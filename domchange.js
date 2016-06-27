@@ -1,17 +1,15 @@
 const {Mark} = require("../model")
-const {mapThroughResult} = require("../transform")
 
-const {Selection, TextSelection} = require("./selection")
+const {Selection} = require("../selection")
 const {DOMFromPos, DOMFromPosFromEnd} = require("./dompos")
 
-function readInputChange(pm) {
-  pm.ensureOperation({readSelection: false})
-  return readDOMChange(pm, rangeAroundSelection(pm))
+function readInputChange(view) {
+  return readDOMChange(view, rangeAroundSelection(view))
 }
 exports.readInputChange = readInputChange
 
-function readCompositionChange(pm, margin) {
-  return readDOMChange(pm, rangeAroundComposition(pm, margin))
+function readCompositionChange(view, margin) {
+  return readDOMChange(view, rangeAroundComposition(view, margin))
 }
 exports.readCompositionChange = readCompositionChange
 
@@ -21,9 +19,9 @@ exports.readCompositionChange = readCompositionChange
 // the modification is mapped over those before it is applied, in
 // readDOMChange.
 
-function parseBetween(pm, from, to) {
-  let {node: parent, offset: startOff} = DOMFromPos(pm, from, true)
-  let {node: parentRight, offset: endOff} = DOMFromPosFromEnd(pm, to)
+function parseBetween(view, from, to) {
+  let {node: parent, offset: startOff} = DOMFromPos(view, from, true)
+  let {node: parentRight, offset: endOff} = DOMFromPosFromEnd(view, to)
   if (parent != parentRight) return null
   while (startOff) {
     let prev = parent.childNodes[startOff - 1]
@@ -36,13 +34,13 @@ function parseBetween(pm, from, to) {
     else break
   }
   let domSel = window.getSelection(), find = null
-  if (domSel.anchorNode && pm.content.contains(domSel.anchorNode)) {
+  if (domSel.anchorNode && view.content.contains(domSel.anchorNode)) {
     find = [{node: domSel.anchorNode, offset: domSel.anchorOffset}]
     if (!domSel.isCollapsed)
       find.push({node: domSel.focusNode, offset: domSel.focusOffset})
   }
-  let sel = null, doc = pm.schema.parseDOM(parent, {
-    topNode: pm.operation.doc.resolve(from).parent.copy(),
+  let sel = null, doc = view.doc.type.schema.parseDOM(parent, {
+    topNode: view.doc.resolve(from).parent.copy(),
     from: startOff,
     to: endOff,
     preserveWhitespace: true,
@@ -68,12 +66,12 @@ function isAtStart($pos, depth) {
   return $pos.parentOffset == 0
 }
 
-function rangeAroundSelection(pm) {
-  let {$from, $to} = pm.operation.sel
+function rangeAroundSelection(view) {
+  let {$from, $to} = view.selection
   // When the selection is entirely inside a text block, use
   // rangeAroundComposition to get a narrow range.
   if ($from.sameParent($to) && $from.parent.isTextblock && $from.parentOffset && $to.parentOffset < $to.parent.content.size)
-    return rangeAroundComposition(pm, 0)
+    return rangeAroundComposition(view, 0)
 
   for (let depth = 0;; depth++) {
     let fromStart = isAtStart($from, depth + 1), toEnd = isAtEnd($to, depth + 1)
@@ -88,9 +86,9 @@ function rangeAroundSelection(pm) {
   }
 }
 
-function rangeAroundComposition(pm, margin) {
-  let {$from, $to} = pm.operation.sel
-  if (!$from.sameParent($to)) return rangeAroundSelection(pm)
+function rangeAroundComposition(view, margin) {
+  let {$from, $to} = view.selection
+  if (!$from.sameParent($to)) return rangeAroundSelection(view)
   let startOff = Math.max(0, $from.parentOffset - margin)
   let size = $from.parent.content.size
   let endOff = Math.min(size, $to.parentOffset + margin)
@@ -105,36 +103,25 @@ function rangeAroundComposition(pm, margin) {
   return {from: nodeStart + startOff, to: nodeStart + endOff}
 }
 
-function readDOMChange(pm, range) {
-  let op = pm.operation
-  // If the document was reset since the start of the current
-  // operation, we can't do anything useful with the change to the
-  // DOM, so we discard it.
-  if (op.docSet) {
-    pm.markAllDirty()
-    return false
-  }
-
+function readDOMChange(view, range) {
   let parseResult
   for (;;) {
-    parseResult = parseBetween(pm, range.from, range.to)
+    parseResult = parseBetween(view, range.from, range.to)
     if (parseResult) break
-    range = {from: op.doc.resolve(range.from).before(),
-             to: op.doc.resolve(range.to).after()}
+    range = {from: view.doc.resolve(range.from).before(),
+             to: view.doc.resolve(range.to).after()}
   }
   let {doc: parsed, sel: parsedSel} = parseResult
 
-  let compare = op.doc.slice(range.from, range.to)
-  let change = findDiff(compare.content, parsed.content, range.from, op.sel.from)
+  let compare = view.doc.slice(range.from, range.to)
+  let change = findDiff(compare.content, parsed.content, range.from, view.selection.from)
   if (!change) return false
-  let fromMapped = mapThroughResult(op.mappings, change.start)
-  let toMapped = mapThroughResult(op.mappings, change.endA)
-  if (fromMapped.deleted && toMapped.deleted) return false
 
   // Mark nodes touched by this change as 'to be redrawn'
-  markDirtyFor(pm, op.doc, change.start, change.endA)
+  markDirtyFor(view, view.doc, change.start, change.endA)
 
-  function newSelection(doc) {
+  // FIXME use
+/*  function newSelection(doc) {
     if (!parsedSel) return false
     let newSel = Selection.findNear(doc.resolve(range.from + parsedSel.head))
     if (parsedSel.anchor != parsedSel.head && newSel.$head) {
@@ -142,7 +129,7 @@ function readDOMChange(pm, range) {
       if ($anchor.parent.isTextblock) newSel = new TextSelection($anchor, newSel.$head)
     }
     return newSel
-  }
+  }*/
 
   let $from = parsed.resolveNoCache(change.start - range.from)
   let $to = parsed.resolveNoCache(change.endB - range.from)
@@ -152,16 +139,15 @@ function readDOMChange(pm, range) {
   if (!$from.sameParent($to) && $from.pos < parsed.content.size &&
       (nextSel = Selection.findFrom(parsed.resolve($from.pos + 1), 1, true)) &&
       nextSel.head == $to.pos) {
-    pm.input.dispatchKey("Enter")
+    view.channel.key({keyName: "Enter"})
   } else if ($from.sameParent($to) && $from.parent.isTextblock &&
              (text = uniformTextBetween(parsed, $from.pos, $to.pos)) != null) {
-    pm.input.insertText(fromMapped.pos, toMapped.pos, text, newSelection)
+    // FIXME reinstate some solution for updating the selection
+    view.channel.insertText({from: change.start, to: change.endA, text})
   } else {
     let slice = parsed.slice(change.start - range.from, change.endB - range.from)
-    let tr = pm.tr.replace(fromMapped.pos, toMapped.pos, slice)
-    let sel = newSelection(tr.doc)
-    if (sel) tr.setSelection(sel)
-    tr.applyAndScroll()
+    // FIXME reinstate some solution for updating the selection
+    view.channel.replace({from: change.start, to: change.endA, slice})
   }
   return true
 }
@@ -196,10 +182,10 @@ function findDiff(a, b, pos, preferedStart) {
   return {start, endA, endB}
 }
 
-function markDirtyFor(pm, doc, start, end) {
+function markDirtyFor(view, doc, start, end) {
   let $start = doc.resolve(start), $end = doc.resolve(end), same = $start.sameDepth($end)
   if (same == 0)
-    pm.markAllDirty()
+    view.markAllDirty()
   else
-    pm.markRangeDirty($start.before(same), $start.after(same), doc)
+    view.markRangeDirty($start.before(same), $start.after(same), doc)
 }

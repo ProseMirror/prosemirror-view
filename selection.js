@@ -1,5 +1,5 @@
 const browser = require("../util/browser")
-const {Selection, NodeSelection, TextSelection} = require("../selection")
+const {Selection, NodeSelection} = require("../selection")
 
 const {posFromDOM, DOMAfterPos, DOMFromPos, coordsAtPos} = require("./dompos")
 
@@ -62,11 +62,16 @@ class SelectionReader { // FIXME inline into view
   // When the DOM selection changes in a notable manner, modify the
   // current selection state to match.
   readFromDOM() {
-    if (this.view.hasFocus() && this.domChanged()) {
-      let {range, adjusted} = selectionFromDOM(this.view.state.doc, this.view.state.selection.head)
-      if (!adjusted) this.storeDOMState()
-      this.view.channel(new SelectionChange(range))
-    }
+    if (!this.view.hasFocus() || !this.domChanged()) return
+
+    let domSel = window.getSelection(), doc = this.view.doc
+    let $anchor = doc.resolve(posFromDOM(domSel.anchorNode, domSel.anchorOffset))
+    let $head = domSel.isCollapsed ? $anchor : doc.resolve(posFromDOM(domSel.focusNode, domSel.focusOffset))
+    let bias = this.view.selection.head != null && this.view.selection.head < $head.pos ? 1 : -1
+    let selection = Selection.between($anchor, $head, bias)
+    if ($head.pos == selection.head && $anchor.pos == selection.anchor)
+      this.storeDOMState()
+    this.view.channel.selection({selection})
   }
 
   receivedFocus() {
@@ -75,14 +80,13 @@ class SelectionReader { // FIXME inline into view
 }
 exports.SelectionReader = SelectionReader
 
-function selectionToDOM(view, takeFocus) {
+function selectionToDOM(view, sel, takeFocus) {
   if (!view.hasFocus()) {
     if (!takeFocus) return
     // See https://bugzilla.mozilla.org/show_bug.cgi?id=921444
-    else if (browser.gecko) this.pm.content.focus()
+    else if (browser.gecko) this.view.content.focus()
   }
 
-  let sel = view.state.selection
   if (sel instanceof NodeSelection)
     nodeSelectionToDOM(view, sel)
   else
@@ -107,7 +111,7 @@ function nodeSelectionToDOM(view, sel) {
 }
 
 // Make changes to the DOM for a text selection.
-textSelectionToDOM(view, sel) {
+function textSelectionToDOM(view, sel) {
   clearNodeSelection(view)
 
   let anchor = DOMFromPos(view, sel.anchor)
@@ -138,32 +142,13 @@ function clearNodeSelection(view) {
   }
 }
 
-function selectionFromDOM(doc, oldHead) {
-  let domSel = window.getSelection()
-  let anchor = posFromDOM(domSel.anchorNode, domSel.anchorOffset)
-  let head = domSel.isCollapsed ? anchor : posFromDOM(domSel.focusNode, domSel.focusOffset)
-
-  let range = Selection.findNear(doc.resolve(head), oldHead != null && oldHead < head ? 1 : -1)
-  if (range instanceof TextSelection) {
-    let selNearAnchor = Selection.findFrom(doc.resolve(anchor), anchor > range.to ? -1 : 1, true)
-    range = new TextSelection(selNearAnchor.$anchor, range.$head)
-  } else if (anchor < range.from || anchor > range.to) {
-    // If head falls on a node, but anchor falls outside of it, create
-    // a text selection between them
-    let inv = anchor > range.to
-    let foundAnchor = Selection.findFrom(doc.resolve(anchor), inv ? -1 : 1, true)
-    let foundHead = Selection.findFrom(inv ? range.$from : range.$to, inv ? 1 : -1, true)
-    if (foundAnchor && foundHead)
-      range = new TextSelection(foundAnchor.$anchor, foundHead.$head)
-  }
-  return {range, adjusted: head != range.head || anchor != range.anchor}
-}
-
 // : (ProseMirror, number, number)
 // Whether vertical position motion in a given direction
 // from a position would leave a text block.
-function verticalMotionLeavesTextblock(view, $pos, dir) {
-  let dom = $pos.depth ? DOMAfterPos(view, $pos.before()) : pos.content
+function verticalMotionLeavesTextblock(view, dir) {
+  let $pos = dir < 0 ? view.selection.$from : view.selection.$to
+  if (!$pos.depth) return false
+  let dom = DOMAfterPos(view, $pos.before())
   let coords = coordsAtPos(view, $pos.pos)
   for (let child = dom.firstChild; child; child = child.nextSibling) {
     if (child.nodeType != 1) continue

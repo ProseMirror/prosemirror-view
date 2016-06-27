@@ -2,176 +2,85 @@ const Keymap = require("browserkeymap")
 const browser = require("../util/browser")
 const {Slice, Fragment, parseDOMInContext} = require("../model")
 
-const {captureKeys} = require("./capturekeys")
 const {elt, contains} = require("../util/dom")
 
 const {readInputChange, readCompositionChange} = require("./domchange")
-const {Selection, hasFocus} = require("./selection")
-
-let stopSeq = null
 
 // A collection of DOM events that occur within the editor, and callback functions
 // to invoke when the event fires.
 const handlers = {}
 
-class Input {
-  constructor(pm) {
-    this.pm = pm
+function initInput(view) {
+  view.shiftKey = false
+  view.keyPrefix = null
+  view.clearPrefix = null
+  view.mouseDown = null
+  view.dragging = null
+  view.dropTarget = null
+  view.composing = null
+  view.finishUpdateFromDOM = null
+  // FIXME actually use this flag
+  view.domTouched = false
 
-    this.keySeq = null
-
-    this.mouseDown = null
-    this.dragging = null
-    this.dropTarget = null
-    this.shiftKey = false
-    this.finishComposing = null
-
-    this.keymaps = []
-
-    this.storedMarks = null
-
-    for (let event in handlers) {
-      let handler = handlers[event]
-      pm.content.addEventListener(event, e => handler(pm, e))
-    }
-
-    pm.on.selectionChange.add(() => this.storedMarks = null)
-  }
-
-  // Dispatch a key press to the internal keymaps, which will override the default
-  // DOM behavior.
-  dispatchKey(name, e) {
-    let pm = this.pm, seq = pm.input.keySeq
-    // If the previous key should be used in sequence with this one, modify the name accordingly.
-    if (seq) {
-      if (Keymap.isModifierKey(name)) return true
-      clearTimeout(stopSeq)
-      stopSeq = setTimeout(function() {
-        if (pm.input.keySeq == seq)
-          pm.input.keySeq = null
-      }, 50)
-      name = seq + " " + name
-    }
-
-    let handle = function(bound) {
-      if (bound === false) return "nothing"
-      if (bound == Keymap.unfinished) return "multi"
-      if (bound == null) return false
-      return bound(pm) == false ? false : "handled"
-    }
-
-    let result
-    for (let i = 0; !result && i < pm.input.keymaps.length; i++)
-      result = handle(pm.input.keymaps[i].map.lookup(name, pm))
-    if (!result)
-      result = handle(captureKeys.lookup(name))
-
-    // If the key should be used in sequence with the next key, store the keyname internally.
-    if (result == "multi")
-      pm.input.keySeq = name
-
-    if ((result == "handled" || result == "multi") && e)
-      e.preventDefault()
-
-    if (seq && !result && /\'$/.test(name)) {
-      if (e) e.preventDefault()
-      return true
-    }
-    return !!result
-  }
-
-  // : (ProseMirror, TextSelection, string, ?(Node) → Selection)
-  // Insert text into a document.
-  insertText(from, to, text, findSelection) {
-    if (from == to && !text) return
-    let pm = this.pm, marks = pm.input.storedMarks || pm.doc.marksAt(from)
-    let tr = pm.tr.replaceWith(from, to, text ? pm.schema.text(text, marks) : null)
-    tr.setSelection(findSelection && findSelection(tr.doc) || Selection.findNear(tr.doc.resolve(tr.map(to)), -1))
-    tr.applyAndScroll()
-    if (text) pm.on.textInput.dispatch(text)
-  }
-
-  get composing() {
-    return this.pm.operation && this.pm.operation.composing
-  }
-
-  startComposition(dataLen, realStart) {
-    this.pm.ensureOperation({noFlush: true, readSelection: realStart}).composing = {
-      ended: false,
-      applied: false,
-      margin: dataLen
-    }
-    this.pm.unscheduleFlush()
-  }
-
-  applyComposition(andFlush) {
-    let composing = this.composing
-    if (composing.applied) return
-    readCompositionChange(this.pm, composing.margin)
-    composing.applied = true
-    // Operations that read DOM changes must be flushed, to make sure
-    // subsequent DOM changes find a clean DOM.
-    if (andFlush) this.pm.flush()
+  for (let event in handlers) {
+    let handler = handlers[event]
+    view.content.addEventListener(event, e => handler(view, e))
   }
 }
-exports.Input = Input
+exports.initInput = initInput
 
-handlers.keydown = (pm, e) => {
-  if (!hasFocus(pm)) return
-  pm.on.interaction.dispatch()
-  if (e.keyCode == 16) pm.input.shiftKey = true
-  if (pm.input.composing) return
+function dispatchKey(view, keyName) {
+  let prefix = view.keyPrefix
+  // If the previous key should be used in sequence with this one, modify the name accordingly.
+  if (prefix) {
+    if (Keymap.isModifierKey(keyName)) return true
+    clearTimeout(view.clearPrefix)
+    view.clearPrefix = setTimeout(function() {
+      if (view.keyPrefix == prefix) view.keyPrefix = null
+    }, 50)
+    keyName = prefix + " " + keyName
+  }
+
+  let result = view.channel.key({keyName})
+  if (result) {
+    if (result.prefix) view.keyPrefix = result.prefix
+    return true
+  }
+  return false
+}
+
+handlers.keydown = (view, e) => {
+  if (e.keyCode == 16) view.shiftKey = true
+  if (!view.hasFocus() || view.composing) return
   let name = Keymap.keyName(e)
-  if (name && pm.input.dispatchKey(name, e)) return
-  pm.sel.fastPoll()
+  if (name && dispatchKey(view, name))
+    e.preventDefault()
+  else
+    view.selectionReader.fastPoll()
 }
 
-handlers.keyup = (pm, e) => {
-  if (e.keyCode == 16) pm.input.shiftKey = false
+handlers.keyup = (view, e) => {
+  if (e.keyCode == 16) view.shiftKey = false
 }
 
-handlers.keypress = (pm, e) => {
-  if (!hasFocus(pm) || pm.input.composing || !e.charCode ||
+handlers.keypress = (view, e) => {
+  if (!view.hasFocus() || view.composing || !e.charCode ||
       e.ctrlKey && !e.altKey || browser.mac && e.metaKey) return
-  if (pm.input.dispatchKey(Keymap.keyName(e), e)) return
-  let sel = pm.selection
+  if (dispatchKey(view, Keymap.keyName(e))) {
+    e.preventDefault()
+    return
+  }
+
   // On iOS, let input through, because if we handle it the virtual
   // keyboard's default case doesn't update (it only does so when the
   // user types or taps, not on selection updates from JavaScript).
   if (!browser.ios) {
-    pm.input.insertText(sel.from, sel.to, String.fromCharCode(e.charCode))
+    view.channel.insertText({text: String.fromCharCode(e.charCode)})
     e.preventDefault()
   }
 }
 
-function contextFromEvent(pm, event) {
-  return pm.contextAtCoords({left: event.clientX, top: event.clientY})
-}
-
-function selectClickedNode(pm, context) {
-  let {node: selectedNode, $from} = pm.selection, selectAt
-
-  for (let i = context.inside.length - 1; i >= 0; i--) {
-    let {pos, node} = context.inside[i]
-    if (node.type.selectable) {
-      selectAt = pos
-      if (selectedNode && $from.depth > 0) {
-        let $pos = pm.doc.resolve(pos)
-        if ($pos.depth >= $from.depth && $pos.before($from.depth + 1) == $from.pos)
-          selectAt = $pos.before($from.depth)
-      }
-      break
-    }
-  }
-
-  if (selectAt != null) {
-    pm.setNodeSelection(selectAt)
-    pm.focus()
-    return true
-  } else {
-    return false
-  }
-}
+function eventCoords(event) { return {left: event.clientX, top: event.clientY} }
 
 let lastClick = {time: 0, x: 0, y: 0}, oneButLastClick = lastClick
 
@@ -180,63 +89,39 @@ function isNear(event, click) {
   return dx * dx + dy * dy < 100
 }
 
-function handleTripleClick(pm, context) {
-  for (let i = context.inside.length - 1; i >= 0; i--) {
-    let {pos, node} = context.inside[i]
-    if (node.isTextblock)
-      pm.setTextSelection(pos + 1, pos + 1 + node.content.size)
-    else if (node.type.selectable)
-      pm.setNodeSelection(pos)
-    else
-      continue
-    pm.focus()
-    break
-  }
-}
-
-function runHandlerOnContext(handler, context) {
-  for (let i = context.inside.length - 1; i >= 0; i--)
-    if (handler.dispatch(context.pos, context.inside[i].node, context.inside[i].pos))
-      return true
-}
-
-handlers.mousedown = (pm, e) => {
-  pm.on.interaction.dispatch()
-  let now = Date.now()
-  let doubleClick = now - lastClick.time < 500 && isNear(e, lastClick)
-  let tripleClick = doubleClick && now - oneButLastClick.time < 600 && isNear(e, oneButLastClick)
+handlers.mousedown = (view, event) => {
+  let now = Date.now(), type
+  if (now - lastClick.time >= 500 || !isNear(event, lastClick)) type = "singleClick"
+  else if (now - oneButLastClick.time >= 600 || !isNear(event, oneButLastClick)) type = "doubleClick"
+  else type = "tripleClick"
   oneButLastClick = lastClick
-  lastClick = {time: now, x: e.clientX, y: e.clientY}
+  lastClick = {time: now, x: event.clientX, y: event.clientY}
 
-  let context = contextFromEvent(pm, e)
-  if (context == null) return
-  if (tripleClick) {
-    e.preventDefault()
-    handleTripleClick(pm, context)
-  } else if (doubleClick) {
-    if (runHandlerOnContext(pm.on.doubleClickOn, context) || pm.on.doubleClick.dispatch(context.pos))
-      e.preventDefault()
-    else
-      pm.sel.fastPoll()
-  } else {
-    pm.input.mouseDown = new MouseDown(pm, e, context, doubleClick)
-  }
+  let pos = view.posAtCoords(eventCoords(event))
+  if (!pos) return
+
+  if (type == "singleClick")
+    view.mouseDown = new MouseDown(view, pos, event)
+  else if (view.channel[type](pos))
+    event.preventDefault()
+  else
+    view.selectionReader.fastPoll()
 }
 
 class MouseDown {
-  constructor(pm, event, context, doubleClick) {
-    this.pm = pm
-    this.event = event
-    this.context = context
-    this.leaveToBrowser = pm.input.shiftKey || doubleClick
-    this.x = event.clientX; this.y = event.clientY
+  constructor(view, pos, event) {
+    this.view = view
+    this.pos = pos
+    this.ctrlKey = event.ctrlKey
+    this.allowDefault = view.shiftKey
 
-    let inner = context.inside[context.inside.length - 1]
-    this.mightDrag = inner && (inner.node.type.draggable || inner.node == pm.sel.range.node) ? inner : null
+    let targetNode
+    if (pos.inside) targetNode = view.doc.nodeAt(pos.inside)
+    else targetNode = view.doc.resolve(pos.pos).parent
+
+    this.mightDrag = (targetNode.type.draggable || targetNode == view.selection.node) ? targetNode : null
     this.target = event.target
     if (this.mightDrag) {
-      if (!contains(pm.content, this.target))
-        this.target = document.elementFromPoint(this.x, this.y)
       this.target.draggable = true
       if (browser.gecko && (this.setContentEditable = !this.target.hasAttribute("contentEditable")))
         this.target.setAttribute("contentEditable", "false")
@@ -244,7 +129,7 @@ class MouseDown {
 
     window.addEventListener("mouseup", this.up = this.up.bind(this))
     window.addEventListener("mousemove", this.move = this.move.bind(this))
-    pm.sel.fastPoll()
+    view.selectionReader.fastPoll()
   }
 
   done() {
@@ -260,45 +145,29 @@ class MouseDown {
   up(event) {
     this.done()
 
-    if (this.leaveToBrowser || !contains(this.pm.content, event.target))
-      return this.pm.sel.fastPoll()
-
-    let context = contextFromEvent(this.pm, event)
-    if (this.event.ctrlKey && selectClickedNode(this.pm, context)) {
+    if (this.allowDefault || !contains(this.view.content, event.target) ||
+        !this.view.channel.singleClick({pos: this.pos.pos, inside: this.pos.inside, ctrl: this.ctrlKey}))
+      return this.view.selectionReader.fastPoll()
+    else
       event.preventDefault()
-    } else if (runHandlerOnContext(this.pm.on.clickOn, this.context) ||
-               this.pm.on.click.dispatch(this.context.pos)) {
-      event.preventDefault()
-    } else {
-      let inner = this.context.inside[this.context.inside.length - 1]
-      if (inner && inner.node.type.isLeaf && inner.node.type.selectable) {
-        this.pm.setNodeSelection(inner.pos)
-        this.pm.focus()
-      } else {
-        this.pm.sel.fastPoll()
-      }
-    }
   }
 
   move(event) {
-    if (!this.leaveToBrowser && (Math.abs(this.x - event.clientX) > 4 ||
-                                 Math.abs(this.y - event.clientY) > 4))
-      this.leaveToBrowser = true
-    this.pm.sel.fastPoll()
+    if (!this.allowDefault && (Math.abs(this.x - event.clientX) > 4 ||
+                               Math.abs(this.y - event.clientY) > 4))
+      this.allowDefault = true
+    this.view.selectionReader.fastPoll()
   }
 }
 
-handlers.touchdown = pm => {
-  pm.sel.fastPoll()
+handlers.touchdown = view => {
+  view.selectionReader.fastPoll()
 }
 
-handlers.contextmenu = (pm, e) => {
-  let context = contextFromEvent(pm, e)
-  if (context) {
-    let inner = context.inside[context.inside.length - 1]
-    if (pm.on.contextMenu.dispatch(context.pos, inner ? inner.node : pm.doc))
-      e.preventDefault()
-  }
+handlers.contextmenu = (view, e) => {
+  let pos = view.posAtCoords(eventCoords(e))
+  if (pos && view.channel.contextMenu(pos))
+    e.preventDefault()
 }
 
 // Input compositions are hard. Mostly because the events fired by
@@ -315,67 +184,58 @@ handlers.contextmenu = (pm, e) => {
 // plain wrong. Instead, when a composition ends, we parse the dom
 // around the original selection, and derive an update from that.
 
-handlers.compositionstart = (pm, e) => {
-  if (!pm.input.composing && hasFocus(pm))
-    pm.input.startComposition(e.data ? e.data.length : 0, true)
+function startComposition(view, dataLen) {
+  view.composing = {margin: dataLen}
+  view.domTouched = true
+  clearTimeout(view.finishUpdateFromDOM)
 }
 
-handlers.compositionupdate = pm => {
-  if (!pm.input.composing && hasFocus(pm))
-    pm.input.startComposition(0, false)
+function scheduleUpdateFromDOM(view) {
+  clearTimeout(view.finishUpdateFromDOM)
+  // Give the browser a moment to fire input events or start a new
+  // composition, and only apply the change from the DOM afterwards.
+  view.finishUpdateFromDOM = window.setTimeout(() => finishUpdateFromDOM(view), 50)
 }
 
-handlers.compositionend = (pm, e) => {
-  if (!hasFocus(pm)) return
-  let composing = pm.input.composing
+handlers.compositionstart = (view, e) => {
+  if (!view.composing && view.hasFocus())
+    startComposition(view, e.data ? e.data.length : 0)
+}
+
+handlers.compositionupdate = view => {
+  if (!view.composing && view.hasFocus())
+    startComposition(view, 0)
+}
+
+handlers.compositionend = (view, e) => {
+  if (!view.hasFocus()) return
+  let composing = view.composing
   if (!composing) {
     // We received a compositionend without having seen any previous
     // events for the composition. If there's data in the event
     // object, we assume that it's a real change, and start a
     // composition. Otherwise, we just ignore it.
-    if (e.data) pm.input.startComposition(e.data.length, false)
+    if (e.data) startComposition(view, e.data.length)
     else return
-  } else if (composing.applied) {
-    // This happens when a flush during composition causes a
-    // syncronous compositionend.
-    return
   }
 
-  clearTimeout(pm.input.finishComposing)
-  pm.operation.composing.ended = true
-  // Applying the composition right away from this event confuses
-  // Chrome (and probably other browsers), causing them to re-update
-  // the DOM afterwards. So we apply the composition either in the
-  // next input event, or after a short interval.
-  pm.input.finishComposing = window.setTimeout(() => {
-    let composing = pm.input.composing
-    if (composing && composing.ended) pm.input.applyComposition(true)
-  }, 20)
+  scheduleUpdateFromDOM(view)
 }
 
-function readInput(pm) {
-  let composing = pm.input.composing
-  if (composing) {
-    // Ignore input events during composition, except when the
-    // composition has ended, in which case we can apply it.
-    if (composing.ended) pm.input.applyComposition(true)
-    return true
+function finishUpdateFromDOM(view) {
+  if (view.composing) {
+    readCompositionChange(view, view.composing.margin)
+    view.composing = null
+  } else {
+    readInputChange(view)
   }
-
-  // Read the changed DOM and derive an update from that.
-  let result = readInputChange(pm)
-  pm.flush()
-  return result
+  view.channel.forceUpdate()
+  view.domTouched = false
 }
 
-function readInputSoon(pm) {
-  window.setTimeout(() => {
-    if (!readInput(pm)) window.setTimeout(() => readInput(pm), 80)
-  }, 20)
-}
-
-handlers.input = pm => {
-  if (hasFocus(pm)) readInput(pm)
+handlers.input = view => {
+  if (view.composing || !view.hasFocus()) return
+  scheduleUpdateFromDOM(view)
 }
 
 function toClipboard(doc, from, to, dataTransfer) {
@@ -402,15 +262,15 @@ function canUpdateClipboard(dataTransfer) {
   return cachedCanUpdateClipboard = dataTransfer.getData("text/html") == "<hr>"
 }
 
-// : (ProseMirror, DataTransfer, ?bool, ResolvedPos) → ?Slice
-function fromClipboard(pm, dataTransfer, plainText, $target) {
+// : (DataTransfer, ?bool, ResolvedPos) → ?Slice
+function fromClipboard(dataTransfer, plainText, $target) {
   let txt = dataTransfer.getData("text/plain")
   let html = dataTransfer.getData("text/html")
   if (!html && !txt) return null
   let dom
   if ((plainText || !html) && txt) {
     dom = document.createElement("div")
-    pm.on.transformPastedText.dispatch(txt).split(/(?:\r\n?|\n){2,}/).forEach(block => {
+    txt.split(/(?:\r\n?|\n){2,}/).forEach(block => {
       let para = dom.appendChild(document.createElement("p"))
       block.split(/\r\n?|\n/).forEach((line, i) => {
         if (i) para.appendChild(document.createElement("br"))
@@ -418,14 +278,14 @@ function fromClipboard(pm, dataTransfer, plainText, $target) {
       })
     })
   } else {
-    dom = readHTML(pm.on.transformPastedHTML.dispatch(html))
+    dom = readHTML(html)
   }
   let openLeft = null, m
   let foundLeft = dom.querySelector("[pm-open-left]")
   if (foundLeft && (m = /^\d+$/.exec(foundLeft.getAttribute("pm-open-left"))))
     openLeft = +m[0]
   let slice = parseDOMInContext($target, dom, {openLeft, preserveWhiteSpace: true})
-  return pm.on.transformPasted.dispatch(slice)
+  return slice
 }
 
 function insertRange($from, $to) {
@@ -455,31 +315,29 @@ function readHTML(html) {
   return elt
 }
 
-handlers.copy = handlers.cut = (pm, e) => {
-  let {from, to, empty} = pm.selection, cut = e.type == "cut"
+handlers.copy = handlers.cut = (view, e) => {
+  let {from, to, empty} = view.selection, cut = e.type == "cut"
   if (empty) return
   if (!e.clipboardData || !canUpdateClipboard(e.clipboardData)) {
-    if (cut && browser.ie && browser.ie_version <= 11) readInputSoon(pm)
+    if (cut && browser.ie && browser.ie_version <= 11) scheduleUpdateFromDOM(view)
     return
   }
-  toClipboard(pm.doc, from, to, e.clipboardData)
+  toClipboard(view.doc, from, to, e.clipboardData)
   e.preventDefault()
-  if (cut) pm.tr.delete(from, to).apply()
+  if (cut) view.channel.cut({from, to})
 }
 
-handlers.paste = (pm, e) => {
-  if (!hasFocus(pm)) return
+handlers.paste = (view, e) => {
+  if (!view.hasFocus()) return
   if (!e.clipboardData) {
-    if (browser.ie && browser.ie_version <= 11) readInputSoon(pm)
+    if (browser.ie && browser.ie_version <= 11) scheduleUpdateFromDOM(view)
     return
   }
-  let sel = pm.selection, range = insertRange(sel.$from, sel.$to)
-  let slice = fromClipboard(pm, e.clipboardData, pm.input.shiftKey, pm.doc.resolve(range.from))
+  let range = insertRange(view.selection.$from, view.selection.$to)
+  let slice = fromClipboard(e.clipboardData, view.shiftKey, view.doc.resolve(range.from))
   if (slice) {
     e.preventDefault()
-    let tr = pm.tr.replace(range.from, range.to, slice)
-    tr.setSelection(Selection.findNear(tr.doc.resolve(tr.map(range.to)), -1))
-    tr.applyAndScroll()
+    view.channel.paste({slice, from: range.from, to: range.to})
   }
 }
 
@@ -504,21 +362,20 @@ function dropPos(slice, $pos) {
   return $pos.pos
 }
 
-function removeDropTarget(pm) {
-  if (pm.input.dropTarget) {
-    pm.wrapper.removeChild(pm.input.dropTarget)
-    pm.input.dropTarget = null
+function removeDropTarget(view) {
+  if (view.dropTarget) {
+    view.wrapper.removeChild(view.dropTarget)
+    view.dropTarget = null
   }
 }
 
-handlers.dragstart = (pm, e) => {
-  let mouseDown = pm.input.mouseDown
+handlers.dragstart = (view, e) => {
+  let mouseDown = view.mouseDown
   if (mouseDown) mouseDown.done()
-
   if (!e.dataTransfer) return
 
-  let {from, to, empty} = pm.selection, dragging
-  let pos = !empty && pm.posAtCoords({left: e.clientX, top: e.clientY})
+  let {from, to, empty} = view.selection, dragging
+  let pos = empty ? null : view.posAtCoords(eventCoords(e))
   if (pos != null && pos >= from && pos <= to) {
     dragging = {from, to}
   } else if (mouseDown && mouseDown.mightDrag) {
@@ -527,30 +384,30 @@ handlers.dragstart = (pm, e) => {
   }
 
   if (dragging) {
-    let slice = toClipboard(pm.doc, dragging.from, dragging.to, e.dataTransfer)
+    let slice = toClipboard(view.doc, dragging.from, dragging.to, e.dataTransfer)
     // FIXME the document could change during a drag, invalidating this range
-    // use a marked range?
-    pm.input.dragging = new Dragging(slice, dragging.from, dragging.to)
+    // use a marked range? Or freeze the view?
+    view.dragging = new Dragging(slice, dragging.from, dragging.to)
   }
 }
 
-handlers.dragend = pm => {
-  removeDropTarget(pm)
-  window.setTimeout(() => pm.input.dragging = null, 50)
+handlers.dragend = view => {
+  removeDropTarget(view)
+  window.setTimeout(() => view.dragging = null, 50)
 }
 
-handlers.dragover = handlers.dragenter = (pm, e) => {
+handlers.dragover = handlers.dragenter = (view, e) => {
   e.preventDefault()
 
-  let target = pm.input.dropTarget
+  let target = view.dropTarget
   if (!target)
-    target = pm.input.dropTarget = pm.wrapper.appendChild(elt("div", {class: "ProseMirror-drop-target"}))
+    target = view.dropTarget = view.wrapper.appendChild(elt("div", {class: "ProseMirror-drop-target"}))
 
-  let pos = dropPos(pm.input.dragging && pm.input.dragging.slice,
-                    pm.doc.resolve(pm.posAtCoords({left: e.clientX, top: e.clientY})))
+  let pos = dropPos(view.dragging && view.dragging.slice,
+                    view.doc.resolve(view.posAtCoords(eventCoords(e))))
   if (pos == null) return
-  let coords = pm.coordsAtPos(pos)
-  let rect = pm.wrapper.getBoundingClientRect()
+  let coords = view.coordsAtPos(pos)
+  let rect = view.wrapper.getBoundingClientRect()
   coords.top -= rect.top
   coords.right -= rect.left
   coords.bottom -= rect.top
@@ -560,49 +417,37 @@ handlers.dragover = handlers.dragenter = (pm, e) => {
   target.style.height = (coords.bottom - coords.top) + "px"
 }
 
-handlers.dragleave = (pm, e) => {
-  if (e.target == pm.content) removeDropTarget(pm)
+handlers.dragleave = (view, e) => {
+  if (e.target == view.content) removeDropTarget(view)
 }
 
-handlers.drop = (pm, e) => {
-  let dragging = pm.input.dragging
-  pm.input.dragging = null
-  removeDropTarget(pm)
+handlers.drop = (view, e) => {
+  let dragging = view.dragging
+  view.dragging = null
+  removeDropTarget(view)
 
-  if (!e.dataTransfer || pm.on.domDrop.dispatch(e)) return
+  if (!e.dataTransfer) return
 
-  let $mouse = pm.doc.resolve(pm.posAtCoords({left: e.clientX, top: e.clientY}))
+  let $mouse = view.doc.resolve(view.posAtCoords(eventCoords(e)))
   if (!$mouse) return
   let range = insertRange($mouse, $mouse)
-  let slice = dragging && dragging.slice || fromClipboard(pm, e.dataTransfer, pm.doc.resolve(range.from))
+  let slice = dragging && dragging.slice || fromClipboard(e.dataTransfer, view.doc.resolve(range.from))
   if (!slice) return
-  let insertPos = dropPos(slice, pm.doc.resolve(range.from))
+  let insertPos = dropPos(slice, view.doc.resolve(range.from))
 
   e.preventDefault()
-  let tr = pm.tr
   if (dragging && !e.ctrlKey && dragging.from != null)
-    tr.delete(dragging.from, dragging.to)
-  let start = tr.map(insertPos), found
-  tr.replace(start, tr.map(insertPos), slice).apply()
-
-  if (slice.content.childCount == 1 && slice.openLeft == 0 && slice.openRight == 0 &&
-      slice.content.child(0).type.selectable &&
-      (found = pm.doc.nodeAt(start)) && found.sameMarkup(slice.content.child(0))) {
-    pm.setNodeSelection(start)
-  } else {
-    let left = Selection.findFrom(pm.doc.resolve(start), 1, true)
-    let right = Selection.findFrom(pm.doc.resolve(tr.map(insertPos)), -1, true)
-    if (left && right) pm.setTextSelection(left.from, right.to)
-  }
-  pm.focus()
+    view.channel.cut({from: dragging.from, to: dragging.to})
+  view.channel.drop({slice, from: insertPos, to: insertPos})
+  view.focus()
 }
 
-handlers.focus = pm => {
-  pm.wrapper.classList.add("ProseMirror-focused")
-  pm.on.focus.dispatch()
+handlers.focus = view => {
+  view.wrapper.classList.add("ProseMirror-focused")
+  view.channel.focus()
 }
 
-handlers.blur = pm => {
-  pm.wrapper.classList.remove("ProseMirror-focused")
-  pm.on.blur.dispatch()
+handlers.blur = view => {
+  view.wrapper.classList.remove("ProseMirror-focused")
+  view.channel.blur()
 }

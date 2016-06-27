@@ -6,6 +6,8 @@ const {childContainer} = require("./dompos")
 const DIRTY_RESCAN = 1, DIRTY_REDRAW = 2
 exports.DIRTY_RESCAN = DIRTY_RESCAN; exports.DIRTY_REDRAW = DIRTY_REDRAW
 
+// FIXME track dirty ranges in a better way
+
 function options(ranges) {
   return {
     pos: 0,
@@ -77,9 +79,9 @@ function splitSpan(span, at) {
   return newNode
 }
 
-function draw(pm, doc) {
-  pm.content.textContent = ""
-  pm.content.appendChild(doc.content.toDOM(options(pm.ranges.activeRangeTracker())))
+function draw(view, doc, ranges) {
+  view.content.textContent = ""
+  view.content.appendChild(doc.content.toDOM(options(ranges.activeRangeTracker())))
 }
 exports.draw = draw
 
@@ -111,10 +113,10 @@ function movePast(dom) {
   return next
 }
 
-function redraw(pm, dirty, doc, prev) {
-  if (dirty.get(prev) == DIRTY_REDRAW) return draw(pm, doc)
+function redraw(view, dirty, doc, prev, ranges) {
+  if (dirty.get(prev) == DIRTY_REDRAW) return draw(view, doc, ranges)
 
-  let opts = options(pm.ranges.activeRangeTracker())
+  let opts = options(ranges.activeRangeTracker())
 
   function scan(dom, node, prev, pos) {
     let iPrev = 0, oPrev = 0, pChild = prev.firstChild
@@ -172,7 +174,7 @@ function redraw(pm, dirty, doc, prev) {
 
     if (browser.ios) iosHacks(dom)
   }
-  scan(pm.content, doc, prev, 0)
+  scan(view.content, doc, prev, 0)
 }
 exports.redraw = redraw
 
