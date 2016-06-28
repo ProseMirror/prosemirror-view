@@ -344,10 +344,11 @@ handlers.paste = (view, e) => {
 }
 
 class Dragging {
-  constructor(slice, from, to) {
+  constructor(slice, from, to, move) {
     this.slice = slice
     this.from = from
     this.to = to
+    this.move = move
   }
 }
 
@@ -387,9 +388,7 @@ handlers.dragstart = (view, e) => {
 
   if (dragging) {
     let slice = toClipboard(view.doc, dragging.from, dragging.to, e.dataTransfer)
-    // FIXME the document could change during a drag, invalidating this range
-    // use a marked range? Or freeze the view?
-    view.dragging = new Dragging(slice, dragging.from, dragging.to)
+    view.dragging = new Dragging(slice, dragging.from, dragging.to, !e.ctrlKey)
   }
 }
 
@@ -438,7 +437,7 @@ handlers.drop = (view, e) => {
   let insertPos = dropPos(slice, view.doc.resolve(range.from))
 
   e.preventDefault()
-  if (dragging && !e.ctrlKey && dragging.from != null)
+  if (dragging && dragging.move)
     view.channel.cut({from: dragging.from, to: dragging.to})
   view.channel.drop({slice, from: insertPos, to: insertPos})
   view.focus()

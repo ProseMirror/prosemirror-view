@@ -54,6 +54,9 @@ class ProseMirrorView {
     // doesn't cause extra layout
     if (scrollIntoView != null) scrollPosIntoView(this, scrollIntoView)
 
+    // Make sure we don't use an outdated range on drop event
+    if (this.dragging && doc != this.doc) this.dragging.move = false
+
     this.doc = doc
     this.selection = selection
     return {redrawn}
