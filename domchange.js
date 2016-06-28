@@ -50,7 +50,7 @@ function parseBetween(view, from, to) {
   if (find && find[0].pos != null) {
     let anchor = find[0].pos, head = find[1] && find[1].pos
     if (head == null) head = anchor
-    sel = {anchor, head}
+    sel = {anchor: anchor + from, head: head + from}
   }
   return {doc, sel}
 }
@@ -120,17 +120,6 @@ function readDOMChange(view, range) {
   // Mark nodes touched by this change as 'to be redrawn'
   markDirtyFor(view, view.doc, change.start, change.endA)
 
-  // FIXME use
-/*  function newSelection(doc) {
-    if (!parsedSel) return false
-    let newSel = Selection.findNear(doc.resolve(range.from + parsedSel.head))
-    if (parsedSel.anchor != parsedSel.head && newSel.$head) {
-      let $anchor = doc.resolve(range.from + parsedSel.anchor)
-      if ($anchor.parent.isTextblock) newSel = new TextSelection($anchor, newSel.$head)
-    }
-    return newSel
-  }*/
-
   let $from = parsed.resolveNoCache(change.start - range.from)
   let $to = parsed.resolveNoCache(change.endB - range.from)
   let nextSel, text
@@ -142,12 +131,12 @@ function readDOMChange(view, range) {
     view.channel.key({keyName: "Enter"})
   } else if ($from.sameParent($to) && $from.parent.isTextblock &&
              (text = uniformTextBetween(parsed, $from.pos, $to.pos)) != null) {
-    // FIXME reinstate some solution for updating the selection
-    view.channel.insertText({from: change.start, to: change.endA, text})
+    view.channel.insertText({from: change.start, to: change.endA, text,
+                             newSelection: parsedSel})
   } else {
     let slice = parsed.slice(change.start - range.from, change.endB - range.from)
-    // FIXME reinstate some solution for updating the selection
-    view.channel.replace({from: change.start, to: change.endA, slice})
+    view.channel.replace({from: change.start, to: change.endA, slice,
+                          newSelection: parsedSel})
   }
   return true
 }
