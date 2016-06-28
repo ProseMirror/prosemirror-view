@@ -3,7 +3,7 @@ const {elt, ensureCSSAdded, contains} = require("../util/dom")
 
 const {scrollPosIntoView, posAtCoords, coordsAtPos} = require("./dompos")
 const {draw, redraw, DIRTY_REDRAW, DIRTY_RESCAN} = require("./draw")
-const {initInput} = require("./input")
+const {initInput, finishUpdateFromDOM} = require("./input")
 const {SelectionReader, selectionToDOM, verticalMotionLeavesTextblock} = require("./selection")
 require("./css")
 
@@ -88,6 +88,9 @@ class ProseMirrorView {
   markAllDirty() {
     this.dirtyNodes.set(this.doc, DIRTY_REDRAW)
   }
+
+  pendingDOMChange() { return this.domTouched }
+  forceDOMChange() { finishUpdateFromDOM(this) }
 
   posAtCoords(coords) { return posAtCoords(this, coords) }
   coordsAtPos(pos) { return coordsAtPos(this, pos) }

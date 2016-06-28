@@ -223,6 +223,7 @@ handlers.compositionend = (view, e) => {
 }
 
 function finishUpdateFromDOM(view) {
+  clearTimeout(view.finishUpdateFromDOM)
   if (view.composing) {
     readCompositionChange(view, view.composing.margin)
     view.composing = null
@@ -232,6 +233,7 @@ function finishUpdateFromDOM(view) {
   view.channel.forceUpdate()
   view.domTouched = false
 }
+exports.finishUpdateFromDOM = finishUpdateFromDOM
 
 handlers.input = view => {
   if (view.composing || !view.hasFocus()) return
