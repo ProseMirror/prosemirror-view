@@ -6,7 +6,7 @@ const {posFromDOM, DOMAfterPos, DOMFromPos, coordsAtPos} = require("./dompos")
 // Track the state of the current editor selection. Keeps the editor
 // selection in sync with the DOM selection by polling for changes,
 // as there is no DOM event for DOM selection changes.
-class SelectionReader { // FIXME inline into view
+class SelectionReader {
   constructor(view) {
     this.view = view
 
