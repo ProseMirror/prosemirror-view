@@ -71,6 +71,7 @@ class SelectionReader {
     let selection = Selection.between($anchor, $head, bias)
     if ($head.pos == selection.head && $anchor.pos == selection.anchor)
       this.storeDOMState()
+    this.view.selection = selection
     this.view.channel.selection({selection})
   }
 
