@@ -72,7 +72,7 @@ class SelectionReader {
     if ($head.pos == selection.head && $anchor.pos == selection.anchor)
       this.storeDOMState()
     this.view.selection = selection
-    this.view.props.onAction({type: "selection", selection})
+    this.view.props.onAction(selection.action())
   }
 
   receivedFocus() {

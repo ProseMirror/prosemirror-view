@@ -14,7 +14,7 @@ exports.inputAction = {
   key(view, {keyName}) {
     let keymaps = view.props.keymaps || []
     for (let i = 0; i <= keymaps.length; i++) {
-      let map = i == keymaps.length ? captureKeys : keymaps[i].map
+      let map = i == keymaps.length ? captureKeys : keymaps[i]
       let bound = map.lookup(keyName, view), action
 
       if (bound === false) {
@@ -111,7 +111,7 @@ function doReplace(view, {from, to, slice, newSelection}, selectContent) {
 }
 
 function sendSelection(view, selection) {
-  view.props.onAction({type: "selection", selection, focus: true})
+  view.props.onAction(selection.action(false, true))
 }
 
 function selectClickedNode(view, pos, inside) {

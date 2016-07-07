@@ -7,10 +7,6 @@ const {verticalMotionLeavesTextblock} = require("./selection")
 
 function nothing() { return true }
 
-function selAction(selection) {
-  return {type: "selection", selection, scrollIntoView: true}
-}
-
 function moveSelectionBlock(state, dir) {
   let {$from, $to, node} = state.selection
   let $side = dir > 0 ? $to : $from
@@ -23,7 +19,7 @@ function selectNodeHorizontally(state, dir) {
   if (!empty && !node) return false
 
   if (node && node.isInline)
-    return selAction(new TextSelection(dir > 0 ? $to : $from))
+    return new TextSelection(dir > 0 ? $to : $from).action(true)
 
   if (!node) {
     let {node: nextNode, offset} = dir > 0
@@ -31,14 +27,14 @@ function selectNodeHorizontally(state, dir) {
         : $from.parent.childBefore($from.parentOffset)
     if (nextNode) {
       if (nextNode.type.selectable && offset == $from.parentOffset - (dir > 0 ? 0 : nextNode.nodeSize))
-        return selAction(new NodeSelection(dir < 0 ? state.doc.resolve($from.pos - nextNode.nodeSize) : $from))
+        return new NodeSelection(dir < 0 ? state.doc.resolve($from.pos - nextNode.nodeSize) : $from).action(true)
       return false
     }
   }
 
   let next = moveSelectionBlock(state, dir)
   if (next && (next instanceof NodeSelection || node))
-    return selAction(next)
+    return next.action(true)
 }
 
 function horiz(dir) {
@@ -58,15 +54,15 @@ function selectNodeVertically(view, dir) {
     leavingTextblock = verticalMotionLeavesTextblock(view, dir) // FIXME need access to the view
 
   if (leavingTextblock) {
-    let next = moveSelectionBlock(view, dir)
+    let next = moveSelectionBlock(view.state, dir)
     if (next && (next instanceof NodeSelection))
-      return selAction(next)
+      return next.action(true)
   }
 
   if (!node || node.isInline) return false
 
   let beyond = Selection.findFrom($start, dir)
-  return beyond ? selAction(beyond) : true
+  return beyond ? beyond.action(true) : true
 }
 
 function vert(dir) {
