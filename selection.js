@@ -64,7 +64,7 @@ class SelectionReader {
   readFromDOM() {
     if (!this.view.hasFocus() || !this.domChanged()) return
 
-    let domSel = window.getSelection(), doc = this.view.doc
+    let domSel = window.getSelection(), doc = this.view.state.doc
     let $anchor = doc.resolve(posFromDOM(domSel.anchorNode, domSel.anchorOffset))
     let $head = domSel.isCollapsed ? $anchor : doc.resolve(posFromDOM(domSel.focusNode, domSel.focusOffset))
     let bias = this.view.selection.head != null && this.view.selection.head < $head.pos ? 1 : -1
@@ -72,7 +72,7 @@ class SelectionReader {
     if ($head.pos == selection.head && $anchor.pos == selection.anchor)
       this.storeDOMState()
     this.view.selection = selection
-    this.view.channel.selection({selection})
+    this.view.props.onAction({type: "selection", selection})
   }
 
   receivedFocus() {

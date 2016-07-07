@@ -114,7 +114,7 @@ exports.DOMFromPos = DOMFromPos
 // DOM change somewhere in our document, and we can no longer rely on
 // the DOM structure around the selection.
 function DOMFromPosFromEnd(view, pos) {
-  let container = view.content, dist = view.doc.content.size - pos
+  let container = view.content, dist = view.state.doc.content.size - pos
   for (;;) {
     for (let child = container.lastChild, i = container.childNodes.length;; child = child.previousSibling, i--) {
       if (!child) return {node: container, offset: i}
@@ -177,7 +177,7 @@ function windowRect() {
 function scrollPosIntoView(view, pos) {
   let coords = coordsAtPos(view, pos)
   for (let parent = view.content;; parent = parent.parentNode) {
-    let {scrollThreshold, scrollMargin} = view.options
+    let {scrollThreshold, scrollMargin} = view.props
     let atBody = parent == document.body
     let rect = atBody ? windowRect() : parent.getBoundingClientRect()
     let moveX = 0, moveY = 0

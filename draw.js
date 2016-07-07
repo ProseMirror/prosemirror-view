@@ -8,7 +8,7 @@ exports.DIRTY_RESCAN = DIRTY_RESCAN; exports.DIRTY_REDRAW = DIRTY_REDRAW
 
 // FIXME track dirty ranges in a better way
 
-function options(ranges) {
+function options() {
   return {
     pos: 0,
 
@@ -29,27 +29,27 @@ function options(ranges) {
       dom.setAttribute("pm-container", true)
     },
     // : (Node, DOMNode, number, number) → DOMNode
-    renderInlineFlat(node, dom, pos, offset) {
-      ranges.advanceTo(pos)
+    renderInlineFlat(node, dom, _pos, offset) {
+      /*ranges.advanceTo(pos)
       let end = pos + node.nodeSize
-      let nextCut = ranges.nextChangeBefore(end)
+      let nextCut = ranges.nextChangeBefore(end), wrapped*/
 
-      let inner = dom, wrapped
+      let inner = dom
       for (let i = 0; i < node.marks.length; i++) inner = inner.firstChild
 
       if (dom.nodeType != 1) {
         dom = elt("span", null, dom)
-        if (nextCut == -1) wrapped = dom
+        //if (nextCut == -1) wrapped = dom
       }
-      if (!wrapped && (nextCut > -1 || ranges.current.length)) {
+      /*if (!wrapped && (nextCut > -1 || ranges.current.length)) {
         wrapped = inner == dom ? (dom = elt("span", null, inner))
                                : inner.parentNode.appendChild(elt("span", null, inner))
-      }
+      }*/
 
       dom.setAttribute("pm-offset", offset)
       dom.setAttribute("pm-size", node.nodeSize)
 
-      let inlineOffset = 0
+      /*let inlineOffset = 0
       while (nextCut > -1) {
         let size = nextCut - pos
         let split = splitSpan(wrapped, size)
@@ -65,23 +65,23 @@ function options(ranges) {
       }
 
       if (ranges.current.length)
-        wrapped.className = ranges.current.join(" ")
+        wrapped.className = ranges.current.join(" ")*/
       return dom
     },
     document
   }
 }
 
-function splitSpan(span, at) {
+/*function splitSpan(span, at) {
   let textNode = span.firstChild, text = textNode.nodeValue
   let newNode = span.parentNode.insertBefore(elt("span", null, text.slice(0, at)), span)
   textNode.nodeValue = text.slice(at)
   return newNode
-}
+}*/
 
-function draw(view, doc, ranges) {
+function draw(view, doc) {
   view.content.textContent = ""
-  view.content.appendChild(doc.content.toDOM(options(ranges.activeRangeTracker())))
+  view.content.appendChild(doc.content.toDOM(options()))
 }
 exports.draw = draw
 
@@ -113,10 +113,11 @@ function movePast(dom) {
   return next
 }
 
-function redraw(view, dirty, doc, prev, ranges) {
-  if (dirty.get(prev) == DIRTY_REDRAW) return draw(view, doc, ranges)
+function redraw(view, newState) {
+  let dirty = view.dirtyNodes
+  if (dirty.get(view.state.doc) == DIRTY_REDRAW) return draw(view, newState.doc)
 
-  let opts = options(ranges.activeRangeTracker())
+  let opts = options()
 
   function scan(dom, node, prev, pos) {
     let iPrev = 0, oPrev = 0, pChild = prev.firstChild
@@ -174,7 +175,7 @@ function redraw(view, dirty, doc, prev, ranges) {
 
     if (browser.ios) iosHacks(dom)
   }
-  scan(view.content, doc, prev, 0)
+  scan(view.content, newState.doc, view.state.doc, 0)
 }
 exports.redraw = redraw
 

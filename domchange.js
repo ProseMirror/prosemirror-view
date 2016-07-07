@@ -2,6 +2,7 @@ const {Mark} = require("../model")
 
 const {Selection} = require("../selection")
 const {DOMFromPos, DOMFromPosFromEnd} = require("./dompos")
+const {inputAction} = require("./inputaction")
 
 function readInputChange(view) {
   return readDOMChange(view, rangeAroundSelection(view))
@@ -39,8 +40,8 @@ function parseBetween(view, from, to) {
     if (!domSel.isCollapsed)
       find.push({node: domSel.focusNode, offset: domSel.focusOffset})
   }
-  let sel = null, doc = view.doc.type.schema.parseDOM(parent, {
-    topNode: view.doc.resolve(from).parent.copy(),
+  let sel = null, doc = view.state.doc.type.schema.parseDOM(parent, {
+    topNode: view.state.doc.resolve(from).parent.copy(),
     from: startOff,
     to: endOff,
     preserveWhitespace: true,
@@ -104,21 +105,21 @@ function rangeAroundComposition(view, margin) {
 }
 
 function readDOMChange(view, range) {
-  let parseResult
+  let parseResult, doc = view.state.doc
   for (;;) {
     parseResult = parseBetween(view, range.from, range.to)
     if (parseResult) break
-    range = {from: view.doc.resolve(range.from).before(),
-             to: view.doc.resolve(range.to).after()}
+    range = {from: doc.resolve(range.from).before(),
+             to: doc.resolve(range.to).after()}
   }
   let {doc: parsed, sel: parsedSel} = parseResult
 
-  let compare = view.doc.slice(range.from, range.to)
+  let compare = doc.slice(range.from, range.to)
   let change = findDiff(compare.content, parsed.content, range.from, view.selection.from)
   if (!change) return false
 
   // Mark nodes touched by this change as 'to be redrawn'
-  markDirtyFor(view, view.doc, change.start, change.endA)
+  markDirtyFor(view, doc, change.start, change.endA)
 
   let $from = parsed.resolveNoCache(change.start - range.from)
   let $to = parsed.resolveNoCache(change.endB - range.from)
@@ -128,15 +129,15 @@ function readDOMChange(view, range) {
   if (!$from.sameParent($to) && $from.pos < parsed.content.size &&
       (nextSel = Selection.findFrom(parsed.resolve($from.pos + 1), 1, true)) &&
       nextSel.head == $to.pos) {
-    view.channel.key({keyName: "Enter"})
+    inputAction.key(view, {keyName: "Enter"})
   } else if ($from.sameParent($to) && $from.parent.isTextblock &&
              (text = uniformTextBetween(parsed, $from.pos, $to.pos)) != null) {
-    view.channel.insertText({from: change.start, to: change.endA, text,
-                             newSelection: parsedSel})
+    inputAction.insertText(view, {from: change.start, to: change.endA, text,
+                                  newSelection: parsedSel})
   } else {
     let slice = parsed.slice(change.start - range.from, change.endB - range.from)
-    view.channel.replace({from: change.start, to: change.endA, slice,
-                          newSelection: parsedSel})
+    inputAction.replace(view, {from: change.start, to: change.endA, slice,
+                               newSelection: parsedSel})
   }
   return true
 }

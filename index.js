@@ -4,31 +4,30 @@ const {elt, ensureCSSAdded, contains} = require("../util/dom")
 const {scrollPosIntoView, posAtCoords, coordsAtPos} = require("./dompos")
 const {draw, redraw, DIRTY_REDRAW, DIRTY_RESCAN} = require("./draw")
 const {initInput, finishUpdateFromDOM} = require("./input")
-const {SelectionReader, selectionToDOM, verticalMotionLeavesTextblock} = require("./selection")
+const {SelectionReader, selectionToDOM} = require("./selection")
 require("./css")
 
-class ProseMirrorView {
-  constructor(place, opts, doc, sel, channel, ranges) {
+class EditorView {
+  constructor(place, state, props) {
     ensureCSSAdded()
-    this.channel = channel
+
+    this.props = props
+    this.state = state
+    this.selection = this.state.selection
 
     // :: DOMNode
     // The editable DOM node containing the document.
     this.content = elt("div", {class: "ProseMirror-content", "pm-container": true})
-    if (!opts.spellCheck) this.content.spellcheck = false
-    if (opts.label) this.content.setAttribute("aria-label", opts.label)
+    if (!props.spellCheck) this.content.spellcheck = false
+    if (props.label) this.content.setAttribute("aria-label", props.label)
     // :: DOMNode
     // The outer DOM element of the editor.
     this.wrapper = elt("div", {class: "ProseMirror"}, this.content)
-    this.wrapper.ProseMirror = this
 
     if (place && place.appendChild) place.appendChild(this.wrapper)
     else if (place) place(this.wrapper)
 
-    this.doc = doc
-    this.selection = sel
-
-    draw(this, doc, ranges)
+    draw(this, state.doc)
     this.content.contentEditable = true
     this.dirtyNodes = new Map // Maps node object to 1 (re-scan content) or 2 (redraw entirely)
 
@@ -37,29 +36,45 @@ class ProseMirrorView {
     initInput(this)
   }
 
-  update(doc, selection, ranges, setFocus, scrollIntoView) {
+  update(state, newProps) {
     if (this.composing) return null
     let redrawn = false
+    let docChange = !state.doc.eq(this.state.doc)
 
-    if (doc != this.doc || this.dirtyNodes.size) {
-      redraw(this, this.dirtyNodes, doc, this.doc, ranges)
+    if (docChange || this.dirtyNodes.size) {
+      redraw(this, state)
       this.dirtyNodes.clear()
       redrawn = true
     }
 
-    if ((redrawn || !selection.eq(this.selection)) || setFocus)
-      selectionToDOM(this, selection, setFocus)
+    if ((redrawn || !state.selection.eq(this.state.selection)) || state.view.requestedFocus)
+      selectionToDOM(this, state.selection, state.view.requestedFocus)
 
     // FIXME somehow schedule this relative to ui/update so that it
     // doesn't cause extra layout
-    if (scrollIntoView != null) scrollPosIntoView(this, scrollIntoView)
+    let scrollTo = state.view.requestedScroll
+    if (scrollTo != null) {
+      if (scrollTo === true) scrollTo = state.selection.head == null ? state.selection.from : state.selection.from
+      scrollPosIntoView(this, scrollTo)
+    }
 
     // Make sure we don't use an outdated range on drop event
-    if (this.dragging && doc != this.doc) this.dragging.move = false
+    if (this.dragging && docChange) this.dragging.move = false
 
-    this.doc = doc
-    this.selection = selection
-    return {redrawn}
+    this.state = state
+    this.selection = state.selection
+
+    if (newProps) this.props = newProps
+
+    return state.update({view: state.view.clean()})
+  }
+
+  // :: (string) → string
+  // Return a translated string, if a [translate function](#translate)
+  // has been supplied, or the original string.
+  translate(string) {
+    let trans = this.props.translate
+    return trans ? trans(string) : string
   }
 
   // :: () → bool
@@ -70,8 +85,8 @@ class ProseMirrorView {
     return sel.rangeCount && contains(this.content, sel.anchorNode)
   }
 
-  verticalMotionLeavesTextblock(dir) {
-    return verticalMotionLeavesTextblock(this, dir)
+  focus() {
+    this.content.focus()
   }
 
   markRangeDirty(from, to, doc) {
@@ -98,4 +113,4 @@ class ProseMirrorView {
   posAtCoords(coords) { return posAtCoords(this, coords) }
   coordsAtPos(pos) { return coordsAtPos(this, pos) }
 }
-exports.ProseMirrorView = ProseMirrorView
+exports.EditorView = EditorView
