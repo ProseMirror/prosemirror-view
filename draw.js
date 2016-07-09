@@ -113,9 +113,9 @@ function movePast(dom) {
   return next
 }
 
-function redraw(view, newState) {
+function redraw(view, oldState, newState) {
   let dirty = view.dirtyNodes
-  if (dirty.get(view.state.doc) == DIRTY_REDRAW) return draw(view, newState.doc)
+  if (dirty.get(oldState.doc) == DIRTY_REDRAW) return draw(view, newState.doc)
 
   let opts = options()
 
@@ -175,7 +175,7 @@ function redraw(view, newState) {
 
     if (browser.ios) iosHacks(dom)
   }
-  scan(view.content, newState.doc, view.state.doc, 0)
+  scan(view.content, newState.doc, oldState.doc, 0)
 }
 exports.redraw = redraw
 

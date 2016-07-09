@@ -5,7 +5,7 @@ const {Slice, Fragment, parseDOMInContext} = require("../model")
 const {elt, contains} = require("../util/dom")
 
 const {readInputChange, readCompositionChange} = require("./domchange")
-const {inputAction} = require("./inputaction")
+const applyInput = require("./applyinput")
 
 // A collection of DOM events that occur within the editor, and callback functions
 // to invoke when the event fires.
@@ -42,7 +42,7 @@ function dispatchKey(view, keyName) {
     keyName = prefix + " " + keyName
   }
 
-  let result = inputAction.key(view, {keyName})
+  let result = applyInput.key(view, {keyName})
   if (result) {
     if (result.prefix) view.keyPrefix = result.prefix
     return true
@@ -76,7 +76,7 @@ handlers.keypress = (view, e) => {
   // keyboard's default case doesn't update (it only does so when the
   // user types or taps, not on selection updates from JavaScript).
   if (!browser.ios) {
-    inputAction.insertText(view, {text: String.fromCharCode(e.charCode)})
+    applyInput.insertText(view, {text: String.fromCharCode(e.charCode)})
     e.preventDefault()
   }
 }
@@ -103,7 +103,7 @@ handlers.mousedown = (view, event) => {
 
   if (type == "singleClick")
     view.mouseDown = new MouseDown(view, pos, event)
-  else if (inputAction[type](view, pos))
+  else if (applyInput[type](view, pos))
     event.preventDefault()
   else
     view.selectionReader.fastPoll()
@@ -120,7 +120,7 @@ class MouseDown {
     if (pos.inside) targetNode = view.state.doc.nodeAt(pos.inside)
     else targetNode = view.state.doc.resolve(pos.pos).parent
 
-    this.mightDrag = (targetNode.type.draggable || targetNode == view.selection.node) ? targetNode : null
+    this.mightDrag = (targetNode.type.draggable || targetNode == view.state.selection.node) ? targetNode : null
     this.target = event.target
     if (this.mightDrag) {
       this.target.draggable = true
@@ -147,7 +147,7 @@ class MouseDown {
     this.done()
 
     if (this.allowDefault || !contains(this.view.content, event.target) ||
-        !inputAction.singleClick(this.view, {pos: this.pos.pos, inside: this.pos.inside, ctrl: this.ctrlKey}))
+        !applyInput.singleClick(this.view, {pos: this.pos.pos, inside: this.pos.inside, ctrl: this.ctrlKey}))
       return this.view.selectionReader.fastPoll()
     else
       event.preventDefault()
@@ -167,7 +167,7 @@ handlers.touchdown = view => {
 
 handlers.contextmenu = (view, e) => {
   let pos = view.posAtCoords(eventCoords(e))
-  if (pos && inputAction.contextMenu(view, pos))
+  if (pos && applyInput.contextMenu(view, pos))
     e.preventDefault()
 }
 
@@ -186,9 +186,10 @@ handlers.contextmenu = (view, e) => {
 // around the original selection, and derive an update from that.
 
 function startComposition(view, dataLen) {
-  view.composing = {margin: dataLen}
   view.domTouched = true
+  view.composing = {margin: dataLen}
   clearTimeout(view.finishUpdateFromDOM)
+  view.props.onChange(view.state.update({view: view.state.view.startDOMUpdate()}))
 }
 
 function scheduleUpdateFromDOM(view) {
@@ -231,13 +232,16 @@ function finishUpdateFromDOM(view) {
   } else {
     readInputChange(view)
   }
-  inputAction.forceUpdate(view)
+  // FIXME build single new state, update only once
   view.domTouched = false
+  view.props.onChange(view.state.update({view: view.state.view.endDOMUpdate()}))
 }
 exports.finishUpdateFromDOM = finishUpdateFromDOM
 
 handlers.input = view => {
   if (view.composing || !view.hasFocus()) return
+  view.domTouched = true
+  view.props.onChange(view.state.update({view: view.state.view.startDOMUpdate()}))
   scheduleUpdateFromDOM(view)
 }
 
@@ -319,7 +323,7 @@ function readHTML(html) {
 }
 
 handlers.copy = handlers.cut = (view, e) => {
-  let {from, to, empty} = view.selection, cut = e.type == "cut"
+  let {from, to, empty} = view.state.selection, cut = e.type == "cut"
   if (empty) return
   if (!e.clipboardData || !canUpdateClipboard(e.clipboardData)) {
     if (cut && browser.ie && browser.ie_version <= 11) scheduleUpdateFromDOM(view)
@@ -327,7 +331,7 @@ handlers.copy = handlers.cut = (view, e) => {
   }
   toClipboard(view.state.doc, from, to, e.clipboardData)
   e.preventDefault()
-  if (cut) inputAction.cut(view, {from, to})
+  if (cut) applyInput.cut(view, {from, to})
 }
 
 handlers.paste = (view, e) => {
@@ -336,11 +340,11 @@ handlers.paste = (view, e) => {
     if (browser.ie && browser.ie_version <= 11) scheduleUpdateFromDOM(view)
     return
   }
-  let range = insertRange(view.selection.$from, view.selection.$to)
+  let range = insertRange(view.state.selection.$from, view.state.selection.$to)
   let slice = fromClipboard(e.clipboardData, view.shiftKey, view.state.doc.resolve(range.from))
   if (slice) {
     e.preventDefault()
-    inputAction.paste(view, {slice, from: range.from, to: range.to})
+    applyInput.paste(view, {slice, from: range.from, to: range.to})
   }
 }
 
@@ -378,7 +382,7 @@ handlers.dragstart = (view, e) => {
   if (mouseDown) mouseDown.done()
   if (!e.dataTransfer) return
 
-  let {from, to, empty} = view.selection, dragging
+  let {from, to, empty} = view.state.selection, dragging
   let pos = empty ? null : view.posAtCoords(eventCoords(e))
   if (pos != null && pos >= from && pos <= to) {
     dragging = {from, to}
@@ -439,8 +443,8 @@ handlers.drop = (view, e) => {
 
   e.preventDefault()
   if (dragging && dragging.move)
-    inputAction.cut(view, {from: dragging.from, to: dragging.to})
-  inputAction.drop(view, {slice, from: insertPos, to: insertPos})
+    applyInput.cut(view, {from: dragging.from, to: dragging.to})
+  applyInput.drop(view, {slice, from: insertPos, to: insertPos})
   view.focus()
 }
 

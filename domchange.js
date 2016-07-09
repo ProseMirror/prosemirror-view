@@ -2,7 +2,7 @@ const {Mark} = require("../model")
 
 const {Selection} = require("../selection")
 const {DOMFromPos, DOMFromPosFromEnd} = require("./dompos")
-const {inputAction} = require("./inputaction")
+const applyInput = require("./applyinput")
 
 function readInputChange(view) {
   return readDOMChange(view, rangeAroundSelection(view))
@@ -68,7 +68,7 @@ function isAtStart($pos, depth) {
 }
 
 function rangeAroundSelection(view) {
-  let {$from, $to} = view.selection
+  let {$from, $to} = view.state.selection
   // When the selection is entirely inside a text block, use
   // rangeAroundComposition to get a narrow range.
   if ($from.sameParent($to) && $from.parent.isTextblock && $from.parentOffset && $to.parentOffset < $to.parent.content.size)
@@ -88,7 +88,7 @@ function rangeAroundSelection(view) {
 }
 
 function rangeAroundComposition(view, margin) {
-  let {$from, $to} = view.selection
+  let {$from, $to} = view.state.selection
   if (!$from.sameParent($to)) return rangeAroundSelection(view)
   let startOff = Math.max(0, $from.parentOffset - margin)
   let size = $from.parent.content.size
@@ -115,7 +115,7 @@ function readDOMChange(view, range) {
   let {doc: parsed, sel: parsedSel} = parseResult
 
   let compare = doc.slice(range.from, range.to)
-  let change = findDiff(compare.content, parsed.content, range.from, view.selection.from)
+  let change = findDiff(compare.content, parsed.content, range.from, view.state.selection.from)
   if (!change) return false
 
   // Mark nodes touched by this change as 'to be redrawn'
@@ -129,15 +129,15 @@ function readDOMChange(view, range) {
   if (!$from.sameParent($to) && $from.pos < parsed.content.size &&
       (nextSel = Selection.findFrom(parsed.resolve($from.pos + 1), 1, true)) &&
       nextSel.head == $to.pos) {
-    inputAction.key(view, {keyName: "Enter"})
+    applyInput.key(view, {keyName: "Enter"})
   } else if ($from.sameParent($to) && $from.parent.isTextblock &&
              (text = uniformTextBetween(parsed, $from.pos, $to.pos)) != null) {
-    inputAction.insertText(view, {from: change.start, to: change.endA, text,
-                                  newSelection: parsedSel})
+    applyInput.insertText(view, {from: change.start, to: change.endA, text,
+                                 newSelection: parsedSel})
   } else {
     let slice = parsed.slice(change.start - range.from, change.endB - range.from)
-    inputAction.replace(view, {from: change.start, to: change.endA, slice,
-                               newSelection: parsedSel})
+    applyInput.replace(view, {from: change.start, to: change.endA, slice,
+                              newSelection: parsedSel})
   }
   return true
 }

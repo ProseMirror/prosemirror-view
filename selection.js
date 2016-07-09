@@ -67,12 +67,11 @@ class SelectionReader {
     let domSel = window.getSelection(), doc = this.view.state.doc
     let $anchor = doc.resolve(posFromDOM(domSel.anchorNode, domSel.anchorOffset))
     let $head = domSel.isCollapsed ? $anchor : doc.resolve(posFromDOM(domSel.focusNode, domSel.focusOffset))
-    let bias = this.view.selection.head != null && this.view.selection.head < $head.pos ? 1 : -1
+    let bias = this.view.state.selection.head != null && this.view.state.selection.head < $head.pos ? 1 : -1
     let selection = Selection.between($anchor, $head, bias)
     if ($head.pos == selection.head && $anchor.pos == selection.anchor)
       this.storeDOMState()
-    this.view.selection = selection
-    this.view.props.onAction(selection.action())
+    this.view.props.onChange(this.view.state.applySelection(selection))
   }
 
   receivedFocus() {
@@ -147,7 +146,7 @@ function clearNodeSelection(view) {
 // Whether vertical position motion in a given direction
 // from a position would leave a text block.
 function verticalMotionLeavesTextblock(view, dir) {
-  let $pos = dir < 0 ? view.selection.$from : view.selection.$to
+  let $pos = dir < 0 ? view.state.selection.$from : view.state.selection.$to
   if (!$pos.depth) return false
   let dom = DOMAfterPos(view, $pos.before())
   let coords = coordsAtPos(view, $pos.pos)

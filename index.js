@@ -13,7 +13,6 @@ class EditorView {
 
     this.props = props
     this.state = state
-    this.selection = this.state.selection
 
     // :: DOMNode
     // The editable DOM node containing the document.
@@ -37,44 +36,38 @@ class EditorView {
   }
 
   update(state, newProps) {
-    if (this.composing) return null
+    let prevState = this.state
+    this.state = state
+    if (newProps) this.props = newProps
+
+    if (this.domTouched) {
+      if (!state.view.inDOMUpdate)
+        setTimeout(() => finishUpdateFromDOM(this), 0)
+      return
+    } else if (state.view.inDOMUpdate) {
+      setTimeout(() => this.props.onChange(state.update({view: state.view.endDOMUpdate()})), 0)
+      return
+    }
+
     let redrawn = false
-    let docChange = !state.doc.eq(this.state.doc)
+    let docChange = !state.doc.eq(prevState.doc)
 
     if (docChange || this.dirtyNodes.size) {
-      redraw(this, state)
+      redraw(this, prevState, state)
       this.dirtyNodes.clear()
       redrawn = true
     }
 
-    if ((redrawn || !state.selection.eq(this.state.selection)) || state.view.requestedFocus)
-      selectionToDOM(this, state.selection, state.view.requestedFocus)
+    if (redrawn || !state.selection.eq(prevState.selection))
+      selectionToDOM(this, state.selection)
 
     // FIXME somehow schedule this relative to ui/update so that it
     // doesn't cause extra layout
-    let scrollTo = state.view.requestedScroll
-    if (scrollTo != null) {
-      if (scrollTo === true) scrollTo = state.selection.head == null ? state.selection.from : state.selection.from
-      scrollPosIntoView(this, scrollTo)
-    }
+    if (state.view.scrollToSelection)
+      scrollPosIntoView(this, state.selection.head == null ? state.selection.from : state.selection.from)
 
     // Make sure we don't use an outdated range on drop event
     if (this.dragging && docChange) this.dragging.move = false
-
-    this.state = state
-    this.selection = state.selection
-
-    if (newProps) this.props = newProps
-
-    return state.update({view: state.view.clean()})
-  }
-
-  // :: (string) → string
-  // Return a translated string, if a [translate function](#translate)
-  // has been supplied, or the original string.
-  translate(string) {
-    let trans = this.props.translate
-    return trans ? trans(string) : string
   }
 
   // :: () → bool
@@ -106,9 +99,6 @@ class EditorView {
   markAllDirty() {
     this.dirtyNodes.set(this.doc, DIRTY_REDRAW)
   }
-
-  pendingDOMChange() { return this.domTouched }
-  forceDOMChange() { finishUpdateFromDOM(this) }
 
   posAtCoords(coords) { return posAtCoords(this, coords) }
   coordsAtPos(pos) { return coordsAtPos(this, pos) }
