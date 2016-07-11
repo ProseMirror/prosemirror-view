@@ -3,13 +3,13 @@ const {Mark} = require("../model")
 const {Selection} = require("../selection")
 const {DOMFromPos, DOMFromPosFromEnd} = require("./dompos")
 
-function readInputChange(view) {
-  return readDOMChange(view, rangeAroundSelection(view))
+function readInputChange(view, oldState) {
+  return readDOMChange(view, oldState, rangeAroundSelection(oldState.selection))
 }
 exports.readInputChange = readInputChange
 
-function readCompositionChange(view, margin) {
-  return readDOMChange(view, rangeAroundComposition(view, margin))
+function readCompositionChange(view, oldState, margin) {
+  return readDOMChange(view, oldState, rangeAroundComposition(oldState.selection, margin))
 }
 exports.readCompositionChange = readCompositionChange
 
@@ -39,8 +39,9 @@ function parseBetween(view, from, to) {
     if (!domSel.isCollapsed)
       find.push({node: domSel.focusNode, offset: domSel.focusOffset})
   }
-  let sel = null, doc = view.state.doc.type.schema.parseDOM(parent, {
-    topNode: view.state.doc.resolve(from).parent.copy(),
+  let startDoc = view.inDOMChange.state.doc
+  let sel = null, doc = startDoc.type.schema.parseDOM(parent, {
+    topNode: startDoc.resolve(from).parent.copy(),
     from: startOff,
     to: endOff,
     preserveWhitespace: true,
@@ -66,12 +67,12 @@ function isAtStart($pos, depth) {
   return $pos.parentOffset == 0
 }
 
-function rangeAroundSelection(view) {
-  let {$from, $to} = view.state.selection
+function rangeAroundSelection(selection) {
+  let {$from, $to} = selection
   // When the selection is entirely inside a text block, use
   // rangeAroundComposition to get a narrow range.
   if ($from.sameParent($to) && $from.parent.isTextblock && $from.parentOffset && $to.parentOffset < $to.parent.content.size)
-    return rangeAroundComposition(view, 0)
+    return rangeAroundComposition(selection, 0)
 
   for (let depth = 0;; depth++) {
     let fromStart = isAtStart($from, depth + 1), toEnd = isAtEnd($to, depth + 1)
@@ -86,9 +87,9 @@ function rangeAroundSelection(view) {
   }
 }
 
-function rangeAroundComposition(view, margin) {
-  let {$from, $to} = view.state.selection
-  if (!$from.sameParent($to)) return rangeAroundSelection(view)
+function rangeAroundComposition(selection, margin) {
+  let {$from, $to} = selection
+  if (!$from.sameParent($to)) return rangeAroundSelection(selection)
   let startOff = Math.max(0, $from.parentOffset - margin)
   let size = $from.parent.content.size
   let endOff = Math.min(size, $to.parentOffset + margin)
@@ -103,8 +104,8 @@ function rangeAroundComposition(view, margin) {
   return {from: nodeStart + startOff, to: nodeStart + endOff}
 }
 
-function readDOMChange(view, range) {
-  let parseResult, doc = view.state.doc
+function readDOMChange(view, oldState, range) {
+  let parseResult, doc = oldState.doc
   for (;;) {
     parseResult = parseBetween(view, range.from, range.to)
     if (parseResult) break
@@ -114,7 +115,7 @@ function readDOMChange(view, range) {
   let {doc: parsed, sel: parsedSel} = parseResult
 
   let compare = doc.slice(range.from, range.to)
-  let change = findDiff(compare.content, parsed.content, range.from, view.state.selection.from)
+  let change = findDiff(compare.content, parsed.content, range.from, oldState.selection.from)
   if (!change) return false
 
   // Mark nodes touched by this change as 'to be redrawn'
@@ -129,16 +130,30 @@ function readDOMChange(view, range) {
       (nextSel = Selection.findFrom(parsed.resolve($from.pos + 1), 1, true)) &&
       nextSel.head == $to.pos) {
     return view.applyKey("Enter")
-  } else if ($from.sameParent($to) && $from.parent.isTextblock &&
-             (text = uniformTextBetween(parsed, $from.pos, $to.pos)) != null) {
-    let state = view.insertText(text, change.start, change.endA)
+  }
+
+  let from = change.start, to = change.endA
+  // If there have been changes since this DOM update started, we must
+  // map our start and end positions, as well as the new selection
+  // positions, through them.
+  let mapping = view.state.view.inDOMUpdate
+  if (mapping) {
+    from = mapping.map(from)
+    to = mapping.map(to)
+    if (parsedSel) parsedSel = {anchor: mapping.map(parsedSel.anchor),
+                                head: mapping.map(parsedSel.head)}
+  }
+
+  if ($from.sameParent($to) && $from.parent.isTextblock &&
+      (text = uniformTextBetween(parsed, $from.pos, $to.pos)) != null) {
+    let state = view.insertText(text, from, to)
     if (parsedSel)
       state = state.applySelection(Selection.between(state.doc.resolve(parsedSel.anchor),
                                                      state.doc.resolve(parsedSel.head)))
     return state
   } else {
     let slice = parsed.slice(change.start - range.from, change.endB - range.from)
-    let tr = view.state.tr.replace(change.start, change.endA, slice)
+    let tr = view.state.tr.replace(from, to, slice)
     if (parsedSel)
       tr.setSelection(Selection.between(tr.doc.resolve(parsedSel.anchor),
                                         tr.doc.resolve(parsedSel.head)))

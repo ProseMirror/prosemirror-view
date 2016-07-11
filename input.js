@@ -18,9 +18,8 @@ function initInput(view) {
   view.mouseDown = null
   view.dragging = null
   view.dropTarget = null
-  view.composing = null
   view.finishUpdateFromDOM = null
-  view.inDOMChange = false
+  view.inDOMChange = null
 
   for (let event in handlers) {
     let handler = handlers[event]
@@ -49,7 +48,7 @@ function dispatchKey(view, keyName) {
 
 handlers.keydown = (view, e) => {
   if (e.keyCode == 16) view.shiftKey = true
-  if (!view.hasFocus() || view.composing) return
+  if (!view.hasFocus() || view.inDOMChange) return
   let name = Keymap.keyName(e)
   if (name && dispatchKey(view, name))
     e.preventDefault()
@@ -62,7 +61,7 @@ handlers.keyup = (view, e) => {
 }
 
 handlers.keypress = (view, e) => {
-  if (!view.hasFocus() || view.composing || !e.charCode ||
+  if (!view.hasFocus() || view.inDOMChange || !e.charCode ||
       e.ctrlKey && !e.altKey || browser.mac && e.metaKey) return
   if (dispatchKey(view, Keymap.keyName(e))) {
     e.preventDefault()
@@ -267,8 +266,7 @@ handlers.contextmenu = (view, e) => {
 // around the original selection, and derive an update from that.
 
 function startComposition(view, dataLen) {
-  view.inDOMChange = true
-  view.composing = {margin: dataLen}
+  view.inDOMChange = {state: view.state, composition: true, composeMargin: dataLen}
   clearTimeout(view.finishUpdateFromDOM)
   view.props.onChange(view.state.update({view: view.state.view.startDOMUpdate()}))
 }
@@ -281,19 +279,18 @@ function scheduleUpdateFromDOM(view) {
 }
 
 handlers.compositionstart = (view, e) => {
-  if (!view.composing && view.hasFocus())
+  if (!view.inDOMChange && view.hasFocus())
     startComposition(view, e.data ? e.data.length : 0)
 }
 
 handlers.compositionupdate = view => {
-  if (!view.composing && view.hasFocus())
+  if (!view.inDOMChange && view.hasFocus())
     startComposition(view, 0)
 }
 
 handlers.compositionend = (view, e) => {
   if (!view.hasFocus()) return
-  let composing = view.composing
-  if (!composing) {
+  if (!view.inDOMChange) {
     // We received a compositionend without having seen any previous
     // events for the composition. If there's data in the event
     // object, we assume that it's a real change, and start a
@@ -307,21 +304,19 @@ handlers.compositionend = (view, e) => {
 
 function finishUpdateFromDOM(view) {
   clearTimeout(view.finishUpdateFromDOM)
-  let state
-  if (view.composing) {
-    state = readCompositionChange(view, view.composing.margin) || view.state
-    view.composing = null
-  } else {
-    state = readInputChange(view) || view.state
-  }
-  view.inDOMChange = false
+  let change = view.inDOMChange
+  if (!change) return
+  let state = (change.composition
+               ? readCompositionChange(view, change.state, change.composeMargin)
+               : readInputChange(view, change.state)) || view.state
+  view.inDOMChange = null
   view.props.onChange(state.update({view: state.view.endDOMUpdate()}))
 }
 exports.finishUpdateFromDOM = finishUpdateFromDOM
 
 handlers.input = view => {
   if (view.inDOMChange || !view.hasFocus()) return
-  view.inDOMChange = true
+  view.inDOMChange = {state: view.state}
   view.props.onChange(view.state.update({view: view.state.view.startDOMUpdate()}))
   scheduleUpdateFromDOM(view)
 }
