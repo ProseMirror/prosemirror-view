@@ -136,7 +136,7 @@ function readDOMChange(view, oldState, range) {
   // If there have been changes since this DOM update started, we must
   // map our start and end positions, as well as the new selection
   // positions, through them.
-  let mapping = view.state.view.inDOMUpdate
+  let mapping = view.state.view.domChangeMapping
   if (mapping) {
     from = mapping.map(from)
     to = mapping.map(to)

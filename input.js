@@ -266,9 +266,14 @@ handlers.contextmenu = (view, e) => {
 // around the original selection, and derive an update from that.
 
 function startComposition(view, dataLen) {
-  view.inDOMChange = {state: view.state, composition: true, composeMargin: dataLen}
+  view.inDOMChange = {id: domChangeID(), state: view.state,
+                      composition: true, composeMargin: dataLen}
   clearTimeout(view.finishUpdateFromDOM)
-  view.props.onChange(view.state.update({view: view.state.view.startDOMUpdate()}))
+  view.props.onChange(view.state.update({view: view.state.view.startDOMChange(view.inDOMChange.id)}))
+}
+
+function domChangeID() {
+  return Math.floor(Math.random() * 0xffffffff)
 }
 
 function scheduleUpdateFromDOM(view) {
@@ -310,14 +315,14 @@ function finishUpdateFromDOM(view) {
                ? readCompositionChange(view, change.state, change.composeMargin)
                : readInputChange(view, change.state)) || view.state
   view.inDOMChange = null
-  view.props.onChange(state.update({view: state.view.endDOMUpdate()}))
+  view.props.onChange(state.update({view: state.view.endDOMChange()}))
 }
 exports.finishUpdateFromDOM = finishUpdateFromDOM
 
 handlers.input = view => {
   if (view.inDOMChange || !view.hasFocus()) return
-  view.inDOMChange = {state: view.state}
-  view.props.onChange(view.state.update({view: view.state.view.startDOMUpdate()}))
+  view.inDOMChange = {id: domChangeID(), state: view.state}
+  view.props.onChange(view.state.update({view: view.state.view.startDOMChange(view.inDOMChange.id)}))
   scheduleUpdateFromDOM(view)
 }
 
