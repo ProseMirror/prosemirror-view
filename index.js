@@ -10,6 +10,45 @@ const {captureKeys} = require("./capturekeys")
 
 require("./css")
 
+// EditorProps:: interface
+//
+// The configuration object that can be passed to an editor view. It
+// supports the following properties (only `onChange` is required).
+//
+//   onChange:: (newState: EditorState)
+//
+//   keymaps:: ?[Keymap]
+//
+//   applyTextInput:: ?(state: EditorState, from: number, to: number, text: string) → ?EditorState
+//
+//   handleClickOn:: ?(view: EditorView, pos: number, node: Node, nodePos: number) → bool
+//
+//   handleClick:: ?(view: EditorView, pos: number) → bool
+//
+//   handleDoubleClickOn:: ?(view: EditorView, pos: number, node: Node, nodePos: number) → bool
+//
+//   handleDoubleClick:: ?(view: EditorView, pos: number) → bool
+//
+//   handleTripleClickOn:: ?(view: EditorView, pos: number, node: Node, nodePos: number) → bool
+//
+//   handleTripleClick:: ?(view: EditorView, pos: number) → bool
+//
+//   handleContextMenu:: ?(view: EditorView, pos: number) → bool
+//
+//   onFocus:: ?(view)
+//
+//   onBlur:: ?(view)
+//
+//   transformPasted:: ?(Slice) → Slice
+//
+//   spellCheck:: ?bool
+//
+//   label:: ?string
+//
+//   scrollThreshold:: ?number
+//
+//   scrollMargin:: ?number
+
 class EditorView {
   constructor(place, state, props) {
     ensureCSSAdded()
@@ -120,8 +159,8 @@ class EditorView {
     if (from == null) {
       ;({from, to} = this.state.selection)
     }
-    if (this.props.handleTextInput) {
-      let handled = this.props.applyTextInput.call(this.state, from, to, text)
+    if (this.props.applyTextInput) {
+      let handled = this.props.applyTextInput(this.state, from, to, text)
       if (handled) return handled
     }
     let marks = this.state.storedMarks || this.state.doc.marksAt(from)

@@ -91,7 +91,7 @@ function runHandlerOnContext(view, handler, pos, inside) {
   let $pos = view.state.doc.resolve(inside == null ? pos : inside)
   for (let i = $pos.depth + (inside == null ? 0 : 1); i > 0; i--) {
     let node = i > $pos.depth ? $pos.nodeAfter : $pos.node(i)
-    if (handler.call(view, pos, node, $pos.before(i))) return true
+    if (handler(view, pos, node, $pos.before(i))) return true
   }
   return false
 }
@@ -137,18 +137,18 @@ function handleSingleClick(view, pos, inside, ctrl) {
   if (ctrl) return selectClickedNode(view, pos, inside)
 
   return runHandlerOnContext(view, view.props.handleClickOn, pos, inside) ||
-    (view.props.handleClick && view.props.handleClick.call(view, pos)) ||
+    (view.props.handleClick && view.props.handleClick(view, pos)) ||
     inside != null && selectClickedLeaf(view, inside)
 }
 
 function handleDoubleClick(view, pos, inside) {
   return runHandlerOnContext(view, view.props.handleDoubleClickOn, pos, inside) ||
-    (view.props.handleDoubleClick && view.props.handleDoubleClick.call(view, pos))
+    (view.props.handleDoubleClick && view.props.handleDoubleClick(view, pos))
 }
 
 function handleTripleClick(view, pos, inside) {
   return runHandlerOnContext(view, view.props.handleTripleClickOn, pos, inside) ||
-    (view.props.handleTripleClick && view.props.handleTripleClick.call(view, pos)) ||
+    (view.props.handleTripleClick && view.props.handleTripleClick(view, pos)) ||
     defaultTripleClick(view, pos, inside)
 }
 
@@ -265,7 +265,7 @@ handlers.contextmenu = (view, e) => {
   let pos
   if (view.props.handleContextMenu &&
       (pos = view.posAtCoords(eventCoords(e))) &&
-      view.props.handleContextMenu.call(view, pos.pos))
+      view.props.handleContextMenu(view, pos.pos))
     e.preventDefault()
 }
 
@@ -555,10 +555,10 @@ handlers.drop = (view, e) => {
 
 handlers.focus = view => {
   view.wrapper.classList.add("ProseMirror-focused")
-  if (view.props.handleFocus) view.props.handleFocus.call(view)
+  if (view.props.onFocus) view.props.onFocus(view)
 }
 
 handlers.blur = view => {
   view.wrapper.classList.remove("ProseMirror-focused")
-  if (view.props.handleBlur) view.props.handleBlur.call(view)
+  if (view.props.onBlur) view.props.onBlur(view)
 }
