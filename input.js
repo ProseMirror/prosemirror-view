@@ -168,7 +168,14 @@ function defaultTripleClick(view, pos, inside) {
   }
 }
 
+function forceDOMFlush(view) {
+  if (!view.inDOMChange) return false
+  finishUpdateFromDOM(view)
+  return true
+}
+
 handlers.mousedown = (view, event) => {
+  let flushed = forceDOMFlush(view)
   let now = Date.now(), type
   if (now - lastClick.time >= 500 || !isNear(event, lastClick)) type = "singleClick"
   else if (now - oneButLastClick.time >= 600 || !isNear(event, oneButLastClick)) type = "doubleClick"
@@ -180,7 +187,7 @@ handlers.mousedown = (view, event) => {
   if (!pos) return
 
   if (type == "singleClick")
-    view.mouseDown = new MouseDown(view, pos, event)
+    view.mouseDown = new MouseDown(view, pos, event, flushed)
   else if ((type == "doubleClick" ? handleDoubleClick : handleTripleClick)(view, pos.pos, pos.inside))
     event.preventDefault()
   else
@@ -188,9 +195,10 @@ handlers.mousedown = (view, event) => {
 }
 
 class MouseDown {
-  constructor(view, pos, event) {
+  constructor(view, pos, event, flushed) {
     this.view = view
     this.pos = pos
+    this.flushed = flushed
     this.ctrlKey = event.ctrlKey
     this.allowDefault = view.shiftKey
 
@@ -199,8 +207,8 @@ class MouseDown {
     else targetNode = view.state.doc.resolve(pos.pos).parent
 
     this.mightDrag = (targetNode.type.draggable || targetNode == view.state.selection.node) ? targetNode : null
-    this.target = event.target
-    if (this.mightDrag) {
+    this.target = flushed ? null : event.target
+    if (this.target && this.mightDrag) {
       this.target.draggable = true
       if (browser.gecko && (this.setContentEditable = !this.target.hasAttribute("contentEditable")))
         this.target.setAttribute("contentEditable", "false")
@@ -214,7 +222,7 @@ class MouseDown {
   done() {
     window.removeEventListener("mouseup", this.up)
     window.removeEventListener("mousemove", this.move)
-    if (this.mightDrag) {
+    if (this.mightDrag && this.target) {
       this.target.draggable = false
       if (browser.gecko && this.setContentEditable)
         this.target.removeAttribute("contentEditable")
@@ -224,11 +232,19 @@ class MouseDown {
   up(event) {
     this.done()
 
-    if (this.allowDefault || !contains(this.view.content, event.target) ||
-        !handleSingleClick(this.view, this.pos.pos, this.pos.inside, this.ctrlKey))
-      return this.view.selectionReader.fastPoll()
-    else
+    if (!contains(this.view.content, event.target)) return
+
+    if (this.allowDefault) {
+      this.view.selectionReader.fastPoll()
+    } else if (handleSingleClick(this.view, this.pos.pos, this.pos.inside, this.ctrlKey)) {
       event.preventDefault()
+    } else if (this.flushed) {
+      this.view.focus()
+      this.view.props.onChange(this.view.state.applySelection(Selection.near(this.view.state.doc.resolve(this.pos.pos))))
+      event.preventDefault()
+    } else {
+      this.view.selectionReader.fastPoll()
+    }
   }
 
   move(event) {
@@ -240,10 +256,12 @@ class MouseDown {
 }
 
 handlers.touchdown = view => {
+  forceDOMFlush(view)
   view.selectionReader.fastPoll()
 }
 
 handlers.contextmenu = (view, e) => {
+  forceDOMFlush(view)
   let pos
   if (view.props.handleContextMenu &&
       (pos = view.posAtCoords(eventCoords(e))) &&
