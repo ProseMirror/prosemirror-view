@@ -1,10 +1,13 @@
 const {Map} = require("../util/map")
 const {elt, ensureCSSAdded, contains} = require("../util/dom")
+const Keymap = require("browserkeymap")
 
 const {scrollPosIntoView, posAtCoords, coordsAtPos} = require("./dompos")
 const {draw, redraw, DIRTY_REDRAW, DIRTY_RESCAN} = require("./draw")
 const {initInput, finishUpdateFromDOM} = require("./input")
 const {SelectionReader, selectionToDOM} = require("./selection")
+const {captureKeys} = require("./capturekeys")
+
 require("./css")
 
 class EditorView {
@@ -40,7 +43,7 @@ class EditorView {
     this.state = state
     if (newProps) this.props = newProps
 
-    if (this.domTouched) {
+    if (this.inDOMChange) {
       if (!state.view.inDOMUpdate)
         setTimeout(() => finishUpdateFromDOM(this), 0)
       return
@@ -94,6 +97,36 @@ class EditorView {
     let parent = $from.node(same)
     for (let i = start; i < end; i++)
       dirty.set(parent.child(i), DIRTY_REDRAW)
+  }
+
+  applyKey(keyName) {
+    let keymaps = this.props.keymaps || []
+    for (let i = 0; i <= keymaps.length; i++) {
+      let map = i == keymaps.length ? captureKeys : keymaps[i]
+      let bound = map.lookup(keyName, this)
+
+      if (bound === false) {
+        return null
+      } else if (bound == Keymap.unfinished) {
+        this.keyPrefix = keyName
+        return this.state
+      } else if (bound) {
+        return bound(map == captureKeys ? this : this.state)
+      }
+    }
+  }
+
+  insertText(text, from, to) {
+    if (from == null) {
+      ;({from, to} = this.state.selection)
+    }
+    if (this.props.handleTextInput) {
+      let handled = this.props.applyTextInput.call(this.state, from, to, text)
+      if (handled) return handled
+    }
+    let marks = this.state.storedMarks || this.state.doc.marksAt(from)
+    let tr = this.state.tr.replaceWith(from, to, text ? this.state.schema.text(text, marks) : null)
+    return tr.applyAndScroll()
   }
 
   markAllDirty() {

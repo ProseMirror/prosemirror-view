@@ -2,7 +2,6 @@ const {Mark} = require("../model")
 
 const {Selection} = require("../selection")
 const {DOMFromPos, DOMFromPosFromEnd} = require("./dompos")
-const applyInput = require("./applyinput")
 
 function readInputChange(view) {
   return readDOMChange(view, rangeAroundSelection(view))
@@ -129,17 +128,22 @@ function readDOMChange(view, range) {
   if (!$from.sameParent($to) && $from.pos < parsed.content.size &&
       (nextSel = Selection.findFrom(parsed.resolve($from.pos + 1), 1, true)) &&
       nextSel.head == $to.pos) {
-    applyInput.key(view, {keyName: "Enter"})
+    return view.applyKey("Enter")
   } else if ($from.sameParent($to) && $from.parent.isTextblock &&
              (text = uniformTextBetween(parsed, $from.pos, $to.pos)) != null) {
-    applyInput.insertText(view, {from: change.start, to: change.endA, text,
-                                 newSelection: parsedSel})
+    let state = view.insertText(text, change.start, change.endA)
+    if (parsedSel)
+      state = state.applySelection(Selection.between(state.doc.resolve(parsedSel.anchor),
+                                                     state.doc.resolve(parsedSel.head)))
+    return state
   } else {
     let slice = parsed.slice(change.start - range.from, change.endB - range.from)
-    applyInput.replace(view, {from: change.start, to: change.endA, slice,
-                              newSelection: parsedSel})
+    let tr = view.state.tr.replace(change.start, change.endA, slice)
+    if (parsedSel)
+      tr.setSelection(Selection.between(tr.doc.resolve(parsedSel.anchor),
+                                        tr.doc.resolve(parsedSel.head)))
+    return tr.applyAndScroll()
   }
-  return true
 }
 
 function uniformTextBetween(node, from, to) {

@@ -1,11 +1,11 @@
 const Keymap = require("browserkeymap")
 const browser = require("../util/browser")
 const {Slice, Fragment, parseDOMInContext} = require("../model")
+const {Selection, NodeSelection, TextSelection} = require("../selection")
 
 const {elt, contains} = require("../util/dom")
 
 const {readInputChange, readCompositionChange} = require("./domchange")
-const applyInput = require("./applyinput")
 
 // A collection of DOM events that occur within the editor, and callback functions
 // to invoke when the event fires.
@@ -20,8 +20,7 @@ function initInput(view) {
   view.dropTarget = null
   view.composing = null
   view.finishUpdateFromDOM = null
-  // FIXME actually use this flag
-  view.domTouched = false
+  view.inDOMChange = false
 
   for (let event in handlers) {
     let handler = handlers[event]
@@ -42,12 +41,10 @@ function dispatchKey(view, keyName) {
     keyName = prefix + " " + keyName
   }
 
-  let result = applyInput.key(view, {keyName})
-  if (result) {
-    if (result.prefix) view.keyPrefix = result.prefix
-    return true
-  }
-  return false
+  let state = view.applyKey(keyName)
+  if (!state) return false
+  if (state != view.state) view.props.onChange(state)
+  return true
 }
 
 handlers.keydown = (view, e) => {
@@ -76,7 +73,7 @@ handlers.keypress = (view, e) => {
   // keyboard's default case doesn't update (it only does so when the
   // user types or taps, not on selection updates from JavaScript).
   if (!browser.ios) {
-    applyInput.insertText(view, {text: String.fromCharCode(e.charCode)})
+    view.props.onChange(view.insertText(String.fromCharCode(e.charCode)))
     e.preventDefault()
   }
 }
@@ -88,6 +85,88 @@ let lastClick = {time: 0, x: 0, y: 0}, oneButLastClick = lastClick
 function isNear(event, click) {
   let dx = click.x - event.clientX, dy = click.y - event.clientY
   return dx * dx + dy * dy < 100
+}
+
+function runHandlerOnContext(view, handler, pos, inside) {
+  if (!handler) return false
+  let $pos = view.state.doc.resolve(inside == null ? pos : inside)
+  for (let i = $pos.depth + (inside == null ? 0 : 1); i > 0; i--) {
+    let node = i > $pos.depth ? $pos.nodeAfter : $pos.node(i)
+    if (handler.call(view, pos, node, $pos.before(i))) return true
+  }
+  return false
+}
+
+function updateSelection(view, selection) {
+  view.focus()
+  view.props.onChange(view.state.applySelection(selection))
+}
+
+function selectClickedLeaf(view, inside) {
+  let leaf = view.state.doc.nodeAt(inside)
+  if (leaf && leaf.type.isLeaf && leaf.type.selectable) {
+    updateSelection(view, new NodeSelection(view.state.doc.resolve(inside)))
+    return true
+  }
+}
+
+function selectClickedNode(view, pos, inside) {
+  let {node: selectedNode, $from} = view.state.selection, selectAt
+
+  let $pos = view.state.doc.resolve(inside == null ? pos : inside)
+  for (let i = $pos.depth + (inside == null ? 0 : 1); i > 0; i--) {
+    let node = i > $pos.depth ? $pos.nodeAfter : $pos.node(i)
+    if (node.type.selectable) {
+     if (selectedNode && $from.depth > 0 &&
+          i >= $from.depth && $pos.before($from.depth + 1) == $from.pos)
+        selectAt = $pos.before($from.depth)
+      else
+        selectAt = $pos.before(i)
+      break
+    }
+  }
+
+  if (selectAt != null) {
+    updateSelection(view, new NodeSelection(view.state.doc.resolve(selectAt)))
+    return true
+  } else {
+    return false
+  }
+}
+
+function handleSingleClick(view, pos, inside, ctrl) {
+  if (ctrl) return selectClickedNode(view, pos, inside)
+
+  return runHandlerOnContext(view, view.props.handleClickOn, pos, inside) ||
+    (view.props.handleClick && view.props.handleClick.call(view, pos)) ||
+    inside != null && selectClickedLeaf(view, inside)
+}
+
+function handleDoubleClick(view, pos, inside) {
+  return runHandlerOnContext(view, view.props.handleDoubleClickOn, pos, inside) ||
+    (view.props.handleDoubleClick && view.props.handleDoubleClick.call(view, pos))
+}
+
+function handleTripleClick(view, pos, inside) {
+  return runHandlerOnContext(view, view.props.handleTripleClickOn, pos, inside) ||
+    (view.props.handleTripleClick && view.props.handleTripleClick.call(view, pos)) ||
+    defaultTripleClick(view, pos, inside)
+}
+
+function defaultTripleClick(view, pos, inside) {
+  let doc = view.state.doc, $pos = doc.resolve(inside == null ? pos : inside)
+  for (let i = $pos.depth + (inside == null ? 0 : 1); i > 0; i--) {
+    let node = i > $pos.depth ? $pos.nodeAfter : $pos.node(i)
+    let nodePos = $pos.before(i)
+    if (node.isTextblock)
+      updateSelection(view, new TextSelection(doc.resolve(nodePos + 1),
+                                            doc.resolve(nodePos + 1 + node.content.size)))
+    else if (node.type.selectable)
+      updateSelection(view, new NodeSelection(doc.resolve(nodePos)))
+    else
+      continue
+    return true
+  }
 }
 
 handlers.mousedown = (view, event) => {
@@ -103,7 +182,7 @@ handlers.mousedown = (view, event) => {
 
   if (type == "singleClick")
     view.mouseDown = new MouseDown(view, pos, event)
-  else if (applyInput[type](view, pos))
+  else if ((type == "doubleClick" ? handleDoubleClick : handleTripleClick)(view, pos.pos, pos.inside))
     event.preventDefault()
   else
     view.selectionReader.fastPoll()
@@ -147,7 +226,7 @@ class MouseDown {
     this.done()
 
     if (this.allowDefault || !contains(this.view.content, event.target) ||
-        !applyInput.singleClick(this.view, {pos: this.pos.pos, inside: this.pos.inside, ctrl: this.ctrlKey}))
+        !handleSingleClick(this.view, this.pos.pos, this.pos.inside, this.ctrlKey))
       return this.view.selectionReader.fastPoll()
     else
       event.preventDefault()
@@ -166,8 +245,10 @@ handlers.touchdown = view => {
 }
 
 handlers.contextmenu = (view, e) => {
-  let pos = view.posAtCoords(eventCoords(e))
-  if (pos && applyInput.contextMenu(view, pos))
+  let pos
+  if (view.props.handleContextMenu &&
+      (pos = view.posAtCoords(eventCoords(e))) &&
+      view.props.handleContextMenu.call(view, pos.pos))
     e.preventDefault()
 }
 
@@ -186,7 +267,7 @@ handlers.contextmenu = (view, e) => {
 // around the original selection, and derive an update from that.
 
 function startComposition(view, dataLen) {
-  view.domTouched = true
+  view.inDOMChange = true
   view.composing = {margin: dataLen}
   clearTimeout(view.finishUpdateFromDOM)
   view.props.onChange(view.state.update({view: view.state.view.startDOMUpdate()}))
@@ -226,21 +307,21 @@ handlers.compositionend = (view, e) => {
 
 function finishUpdateFromDOM(view) {
   clearTimeout(view.finishUpdateFromDOM)
+  let state
   if (view.composing) {
-    readCompositionChange(view, view.composing.margin)
+    state = readCompositionChange(view, view.composing.margin) || view.state
     view.composing = null
   } else {
-    readInputChange(view)
+    state = readInputChange(view) || view.state
   }
-  // FIXME build single new state, update only once
-  view.domTouched = false
-  view.props.onChange(view.state.update({view: view.state.view.endDOMUpdate()}))
+  view.inDOMChange = false
+  view.props.onChange(state.update({view: state.view.endDOMUpdate()}))
 }
 exports.finishUpdateFromDOM = finishUpdateFromDOM
 
 handlers.input = view => {
-  if (view.composing || !view.hasFocus()) return
-  view.domTouched = true
+  if (view.inDOMChange || !view.hasFocus()) return
+  view.inDOMChange = true
   view.props.onChange(view.state.update({view: view.state.view.startDOMUpdate()}))
   scheduleUpdateFromDOM(view)
 }
@@ -331,7 +412,7 @@ handlers.copy = handlers.cut = (view, e) => {
   }
   toClipboard(view.state.doc, from, to, e.clipboardData)
   e.preventDefault()
-  if (cut) applyInput.cut(view, {from, to})
+  if (cut) view.props.onChange(view.state.tr.delete(from, to).applyAndScroll())
 }
 
 handlers.paste = (view, e) => {
@@ -344,7 +425,8 @@ handlers.paste = (view, e) => {
   let slice = fromClipboard(e.clipboardData, view.shiftKey, view.state.doc.resolve(range.from))
   if (slice) {
     e.preventDefault()
-    applyInput.paste(view, {slice, from: range.from, to: range.to})
+    if (view.props.transformPasted) slice = view.props.transformPasted(slice)
+    view.props.onChange(view.state.tr.replace(range.from, range.to, slice).applyAndScroll())
   }
 }
 
@@ -442,10 +524,15 @@ handlers.drop = (view, e) => {
   let insertPos = dropPos(slice, view.state.doc.resolve(range.from))
 
   e.preventDefault()
+  let tr = view.state.tr
   if (dragging && dragging.move)
-    applyInput.cut(view, {from: dragging.from, to: dragging.to})
-  applyInput.drop(view, {slice, from: insertPos, to: insertPos})
+    tr.delete(dragging.from, dragging.to)
+  if (view.props.transformPasted) slice = view.props.transformPasted(slice)
+  let pos = tr.mapping.map(insertPos)
+  tr.replace(pos, pos, slice)
+  tr.setSelection(Selection.between(tr.doc.resolve(pos), tr.doc.resolve(tr.mapping.map(insertPos))))
   view.focus()
+  view.props.onChange(tr.apply())
 }
 
 handlers.focus = view => {
