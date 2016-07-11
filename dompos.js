@@ -177,7 +177,7 @@ function windowRect() {
 function scrollPosIntoView(view, pos) {
   let coords = coordsAtPos(view, pos)
   for (let parent = view.content;; parent = parent.parentNode) {
-    let {scrollThreshold, scrollMargin} = view.props
+    let {scrollThreshold = 0, scrollMargin = 5} = view.props
     let atBody = parent == document.body
     let rect = atBody ? windowRect() : parent.getBoundingClientRect()
     let moveX = 0, moveY = 0
