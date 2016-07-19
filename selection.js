@@ -1,5 +1,5 @@
 const browser = require("../util/browser")
-const {Selection, NodeSelection} = require("../selection")
+const {Selection, NodeSelection} = require("../state")
 
 const {posFromDOM, DOMAfterPos, DOMFromPos, coordsAtPos} = require("./dompos")
 

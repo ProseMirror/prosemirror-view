@@ -1,6 +1,6 @@
 const Keymap = require("browserkeymap")
 
-const {Selection, NodeSelection, TextSelection} = require("../selection")
+const {Selection, NodeSelection, TextSelection} = require("../state")
 const browser = require("../util/browser")
 
 const {verticalMotionLeavesTextblock} = require("./selection")

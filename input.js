@@ -1,7 +1,7 @@
 const Keymap = require("browserkeymap")
 const browser = require("../util/browser")
 const {Slice, Fragment, parseDOMInContext} = require("../model")
-const {Selection, NodeSelection, TextSelection} = require("../selection")
+const {Selection, NodeSelection, TextSelection} = require("../state")
 
 const {elt, contains} = require("../util/dom")
 

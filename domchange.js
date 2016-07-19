@@ -1,6 +1,6 @@
 const {Mark} = require("../model")
 
-const {Selection} = require("../selection")
+const {Selection} = require("../state")
 const {DOMFromPos, DOMFromPosFromEnd} = require("./dompos")
 
 function readInputChange(view, oldState) {
