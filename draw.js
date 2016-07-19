@@ -30,54 +30,19 @@ function options() {
     },
     // : (Node, DOMNode, number, number) → DOMNode
     renderInlineFlat(node, dom, _pos, offset) {
-      /*ranges.advanceTo(pos)
-      let end = pos + node.nodeSize
-      let nextCut = ranges.nextChangeBefore(end), wrapped*/
-
       let inner = dom
       for (let i = 0; i < node.marks.length; i++) inner = inner.firstChild
 
-      if (dom.nodeType != 1) {
-        dom = elt("span", null, dom)
-        //if (nextCut == -1) wrapped = dom
-      }
-      /*if (!wrapped && (nextCut > -1 || ranges.current.length)) {
-        wrapped = inner == dom ? (dom = elt("span", null, inner))
-                               : inner.parentNode.appendChild(elt("span", null, inner))
-      }*/
+      if (dom.nodeType != 1) dom = elt("span", null, dom)
 
       dom.setAttribute("pm-offset", offset)
       dom.setAttribute("pm-size", node.nodeSize)
 
-      /*let inlineOffset = 0
-      while (nextCut > -1) {
-        let size = nextCut - pos
-        let split = splitSpan(wrapped, size)
-        if (ranges.current.length)
-          split.className = ranges.current.join(" ")
-        split.setAttribute("pm-inner-offset", inlineOffset)
-        inlineOffset += size
-        ranges.advanceTo(nextCut)
-        nextCut = ranges.nextChangeBefore(end)
-        if (nextCut == -1)
-          wrapped.setAttribute("pm-inner-offset", inlineOffset)
-        pos += size
-      }
-
-      if (ranges.current.length)
-        wrapped.className = ranges.current.join(" ")*/
       return dom
     },
     document
   }
 }
-
-/*function splitSpan(span, at) {
-  let textNode = span.firstChild, text = textNode.nodeValue
-  let newNode = span.parentNode.insertBefore(elt("span", null, text.slice(0, at)), span)
-  textNode.nodeValue = text.slice(at)
-  return newNode
-}*/
 
 function draw(view, doc) {
   view.content.textContent = ""
