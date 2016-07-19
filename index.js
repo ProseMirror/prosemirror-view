@@ -87,7 +87,7 @@ class EditorView {
         setTimeout(() => finishUpdateFromDOM(this), 0)
       return
     } else if (state.view.inDOMChange != null) {
-      setTimeout(() => this.props.onChange(this.state.update({view: state.view.endDOMChange()})), 0)
+      setTimeout(() => this.props.onChange(this.state.endDOMChange()), 0)
       return
     }
 
