@@ -86,12 +86,12 @@ function isNear(event, click) {
   return dx * dx + dy * dy < 100
 }
 
-function runHandlerOnContext(view, handler, pos, inside) {
-  if (!handler) return false
+function runHandlerOnContext(view, propName, pos, inside) {
   let $pos = view.state.doc.resolve(inside == null ? pos : inside)
   for (let i = $pos.depth + (inside == null ? 0 : 1); i > 0; i--) {
     let node = i > $pos.depth ? $pos.nodeAfter : $pos.node(i)
-    if (handler(view, pos, node, $pos.before(i))) return true
+    if (view.someProp(propName, f => f(view, pos, node, $pos.before(i))))
+      return true
   }
   return false
 }
@@ -136,19 +136,19 @@ function selectClickedNode(view, pos, inside) {
 function handleSingleClick(view, pos, inside, ctrl) {
   if (ctrl) return selectClickedNode(view, pos, inside)
 
-  return runHandlerOnContext(view, view.props.handleClickOn, pos, inside) ||
-    (view.props.handleClick && view.props.handleClick(view, pos)) ||
+  return runHandlerOnContext(view, "handleClickOn", pos, inside) ||
+    view.someProp("handleClick", f => f(view, pos)) ||
     inside != null && selectClickedLeaf(view, inside)
 }
 
 function handleDoubleClick(view, pos, inside) {
-  return runHandlerOnContext(view, view.props.handleDoubleClickOn, pos, inside) ||
-    (view.props.handleDoubleClick && view.props.handleDoubleClick(view, pos))
+  return runHandlerOnContext(view, "handleDoubleClickOn", pos, inside) ||
+    view.someProp("handleDoubleClick", f => f(view, pos))
 }
 
 function handleTripleClick(view, pos, inside) {
-  return runHandlerOnContext(view, view.props.handleTripleClickOn, pos, inside) ||
-    (view.props.handleTripleClick && view.props.handleTripleClick(view, pos)) ||
+  return runHandlerOnContext(view, "handleTripleClickOn", pos, inside) ||
+    view.someProp("handleTripleClick", f => f(view, pos)) ||
     defaultTripleClick(view, pos, inside)
 }
 
@@ -262,10 +262,8 @@ handlers.touchdown = view => {
 
 handlers.contextmenu = (view, e) => {
   forceDOMFlush(view)
-  let pos
-  if (view.props.handleContextMenu &&
-      (pos = view.posAtCoords(eventCoords(e))) &&
-      view.props.handleContextMenu(view, pos.pos))
+  let pos = view.posAtCoords(eventCoords(e))
+  if (pos && view.someProp("handleContextMenu", f => f(view, pos.pos)))
     e.preventDefault()
 }
 
@@ -443,7 +441,7 @@ handlers.paste = (view, e) => {
   let slice = fromClipboard(e.clipboardData, view.shiftKey, view.state.doc.resolve(range.from))
   if (slice) {
     e.preventDefault()
-    if (view.props.transformPasted) slice = view.props.transformPasted(slice)
+    view.someProp("transformPasted", f => { slice = f(slice) })
     view.props.onChange(view.state.tr.replace(range.from, range.to, slice).applyAndScroll())
   }
 }
@@ -545,7 +543,7 @@ handlers.drop = (view, e) => {
   let tr = view.state.tr
   if (dragging && dragging.move)
     tr.delete(dragging.from, dragging.to)
-  if (view.props.transformPasted) slice = view.props.transformPasted(slice)
+  view.someProp("transformPasted", f => { slice = f(slice) })
   let pos = tr.mapping.map(insertPos)
   tr.replace(pos, pos, slice)
   tr.setSelection(Selection.between(tr.doc.resolve(pos), tr.doc.resolve(tr.mapping.map(insertPos))))
@@ -555,10 +553,10 @@ handlers.drop = (view, e) => {
 
 handlers.focus = view => {
   view.wrapper.classList.add("ProseMirror-focused")
-  if (view.props.onFocus) view.props.onFocus(view)
+  view.someProp("onFocus", f => { f(view) })
 }
 
 handlers.blur = view => {
   view.wrapper.classList.remove("ProseMirror-focused")
-  if (view.props.onBlur) view.props.onBlur(view)
+  view.someProp("onBlur", f => { f(view) })
 }

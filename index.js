@@ -59,11 +59,11 @@ class EditorView {
     // :: DOMNode
     // The editable DOM node containing the document.
     this.content = elt("div", {class: "ProseMirror-content", "pm-container": true})
-    if (!props.spellCheck) this.content.spellcheck = false
-    if (props.label) this.content.setAttribute("aria-label", props.label)
     // :: DOMNode
     // The outer DOM element of the editor.
     this.wrapper = elt("div", {class: "ProseMirror"}, this.content)
+
+    this.updateDOMForProps()
 
     if (place && place.appendChild) place.appendChild(this.wrapper)
     else if (place) place(this.wrapper)
@@ -80,7 +80,10 @@ class EditorView {
   update(state, newProps) {
     let prevState = this.state
     this.state = state
-    if (newProps) this.props = newProps
+    if (newProps) {
+      this.props = newProps
+      this.updateDOMForProps()
+    }
 
     if (this.inDOMChange) {
       if (state.view.inDOMChange != this.inDOMChange.id)
@@ -112,12 +115,29 @@ class EditorView {
     if (this.dragging && docChange) this.dragging.move = false
   }
 
+  updateDOMForProps() {
+    let spellcheck = !!this.someProp("spellcheck")
+    if (spellcheck != this.content.spellcheck) this.content.spellcheck = spellcheck
+    let label = this.someProp("label")
+    if (this.content.getAttribute("aria-label") != label) this.content.setAttribute("aria-label", label)
+  }
+
   // :: () → bool
   // Query whether the view has focus.
   hasFocus() {
     if (document.activeElement != this.content) return false
     let sel = window.getSelection()
     return sel.rangeCount && contains(this.content, sel.anchorNode)
+  }
+
+  someProp(propName, f) {
+    let prop = this.props && this.props[propName], value
+    if (prop && (value = f ? f(prop) : prop)) return value
+    let plugins = this.props.config && this.props.config.plugins
+    if (plugins) for (let i = 0; i < plugins.length; i++) {
+      let prop = plugins[i][propName]
+      if (prop && (value = f ? f(prop) : prop)) return value
+    }
   }
 
   focus() {
@@ -139,30 +159,31 @@ class EditorView {
   }
 
   applyKey(keyName) {
-    let keymaps = this.props.keymaps || []
-    for (let i = 0; i <= keymaps.length; i++) {
-      let map = i == keymaps.length ? captureKeys : keymaps[i]
-      let bound = map.lookup(keyName, this)
-
-      if (bound === false) {
-        return null
-      } else if (bound == Keymap.unfinished) {
+    const applyMap = (map, arg) => {
+      let bound = map.lookup(keyName)
+      if (bound == Keymap.unfinished) {
         this.keyPrefix = keyName
         return this.state
       } else if (bound) {
-        return bound(map == captureKeys ? this : this.state)
+        return bound(arg)
       }
     }
+    let result = this.someProp("keymaps", maps => {
+      for (let i = 0; i < maps.length; i++) {
+        let result = applyMap(maps[i], this.state)
+        if (result) return result
+      }
+    })
+    return result || applyMap(captureKeys, this)
   }
 
   insertText(text, from, to) {
     if (from == null) {
       ;({from, to} = this.state.selection)
     }
-    if (this.props.applyTextInput) {
-      let handled = this.props.applyTextInput(this.state, from, to, text)
-      if (handled) return handled
-    }
+    let handled = this.someProp("applyTextInput", f => f(this.state, from, to, text))
+    if (handled) return handled
+
     let marks = this.state.storedMarks || this.state.doc.marksAt(from)
     let tr = this.state.tr.replaceWith(from, to, text ? this.state.schema.text(text, marks) : null)
     return tr.applyAndScroll()
