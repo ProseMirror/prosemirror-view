@@ -71,7 +71,7 @@ class SelectionReader {
     let selection = Selection.between($anchor, $head, bias)
     if ($head.pos == selection.head && $anchor.pos == selection.anchor)
       this.storeDOMState()
-    this.view.props.onChange(this.view.state.applySelection(selection))
+    this.view.props.onAction(selection.action())
   }
 
   receivedFocus() {

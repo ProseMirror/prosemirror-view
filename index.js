@@ -1,21 +1,19 @@
 const {Map} = require("../util/map")
 const {elt, ensureCSSAdded, contains} = require("../util/dom")
-const Keymap = require("browserkeymap")
 
 const {scrollPosIntoView, posAtCoords, coordsAtPos} = require("./dompos")
 const {draw, redraw, DIRTY_REDRAW, DIRTY_RESCAN} = require("./draw")
 const {initInput, finishUpdateFromDOM} = require("./input")
 const {SelectionReader, selectionToDOM} = require("./selection")
-const {captureKeys} = require("./capturekeys")
 
 require("./css")
 
 // EditorProps:: interface
 //
 // The configuration object that can be passed to an editor view. It
-// supports the following properties (only `onChange` is required).
+// supports the following properties (only `onAction` is required).
 //
-//   onChange:: (newState: EditorState)
+//   onAction:: (action: Object)
 //
 //   keymaps:: ?[Keymap]
 //
@@ -90,7 +88,7 @@ class EditorView {
         setTimeout(() => finishUpdateFromDOM(this), 0)
       return
     } else if (state.view.inDOMChange != null) {
-      setTimeout(() => this.props.onChange(this.state.endDOMChange()), 0)
+      setTimeout(() => this.props.onAction({type: "endDOMChange"}), 0)
       return
     }
 
@@ -156,37 +154,6 @@ class EditorView {
     let parent = $from.node(same)
     for (let i = start; i < end; i++)
       dirty.set(parent.child(i), DIRTY_REDRAW)
-  }
-
-  applyKey(keyName) {
-    const applyMap = (map, arg) => {
-      let bound = map.lookup(keyName)
-      if (bound == Keymap.unfinished) {
-        this.keyPrefix = keyName
-        return this.state
-      } else if (bound) {
-        return bound(arg)
-      }
-    }
-    let result = this.someProp("keymaps", maps => {
-      for (let i = 0; i < maps.length; i++) {
-        let result = applyMap(maps[i], this.state)
-        if (result) return result
-      }
-    })
-    return result || applyMap(captureKeys, this)
-  }
-
-  insertText(text, from, to) {
-    if (from == null) {
-      ;({from, to} = this.state.selection)
-    }
-    let handled = this.someProp("applyTextInput", f => f(this.state, from, to, text))
-    if (handled) return handled
-
-    let marks = this.state.storedMarks || this.state.doc.marksAt(from)
-    let tr = this.state.tr.replaceWith(from, to, text ? this.state.schema.text(text, marks) : null)
-    return tr.applyAndScroll()
   }
 
   markAllDirty() {

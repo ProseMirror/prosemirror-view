@@ -2,6 +2,7 @@ const Keymap = require("browserkeymap")
 const browser = require("../util/browser")
 const {Slice, Fragment, parseDOMInContext} = require("../model")
 const {Selection, NodeSelection, TextSelection} = require("../state")
+const {captureKeys} = require("./capturekeys")
 
 const {elt, contains} = require("../util/dom")
 
@@ -13,8 +14,6 @@ const handlers = {}
 
 function initInput(view) {
   view.shiftKey = false
-  view.keyPrefix = null
-  view.clearPrefix = null
   view.mouseDown = null
   view.dragging = null
   view.dropTarget = null
@@ -29,21 +28,10 @@ function initInput(view) {
 exports.initInput = initInput
 
 function dispatchKey(view, keyName) {
-  let prefix = view.keyPrefix
-  // If the previous key should be used in sequence with this one, modify the name accordingly.
-  if (prefix) {
-    if (Keymap.isModifierKey(keyName)) return true
-    clearTimeout(view.clearPrefix)
-    view.clearPrefix = setTimeout(function() {
-      if (view.keyPrefix == prefix) view.keyPrefix = null
-    }, 50)
-    keyName = prefix + " " + keyName
-  }
-
-  let state = view.applyKey(keyName)
-  if (!state) return false
-  if (state != view.state) view.props.onChange(state)
-  return true
+  if (view.someProp("onKey", f => f(view.state, keyName)))
+    return true
+  let capture = captureKeys.lookup(keyName)
+  return capture && capture(view)
 }
 
 handlers.keydown = (view, e) => {
@@ -60,6 +48,12 @@ handlers.keyup = (view, e) => {
   if (e.keyCode == 16) view.shiftKey = false
 }
 
+function insertText(view, text) {
+  let {from, to} = view.state.selection
+  if (!view.someProp("onTextInput", f => f(view.state, from, to, text)))
+    view.props.onAction(view.state.tr.insertText(text).scrollAction())
+}
+
 handlers.keypress = (view, e) => {
   if (!view.hasFocus() || view.inDOMChange || !e.charCode ||
       e.ctrlKey && !e.altKey || browser.mac && e.metaKey) return
@@ -72,7 +66,7 @@ handlers.keypress = (view, e) => {
   // keyboard's default case doesn't update (it only does so when the
   // user types or taps, not on selection updates from JavaScript).
   if (!browser.ios) {
-    view.props.onChange(view.insertText(String.fromCharCode(e.charCode)))
+    insertText(view, String.fromCharCode(e.charCode))
     e.preventDefault()
   }
 }
@@ -98,7 +92,7 @@ function runHandlerOnContext(view, propName, pos, inside) {
 
 function updateSelection(view, selection) {
   view.focus()
-  view.props.onChange(view.state.applySelection(selection))
+  view.props.onAction(selection.action())
 }
 
 function selectClickedLeaf(view, inside) {
@@ -240,7 +234,7 @@ class MouseDown {
       event.preventDefault()
     } else if (this.flushed) {
       this.view.focus()
-      this.view.props.onChange(this.view.state.applySelection(Selection.near(this.view.state.doc.resolve(this.pos.pos))))
+      this.view.props.onAction(Selection.near(this.view.state.doc.resolve(this.pos.pos)).action())
       event.preventDefault()
     } else {
       this.view.selectionReader.fastPoll()
@@ -285,7 +279,7 @@ function startComposition(view, dataLen) {
   view.inDOMChange = {id: domChangeID(), state: view.state,
                       composition: true, composeMargin: dataLen}
   clearTimeout(view.finishUpdateFromDOM)
-  view.props.onChange(view.startDOMChange(view.inDOMChange.id))
+  view.props.onAction({type: "startDOMChange", id: view.inDOMChange.id})
 }
 
 function domChangeID() {
@@ -327,18 +321,17 @@ function finishUpdateFromDOM(view) {
   clearTimeout(view.finishUpdateFromDOM)
   let change = view.inDOMChange
   if (!change) return
-  let state = (change.composition
-               ? readCompositionChange(view, change.state, change.composeMargin)
-               : readInputChange(view, change.state)) || view.state
+  if (change.composition) readCompositionChange(view, change.state, change.composeMargin)
+  else readInputChange(view, change.state)
   view.inDOMChange = null
-  view.props.onChange(state.endDOMChange())
+  view.props.onAction({type: "endDOMChange"})
 }
 exports.finishUpdateFromDOM = finishUpdateFromDOM
 
 handlers.input = view => {
   if (view.inDOMChange || !view.hasFocus()) return
   view.inDOMChange = {id: domChangeID(), state: view.state}
-  view.props.onChange(view.startDOMChange(view.inDOMChange.id))
+  view.props.onAction({type: "startDOMChange", id: view.inDOMChange.id})
   scheduleUpdateFromDOM(view)
 }
 
@@ -428,7 +421,7 @@ handlers.copy = handlers.cut = (view, e) => {
   }
   toClipboard(view.state.doc, from, to, e.clipboardData)
   e.preventDefault()
-  if (cut) view.props.onChange(view.state.tr.delete(from, to).applyAndScroll())
+  if (cut) view.props.onAction(view.state.tr.delete(from, to).scrollAction())
 }
 
 handlers.paste = (view, e) => {
@@ -442,7 +435,7 @@ handlers.paste = (view, e) => {
   if (slice) {
     e.preventDefault()
     view.someProp("transformPasted", f => { slice = f(slice) })
-    view.props.onChange(view.state.tr.replace(range.from, range.to, slice).applyAndScroll())
+    view.props.onAction(view.state.tr.replace(range.from, range.to, slice).scrollAction())
   }
 }
 
@@ -548,7 +541,7 @@ handlers.drop = (view, e) => {
   tr.replace(pos, pos, slice)
   tr.setSelection(Selection.between(tr.doc.resolve(pos), tr.doc.resolve(tr.mapping.map(insertPos))))
   view.focus()
-  view.props.onChange(tr.apply())
+  view.props.onAction(tr.action())
 }
 
 handlers.focus = view => {

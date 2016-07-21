@@ -1,11 +1,10 @@
 const Keymap = require("browserkeymap")
-
 const {Selection, NodeSelection, TextSelection} = require("../state")
 const browser = require("../util/browser")
 
 const {verticalMotionLeavesTextblock} = require("./selection")
 
-function nothing(view) { return view.state }
+function nothing() { return true }
 
 function moveSelectionBlock(state, dir) {
   let {$from, $to, node} = state.selection
@@ -14,16 +13,17 @@ function moveSelectionBlock(state, dir) {
   return $start && Selection.findFrom($start, dir)
 }
 
-function apply(state, sel) {
-  return state.applySelection(sel, {scrollIntoView: true})
+function apply(view, sel) {
+  view.props.onAction(sel.action({scrollIntoView: true}))
+  return true
 }
 
-function selectNodeHorizontally(state, dir) {
-  let {empty, node, $from, $to} = state.selection
-  if (!empty && !node) return null
+function selectNodeHorizontally(view, dir) {
+  let {empty, node, $from, $to} = view.state.selection
+  if (!empty && !node) return false
 
   if (node && node.isInline)
-    return apply(state, new TextSelection(dir > 0 ? $to : $from))
+    return apply(view, new TextSelection(dir > 0 ? $to : $from))
 
   if (!node) {
     let {node: nextNode, offset} = dir > 0
@@ -31,18 +31,20 @@ function selectNodeHorizontally(state, dir) {
         : $from.parent.childBefore($from.parentOffset)
     if (nextNode) {
       if (nextNode.type.selectable && offset == $from.parentOffset - (dir > 0 ? 0 : nextNode.nodeSize))
-        return apply(state, new NodeSelection(dir < 0 ? state.doc.resolve($from.pos - nextNode.nodeSize) : $from))
+        return apply(view, new NodeSelection(dir < 0 ? view.state.doc.resolve($from.pos - nextNode.nodeSize) : $from))
       return null
     }
   }
 
-  let next = moveSelectionBlock(state, dir)
+  let next = moveSelectionBlock(view.state, dir)
   if (next && (next instanceof NodeSelection || node))
-    return apply(state, next)
+    return apply(view, next)
+
+  return false
 }
 
 function horiz(dir) {
-  return view => selectNodeHorizontally(view.state, dir)
+  return view => selectNodeHorizontally(view, dir)
 }
 
 // : (EditorState, number)
@@ -51,7 +53,7 @@ function horiz(dir) {
 // browser)
 function selectNodeVertically(view, dir) {
   let {empty, node, $from, $to} = view.state.selection
-  if (!empty && !node) return null
+  if (!empty && !node) return false
 
   let leavingTextblock = true, $start = dir < 0 ? $from : $to
   if (!node || node.isInline)
@@ -60,13 +62,13 @@ function selectNodeVertically(view, dir) {
   if (leavingTextblock) {
     let next = moveSelectionBlock(view.state, dir)
     if (next && (next instanceof NodeSelection))
-      return apply(view.state, next)
+      return apply(view, next)
   }
 
-  if (!node || node.isInline) return null
+  if (!node || node.isInline) return false
 
   let beyond = Selection.findFrom($start, dir)
-  return beyond ? apply(view.state, beyond) : view.state
+  return beyond ? apply(view, beyond) : true
 }
 
 function vert(dir) {

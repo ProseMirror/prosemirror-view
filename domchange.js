@@ -129,7 +129,8 @@ function readDOMChange(view, oldState, range) {
   if (!$from.sameParent($to) && $from.pos < parsed.content.size &&
       (nextSel = Selection.findFrom(parsed.resolve($from.pos + 1), 1, true)) &&
       nextSel.head == $to.pos) {
-    return view.applyKey("Enter")
+    view.someProp("onKey", f => f(view.state, "Enter"))
+    return
   }
 
   let from = change.start, to = change.endA
@@ -144,21 +145,19 @@ function readDOMChange(view, oldState, range) {
                                 head: mapping.map(parsedSel.head)}
   }
 
+  let tr = view.state.tr
   if ($from.sameParent($to) && $from.parent.isTextblock &&
       (text = uniformTextBetween(parsed, $from.pos, $to.pos)) != null) {
-    let state = view.insertText(text, from, to)
-    if (parsedSel)
-      state = state.applySelection(Selection.between(state.doc.resolve(parsedSel.anchor),
-                                                     state.doc.resolve(parsedSel.head)))
-    return state
+    if (view.someProp("onTextInput", f => f(view.state, from, to, text))) return
+    tr.insertText(text, from, to)
   } else {
-    let slice = parsed.slice(change.start - range.from, change.endB - range.from)
-    let tr = view.state.tr.replace(from, to, slice)
-    if (parsedSel)
-      tr.setSelection(Selection.between(tr.doc.resolve(parsedSel.anchor),
-                                        tr.doc.resolve(parsedSel.head)))
-    return tr.applyAndScroll()
+    tr.replace(from, to, parsed.slice(change.start - range.from, change.endB - range.from))
   }
+
+  if (parsedSel)
+    tr.setSelection(Selection.between(tr.doc.resolve(parsedSel.anchor),
+                                      tr.doc.resolve(parsedSel.head)))
+  view.props.onAction(tr.scrollAction())
 }
 
 function uniformTextBetween(node, from, to) {
