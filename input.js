@@ -33,6 +33,7 @@ function dispatchKey(view, keyName) {
   let capture = captureKeys.lookup(keyName)
   return capture && capture(view)
 }
+exports.dispatchKey = dispatchKey
 
 handlers.keydown = (view, e) => {
   if (e.keyCode == 16) view.shiftKey = true

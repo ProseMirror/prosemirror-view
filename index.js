@@ -3,7 +3,7 @@ const {elt, ensureCSSAdded, contains} = require("../util/dom")
 
 const {scrollPosIntoView, posAtCoords, coordsAtPos} = require("./dompos")
 const {draw, redraw, DIRTY_REDRAW, DIRTY_RESCAN} = require("./draw")
-const {initInput, finishUpdateFromDOM} = require("./input")
+const {initInput, finishUpdateFromDOM, dispatchKey} = require("./input")
 const {SelectionReader, selectionToDOM} = require("./selection")
 
 require("./css")
@@ -162,5 +162,9 @@ class EditorView {
 
   posAtCoords(coords) { return posAtCoords(this, coords) }
   coordsAtPos(pos) { return coordsAtPos(this, pos) }
+
+  dispatchKey(keyName) {
+    dispatchKey(this, keyName)
+  }
 }
 exports.EditorView = EditorView
