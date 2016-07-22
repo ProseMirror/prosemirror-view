@@ -19,7 +19,7 @@ exports.readCompositionChange = readCompositionChange
 // the modification is mapped over those before it is applied, in
 // readDOMChange.
 
-function parseBetween(view, from, to) {
+function parseBetween(view, oldState, from, to) {
   let {node: parent, offset: startOff} = DOMFromPos(view, from, true)
   let {node: parentRight, offset: endOff} = DOMFromPosFromEnd(view, to)
   if (parent != parentRight) return null
@@ -39,7 +39,7 @@ function parseBetween(view, from, to) {
     if (!domSel.isCollapsed)
       find.push({node: domSel.focusNode, offset: domSel.focusOffset})
   }
-  let startDoc = view.inDOMChange.state.doc
+  let startDoc = oldState.doc
   let sel = null, doc = startDoc.type.schema.parseDOM(parent, {
     topNode: startDoc.resolve(from).parent.copy(),
     from: startOff,
@@ -107,7 +107,7 @@ function rangeAroundComposition(selection, margin) {
 function readDOMChange(view, oldState, range) {
   let parseResult, doc = oldState.doc
   for (;;) {
-    parseResult = parseBetween(view, range.from, range.to)
+    parseResult = parseBetween(view, oldState, range.from, range.to)
     if (parseResult) break
     range = {from: doc.resolve(range.from).before(),
              to: doc.resolve(range.to).after()}
@@ -128,10 +128,9 @@ function readDOMChange(view, oldState, range) {
   // Enter key instead.
   if (!$from.sameParent($to) && $from.pos < parsed.content.size &&
       (nextSel = Selection.findFrom(parsed.resolve($from.pos + 1), 1, true)) &&
-      nextSel.head == $to.pos) {
-    view.dispatchKey("Enter")
+      nextSel.head == $to.pos &&
+      view.someProp("onKey", f => f(view.state, "Enter")))
     return
-  }
 
   let from = change.start, to = change.endA
   // If there have been changes since this DOM update started, we must
