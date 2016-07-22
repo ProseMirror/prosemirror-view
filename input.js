@@ -34,7 +34,7 @@ exports.dispatchKeyDown = dispatchKeyDown
 handlers.keydown = (view, e) => {
   if (e.keyCode == 16) view.shiftKey = true
   if (!view.hasFocus() || view.inDOMChange) return
-  if (name && dispatchKeyDown(view, e))
+  if (dispatchKeyDown(view, e))
     e.preventDefault()
   else
     view.selectionReader.fastPoll()
@@ -46,7 +46,7 @@ handlers.keyup = (view, e) => {
 
 function insertText(view, text) {
   let {from, to} = view.state.selection
-  if (!view.someProp("onTextInput", f => f(view.state, from, to, text)))
+  if (!view.someProp("onTextInput", f => f(view, from, to, text)))
     view.props.onAction(view.state.tr.insertText(text).scrollAction())
 }
 

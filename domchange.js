@@ -156,7 +156,7 @@ function readDOMChange(view, oldState, range) {
   let tr = view.state.tr
   if ($from.sameParent($to) && $from.parent.isTextblock &&
       (text = uniformTextBetween(parsed, $from.pos, $to.pos)) != null) {
-    if (view.someProp("onTextInput", f => f(view.state, from, to, text))) return
+    if (view.someProp("onTextInput", f => f(view, from, to, text))) return
     tr.insertText(text, from, to)
   } else {
     tr.replace(from, to, parsed.slice(change.start - range.from, change.endB - range.from))
