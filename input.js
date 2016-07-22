@@ -28,10 +28,9 @@ function initInput(view) {
 exports.initInput = initInput
 
 function dispatchKey(view, keyName) {
-  if (view.someProp("onKey", f => f(view.state, keyName)))
-    return true
+  if (view.someProp("onKey", f => f(view, keyName))) return true
   let capture = captureKeys.lookup(keyName)
-  return capture && capture(view)
+  return capture ? capture(view) : false
 }
 exports.dispatchKey = dispatchKey
 

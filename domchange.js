@@ -129,7 +129,7 @@ function readDOMChange(view, oldState, range) {
   if (!$from.sameParent($to) && $from.pos < parsed.content.size &&
       (nextSel = Selection.findFrom(parsed.resolve($from.pos + 1), 1, true)) &&
       nextSel.head == $to.pos &&
-      view.someProp("onKey", f => f(view.state, "Enter")))
+      view.dispatchKey("Enter"))
     return
 
   let from = change.start, to = change.endA

@@ -164,7 +164,16 @@ class EditorView {
   coordsAtPos(pos) { return coordsAtPos(this, pos) }
 
   dispatchKey(keyName) {
-    dispatchKey(this, keyName)
+    return dispatchKey(this, keyName)
   }
 }
 exports.EditorView = EditorView
+
+exports.keymap = function(keymap) {
+  return {
+    onKey(view, keyName) {
+      let bound = keymap.lookup(keyName)
+      return bound ? bound(view.state, view.props.onAction) : false
+    }
+  }
+}
