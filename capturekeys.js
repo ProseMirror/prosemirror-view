@@ -1,10 +1,7 @@
-const Keymap = require("browserkeymap")
 const {Selection, NodeSelection, TextSelection} = require("../state")
 const browser = require("../util/browser")
 
 const {verticalMotionLeavesTextblock} = require("./selection")
-
-function nothing() { return true }
 
 function moveSelectionBlock(state, dir) {
   let {$from, $to, node} = state.selection
@@ -43,10 +40,6 @@ function selectNodeHorizontally(view, dir) {
   return false
 }
 
-function horiz(dir) {
-  return view => selectNodeHorizontally(view, dir)
-}
-
 // : (EditorState, number)
 // Check whether vertical selection motion would involve node
 // selections. If so, apply it (if not, the result is left to the
@@ -71,10 +64,6 @@ function selectNodeVertically(view, dir) {
   return beyond ? apply(view, beyond) : true
 }
 
-function vert(dir) {
-  return view => selectNodeVertically(view, dir)
-}
-
 // A backdrop keymap used to make sure we always suppress keys that
 // have a dangerous default effect, even if the commands they are
 // bound to return false, and to make sure that cursor-motion keys
@@ -82,45 +71,24 @@ function vert(dir) {
 // cursor-motion keys, the code in the handlers also takes care of
 // block selections.
 
-let keys = {
-  "Esc": nothing,
-  "Enter": nothing,
-  "Ctrl-Enter": nothing,
-  "Mod-Enter": nothing,
-  "Shift-Enter": nothing,
-  "Backspace": browser.ios ? undefined : nothing,
-  "Delete": nothing,
-  "Mod-B": nothing,
-  "Mod-I": nothing,
-  "Mod-Backspace": nothing,
-  "Mod-Delete": nothing,
-  "Shift-Backspace": nothing,
-  "Shift-Delete": nothing,
-  "Shift-Mod-Backspace": nothing,
-  "Shift-Mod-Delete": nothing,
-  "Mod-Z": nothing,
-  "Mod-Y": nothing,
-  "Shift-Mod-Z": nothing,
-  "Ctrl-D": nothing,
-  "Ctrl-H": nothing,
-  "Ctrl-Alt-Backspace": nothing,
-  "Alt-D": nothing,
-  "Alt-Delete": nothing,
-  "Alt-Backspace": nothing,
-
-  "Left": horiz(-1),
-  "Mod-Left": horiz(-1),
-  "Right": horiz(1),
-  "Mod-Right": horiz(1),
-  "Up": vert(-1),
-  "Down": vert(1)
+function captureKeyDown(view, event) {
+  let code = event.keyCode, mod = browser.mac ? event.metaKey : event.ctrlKey
+  if (code == 8) { // Backspace
+    return browser.ios ? false : true
+  } else if (code == 13 || code == 27 || code == 46) { // Enter, Esc, Delete
+    return true
+  } else if (mod && (code == 66 || code == 73 || code == 89 || code == 90 || code == 68 || code == 72)) { // Mod-[BIYZDH]
+    return true
+  } else if (event.altKey && (code == 68)) { // Alt-D
+    return true
+  } else if (code == 37) { // Left arrow
+    return selectNodeHorizontally(view, -1)
+  } else if (code == 39) { // Right arrow
+    return selectNodeHorizontally(view, 1)
+  } else if (code == 38) { // Up arrow
+    return selectNodeVertically(view, -1)
+  } else if (code == 40) { // Down arrow
+    return selectNodeVertically(view, 1)
+  }
 }
-
-if (browser.mac) {
-  keys["Alt-Left"] = horiz(-1)
-  keys["Alt-Right"] = horiz(1)
-  keys["Ctrl-Backspace"] = keys["Ctrl-Delete"] = nothing
-}
-
-const captureKeys = new Keymap(keys)
-exports.captureKeys = captureKeys
+exports.captureKeyDown = captureKeyDown

@@ -1,8 +1,7 @@
-const Keymap = require("browserkeymap")
 const browser = require("../util/browser")
 const {Slice, Fragment, parseDOMInContext} = require("../model")
 const {Selection, NodeSelection, TextSelection} = require("../state")
-const {captureKeys} = require("./capturekeys")
+const {captureKeyDown} = require("./capturekeys")
 
 const {elt, contains} = require("../util/dom")
 
@@ -27,18 +26,15 @@ function initInput(view) {
 }
 exports.initInput = initInput
 
-function dispatchKey(view, keyName) {
-  if (view.someProp("onKey", f => f(view, keyName))) return true
-  let capture = captureKeys.lookup(keyName)
-  return capture ? capture(view) : false
+function dispatchKeyDown(view, event) {
+  return view.someProp("onKeyDown", f => f(view, event)) || captureKeyDown(view, event)
 }
-exports.dispatchKey = dispatchKey
+exports.dispatchKeyDown = dispatchKeyDown
 
 handlers.keydown = (view, e) => {
   if (e.keyCode == 16) view.shiftKey = true
   if (!view.hasFocus() || view.inDOMChange) return
-  let name = Keymap.keyName(e)
-  if (name && dispatchKey(view, name))
+  if (name && dispatchKeyDown(view, e))
     e.preventDefault()
   else
     view.selectionReader.fastPoll()
@@ -54,10 +50,15 @@ function insertText(view, text) {
     view.props.onAction(view.state.tr.insertText(text).scrollAction())
 }
 
+function dispatchKeyPress(view, event) {
+  return view.someProp("onKeyPress", f => f(view, event))
+}
+exports.dispatchKeyPress = dispatchKeyPress
+
 handlers.keypress = (view, e) => {
   if (!view.hasFocus() || view.inDOMChange || !e.charCode ||
       e.ctrlKey && !e.altKey || browser.mac && e.metaKey) return
-  if (dispatchKey(view, Keymap.keyName(e))) {
+  if (dispatchKeyPress(view, e)) {
     e.preventDefault()
     return
   }

@@ -104,6 +104,14 @@ function rangeAroundComposition(selection, margin) {
   return {from: nodeStart + startOff, to: nodeStart + endOff}
 }
 
+function enterEvent() {
+  let event = document.createEvent("Event")
+  event.initEvent("keydown", true, true)
+  event.keyCode = 13
+  event.code = "Enter"
+  return event
+}
+
 function readDOMChange(view, oldState, range) {
   let parseResult, doc = oldState.doc
   for (;;) {
@@ -123,13 +131,14 @@ function readDOMChange(view, oldState, range) {
 
   let $from = parsed.resolveNoCache(change.start - range.from)
   let $to = parsed.resolveNoCache(change.endB - range.from)
-  let nextSel, text
+  let nextSel, text, event
   // If this looks like the effect of pressing Enter, just dispatch an
   // Enter key instead.
   if (!$from.sameParent($to) && $from.pos < parsed.content.size &&
       (nextSel = Selection.findFrom(parsed.resolve($from.pos + 1), 1, true)) &&
       nextSel.head == $to.pos &&
-      view.dispatchKey("Enter"))
+      (event = enterEvent()) &&
+      view.someProp("onKeyDown", f => f(view, event)))
     return
 
   let from = change.start, to = change.endA
