@@ -105,8 +105,8 @@ function redraw(view, oldState, newState) {
       if (found > -1) {
         matching = child
         while (iPrev != found) {
-          oPrev += prev.child(iPrev).nodeSize
-          iPrev++
+          oPrev += pChild.nodeSize
+          pChild = prev.maybeChild(++iPrev)
         }
       }
 
@@ -116,6 +116,7 @@ function redraw(view, oldState, newState) {
         reuseDOM = true
         if (!pChild.type.isLeaf)
           scan(childContainer(domPos), child, pChild, pos + offset + 1)
+        domPos.setAttribute("pm-size", child.nodeSize)
       } else {
         opts.pos = pos + offset
         opts.offset = offset
@@ -125,10 +126,20 @@ function redraw(view, oldState, newState) {
       }
 
       if (reuseDOM) {
-        domPos.setAttribute("pm-offset", offset)
-        domPos.setAttribute("pm-size", child.nodeSize)
-        domPos = domPos.nextSibling
-        oPrev += prev.child(iPrev).nodeSize
+        // Text nodes might be split into smaller segments
+        if (child.isText) {
+          for (let off = offset, end = off + child.nodeSize; off < end;) {
+            if (offset != oPrev)
+              domPos.setAttribute("pm-offset", off)
+            off += +domPos.getAttribute("pm-size")
+            domPos = domPos.nextSibling
+          }
+        } else {
+          if (offset != oPrev)
+            domPos.setAttribute("pm-offset", offset)
+          domPos = domPos.nextSibling
+        }
+        oPrev += pChild.nodeSize
         pChild = prev.maybeChild(++iPrev)
       }
       offset += child.nodeSize
