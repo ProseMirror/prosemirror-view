@@ -41,7 +41,7 @@ require("./css")
 //
 //   transformPasted:: ?(Slice) → Slice
 //
-//   spellCheck:: ?bool
+//   spellcheck:: ?bool
 //
 //   label:: ?string
 //
