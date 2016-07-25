@@ -15,9 +15,11 @@ require("./css")
 //
 //   onAction:: (action: Object)
 //
-//   keymaps:: ?[Keymap]
+//   handleKeyDown:: ?(view: EditorView, event: KeyboardEvent) → bool
 //
-//   applyTextInput:: ?(state: EditorState, from: number, to: number, text: string) → ?EditorState
+//   handleKeyPress:: ?(view: EditorView, event: KeyboardEvent) → bool
+//
+//   handleTextInput:: ?(view: EditorView, from: number, to: number, text: string) → bool
 //
 //   handleClickOn:: ?(view: EditorView, pos: number, node: Node, nodePos: number) → bool
 //

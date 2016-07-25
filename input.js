@@ -46,7 +46,7 @@ handlers.keyup = (view, e) => {
 
 function insertText(view, text) {
   let {from, to} = view.state.selection
-  if (!view.someProp("onTextInput", f => f(view, from, to, text)))
+  if (!view.someProp("handleTextInput", f => f(view, from, to, text)))
     view.props.onAction(view.state.tr.insertText(text).scrollAction())
 }
 
