@@ -27,7 +27,7 @@ function initInput(view) {
 exports.initInput = initInput
 
 function dispatchKeyDown(view, event) {
-  return view.someProp("onKeyDown", f => f(view, event)) || captureKeyDown(view, event)
+  return view.someProp("handleKeyDown", f => f(view, event)) || captureKeyDown(view, event)
 }
 exports.dispatchKeyDown = dispatchKeyDown
 
@@ -51,7 +51,7 @@ function insertText(view, text) {
 }
 
 function dispatchKeyPress(view, event) {
-  return view.someProp("onKeyPress", f => f(view, event))
+  return view.someProp("handleKeyPress", f => f(view, event))
 }
 exports.dispatchKeyPress = dispatchKeyPress
 

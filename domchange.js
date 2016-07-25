@@ -138,7 +138,7 @@ function readDOMChange(view, oldState, range) {
       (nextSel = Selection.findFrom(parsed.resolve($from.pos + 1), 1, true)) &&
       nextSel.head == $to.pos &&
       (event = enterEvent()) &&
-      view.someProp("onKeyDown", f => f(view, event)))
+      view.someProp("handleKeyDown", f => f(view, event)))
     return
 
   let from = change.start, to = change.endA
