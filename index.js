@@ -21,19 +21,19 @@ require("./css")
 //
 //   handleTextInput:: ?(view: EditorView, from: number, to: number, text: string) → bool
 //
-//   handleClickOn:: ?(view: EditorView, pos: number, node: Node, nodePos: number) → bool
+//   handleClickOn:: ?(view: EditorView, pos: number, node: Node, nodePos: number, event: MouseEvent) → bool
 //
-//   handleClick:: ?(view: EditorView, pos: number) → bool
+//   handleClick:: ?(view: EditorView, pos: number, event: MouseEvent) → bool
 //
-//   handleDoubleClickOn:: ?(view: EditorView, pos: number, node: Node, nodePos: number) → bool
+//   handleDoubleClickOn:: ?(view: EditorView, pos: number, node: Node, nodePos: number, event: MouseEvent) → bool
 //
-//   handleDoubleClick:: ?(view: EditorView, pos: number) → bool
+//   handleDoubleClick:: ?(view: EditorView, pos: number, event: MouseEvent) → bool
 //
-//   handleTripleClickOn:: ?(view: EditorView, pos: number, node: Node, nodePos: number) → bool
+//   handleTripleClickOn:: ?(view: EditorView, pos: number, node: Node, nodePos: number, event: MouseEvent) → bool
 //
-//   handleTripleClick:: ?(view: EditorView, pos: number) → bool
+//   handleTripleClick:: ?(view: EditorView, pos: number, event: MouseEvent) → bool
 //
-//   handleContextMenu:: ?(view: EditorView, pos: number) → bool
+//   handleContextMenu:: ?(view: EditorView, pos: number, event: MouseEvent) → bool
 //
 //   onFocus:: ?(view)
 //
