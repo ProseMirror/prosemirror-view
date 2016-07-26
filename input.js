@@ -81,11 +81,11 @@ function isNear(event, click) {
   return dx * dx + dy * dy < 100
 }
 
-function runHandlerOnContext(view, propName, pos, inside) {
+function runHandlerOnContext(view, propName, pos, inside, event) {
   let $pos = view.state.doc.resolve(inside == null ? pos : inside)
   for (let i = $pos.depth + (inside == null ? 0 : 1); i > 0; i--) {
     let node = i > $pos.depth ? $pos.nodeAfter : $pos.node(i)
-    if (view.someProp(propName, f => f(view, pos, node, $pos.before(i))))
+    if (view.someProp(propName, f => f(view, pos, node, $pos.before(i), event)))
       return true
   }
   return false
@@ -128,22 +128,22 @@ function selectClickedNode(view, pos, inside) {
   }
 }
 
-function handleSingleClick(view, pos, inside, ctrl) {
+function handleSingleClick(view, pos, inside, ctrl, event) {
   if (ctrl) return selectClickedNode(view, pos, inside)
 
-  return runHandlerOnContext(view, "handleClickOn", pos, inside) ||
-    view.someProp("handleClick", f => f(view, pos)) ||
+  return runHandlerOnContext(view, "handleClickOn", pos, inside, event) ||
+    view.someProp("handleClick", f => f(view, pos, event)) ||
     inside != null && selectClickedLeaf(view, inside)
 }
 
-function handleDoubleClick(view, pos, inside) {
-  return runHandlerOnContext(view, "handleDoubleClickOn", pos, inside) ||
-    view.someProp("handleDoubleClick", f => f(view, pos))
+function handleDoubleClick(view, pos, inside, event) {
+  return runHandlerOnContext(view, "handleDoubleClickOn", pos, inside, event) ||
+    view.someProp("handleDoubleClick", f => f(view, pos, event))
 }
 
-function handleTripleClick(view, pos, inside) {
-  return runHandlerOnContext(view, "handleTripleClickOn", pos, inside) ||
-    view.someProp("handleTripleClick", f => f(view, pos)) ||
+function handleTripleClick(view, pos, inside, event) {
+  return runHandlerOnContext(view, "handleTripleClickOn", pos, inside, event) ||
+    view.someProp("handleTripleClick", f => f(view, pos, event)) ||
     defaultTripleClick(view, pos, inside)
 }
 
@@ -183,7 +183,7 @@ handlers.mousedown = (view, event) => {
 
   if (type == "singleClick")
     view.mouseDown = new MouseDown(view, pos, event, flushed)
-  else if ((type == "doubleClick" ? handleDoubleClick : handleTripleClick)(view, pos.pos, pos.inside))
+  else if ((type == "doubleClick" ? handleDoubleClick : handleTripleClick)(view, pos.pos, pos.inside, event))
     event.preventDefault()
   else
     view.selectionReader.fastPoll()
@@ -231,7 +231,7 @@ class MouseDown {
 
     if (this.allowDefault) {
       this.view.selectionReader.fastPoll()
-    } else if (handleSingleClick(this.view, this.pos.pos, this.pos.inside, this.ctrlKey)) {
+    } else if (handleSingleClick(this.view, this.pos.pos, this.pos.inside, this.ctrlKey, event)) {
       event.preventDefault()
     } else if (this.flushed) {
       this.view.focus()
@@ -258,7 +258,7 @@ handlers.touchdown = view => {
 handlers.contextmenu = (view, e) => {
   forceDOMFlush(view)
   let pos = view.posAtCoords(eventCoords(e))
-  if (pos && view.someProp("handleContextMenu", f => f(view, pos.pos)))
+  if (pos && view.someProp("handleContextMenu", f => f(view, pos.pos, e)))
     e.preventDefault()
 }
 
