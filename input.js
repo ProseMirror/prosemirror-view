@@ -81,9 +81,9 @@ function isNear(event, click) {
   return dx * dx + dy * dy < 100
 }
 
-function runHandlerOnContext(view, propName, pos, inside, event) {
-  let $pos = view.state.doc.resolve(inside == null ? pos : inside)
-  for (let i = $pos.depth + (inside == null ? 0 : 1); i > 0; i--) {
+function runHandlerOnContext(view, propName, pos, inLeaf, event) {
+  let $pos = view.state.doc.resolve(inLeaf < 0 ? pos : inLeaf)
+  for (let i = $pos.depth + (inLeaf < 0 ? 0 : 1); i > 0; i--) {
     let node = i > $pos.depth ? $pos.nodeAfter : $pos.node(i)
     if (view.someProp(propName, f => f(view, pos, node, $pos.before(i), event)))
       return true
@@ -96,19 +96,19 @@ function updateSelection(view, selection) {
   view.props.onAction(selection.action())
 }
 
-function selectClickedLeaf(view, inside) {
-  let leaf = view.state.doc.nodeAt(inside)
+function selectClickedLeaf(view, inLeaf) {
+  let leaf = view.state.doc.nodeAt(inLeaf)
   if (leaf && leaf.type.isLeaf && leaf.type.selectable) {
-    updateSelection(view, new NodeSelection(view.state.doc.resolve(inside)))
+    updateSelection(view, new NodeSelection(view.state.doc.resolve(inLeaf)))
     return true
   }
 }
 
-function selectClickedNode(view, pos, inside) {
+function selectClickedNode(view, pos, inLeaf) {
   let {node: selectedNode, $from} = view.state.selection, selectAt
 
-  let $pos = view.state.doc.resolve(inside == null ? pos : inside)
-  for (let i = $pos.depth + (inside == null ? 0 : 1); i > 0; i--) {
+  let $pos = view.state.doc.resolve(inLeaf < 0 ? pos : inLeaf)
+  for (let i = $pos.depth + (inLeaf < 0 ? 0 : 1); i > 0; i--) {
     let node = i > $pos.depth ? $pos.nodeAfter : $pos.node(i)
     if (node.type.selectable) {
      if (selectedNode && $from.depth > 0 &&
@@ -128,28 +128,28 @@ function selectClickedNode(view, pos, inside) {
   }
 }
 
-function handleSingleClick(view, pos, inside, ctrl, event) {
-  if (ctrl) return selectClickedNode(view, pos, inside)
+function handleSingleClick(view, pos, inLeaf, ctrl, event) {
+  if (ctrl) return selectClickedNode(view, pos, inLeaf)
 
-  return runHandlerOnContext(view, "handleClickOn", pos, inside, event) ||
+  return runHandlerOnContext(view, "handleClickOn", pos, inLeaf, event) ||
     view.someProp("handleClick", f => f(view, pos, event)) ||
-    inside != null && selectClickedLeaf(view, inside)
+    inLeaf > -1 && selectClickedLeaf(view, inLeaf)
 }
 
-function handleDoubleClick(view, pos, inside, event) {
-  return runHandlerOnContext(view, "handleDoubleClickOn", pos, inside, event) ||
+function handleDoubleClick(view, pos, inLeaf, event) {
+  return runHandlerOnContext(view, "handleDoubleClickOn", pos, inLeaf, event) ||
     view.someProp("handleDoubleClick", f => f(view, pos, event))
 }
 
-function handleTripleClick(view, pos, inside, event) {
-  return runHandlerOnContext(view, "handleTripleClickOn", pos, inside, event) ||
+function handleTripleClick(view, pos, inLeaf, event) {
+  return runHandlerOnContext(view, "handleTripleClickOn", pos, inLeaf, event) ||
     view.someProp("handleTripleClick", f => f(view, pos, event)) ||
-    defaultTripleClick(view, pos, inside)
+    defaultTripleClick(view, pos, inLeaf)
 }
 
-function defaultTripleClick(view, pos, inside) {
-  let doc = view.state.doc, $pos = doc.resolve(inside == null ? pos : inside)
-  for (let i = $pos.depth + (inside == null ? 0 : 1); i > 0; i--) {
+function defaultTripleClick(view, pos, inLeaf) {
+  let doc = view.state.doc, $pos = doc.resolve(inLeaf < 0 ? pos : inLeaf)
+  for (let i = $pos.depth + (inLeaf < 0 ? 0 : 1); i > 0; i--) {
     let node = i > $pos.depth ? $pos.nodeAfter : $pos.node(i)
     let nodePos = $pos.before(i)
     if (node.isTextblock)
@@ -183,7 +183,7 @@ handlers.mousedown = (view, event) => {
 
   if (type == "singleClick")
     view.mouseDown = new MouseDown(view, pos, event, flushed)
-  else if ((type == "doubleClick" ? handleDoubleClick : handleTripleClick)(view, pos.pos, pos.inside, event))
+  else if ((type == "doubleClick" ? handleDoubleClick : handleTripleClick)(view, pos.pos, pos.inLeaf, event))
     event.preventDefault()
   else
     view.selectionReader.fastPoll()
@@ -198,7 +198,7 @@ class MouseDown {
     this.allowDefault = view.shiftKey
 
     let targetNode
-    if (pos.inside) targetNode = view.state.doc.nodeAt(pos.inside)
+    if (pos.inLeaf > -1) targetNode = view.state.doc.nodeAt(pos.inLeaf)
     else targetNode = view.state.doc.resolve(pos.pos).parent
 
     this.mightDrag = (targetNode.type.draggable || targetNode == view.state.selection.node) ? targetNode : null
@@ -231,7 +231,7 @@ class MouseDown {
 
     if (this.allowDefault) {
       this.view.selectionReader.fastPoll()
-    } else if (handleSingleClick(this.view, this.pos.pos, this.pos.inside, this.ctrlKey, event)) {
+    } else if (handleSingleClick(this.view, this.pos.pos, this.pos.inLeaf, this.ctrlKey, event)) {
       event.preventDefault()
     } else if (this.flushed) {
       this.view.focus()

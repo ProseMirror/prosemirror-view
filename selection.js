@@ -65,10 +65,22 @@ class SelectionReader {
     if (!this.view.hasFocus() || !this.domChanged()) return
 
     let domSel = window.getSelection(), doc = this.view.state.doc
-    let $anchor = doc.resolve(posFromDOM(domSel.anchorNode, domSel.anchorOffset))
-    let $head = domSel.isCollapsed ? $anchor : doc.resolve(posFromDOM(domSel.focusNode, domSel.focusOffset))
-    let bias = this.view.state.selection.head != null && this.view.state.selection.head < $head.pos ? 1 : -1
-    let selection = Selection.between($anchor, $head, bias)
+    let {pos: head, inLeaf: headInLeaf} = posFromDOM(domSel.focusNode, domSel.focusOffset)
+    let $head = doc.resolve(head), $anchor, selection
+    if (domSel.isCollapsed) {
+      $anchor = $head
+      if (headInLeaf > -1) {
+        let $leaf = doc.resolve(headInLeaf)
+        if ($leaf.nodeAfter.type.selectable) selection = new NodeSelection($leaf)
+      }
+    } else {
+      $anchor = doc.resolve(posFromDOM(domSel.anchorNode, domSel.anchorOffset).pos)
+    }
+
+    if (!selection) {
+      let bias = this.view.state.selection.head != null && this.view.state.selection.head < $head.pos ? 1 : -1
+      selection = Selection.between($anchor, $head, bias)
+    }
     if ($head.pos == selection.head && $anchor.pos == selection.anchor)
       this.storeDOMState()
     this.view.props.onAction(selection.action())
