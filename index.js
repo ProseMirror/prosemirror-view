@@ -35,9 +35,11 @@ require("./css")
 //
 //   handleContextMenu:: ?(view: EditorView, pos: number, event: MouseEvent) → bool
 //
-//   onFocus:: ?(view)
+//   onFocus:: ?(view: EditorView)
 //
-//   onBlur:: ?(view)
+//   onBlur:: ?(view: EditorView)
+//
+//   onUpdate:: ?(view: EditorView, oldState: EditorState, newState: EditorState)
 //
 //   transformPasted:: ?(Slice) → Slice
 //
@@ -61,7 +63,7 @@ class EditorView {
     this.content = elt("div", {class: "ProseMirror-content", "pm-container": true})
     // :: DOMNode
     // The outer DOM element of the editor.
-    this.wrapper = elt("div", {class: "ProseMirror"}, this.content)
+    this.wrapper = elt("div", null, this.content)
 
     this.updateDOMForProps()
 
@@ -113,6 +115,8 @@ class EditorView {
 
     // Make sure we don't use an outdated range on drop event
     if (this.dragging && docChange) this.dragging.move = false
+
+    this.someProp("onUpdate", f => { f(this, prevState, state) })
   }
 
   updateDOMForProps() {
@@ -120,6 +124,9 @@ class EditorView {
     if (spellcheck != this.content.spellcheck) this.content.spellcheck = spellcheck
     let label = this.someProp("label")
     if (this.content.getAttribute("aria-label") != label) this.content.setAttribute("aria-label", label)
+    let className = "ProseMirror"
+    this.someProp("className", str => className += " " + str)
+    if (this.wrapper.className != className) this.wrapper.className = className
   }
 
   // :: () → bool
