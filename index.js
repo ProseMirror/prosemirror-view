@@ -58,6 +58,8 @@ class EditorView {
     this.props = props
     this.state = state
 
+    this.subViews = Object.create(null)
+
     // :: DOMNode
     // The editable DOM node containing the document.
     this.content = elt("div", {class: "ProseMirror-content", "pm-container": true})
@@ -116,7 +118,30 @@ class EditorView {
     // Make sure we don't use an outdated range on drop event
     if (this.dragging && docChange) this.dragging.move = false
 
-    this.someProp("onUpdate", f => { f(this, prevState, state) })
+    this.updateSubViews(prevState, state)
+  }
+
+  updateSubViews(prevState, state) {
+    let plugins = this.props.plugins || []
+    let iView = 0, newViews = []
+    for (let iPlugin = 0; iPlugin < plugins.length; iPlugin++) {
+      let plugin = plugins[iPlugin]
+      if (!plugin.createView) return
+      let found = this.subViews.indexOf(plugin, iView), view
+      if (found > -1) {
+        for (; iView < found; iView += 2)
+          this.subViews[iView].destroyView(this.subViews[iView + 1])
+        view = this.subViews[found + 1]
+        iView = found + 2
+        plugin.updateView(view, prevState, state)
+      } else {
+        view = plugin.createView(this, state)
+      }
+      newViews.push(plugin, view)
+    }
+    for (; iView < this.subViews.length; iView += 2)
+      this.subViews[iView].destroyView(this.subViews[iView + 1])
+    this.subViews = newViews
   }
 
   updateDOMForProps() {
