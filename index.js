@@ -58,7 +58,7 @@ class EditorView {
     this.props = props
     this.state = state
 
-    this.subViews = Object.create(null)
+    this.subViews = []
 
     // :: DOMNode
     // The editable DOM node containing the document.
@@ -79,6 +79,8 @@ class EditorView {
     this.lastSelectedNode = null
     this.selectionReader = new SelectionReader(this)
     initInput(this)
+
+    this.updateSubViews(state, state)
   }
 
   update(state, newProps) {
@@ -126,16 +128,16 @@ class EditorView {
     let iView = 0, newViews = []
     for (let iPlugin = 0; iPlugin < plugins.length; iPlugin++) {
       let plugin = plugins[iPlugin]
-      if (!plugin.createView) return
+      if (!plugin.createView) continue
       let found = this.subViews.indexOf(plugin, iView), view
       if (found > -1) {
         for (; iView < found; iView += 2)
           this.subViews[iView].destroyView(this.subViews[iView + 1])
         view = this.subViews[found + 1]
         iView = found + 2
-        plugin.updateView(view, prevState, state)
+        plugin.updateView(view, prevState, state, this.props)
       } else {
-        view = plugin.createView(this, state)
+        view = plugin.createView(this, state, this.props)
       }
       newViews.push(plugin, view)
     }
