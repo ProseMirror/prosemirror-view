@@ -159,7 +159,7 @@ class EditorView {
   // :: () → bool
   // Query whether the view has focus.
   hasFocus() {
-    if (document.activeElement != this.content) return false
+    if (this.content.ownerDocument.activeElement != this.content) return false
     let sel = window.getSelection()
     return sel.rangeCount && contains(this.content, sel.anchorNode)
   }
