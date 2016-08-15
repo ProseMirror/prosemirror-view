@@ -162,9 +162,14 @@ function windowRect() {
           top: 0, bottom: window.innerHeight}
 }
 
+function parentNode(node) {
+  let parent = node.parentNode
+  return parent.nodeType == 11 ? parent.host : parent
+}
+
 function scrollPosIntoView(view, pos) {
   let coords = coordsAtPos(view, pos)
-  for (let parent = view.content;; parent = parent.parentNode) {
+  for (let parent = view.content;; parent = parentNode(parent)) {
     let {scrollThreshold = 0, scrollMargin = 5} = view.props
     let atBody = parent == document.body
     let rect = atBody ? windowRect() : parent.getBoundingClientRect()
