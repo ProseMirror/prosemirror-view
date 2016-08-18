@@ -15,6 +15,8 @@ require("./css")
 //
 //   onAction:: (action: Object)
 //
+//   handleDOMEvent:: ?(view: EditorView, event: DOMEvent) → bool
+//
 //   handleKeyDown:: ?(view: EditorView, event: KeyboardEvent) → bool
 //
 //   handleKeyPress:: ?(view: EditorView, event: KeyboardEvent) → bool

@@ -21,7 +21,10 @@ function initInput(view) {
 
   for (let event in handlers) {
     let handler = handlers[event]
-    view.content.addEventListener(event, e => handler(view, e))
+    view.content.addEventListener(event, e => {
+      if (!view.someProp("handleDOMEvent", f => f(view, event)))
+        handler(view, e)
+    })
   }
 }
 exports.initInput = initInput
