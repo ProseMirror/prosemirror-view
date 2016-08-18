@@ -70,8 +70,8 @@ class SelectionReader {
     if (domSel.isCollapsed) {
       $anchor = $head
       if (headInLeaf > -1) {
-        let $leaf = doc.resolve(headInLeaf)
-        if ($leaf.nodeAfter.type.selectable) selection = new NodeSelection($leaf)
+        let $leaf = doc.resolve(headInLeaf), node = $leaf.nodeAfter
+        if (node.type.selectable && !node.type.isInline) selection = new NodeSelection($leaf)
       }
     } else {
       $anchor = doc.resolve(posFromDOM(domSel.anchorNode, domSel.anchorOffset).pos)
