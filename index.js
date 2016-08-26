@@ -69,6 +69,8 @@ class EditorView {
     // The outer DOM element of the editor.
     this.wrapper = elt("div", null, this.content)
 
+    this._root = null
+
     this.updateDOMForProps()
 
     if (place && place.appendChild) place.appendChild(this.wrapper)
@@ -162,7 +164,7 @@ class EditorView {
   // Query whether the view has focus.
   hasFocus() {
     if (this.content.ownerDocument.activeElement != this.content) return false
-    let sel = window.getSelection()
+    let sel = this.root.getSelection()
     return sel.rangeCount && contains(this.content, sel.anchorNode)
   }
 
@@ -178,6 +180,15 @@ class EditorView {
 
   focus() {
     this.content.focus()
+  }
+
+  get root() {
+    let cached = this._root
+    if (cached == null) for (let search = this.wrapper.parentNode; search; search = search.parentNode) {
+      if (search.nodeType == 9 || (search.nodeType == 11 && search.host))
+        return this._root = search
+    }
+    return cached || document
   }
 
   markRangeDirty(from, to, doc) {

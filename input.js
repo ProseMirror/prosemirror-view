@@ -212,14 +212,14 @@ class MouseDown {
         this.target.setAttribute("contentEditable", "false")
     }
 
-    window.addEventListener("mouseup", this.up = this.up.bind(this))
-    window.addEventListener("mousemove", this.move = this.move.bind(this))
+    view.root.addEventListener("mouseup", this.up = this.up.bind(this))
+    view.root.addEventListener("mousemove", this.move = this.move.bind(this))
     view.selectionReader.fastPoll()
   }
 
   done() {
-    window.removeEventListener("mouseup", this.up)
-    window.removeEventListener("mousemove", this.move)
+    this.view.root.removeEventListener("mouseup", this.up)
+    this.view.root.removeEventListener("mousemove", this.move)
     if (this.mightDrag && this.target) {
       this.target.draggable = false
       if (browser.gecko && this.setContentEditable)

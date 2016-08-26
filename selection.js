@@ -46,14 +46,14 @@ class SelectionReader {
   // : () → bool
   // Whether the DOM selection has changed from the last known state.
   domChanged() {
-    let sel = window.getSelection()
+    let sel = this.view.root.getSelection()
     return sel.anchorNode != this.lastAnchorNode || sel.anchorOffset != this.lastAnchorOffset ||
       sel.focusNode != this.lastHeadNode || sel.focusOffset != this.lastHeadOffset
   }
 
   // Store the current state of the DOM selection.
   storeDOMState() {
-    let sel = window.getSelection()
+    let sel = this.view.root.getSelection()
     this.lastAnchorNode = sel.anchorNode; this.lastAnchorOffset = sel.anchorOffset
     this.lastHeadNode = sel.focusNode; this.lastHeadOffset = sel.focusOffset
   }
@@ -64,7 +64,7 @@ class SelectionReader {
   readFromDOM() {
     if (!this.view.hasFocus() || !this.domChanged()) return
 
-    let domSel = window.getSelection(), doc = this.view.state.doc
+    let domSel = this.view.root.getSelection(), doc = this.view.state.doc
     let {pos: head, inLeaf: headInLeaf} = posFromDOM(domSel.focusNode, domSel.focusOffset)
     let $head = doc.resolve(head), $anchor, selection
     if (domSel.isCollapsed) {
@@ -115,7 +115,7 @@ function nodeSelectionToDOM(view, sel) {
     view.content.classList.add("ProseMirror-nodeselection")
     view.lastSelectedNode = dom
   }
-  let range = document.createRange(), domSel = window.getSelection()
+  let range = document.createRange(), domSel = view.root.getSelection()
   range.selectNode(dom)
   domSel.removeAllRanges()
   domSel.addRange(range)
@@ -129,7 +129,7 @@ function textSelectionToDOM(view, sel) {
   let anchor = DOMFromPos(view, sel.anchor)
   let head = DOMFromPos(view, sel.head)
 
-  let domSel = window.getSelection(), range = document.createRange()
+  let domSel = view.root.getSelection(), range = document.createRange()
   if (domSel.extend) {
     range.setEnd(anchor.node, anchor.offset)
     range.collapse(false)
