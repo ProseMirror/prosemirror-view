@@ -3,8 +3,6 @@ const {Slice, Fragment, parseDOMInContext} = require("../model")
 const {Selection, NodeSelection, TextSelection} = require("../state")
 const {captureKeyDown} = require("./capturekeys")
 
-const {elt, contains} = require("../util/dom")
-
 const {readInputChange, readCompositionChange} = require("./domchange")
 
 // A collection of DOM events that occur within the editor, and callback functions
@@ -236,7 +234,8 @@ class MouseDown {
   up(event) {
     this.done()
 
-    if (!contains(this.view.content, event.target)) return
+    if (!this.view.content.contains(event.target.nodeType == 3 ? event.target.parentNode : event.target))
+      return
 
     if (this.allowDefault) {
       this.view.selectionReader.fastPoll()
@@ -507,8 +506,10 @@ handlers.dragover = handlers.dragenter = (view, e) => {
   e.preventDefault()
 
   let target = view.dropTarget
-  if (!target)
-    target = view.dropTarget = view.wrapper.appendChild(elt("div", {class: "ProseMirror-drop-target"}))
+  if (!target) {
+    target = view.dropTarget = view.wrapper.appendChild(document.createElement("div"))
+    target.className = "ProseMirror-drop-target"
+  }
 
   let pos = dropPos(view.dragging && view.dragging.slice,
                     view.state.doc.resolve(view.posAtCoords(eventCoords(e)).pos))
