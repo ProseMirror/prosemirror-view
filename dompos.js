@@ -1,5 +1,3 @@
-const {contains} = require("../util/dom")
-
 function isEditorContent(dom) {
   return dom.classList.contains("ProseMirror-content")
 }
@@ -256,7 +254,7 @@ function targetKludge(dom, coords) {
 // Given an x,y position on the editor, get the position in the document.
 function posAtCoords(view, coords) {
   let elt = targetKludge(view.root.elementFromPoint(coords.left, coords.top + 1), coords)
-  if (!contains(view.content, elt)) return null
+  if (!view.content.contains(elt.nodeType == 3 ? elt.parentNode : elt)) return null
 
   let {node, offset} = findOffsetInNode(elt, coords), bias = -1
   if (node.nodeType == 1 && !node.firstChild) {

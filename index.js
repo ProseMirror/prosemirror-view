@@ -1,5 +1,5 @@
 const {Map} = require("../util/map")
-const {elt, ensureCSSAdded, contains} = require("../util/dom")
+const {elt, ensureCSSAdded} = require("../util/dom")
 
 const {scrollPosIntoView, posAtCoords, coordsAtPos} = require("./dompos")
 const {draw, redraw, DIRTY_REDRAW, DIRTY_RESCAN} = require("./draw")
@@ -136,7 +136,7 @@ class EditorView {
   hasFocus() {
     if (this.content.ownerDocument.activeElement != this.content) return false
     let sel = this.root.getSelection()
-    return sel.rangeCount && contains(this.content, sel.anchorNode)
+    return sel.rangeCount && this.content.contains(sel.anchorNode.nodeType == 3 ? sel.anchorNode.parentNode : sel.anchorNode)
   }
 
   someProp(propName, f) {
