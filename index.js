@@ -1,5 +1,4 @@
-const {Map} = require("../util/map")
-
+const {Map} = require("./map")
 const {scrollPosIntoView, posAtCoords, coordsAtPos} = require("./dompos")
 const {draw, redraw, DIRTY_REDRAW, DIRTY_RESCAN} = require("./draw")
 const {initInput, finishUpdateFromDOM, dispatchKeyDown, dispatchKeyPress} = require("./input")
