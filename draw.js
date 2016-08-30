@@ -1,4 +1,3 @@
-const {elt} = require("../util/dom")
 const browser = require("../util/browser")
 
 const {childContainer} = require("./dompos")
@@ -19,8 +18,11 @@ function options() {
         dom.setAttribute("pm-size", node.nodeSize)
         if (node.isTextblock)
           adjustTrailingHacks(dom, node)
-        if (dom.contentEditable == "false")
-          dom = elt("div", null, dom)
+        if (dom.contentEditable == "false") {
+          let wrap = document.createElement("div")
+          wrap.appendChild(dom)
+          dom = wrap
+        }
       }
 
       return dom
@@ -33,7 +35,11 @@ function options() {
       let inner = dom
       for (let i = 0; i < node.marks.length; i++) inner = inner.firstChild
 
-      if (dom.nodeType != 1) dom = elt("span", null, dom)
+      if (dom.nodeType != 1) {
+        let wrap = document.createElement("span")
+        wrap.appendChild(dom)
+        dom = wrap
+      }
 
       dom.setAttribute("pm-offset", offset)
       dom.setAttribute("pm-size", node.nodeSize)
@@ -59,8 +65,11 @@ function adjustTrailingHacks(dom, node) {
       : last.nodeName == "BR" ? "br" : "text"
   if (needs != has) {
     if (has) dom.removeChild(last)
-    if (needs) dom.appendChild(needs == "br" ? elt("br", {"pm-ignore": "trailing-break"})
-                               : elt("span", {"pm-ignore": "cursor-text"}, ""))
+    if (needs) {
+      let add = document.createElement(needs == "br" ? "br" : "span")
+      add.setAttribute("pm-ignore", needs == "br" ? "trailing-break" : "cursor-text")
+      dom.appendChild(add)
+    }
   }
 }
 
