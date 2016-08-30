@@ -200,11 +200,17 @@ class MouseDown {
     this.ctrlKey = event.ctrlKey
     this.allowDefault = view.shiftKey
 
-    let targetNode
-    if (pos.inLeaf > -1) targetNode = view.state.doc.nodeAt(pos.inLeaf)
-    else targetNode = view.state.doc.resolve(pos.pos).parent
+    let targetNode, targetPos
+    if (pos.inLeaf > -1) {
+      targetNode = view.state.doc.nodeAt(pos.inLeaf)
+      targetPos = pos.inLeaf
+    } else {
+      let $pos = view.state.doc.resolve(pos.pos)
+      targetNode = $pos.parent
+      targetPos = $pos.depth ? $pos.before() : 0
+    }
 
-    this.mightDrag = (targetNode.type.draggable || targetNode == view.state.selection.node) ? targetNode : null
+    this.mightDrag = (targetNode.type.draggable || targetNode == view.state.selection.node) ? {node: targetNode, pos: targetPos} : null
     this.target = flushed ? null : event.target
     if (this.target && this.mightDrag) {
       this.target.draggable = true
