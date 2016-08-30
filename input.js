@@ -1,4 +1,4 @@
-const browser = require("../util/browser")
+const browser = require("./browser")
 const {Slice, Fragment, parseDOMInContext} = require("../model")
 const {Selection, NodeSelection, TextSelection} = require("../state")
 const {captureKeyDown} = require("./capturekeys")

@@ -1,4 +1,4 @@
-const browser = require("../util/browser")
+const browser = require("./browser")
 
 const {childContainer} = require("./dompos")
 

@@ -1,5 +1,5 @@
 const {Selection, NodeSelection, TextSelection} = require("../state")
-const browser = require("../util/browser")
+const browser = require("./browser")
 
 const {verticalMotionLeavesTextblock} = require("./selection")
 
