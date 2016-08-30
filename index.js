@@ -1,12 +1,9 @@
 const {Map} = require("../util/map")
-const {ensureCSSAdded} = require("../util/dom")
 
 const {scrollPosIntoView, posAtCoords, coordsAtPos} = require("./dompos")
 const {draw, redraw, DIRTY_REDRAW, DIRTY_RESCAN} = require("./draw")
 const {initInput, finishUpdateFromDOM, dispatchKeyDown, dispatchKeyPress} = require("./input")
 const {SelectionReader, selectionToDOM} = require("./selection")
-
-require("./css")
 
 // EditorProps:: interface
 //
@@ -55,8 +52,6 @@ require("./css")
 
 class EditorView {
   constructor(place, state, props) {
-    ensureCSSAdded()
-
     this.props = props
     this.state = state
 
