@@ -1,5 +1,5 @@
 const {Map} = require("../util/map")
-const {elt, ensureCSSAdded} = require("../util/dom")
+const {ensureCSSAdded} = require("../util/dom")
 
 const {scrollPosIntoView, posAtCoords, coordsAtPos} = require("./dompos")
 const {draw, redraw, DIRTY_REDRAW, DIRTY_RESCAN} = require("./draw")
@@ -62,10 +62,14 @@ class EditorView {
 
     // :: DOMNode
     // The editable DOM node containing the document.
-    this.content = elt("div", {class: "ProseMirror-content", "pm-container": true})
+    this.content = document.createElement("div")
+    this.content.setAttribute("pm-container", "true")
+    this.content.classList.add("ProseMirror-content")
+
     // :: DOMNode
     // The outer DOM element of the editor.
-    this.wrapper = elt("div", null, this.content)
+    this.wrapper = document.createElement("div")
+    this.wrapper.appendChild(this.content)
 
     this._root = null
 
