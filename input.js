@@ -101,7 +101,7 @@ function updateSelection(view, selection) {
 
 function selectClickedLeaf(view, inLeaf) {
   let leaf = view.state.doc.nodeAt(inLeaf)
-  if (leaf && leaf.type.isLeaf && leaf.type.selectable) {
+  if (leaf && leaf.isLeaf && leaf.type.selectable) {
     updateSelection(view, new NodeSelection(view.state.doc.resolve(inLeaf)))
     return true
   }

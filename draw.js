@@ -53,7 +53,7 @@ exports.draw = draw
 function adjustTrailingHacks(dom, node) {
   let needs = node.content.size == 0 || node.lastChild.type.isBR ||
       (node.type.isCode && node.lastChild.isText && /\n$/.test(node.lastChild.text))
-      ? "br" : !node.lastChild.isText && node.lastChild.type.isLeaf ? "text" : null
+      ? "br" : !node.lastChild.isText && node.lastChild.isLeaf ? "text" : null
   let last = dom.lastChild
   let has = !last || last.nodeType != 1 || !last.hasAttribute("pm-ignore") ? null
       : last.nodeName == "BR" ? "br" : "text"
@@ -114,7 +114,7 @@ function redraw(view, oldState, newState) {
         reuseDOM = true
       } else if (pChild && !child.isText && child.sameMarkup(pChild) && dirty.get(pChild) != DIRTY_REDRAW && syncDOM()) {
         reuseDOM = true
-        if (!pChild.type.isLeaf)
+        if (!pChild.isLeaf)
           scan(childContainer(domPos), child, pChild, pos + offset + 1)
         domPos.setAttribute("pm-size", child.nodeSize)
       } else {
