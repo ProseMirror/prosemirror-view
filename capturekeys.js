@@ -77,9 +77,10 @@ function captureKeyDown(view, event) {
     return browser.ios ? false : true
   } else if (code == 13 || code == 27 || code == 46) { // Enter, Esc, Delete
     return true
-  } else if (mod && (code == 66 || code == 73 || code == 89 || code == 90 || code == 68 || code == 72)) { // Mod-[BIYZDH]
+  } else if (mod && !event.altKey && !event.shiftKey &&
+             (code == 66 || code == 73 || code == 89 || code == 90 || code == 68 || code == 72)) { // Mod-[BIYZDH]
     return true
-  } else if (event.altKey && (code == 68)) { // Alt-D
+  } else if (code == 68 && event.altKey && !mod && !event.shiftKey) { // Alt-D
     return true
   } else if (code == 37) { // Left arrow
     return selectNodeHorizontally(view, -1)
