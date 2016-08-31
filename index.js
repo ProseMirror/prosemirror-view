@@ -4,51 +4,9 @@ const {draw, redraw, DIRTY_REDRAW, DIRTY_RESCAN} = require("./draw")
 const {initInput, finishUpdateFromDOM, dispatchKeyDown, dispatchKeyPress} = require("./input")
 const {SelectionReader, selectionToDOM} = require("./selection")
 
-// EditorProps:: interface
-//
-// The configuration object that can be passed to an editor view. It
-// supports the following properties (only `onAction` is required).
-//
-//   onAction:: (action: Object)
-//
-//   handleDOMEvent:: ?(view: EditorView, event: dom.Event) → bool
-//
-//   handleKeyDown:: ?(view: EditorView, event: KeyboardEvent) → bool
-//
-//   handleKeyPress:: ?(view: EditorView, event: KeyboardEvent) → bool
-//
-//   handleTextInput:: ?(view: EditorView, from: number, to: number, text: string) → bool
-//
-//   handleClickOn:: ?(view: EditorView, pos: number, node: Node, nodePos: number, event: MouseEvent) → bool
-//
-//   handleClick:: ?(view: EditorView, pos: number, event: MouseEvent) → bool
-//
-//   handleDoubleClickOn:: ?(view: EditorView, pos: number, node: Node, nodePos: number, event: MouseEvent) → bool
-//
-//   handleDoubleClick:: ?(view: EditorView, pos: number, event: MouseEvent) → bool
-//
-//   handleTripleClickOn:: ?(view: EditorView, pos: number, node: Node, nodePos: number, event: MouseEvent) → bool
-//
-//   handleTripleClick:: ?(view: EditorView, pos: number, event: MouseEvent) → bool
-//
-//   handleContextMenu:: ?(view: EditorView, pos: number, event: MouseEvent) → bool
-//
-//   onFocus:: ?(view: EditorView)
-//
-//   onBlur:: ?(view: EditorView)
-//
-//   onUpdate:: ?(view: EditorView, oldState: EditorState, newState: EditorState)
-//
-//   transformPasted:: ?(Slice) → Slice
-//
-//   spellcheck:: ?bool
-//
-//   label:: ?string
-//
-//   scrollThreshold:: ?number
-//
-//   scrollMargin:: ?number
-
+// ::- An editor view represents the DOM structure that represents an
+// editor. Its state and behavior are determined by its
+// [props](#view.EditorProps).
 class EditorView {
   constructor(place, state, props) {
     this.props = props
@@ -190,3 +148,49 @@ class EditorView {
   }
 }
 exports.EditorView = EditorView
+
+// EditorProps:: interface
+//
+// The configuration object that can be passed to an editor view. It
+// supports the following properties (only `onAction` is required).
+//
+//   onAction:: (action: Object)
+//
+//   handleDOMEvent:: ?(view: EditorView, event: dom.Event) → bool
+//
+//   handleKeyDown:: ?(view: EditorView, event: dom.KeyboardEvent) → bool
+//
+//   handleKeyPress:: ?(view: EditorView, event: dom.KeyboardEvent) → bool
+//
+//   handleTextInput:: ?(view: EditorView, from: number, to: number, text: string) → bool
+//
+//   handleClickOn:: ?(view: EditorView, pos: number, node: Node, nodePos: number, event: dom.MouseEvent) → bool
+//
+//   handleClick:: ?(view: EditorView, pos: number, event: dom.MouseEvent) → bool
+//
+//   handleDoubleClickOn:: ?(view: EditorView, pos: number, node: Node, nodePos: number, event: dom.MouseEvent) → bool
+//
+//   handleDoubleClick:: ?(view: EditorView, pos: number, event: dom.MouseEvent) → bool
+//
+//   handleTripleClickOn:: ?(view: EditorView, pos: number, node: Node, nodePos: number, event: dom.MouseEvent) → bool
+//
+//   handleTripleClick:: ?(view: EditorView, pos: number, event: dom.MouseEvent) → bool
+//
+//   handleContextMenu:: ?(view: EditorView, pos: number, event: dom.MouseEvent) → bool
+//
+//   onFocus:: ?(view: EditorView)
+//
+//   onBlur:: ?(view: EditorView)
+//
+//   onUpdate:: ?(view: EditorView, oldState: EditorState, newState: EditorState)
+//
+//   transformPasted:: ?(Slice) → Slice
+//
+//   spellcheck:: ?bool
+//
+//   label:: ?string
+//
+//   scrollThreshold:: ?number
+//
+//   scrollMargin:: ?number
+
