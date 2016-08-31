@@ -30,7 +30,7 @@ function options() {
     onContainer(dom) {
       dom.setAttribute("pm-container", true)
     },
-    // : (Node, DOMNode, number, number) → DOMNode
+    // : (Node, dom.Node, number, number) → dom.Node
     renderInlineFlat(node, dom, _pos, offset) {
       let inner = dom
       for (let i = 0; i < node.marks.length; i++) inner = inner.firstChild

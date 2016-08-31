@@ -11,7 +11,7 @@ const {SelectionReader, selectionToDOM} = require("./selection")
 //
 //   onAction:: (action: Object)
 //
-//   handleDOMEvent:: ?(view: EditorView, event: DOMEvent) → bool
+//   handleDOMEvent:: ?(view: EditorView, event: dom.Event) → bool
 //
 //   handleKeyDown:: ?(view: EditorView, event: KeyboardEvent) → bool
 //
@@ -54,13 +54,13 @@ class EditorView {
     this.props = props
     this.state = state
 
-    // :: DOMNode
+    // :: dom.Node
     // The editable DOM node containing the document.
     this.content = document.createElement("div")
     this.content.setAttribute("pm-container", "true")
     this.content.classList.add("ProseMirror-content")
 
-    // :: DOMNode
+    // :: dom.Node
     // The outer DOM element of the editor.
     this.wrapper = document.createElement("div")
     this.wrapper.appendChild(this.content)

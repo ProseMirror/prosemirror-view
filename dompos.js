@@ -2,7 +2,7 @@ function isEditorContent(dom) {
   return dom.classList.contains("ProseMirror-content")
 }
 
-// : (DOMNode) → number
+// : (dom.Node) → number
 // Get the position before a given a DOM node in a document.
 function posBeforeFromDOM(node) {
   let pos = 0, add = 0
@@ -15,7 +15,7 @@ function posBeforeFromDOM(node) {
 
 const posFromDOMResult = {pos: 0, inLeaf: -1}
 
-// : (DOMNode, number) → {pos: number, inLeaf: number}
+// : (dom.Node, number) → {pos: number, inLeaf: number}
 function posFromDOM(dom, domOffset, bias = 0) {
   if (domOffset == null) {
     domOffset = Array.prototype.indexOf.call(dom.parentNode.childNodes, dom)
@@ -65,13 +65,13 @@ function posFromDOM(dom, domOffset, bias = 0) {
 }
 exports.posFromDOM = posFromDOM
 
-// : (DOMNode) → ?DOMNode
+// : (dom.Node) → ?dom.Node
 function childContainer(dom) {
   return dom.hasAttribute("pm-container") ? dom : dom.querySelector("[pm-container]")
 }
 exports.childContainer = childContainer
 
-// : (ProseMirror, number) → {node: DOMNode, offset: number}
+// : (ProseMirror, number) → {node: dom.Node, offset: number}
 // Find the DOM node and offset into that node that the given document
 // position refers to.
 function DOMFromPos(view, pos, loose) {
@@ -104,7 +104,7 @@ function DOMFromPos(view, pos, loose) {
 }
 exports.DOMFromPos = DOMFromPos
 
-// : (ProseMirror, number) → {node: DOMNode, offset: number}
+// : (ProseMirror, number) → {node: dom.Node, offset: number}
 // The same as DOMFromPos, but searching from the bottom instead of
 // the top. This is needed in domchange.js, when there is an arbitrary
 // DOM change somewhere in our document, and we can no longer rely on
@@ -136,7 +136,7 @@ function DOMFromPosFromEnd(view, pos) {
 }
 exports.DOMFromPosFromEnd = DOMFromPosFromEnd
 
-// : (ProseMirror, number) → DOMNode
+// : (ProseMirror, number) → dom.Node
 function DOMAfterPos(view, pos) {
   let {node, offset} = DOMFromPos(view, pos)
   if (node.nodeType != 1 || offset == node.childNodes.length)
@@ -145,7 +145,7 @@ function DOMAfterPos(view, pos) {
 }
 exports.DOMAfterPos = DOMAfterPos
 
-// : (DOMNode, number) → {node: DOMNode, offset: number}
+// : (dom.Node, number) → {node: dom.Node, offset: number}
 function leafAt(node, offset) {
   for (;;) {
     let child = node.firstChild
