@@ -168,7 +168,8 @@ function parentNode(node) {
 function scrollPosIntoView(view, pos) {
   let coords = coordsAtPos(view, pos)
   for (let parent = view.content;; parent = parentNode(parent)) {
-    let {scrollThreshold = 0, scrollMargin = 5} = view.props
+    let scrollThreshold = view.someProp("scrollThreshold") || 0, scrollMargin = view.someProp("scrollMargin")
+    if (scrollMargin == null) scrollMargin = 5
     let atBody = parent == document.body
     let rect = atBody ? windowRect() : parent.getBoundingClientRect()
     let moveX = 0, moveY = 0

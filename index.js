@@ -80,10 +80,10 @@ class EditorView {
   updateDOMForProps() {
     let spellcheck = !!this.someProp("spellcheck")
     if (spellcheck != this.content.spellcheck) this.content.spellcheck = spellcheck
-    let label = this.someProp("label")
+    let label = this.someProp("label", f => f(this.state)) || ""
     if (this.content.getAttribute("aria-label") != label) this.content.setAttribute("aria-label", label)
     let className = "ProseMirror"
-    this.someProp("className", str => className += " " + str)
+    this.someProp("class", f => { let cls = f(this.state); if (cls) className += " " + cls })
     if (this.wrapper.className != className) this.wrapper.className = className
   }
 
@@ -154,43 +154,80 @@ exports.EditorView = EditorView
 // The configuration object that can be passed to an editor view. It
 // supports the following properties (only `onAction` is required).
 //
+// The various event-handling functions may all return `true` to
+// indicate that they handled the given event. The view will then take
+// care to call `preventDefault` on the event, except with
+// `handleDOMEvent, where the handler itself is responsible for that.
+//
 //   onAction:: (action: Object)
+//   The callback over which to send actions (state updates) produced
+//   by the view. You'll usually want to make sure this ends up
+//   calling the view's [`update`](#view.EditorView.update) method
+//   with a new state that has the action
+//   [applied](#state.EditorState.applyAction).
 //
 //   handleDOMEvent:: ?(view: EditorView, event: dom.Event) → bool
+//   Called before the view handles a DOM event.
 //
 //   handleKeyDown:: ?(view: EditorView, event: dom.KeyboardEvent) → bool
+//   Called when the editor receives a `keydown` event.
 //
 //   handleKeyPress:: ?(view: EditorView, event: dom.KeyboardEvent) → bool
+//   A handler for `keypress` events.
 //
 //   handleTextInput:: ?(view: EditorView, from: number, to: number, text: string) → bool
+//   Whenever the user directly input text, this handler is called,
+//   before the input is applied.
 //
 //   handleClickOn:: ?(view: EditorView, pos: number, node: Node, nodePos: number, event: dom.MouseEvent) → bool
+//   Called for each node around a click, from the inside out.
 //
 //   handleClick:: ?(view: EditorView, pos: number, event: dom.MouseEvent) → bool
+//   Called when the editor is clicked, after `handleClickOn` handlers
+//   have been called.
 //
 //   handleDoubleClickOn:: ?(view: EditorView, pos: number, node: Node, nodePos: number, event: dom.MouseEvent) → bool
+//   Called for each node around a double click.
 //
 //   handleDoubleClick:: ?(view: EditorView, pos: number, event: dom.MouseEvent) → bool
+//   Called when the editor is double-clicked, after `handleDoubleClickOn`.
 //
 //   handleTripleClickOn:: ?(view: EditorView, pos: number, node: Node, nodePos: number, event: dom.MouseEvent) → bool
+//   Called for each node around a triple click.
 //
 //   handleTripleClick:: ?(view: EditorView, pos: number, event: dom.MouseEvent) → bool
+//   Called when the editor is triple-clicked, after `handleTripleClickOn`.
 //
 //   handleContextMenu:: ?(view: EditorView, pos: number, event: dom.MouseEvent) → bool
+//   Called when a context menu event is fired in the editor.
 //
 //   onFocus:: ?(view: EditorView)
+//   Called when the editor is focused.
 //
 //   onBlur:: ?(view: EditorView)
-//
-//   onUpdate:: ?(view: EditorView, oldState: EditorState, newState: EditorState)
+//   Called when the editor loses focus.
 //
 //   transformPasted:: ?(Slice) → Slice
+//   Can be used to transform pasted content before it is applied to the document.
 //
 //   spellcheck:: ?bool
+//   Controls whether the DOM spellcheck attribute is enabled on the
+//   editable content. Defaults to false.
 //
-//   label:: ?string
+//   class:: ?(state: EditorState) → ?string
+//   Controls the CSS class name of the editor DOM node. Any classes
+//   returned from this will be added to the default `ProseMirror`
+//   class.
+//
+//   label:: ?(state: EditorState) → ?string
+//   Can be used to set an `aria-label` attribute on the editable
+//   content node.
 //
 //   scrollThreshold:: ?number
+//   Determines the distance (in pixels) between the cursor and the
+//   end of the visible viewport at which point, when scrolling the
+//   cursor into view, scrolling takes place. Defaults to 0.
 //
 //   scrollMargin:: ?number
-
+//   Determines the extra space (in pixels) that is left above or
+//   below the cursor when it is scrolled into view. Defaults to 5.
