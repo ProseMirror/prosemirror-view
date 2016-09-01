@@ -113,7 +113,7 @@ class EditorView {
   someProp(propName, f) {
     let value, plugins = this.state.plugins
     if (plugins) for (let i = 0; i < plugins.length; i++) {
-      let prop = plugins[i][propName]
+      let prop = plugins[i].props[propName]
       if (prop != null && (value = f ? f(prop) : prop)) return value
     }
     let prop = this.props && this.props[propName]
@@ -190,13 +190,13 @@ exports.EditorView = EditorView
 // care to call `preventDefault` on the event, except with
 // `handleDOMEvent, where the handler itself is responsible for that.
 //
-// Except for `state` and `onAction`, these may also be present on
-// plugins. How a prop is resolved depends on the prop. Handler
-// functions are called one at a time, starting with the plugins (in
-// order of appearance), and finally looking at the base props, until
-// one of them returns true. For some props, the first plugin that
-// yields a value gets precedence. For `class`, all the classes
-// returned are combined.
+// Except for `state` and `onAction`, these may also be present on the
+// `props` property of plugins. How a prop is resolved depends on the
+// prop. Handler functions are called one at a time, starting with the
+// plugins (in order of appearance), and finally looking at the base
+// props, until one of them returns true. For some props, the first
+// plugin that yields a value gets precedence. For `class`, all the
+// classes returned are combined.
 //
 //   state:: EditorState
 //   The state of the editor.
