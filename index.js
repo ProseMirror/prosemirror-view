@@ -8,9 +8,13 @@ const {SelectionReader, selectionToDOM} = require("./selection")
 // editor. Its state and behavior are determined by its
 // [props](#view.EditorProps).
 class EditorView {
-  constructor(place, state, props) {
+  constructor(place, props) {
+    // :: Object
+    // The view's current [props](#view.EditorProps).
     this.props = props
-    this.state = state
+    // :: EditorState
+    // The view's current [state](#state.EditorState).
+    this.state = props.state
 
     // :: dom.Node
     // The editable DOM node containing the document.
@@ -18,8 +22,6 @@ class EditorView {
     this.content.setAttribute("pm-container", "true")
     this.content.classList.add("ProseMirror-content")
 
-    // :: dom.Node
-    // The outer DOM element of the editor.
     this.wrapper = document.createElement("div")
     this.wrapper.appendChild(this.content)
 
@@ -30,7 +32,7 @@ class EditorView {
     if (place && place.appendChild) place.appendChild(this.wrapper)
     else if (place) place(this.wrapper)
 
-    draw(this, state.doc)
+    draw(this, this.state.doc)
     this.content.contentEditable = true
     this.dirtyNodes = new Map // Maps node object to 1 (re-scan content) or 2 (redraw entirely)
 
@@ -39,13 +41,21 @@ class EditorView {
     initInput(this)
   }
 
-  update(state, newProps) {
+  // :: (Object)
+  // Update the view's props. Will immediately cause an update to
+  // the view's DOM.
+  update(props) {
+    this.props = props
+    this.updateState(props.state)
+    this.updateDOMForProps()
+  }
+
+  // :: (EditorState)
+  // Update the editor's `state` prop, without touching any of the
+  // other props.
+  updateState(state) {
     let prevState = this.state
     this.state = state
-    if (newProps) {
-      this.props = newProps
-      this.updateDOMForProps()
-    }
 
     if (this.inDOMChange) {
       if (state.view.inDOMChange != this.inDOMChange.id)
@@ -95,20 +105,31 @@ class EditorView {
     return sel.rangeCount && this.content.contains(sel.anchorNode.nodeType == 3 ? sel.anchorNode.parentNode : sel.anchorNode)
   }
 
+  // :: (string, (*) → *) → *
+  // Goes over the values of a prop, first those from plugins, and
+  // finally those from the base props, and calls `f` every time a
+  // non-undefined value is found. When `f` returns a truthy value,
+  // that is immediately returned.
   someProp(propName, f) {
     let value, plugins = this.state.plugins
     if (plugins) for (let i = 0; i < plugins.length; i++) {
       let prop = plugins[i][propName]
-      if (prop && (value = f ? f(prop) : prop)) return value
+      if (prop != null && (value = f ? f(prop) : prop)) return value
     }
     let prop = this.props && this.props[propName]
     if (prop && (value = f ? f(prop) : prop)) return value
   }
 
+  // :: ()
+  // Focus the editor.
   focus() {
     this.content.focus()
   }
 
+  // :: union<dom.Document, dom.DocumentFragment>
+  // Get the document root in which the editor exists. This will
+  // usually be the top-level `document`, but might be a shadow DOM
+  // root if the editor is inside a shadow DOM.
   get root() {
     let cached = this._root
     if (cached == null) for (let search = this.wrapper.parentNode; search; search = search.parentNode) {
@@ -136,7 +157,16 @@ class EditorView {
     this.dirtyNodes.set(this.doc, DIRTY_REDRAW)
   }
 
+  // :: ({left: number, top: number}) → ?number
+  // Given a pair of coordinates, return the document position that
+  // corresponds to them. May return null if the given coordinates
+  // aren't inside of the visible editor.
   posAtCoords(coords) { return posAtCoords(this, coords) }
+
+  // :: (number) → {left: number, right: number, top: number, bottom: number}
+  // Returns the screen rectangle at a given document position. `left`
+  // and `right` will be the same number, as this returns a flat
+  // cursor-ish rectangle.
   coordsAtPos(pos) { return coordsAtPos(this, pos) }
 
   dispatchKeyDown(event) {
@@ -152,12 +182,24 @@ exports.EditorView = EditorView
 // EditorProps:: interface
 //
 // The configuration object that can be passed to an editor view. It
-// supports the following properties (only `onAction` is required).
+// supports the following properties (only `state` and `onAction` are
+// required).
 //
 // The various event-handling functions may all return `true` to
 // indicate that they handled the given event. The view will then take
 // care to call `preventDefault` on the event, except with
 // `handleDOMEvent, where the handler itself is responsible for that.
+//
+// Except for `state` and `onAction`, these may also be present on
+// plugins. How a prop is resolved depends on the prop. Handler
+// functions are called one at a time, starting with the plugins (in
+// order of appearance), and finally looking at the base props, until
+// one of them returns true. For some props, the first plugin that
+// yields a value gets precedence. For `class`, all the classes
+// returned are combined.
+//
+//   state:: EditorState
+//   The state of the editor.
 //
 //   onAction:: (action: Object)
 //   The callback over which to send actions (state updates) produced
