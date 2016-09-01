@@ -8,6 +8,11 @@ const {SelectionReader, selectionToDOM} = require("./selection")
 // editor. Its state and behavior are determined by its
 // [props](#view.EditorProps).
 class EditorView {
+  // :: (?union<dom.Node, (dom.Node)>, EditorProps)
+  // Create a view. `place` may be a DOM node that the editor should
+  // be appended to, or a function that will place it into the
+  // document. If it is `null`, the editor will not be added to the
+  // document.
   constructor(place, props) {
     // :: Object
     // The view's current [props](#view.EditorProps).
