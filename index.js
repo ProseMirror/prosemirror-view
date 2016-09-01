@@ -4,7 +4,7 @@ const {draw, redraw, DIRTY_REDRAW, DIRTY_RESCAN} = require("./draw")
 const {initInput, finishUpdateFromDOM, dispatchKeyDown, dispatchKeyPress} = require("./input")
 const {SelectionReader, selectionToDOM} = require("./selection")
 
-// ::- An editor view represents the DOM structure that represents an
+// ::- An editor view manages the DOM structure that represents an
 // editor. Its state and behavior are determined by its
 // [props](#view.EditorProps).
 class EditorView {
