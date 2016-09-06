@@ -20,9 +20,10 @@
     "prosemirror-state": "^0.11.0"
   },
   "devDependencies": {
+    "ist": "^1.0.0",
     "mocha": "^3.0.2",
-    "rimraf": "^2.5.4",
-    "moduleserve": "^0.7.0"
+    "moduleserve": "^0.7.0",
+    "rimraf": "^2.5.4"
   },
   "scripts": {
     "test": "FIXME autorun browser tests",
