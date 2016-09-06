@@ -1,0 +1,32 @@
+{
+  "name": "prosemirror-view",
+  "version": "0.11.0",
+  "description": "ProseMirror's view component",
+  "main": "src/index.js",
+  "license": "MIT",
+  "maintainers": [
+    {
+      "name": "Marijn Haverbeke",
+      "email": "marijnh@gmail.com",
+      "web": "http://marijnhaverbeke.nl"
+    }
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/prosemirror/prosemirror-view.git"
+  },
+  "dependencies": {
+    "prosemirror-model": "^0.11.0",
+    "prosemirror-state": "^0.11.0"
+  },
+  "devDependencies": {
+    "mocha": "^3.0.2",
+    "rimraf": "^2.5.4",
+    "moduleserve": "^0.7.0"
+  },
+  "scripts": {
+    "test": "FIXME autorun browser tests",
+    "test-server": "moduleserve test",
+    "x-prepublish": "rimraf dist && babel -d dist src"
+  }
+}

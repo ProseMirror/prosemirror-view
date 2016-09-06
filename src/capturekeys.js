@@ -1,4 +1,4 @@
-const {Selection, NodeSelection, TextSelection} = require("../state")
+const {Selection, NodeSelection, TextSelection} = require("prosemirror-state")
 const browser = require("./browser")
 
 const {verticalMotionLeavesTextblock} = require("./selection")

@@ -1,6 +1,6 @@
-const browser = require("./browser")
-const {Selection, NodeSelection} = require("../state")
+const {Selection, NodeSelection} = require("prosemirror-state")
 
+const browser = require("./browser")
 const {posFromDOM, DOMAfterPos, DOMFromPos, coordsAtPos} = require("./dompos")
 
 // Track the state of the current editor selection. Keeps the editor

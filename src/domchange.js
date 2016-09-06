@@ -1,6 +1,6 @@
-const {Mark} = require("../model")
+const {Mark} = require("prosemirror-model")
+const {Selection} = require("prosemirror-state")
 
-const {Selection} = require("../state")
 const {DOMFromPos, DOMFromPosFromEnd} = require("./dompos")
 
 function readInputChange(view, oldState) {

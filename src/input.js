@@ -1,8 +1,8 @@
-const browser = require("./browser")
-const {Slice, Fragment, parseDOMInContext} = require("../model")
-const {Selection, NodeSelection, TextSelection} = require("../state")
-const {captureKeyDown} = require("./capturekeys")
+const {Slice, Fragment, parseDOMInContext} = require("prosemirror-model")
+const {Selection, NodeSelection, TextSelection} = require("prosemirror-state")
 
+const browser = require("./browser")
+const {captureKeyDown} = require("./capturekeys")
 const {readInputChange, readCompositionChange} = require("./domchange")
 
 // A collection of DOM events that occur within the editor, and callback functions
