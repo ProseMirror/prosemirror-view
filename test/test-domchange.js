@@ -1,5 +1,5 @@
 const ist = require("ist")
-const {sameDoc, doc, p, h1, em, img, strong, blockquote} = require("prosemirror-model/test/build")
+const {eq, doc, p, h1, em, img, strong, blockquote} = require("prosemirror-model/test/build")
 const {readInputChange, readCompositionChange} = require("../src/domchange")
 const {tempEditor, findTextNode} = require("./view")
 
@@ -16,21 +16,21 @@ describe("readInputChange", () => {
     let view = tempEditor({doc: doc(p("hello"))})
     findTextNode(view.content, "hello").nodeValue = "heLllo"
     readInputChange(view, view.state)
-    ist(view.state.doc, doc(p("heLllo")), sameDoc)
+    ist(view.state.doc, doc(p("heLllo")), eq)
   })
 
   it("notices when text is removed", () => {
     let view = tempEditor({doc: doc(p("hello"))})
     findTextNode(view.content, "hello").nodeValue = "heo"
     readInputChange(view, view.state)
-    ist(view.state.doc, doc(p("heo")), sameDoc)
+    ist(view.state.doc, doc(p("heo")), eq)
   })
 
   it("handles ambiguous changes", () => {
     let view = tempEditor({doc: doc(p("hello"))})
     findTextNode(view.content, "hello").nodeValue = "helo"
     readInputChange(view, view.state)
-    ist(view.state.doc, doc(p("helo")), sameDoc)
+    ist(view.state.doc, doc(p("helo")), eq)
   })
 
   it("respects stored marks", () => {
@@ -38,7 +38,7 @@ describe("readInputChange", () => {
     view.props.onAction({type: "addStoredMark", mark: view.state.schema.marks.em.create()})
     findTextNode(view.content, "hello").nodeValue = "helloo"
     readInputChange(view, view.state)
-    ist(view.state.doc, doc(p("hello", em("o"))), sameDoc)
+    ist(view.state.doc, doc(p("hello", em("o"))), eq)
   })
 
   it("can add a node", () => {
@@ -46,7 +46,7 @@ describe("readInputChange", () => {
     let txt = findTextNode(view.content, "hello")
     txt.parentNode.appendChild(document.createTextNode("!"))
     readInputChange(view, view.state)
-    ist(view.state.doc, doc(p("hello!")), sameDoc)
+    ist(view.state.doc, doc(p("hello!")), eq)
   })
 
   it("can remove a text node", () => {
@@ -54,7 +54,7 @@ describe("readInputChange", () => {
     let txt = findTextNode(view.content, "hello")
     txt.parentNode.removeChild(txt)
     readInputChange(view, view.state)
-    ist(view.state.doc, doc(p()), sameDoc)
+    ist(view.state.doc, doc(p()), eq)
   })
 
   it("can add a paragraph", () => {
@@ -62,7 +62,7 @@ describe("readInputChange", () => {
     view.content.insertBefore(document.createElement("p"), view.content.firstChild)
       .appendChild(document.createTextNode("hey"))
     readInputChange(view, view.state)
-    ist(view.state.doc, doc(p("hey"), p("hello")), sameDoc)
+    ist(view.state.doc, doc(p("hey"), p("hello")), eq)
   })
 
   it("supports duplicating a paragraph", () => {
@@ -70,14 +70,14 @@ describe("readInputChange", () => {
     view.content.insertBefore(document.createElement("p"), view.content.firstChild)
       .appendChild(document.createTextNode("hello"))
     readInputChange(view, view.state)
-    ist(view.state.doc, doc(p("hello"), p("hello")), sameDoc)
+    ist(view.state.doc, doc(p("hello"), p("hello")), eq)
   })
 
   it("support inserting repeated text", () => {
     let view = tempEditor({doc: doc(p("hello"))})
     findTextNode(view.content, "hello").nodeValue = "helhello"
     readInputChange(view, view.state)
-    ist(view.state.doc, doc(p("helhello")), sameDoc)
+    ist(view.state.doc, doc(p("helhello")), eq)
   })
 
   it("detects an enter press", () => {
@@ -98,7 +98,7 @@ describe("readInputChange", () => {
     textNode.nodeValue = "abcd"
     setSel(textNode, 3)
     readInputChange(view, view.state)
-    ist(view.state.doc, doc(p("abcd")), sameDoc)
+    ist(view.state.doc, doc(p("abcd")), eq)
     ist(view.state.selection.anchor, 4)
     ist(view.state.selection.head, 4)
   })
@@ -111,7 +111,7 @@ describe("readInputChange", () => {
     findTextNode(para, "defg").nodeValue = "dexy"
     setSel(split.firstChild, 1)
     readInputChange(view, view.state)
-    ist(view.state.doc, doc(h1("abc"), p("dexy"), p("fg")), sameDoc)
+    ist(view.state.doc, doc(h1("abc"), p("dexy"), p("fg")), eq)
     ist(view.state.selection.anchor, 13)
   })
 
@@ -124,7 +124,7 @@ describe("readInputChange", () => {
     text2.nodeValue = "cd"
     setSel(text2.parentNode, 0)
     readInputChange(view, view.state)
-    ist(view.state.doc, doc(blockquote(p("abx")), blockquote(p("cd"))), sameDoc)
+    ist(view.state.doc, doc(blockquote(p("abx")), blockquote(p("cd"))), eq)
     ist(view.state.selection.anchor, 9)
   })
 })
@@ -134,21 +134,21 @@ describe("readCompositionChange", () => {
     let view = tempEditor({doc: doc(p("hello"))})
     findTextNode(view.content, "hello").nodeValue = "hellox"
     readCompositionChange(view, view.state, 0)
-    ist(view.state.doc, doc(p("hellox")), sameDoc)
+    ist(view.state.doc, doc(p("hellox")), eq)
   })
 
   it("can delete text in markup", () => {
     let view = tempEditor({doc: doc(p("a", em("b", img, strong("cd<a>")), "e"))})
     findTextNode(view.content, "cd").nodeValue = "c"
     readCompositionChange(view, view.state, 0)
-    ist(view.state.doc, doc(p("a", em("b", img, strong("c")), "e")), sameDoc)
+    ist(view.state.doc, doc(p("a", em("b", img, strong("c")), "e")), eq)
   })
 
   it("recognizes typing inside markup", () => {
     let view = tempEditor({doc: doc(p("a", em("b", img, strong("cd<a>")), "e"))})
     findTextNode(view.content, "cd").nodeValue = "cdxy"
     readCompositionChange(view, view.state, 0)
-    ist(view.state.doc, doc(p("a", em("b", img, strong("cdxy")), "e")), sameDoc)
+    ist(view.state.doc, doc(p("a", em("b", img, strong("cdxy")), "e")), eq)
   })
 
   it("resolves ambiguous text input", () => {
@@ -156,6 +156,6 @@ describe("readCompositionChange", () => {
     view.props.onAction({type: "addStoredMark", mark: view.state.schema.marks.strong.create()})
     findTextNode(view.content, "foo").nodeValue = "fooo"
     readCompositionChange(view, view.state, 0)
-    ist(view.state.doc, doc(p("fo", strong("o"), "o")), sameDoc)
+    ist(view.state.doc, doc(p("fo", strong("o"), "o")), eq)
   })
 })
