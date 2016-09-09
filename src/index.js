@@ -14,7 +14,7 @@ class EditorView {
   // document. If it is `null`, the editor will not be added to the
   // document.
   constructor(place, props) {
-    // :: Object
+    // :: EditorProps
     // The view's current [props](#view.EditorProps).
     this.props = props
     // :: EditorState
@@ -46,7 +46,7 @@ class EditorView {
     initInput(this)
   }
 
-  // :: (Object)
+  // :: (EditorProps)
   // Update the view's props. Will immediately cause an update to
   // the view's DOM.
   update(props) {
@@ -206,7 +206,7 @@ exports.EditorView = EditorView
 //   state:: EditorState
 //   The state of the editor.
 //
-//   onAction:: (action: Object)
+//   onAction:: (action: Action)
 //   The callback over which to send actions (state updates) produced
 //   by the view. You'll usually want to make sure this ends up
 //   calling the view's [`update`](#view.EditorView.update) method
