@@ -390,7 +390,7 @@ function fromClipboard(dataTransfer, plainText, $target) {
   let foundLeft = dom.querySelector("[pm-open-left]")
   if (foundLeft && (m = /^\d+$/.exec(foundLeft.getAttribute("pm-open-left"))))
     openLeft = +m[0]
-  let slice = parseDOMInContext($target, dom, {openLeft, preserveWhiteSpace: true})
+  let slice = parseDOMInContext($target, dom, {openLeft, preserveWhitespace: true})
   return slice
 }
 
