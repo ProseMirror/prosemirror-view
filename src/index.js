@@ -254,6 +254,17 @@ exports.EditorView = EditorView
 //   onBlur:: ?(view: EditorView)
 //   Called when the editor loses focus.
 //
+//   domParser:: ?DOMParser
+//   The [parser](#model.DOMParser) to use when reading editor changes
+//   from the DOM. Defaults to calling
+//   [`DOMParser.fromSchema`](#model.DOMParser.fromSchema) on the
+//   editor's schema.
+//
+//   clipboardParser:: ?DOMParser
+//   The [parser](#model.DOMParser) to use when reading content from
+//   the clipboard. When not given, the value of the
+//   [`domParser`](#view.EditorProps.domParser) prop is used.
+//
 //   transformPasted:: ?(Slice) → Slice
 //   Can be used to transform pasted content before it is applied to the document.
 //

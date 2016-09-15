@@ -1,4 +1,4 @@
-const {Mark} = require("prosemirror-model")
+const {Mark, DOMParser} = require("prosemirror-model")
 const {Selection} = require("prosemirror-state")
 
 const {DOMFromPos, DOMFromPosFromEnd} = require("./dompos")
@@ -40,7 +40,8 @@ function parseBetween(view, oldState, from, to) {
       find.push({node: domSel.focusNode, offset: domSel.focusOffset})
   }
   let startDoc = oldState.doc
-  let sel = null, doc = startDoc.type.schema.parseDOM(parent, {
+  let parser = view.someProp("domParser") || DOMParser.fromSchema(view.state.schema)
+  let sel = null, doc = parser.parse(parent, {
     topNode: startDoc.resolve(from).parent.copy(),
     from: startOff,
     to: endOff,

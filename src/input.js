@@ -1,4 +1,4 @@
-const {Slice, Fragment, parseDOMInContext} = require("prosemirror-model")
+const {Slice, Fragment, DOMParser} = require("prosemirror-model")
 const {Selection, NodeSelection, TextSelection, isSelectable} = require("prosemirror-state")
 
 const browser = require("./browser")
@@ -390,7 +390,9 @@ function fromClipboard(dataTransfer, plainText, $target) {
   let foundLeft = dom.querySelector("[pm-open-left]")
   if (foundLeft && (m = /^\d+$/.exec(foundLeft.getAttribute("pm-open-left"))))
     openLeft = +m[0]
-  let slice = parseDOMInContext($target, dom, {openLeft, preserveWhitespace: true})
+
+  let parser = view.someProp("clipboardParser") || view.someProp("domParser") || DOMParser.fromSchema(view.state.schema)
+  let slice = parser.parseInContext($target, dom, {openLeft, preserveWhitespace: true})
   return slice
 }
 
