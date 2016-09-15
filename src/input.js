@@ -1,5 +1,5 @@
 const {Slice, Fragment, parseDOMInContext} = require("prosemirror-model")
-const {Selection, NodeSelection, TextSelection} = require("prosemirror-state")
+const {Selection, NodeSelection, TextSelection, isSelectable} = require("prosemirror-state")
 
 const browser = require("./browser")
 const {captureKeyDown} = require("./capturekeys")
@@ -99,7 +99,7 @@ function updateSelection(view, selection) {
 
 function selectClickedLeaf(view, inLeaf) {
   let leaf = view.state.doc.nodeAt(inLeaf)
-  if (leaf && leaf.isLeaf && leaf.type.selectable) {
+  if (leaf && leaf.isLeaf && isSelectable(leaf)) {
     updateSelection(view, new NodeSelection(view.state.doc.resolve(inLeaf)))
     return true
   }
@@ -111,7 +111,7 @@ function selectClickedNode(view, pos, inLeaf) {
   let $pos = view.state.doc.resolve(inLeaf < 0 ? pos : inLeaf)
   for (let i = $pos.depth + (inLeaf < 0 ? 0 : 1); i > 0; i--) {
     let node = i > $pos.depth ? $pos.nodeAfter : $pos.node(i)
-    if (node.type.selectable) {
+    if (isSelectable(node)) {
      if (selectedNode && $from.depth > 0 &&
           i >= $from.depth && $pos.before($from.depth + 1) == $from.pos)
         selectAt = $pos.before($from.depth)
@@ -156,7 +156,7 @@ function defaultTripleClick(view, pos, inLeaf) {
     if (node.isTextblock)
       updateSelection(view, new TextSelection(doc.resolve(nodePos + 1),
                                             doc.resolve(nodePos + 1 + node.content.size)))
-    else if (node.type.selectable)
+    else if (isSelectable(node))
       updateSelection(view, new NodeSelection(doc.resolve(nodePos)))
     else
       continue

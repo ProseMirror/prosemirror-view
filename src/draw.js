@@ -57,8 +57,8 @@ function draw(view, doc) {
 exports.draw = draw
 
 function adjustTrailingHacks(dom, node) {
-  let needs = node.content.size == 0 || node.lastChild.type.isBR ||
-      (node.type.isCode && node.lastChild.isText && /\n$/.test(node.lastChild.text))
+  let needs = node.content.size == 0 || node.lastChild.type.spec.isBR ||
+      (node.type.spec.code && node.lastChild.isText && /\n$/.test(node.lastChild.text))
       ? "br" : !node.lastChild.isText && node.lastChild.isLeaf ? "text" : null
   let last = dom.lastChild
   let has = !last || last.nodeType != 1 || !last.hasAttribute("pm-ignore") ? null

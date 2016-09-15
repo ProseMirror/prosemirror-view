@@ -1,4 +1,4 @@
-const {Selection, NodeSelection} = require("prosemirror-state")
+const {Selection, NodeSelection, isSelectable} = require("prosemirror-state")
 
 const browser = require("./browser")
 const {posFromDOM, DOMAfterPos, DOMFromPos, coordsAtPos} = require("./dompos")
@@ -71,7 +71,7 @@ class SelectionReader {
       $anchor = $head
       if (headInLeaf > -1) {
         let $leaf = doc.resolve(headInLeaf), node = $leaf.nodeAfter
-        if (node.type.selectable && !node.type.isInline) selection = new NodeSelection($leaf)
+        if (isSelectable(node) && !node.type.isInline) selection = new NodeSelection($leaf)
       }
     } else {
       $anchor = doc.resolve(posFromDOM(domSel.anchorNode, domSel.anchorOffset).pos)
