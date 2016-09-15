@@ -28,7 +28,7 @@ describe("EditorView", () => {
       ist(view.content.querySelector("p"), oldP)
     })
 
-    it("doesn't redraw nodes between changes", () => { 
+    it("doesn't redraw nodes between changes", () => {
       let view = tempEditor({doc: doc(p("foo"), h1("bar"), pre("baz"))})
       let oldP = view.content.querySelector("p")
       let oldPre = view.content.querySelector("pre")

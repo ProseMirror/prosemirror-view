@@ -1,3 +1,4 @@
+// declare global: mocha
 mocha.setup("bdd")
 
 require("./test-draw")

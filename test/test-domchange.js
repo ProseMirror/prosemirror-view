@@ -84,7 +84,7 @@ describe("readInputChange", () => {
     let enterPressed = false
     let view = tempEditor({
       doc: doc(blockquote(p("foo"), p("<a>"))),
-      handleKeyDown: (view, event) => { if (event.keyCode == 13) return enterPressed = true }
+      handleKeyDown: (_view, event) => { if (event.keyCode == 13) return enterPressed = true }
     })
     let bq = view.content.querySelector("blockquote")
     bq.appendChild(document.createElement("p"))
