@@ -557,12 +557,12 @@ handlers.drop = (view, e) => {
   view.props.onAction(tr.action())
 }
 
-handlers.focus = view => {
+handlers.focus = (view, event) => {
   view.wrapper.classList.add("ProseMirror-focused")
-  view.someProp("onFocus", f => { f(view) })
+  view.someProp("onFocus", f => { f(view, event) })
 }
 
-handlers.blur = view => {
+handlers.blur = (view, event) => {
   view.wrapper.classList.remove("ProseMirror-focused")
-  view.someProp("onBlur", f => { f(view) })
+  view.someProp("onBlur", f => { f(view, event) })
 }

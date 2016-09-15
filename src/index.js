@@ -248,10 +248,10 @@ exports.EditorView = EditorView
 //   handleContextMenu:: ?(view: EditorView, pos: number, event: dom.MouseEvent) → bool
 //   Called when a context menu event is fired in the editor.
 //
-//   onFocus:: ?(view: EditorView)
+//   onFocus:: ?(view: EditorView, event: dom.Event)
 //   Called when the editor is focused.
 //
-//   onBlur:: ?(view: EditorView)
+//   onBlur:: ?(view: EditorView, event: dom.Event)
 //   Called when the editor loses focus.
 //
 //   domParser:: ?DOMParser
