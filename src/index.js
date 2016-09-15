@@ -266,7 +266,19 @@ exports.EditorView = EditorView
 //   [`domParser`](#view.EditorProps.domParser) prop is used.
 //
 //   transformPasted:: ?(Slice) → Slice
-//   Can be used to transform pasted content before it is applied to the document.
+//   Can be used to transform pasted content before it is applied to
+//   the document.
+//
+//   domSerializer:: ?DOMSerializer
+//   The [serializer](#model.DOMSerializer) to use when drawing the
+//   document to the display. If not given, the result of
+//   [`DOMSerializer.fromSchema`](#model.DOMSerializer.fromSchema)
+//   will be used.
+//
+//   clipboardSerializer:: ?DOMSerializer
+//   The DOM serializer to use when putting content onto the
+//   clipboard. When not given, the value of the
+//   [`domSerializer`](#view.EditorProps.domSerializer) prop is used.
 //
 //   spellcheck:: ?bool
 //   Controls whether the DOM spellcheck attribute is enabled on the

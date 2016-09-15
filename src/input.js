@@ -1,4 +1,4 @@
-const {Slice, Fragment, DOMParser} = require("prosemirror-model")
+const {Slice, Fragment, DOMParser, DOMSerializer} = require("prosemirror-model")
 const {Selection, NodeSelection, TextSelection, isSelectable} = require("prosemirror-state")
 
 const browser = require("./browser")
@@ -344,13 +344,15 @@ handlers.input = view => {
   scheduleUpdateFromDOM(view)
 }
 
-function toClipboard(doc, from, to, dataTransfer) {
+function toClipboard(view, from, to, dataTransfer) {
+  let doc = view.state.doc
   let $from = doc.resolve(from), start = from
   for (let d = $from.depth; d > 0 && $from.end(d) == start; d--) start++
   let slice = doc.slice(start, to)
   if (slice.possibleParent.type != doc.type.schema.nodes.doc)
     slice = new Slice(Fragment.from(slice.possibleParent.copy(slice.content)), slice.openLeft + 1, slice.openRight + 1)
-  let dom = slice.content.toDOM(), wrap = document.createElement("div")
+  let serializer = view.someProp("clipboardSerializer") || view.someProp("domSerializer") || DOMSerializer.fromSchema(view.state.schema)
+  let dom = serializer.serializeFragment(slice.content), wrap = document.createElement("div")
   if (dom.firstChild && dom.firstChild.nodeType == 1)
     dom.firstChild.setAttribute("pm-open-left", slice.openLeft)
   wrap.appendChild(dom)
@@ -430,7 +432,7 @@ handlers.copy = handlers.cut = (view, e) => {
     if (cut && browser.ie && browser.ie_version <= 11) scheduleUpdateFromDOM(view)
     return
   }
-  toClipboard(view.state.doc, from, to, e.clipboardData)
+  toClipboard(view, from, to, e.clipboardData)
   e.preventDefault()
   if (cut) view.props.onAction(view.state.tr.delete(from, to).scrollAction())
 }
@@ -494,7 +496,7 @@ handlers.dragstart = (view, e) => {
   }
 
   if (dragging) {
-    let slice = toClipboard(view.state.doc, dragging.from, dragging.to, e.dataTransfer)
+    let slice = toClipboard(view, dragging.from, dragging.to, e.dataTransfer)
     view.dragging = new Dragging(slice, dragging.from, dragging.to, !e.ctrlKey)
   }
 }

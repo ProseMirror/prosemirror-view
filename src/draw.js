@@ -1,5 +1,6 @@
-const browser = require("./browser")
+const {DOMSerializer} = require("prosemirror-model")
 
+const browser = require("./browser")
 const {childContainer} = require("./dompos")
 
 const DIRTY_RESCAN = 1, DIRTY_REDRAW = 2
@@ -50,9 +51,13 @@ function options() {
   }
 }
 
+function getSerializer(view) {
+  return view.someProp("domSerializer") || DOMSerializer.fromSchema(view.state.schema)
+}
+
 function draw(view, doc) {
   view.content.textContent = ""
-  view.content.appendChild(doc.content.toDOM(options()))
+  view.content.appendChild(getSerializer(view).serializeFragment(doc.content, options()))
 }
 exports.draw = draw
 
@@ -91,7 +96,7 @@ function redraw(view, oldState, newState) {
   let dirty = view.dirtyNodes
   if (dirty.get(oldState.doc) == DIRTY_REDRAW) return draw(view, newState.doc)
 
-  let opts = options()
+  let opts = options(), serializer = getSerializer(view)
 
   function scan(dom, node, prev, pos) {
     let iPrev = 0, oPrev = 0, pChild = prev.firstChild
@@ -129,7 +134,7 @@ function redraw(view, oldState, newState) {
       } else {
         opts.pos = pos + offset
         opts.offset = offset
-        let rendered = child.toDOM(opts)
+        let rendered = serializer.serializeNode(child, opts)
         dom.insertBefore(rendered, domPos)
         reuseDOM = false
       }
