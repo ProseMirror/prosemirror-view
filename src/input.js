@@ -369,7 +369,7 @@ function canUpdateClipboard(dataTransfer) {
 }
 
 // : (DataTransfer, ?bool, ResolvedPos) → ?Slice
-function fromClipboard(dataTransfer, plainText, $target) {
+function fromClipboard(view, dataTransfer, plainText, $target) {
   let txt = dataTransfer.getData("text/plain")
   let html = dataTransfer.getData("text/html")
   if (!html && !txt) return null
@@ -442,7 +442,7 @@ handlers.paste = (view, e) => {
     return
   }
   let range = insertRange(view.state.selection.$from, view.state.selection.$to)
-  let slice = fromClipboard(e.clipboardData, view.shiftKey, view.state.doc.resolve(range.from))
+  let slice = fromClipboard(view, e.clipboardData, view.shiftKey, view.state.doc.resolve(range.from))
   if (slice) {
     e.preventDefault()
     view.someProp("transformPasted", f => { slice = f(slice) })
@@ -541,7 +541,7 @@ handlers.drop = (view, e) => {
   let $mouse = view.state.doc.resolve(view.posAtCoords(eventCoords(e)).pos)
   if (!$mouse) return
   let range = insertRange($mouse, $mouse)
-  let slice = dragging && dragging.slice || fromClipboard(e.dataTransfer, view.state.doc.resolve(range.from), $mouse)
+  let slice = dragging && dragging.slice || fromClipboard(view, e.dataTransfer, view.state.doc.resolve(range.from), $mouse)
   if (!slice) return
   let insertPos = dropPos(slice, view.state.doc.resolve(range.from))
 
