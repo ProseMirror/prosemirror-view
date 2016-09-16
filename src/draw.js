@@ -8,8 +8,10 @@ exports.DIRTY_RESCAN = DIRTY_RESCAN; exports.DIRTY_REDRAW = DIRTY_REDRAW
 
 // FIXME track dirty ranges in a better way
 
-function options() {
-  return {
+function setup(view) {
+  let serializer = view.someProp("domSerializer") || DOMSerializer.fromSchema(view.state.schema)
+
+  let options = {
     pos: 0,
 
     onRender(node, dom, _pos, offset) {
@@ -18,7 +20,7 @@ function options() {
           dom.setAttribute("pm-offset", offset)
         dom.setAttribute("pm-size", node.nodeSize)
         if (node.isTextblock)
-          adjustTrailingHacks(dom, node)
+          adjustTrailingHacks(serializer, dom, node)
         if (dom.contentEditable == "false") {
           let wrap = document.createElement("div")
           wrap.appendChild(dom)
@@ -49,20 +51,25 @@ function options() {
     },
     document
   }
-}
 
-function getSerializer(view) {
-  return view.someProp("domSerializer") || DOMSerializer.fromSchema(view.state.schema)
+  return {serializer, options}
 }
 
 function draw(view, doc) {
   view.content.textContent = ""
-  view.content.appendChild(getSerializer(view).serializeFragment(doc.content, options()))
+  let {options, serializer} = setup(view)
+  view.content.appendChild(serializer.serializeFragment(doc.content, options))
 }
 exports.draw = draw
 
-function adjustTrailingHacks(dom, node) {
-  let needs = node.content.size == 0 || node.lastChild.type.spec.isBR ||
+function isBR(node, serializer) {
+  if (!node.isLeaf || node.isText || !node.isInline) return false
+  let ser = serializer.nodes[node.type.name](node)
+  return Array.isArray(ser) ? ser[0] == "br" : ser && ser.nodeName == "BR"
+}
+
+function adjustTrailingHacks(serializer, dom, node) {
+  let needs = node.content.size == 0 || isBR(node.lastChild, serializer) ||
       (node.type.spec.code && node.lastChild.isText && /\n$/.test(node.lastChild.text))
       ? "br" : !node.lastChild.isText && node.lastChild.isLeaf ? "text" : null
   let last = dom.lastChild
@@ -96,7 +103,7 @@ function redraw(view, oldState, newState) {
   let dirty = view.dirtyNodes
   if (dirty.get(oldState.doc) == DIRTY_REDRAW) return draw(view, newState.doc)
 
-  let opts = options(), serializer = getSerializer(view)
+  let {serializer, options: opts} = setup(view)
 
   function scan(dom, node, prev, pos) {
     let iPrev = 0, oPrev = 0, pChild = prev.firstChild
@@ -161,7 +168,7 @@ function redraw(view, oldState, newState) {
 
     while (domPos) domPos = movePast(domPos)
 
-    if (node.isTextblock) adjustTrailingHacks(dom, node)
+    if (node.isTextblock) adjustTrailingHacks(serializer, dom, node)
 
     if (browser.ios) iosHacks(dom)
   }
