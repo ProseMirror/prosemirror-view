@@ -1,6 +1,4 @@
-Some kind of intro.
-
-## A header
+ProseMirror's 
 
 @EditorView
 

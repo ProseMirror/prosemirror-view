@@ -22,7 +22,8 @@ class EditorView {
     this.state = props.state
 
     // :: dom.Node
-    // The editable DOM node containing the document.
+    // The editable DOM node containing the document. (You probably
+    // should not be directly interfering with its child nodes.)
     this.content = document.createElement("div")
     this.content.setAttribute("pm-container", "true")
     this.content.classList.add("ProseMirror-content")
@@ -110,11 +111,11 @@ class EditorView {
     return sel.rangeCount && this.content.contains(sel.anchorNode.nodeType == 3 ? sel.anchorNode.parentNode : sel.anchorNode)
   }
 
-  // :: (string, (*) → *) → *
-  // Goes over the values of a prop, first those from plugins, and
-  // finally those from the base props, and calls `f` every time a
-  // non-undefined value is found. When `f` returns a truthy value,
-  // that is immediately returned.
+  // :: (string, (prop: *) → *) → *
+  // Goes over the values of a prop, first those from plugins (in
+  // order), and finally those from the base props, and calls `f`
+  // every time a non-undefined value is found. When `f` returns a
+  // truthy value, that is immediately returned.
   someProp(propName, f) {
     let value, plugins = this.state.plugins
     if (plugins) for (let i = 0; i < plugins.length; i++) {
@@ -214,17 +215,22 @@ exports.EditorView = EditorView
 //   [applied](#state.EditorState.applyAction).
 //
 //   handleDOMEvent:: ?(view: EditorView, event: dom.Event) → bool
-//   Called before the view handles a DOM event.
+//   Called before the view handles a DOM event. This is a kind of
+//   catch-all override hook. Contrary to the other event handling
+//   props, when returning true from this one, you are responsible for
+//   calling `preventDefault` yourself (or not, if you want to allow
+//   the default behavior).
 //
 //   handleKeyDown:: ?(view: EditorView, event: dom.KeyboardEvent) → bool
 //   Called when the editor receives a `keydown` event.
 //
 //   handleKeyPress:: ?(view: EditorView, event: dom.KeyboardEvent) → bool
-//   A handler for `keypress` events.
+//   Handler for `keypress` events.
 //
 //   handleTextInput:: ?(view: EditorView, from: number, to: number, text: string) → bool
-//   Whenever the user directly input text, this handler is called,
-//   before the input is applied.
+//   Whenever the user directly input text, this handler is called
+//   before the input is applied. If it returns `true`, the default
+//   effect of actually inserting the text is suppressed.
 //
 //   handleClickOn:: ?(view: EditorView, pos: number, node: Node, nodePos: number, event: dom.MouseEvent) → bool
 //   Called for each node around a click, from the inside out.
@@ -257,7 +263,7 @@ exports.EditorView = EditorView
 //   domParser:: ?DOMParser
 //   The [parser](#model.DOMParser) to use when reading editor changes
 //   from the DOM. Defaults to calling
-//   [`DOMParser.fromSchema`](#model.DOMParser.fromSchema) on the
+//   [`DOMParser.fromSchema`](#model.DOMParser^fromSchema) on the
 //   editor's schema.
 //
 //   clipboardParser:: ?DOMParser
@@ -272,7 +278,7 @@ exports.EditorView = EditorView
 //   domSerializer:: ?DOMSerializer
 //   The [serializer](#model.DOMSerializer) to use when drawing the
 //   document to the display. If not given, the result of
-//   [`DOMSerializer.fromSchema`](#model.DOMSerializer.fromSchema)
+//   [`DOMSerializer.fromSchema`](#model.DOMSerializer^fromSchema)
 //   will be used.
 //
 //   clipboardSerializer:: ?DOMSerializer
