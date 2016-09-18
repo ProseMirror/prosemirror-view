@@ -1,6 +1,6 @@
 const ist = require("ist")
 const {eq, doc, p, h1, em, img, strong, blockquote} = require("prosemirror-model/test/build")
-const {readInputChange, readCompositionChange} = require("../src/domchange")
+const {readInputChange, readCompositionChange} = require("../dist/domchange")
 const {tempEditor, findTextNode} = require("./view")
 
 function setSel(aNode, aOff, fNode, fOff) {

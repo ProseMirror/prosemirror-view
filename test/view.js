@@ -1,5 +1,5 @@
 const {selFor} = require("prosemirror-state/test/state")
-const {EditorView} = require("../src")
+const {EditorView} = require("../dist")
 const {EditorState} = require("prosemirror-state")
 const {schema} = require("prosemirror-model/test/build")
 
