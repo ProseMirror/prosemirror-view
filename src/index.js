@@ -131,6 +131,7 @@ class EditorView {
   // :: ()
   // Focus the editor.
   focus() {
+    selectionToDOM(this, this.state.selection, true)
     this.content.focus()
   }
 
