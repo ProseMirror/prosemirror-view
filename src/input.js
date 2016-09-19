@@ -208,7 +208,7 @@ class MouseDown {
       targetPos = $pos.depth ? $pos.before() : 0
     }
 
-    this.mightDrag = (targetNode.type.draggable || targetNode == view.state.selection.node) ? {node: targetNode, pos: targetPos} : null
+    this.mightDrag = (targetNode.type.spec.draggable || targetNode == view.state.selection.node) ? {node: targetNode, pos: targetPos} : null
     this.target = flushed ? null : event.target
     if (this.target && this.mightDrag) {
       this.target.draggable = true
@@ -488,7 +488,7 @@ handlers.dragstart = (view, e) => {
 
   let {from, to, empty} = view.state.selection, dragging
   let pos = empty ? null : view.posAtCoords(eventCoords(e))
-  if (pos != null && pos >= from && pos <= to) {
+  if (pos != null && pos.pos >= from && pos.pos <= to) {
     dragging = {from, to}
   } else if (mouseDown && mouseDown.mightDrag) {
     let pos = mouseDown.mightDrag.pos
@@ -543,7 +543,7 @@ handlers.drop = (view, e) => {
   let $mouse = view.state.doc.resolve(view.posAtCoords(eventCoords(e)).pos)
   if (!$mouse) return
   let range = insertRange($mouse, $mouse)
-  let slice = dragging && dragging.slice || fromClipboard(view, e.dataTransfer, view.state.doc.resolve(range.from), $mouse)
+  let slice = dragging && dragging.slice || fromClipboard(view, e.dataTransfer, false, $mouse)
   if (!slice) return
   let insertPos = dropPos(slice, view.state.doc.resolve(range.from))
 
