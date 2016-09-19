@@ -112,18 +112,20 @@ class EditorView {
   }
 
   // :: (string, (prop: *) → *) → *
-  // Goes over the values of a prop, first those from plugins (in
-  // order), and finally those from the base props, and calls `f`
-  // every time a non-undefined value is found. When `f` returns a
-  // truthy value, that is immediately returned.
+  // Goes over the values of a prop, first those provided directly,
+  // then those from plugins (in order), and calls `f` every time a
+  // non-undefined value is found. When `f` returns a truthy value,
+  // that is immediately returned. When `f` isn't provided, it is
+  // treated as the identity function (the prop value is returned
+  // directly).
   someProp(propName, f) {
-    let value, plugins = this.state.plugins
+    let prop = this.props && this.props[propName], value
+    if (prop && (value = f ? f(prop) : prop)) return value
+    let plugins = this.state.plugins
     if (plugins) for (let i = 0; i < plugins.length; i++) {
       let prop = plugins[i].props[propName]
       if (prop != null && (value = f ? f(prop) : prop)) return value
     }
-    let prop = this.props && this.props[propName]
-    if (prop && (value = f ? f(prop) : prop)) return value
   }
 
   // :: ()
