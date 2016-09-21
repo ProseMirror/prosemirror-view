@@ -263,6 +263,13 @@ exports.EditorView = EditorView
 //   onBlur:: ?(view: EditorView, event: dom.Event)
 //   Called when the editor loses focus.
 //
+//   onUnmountDOM:: ?(view, dom.Node)
+//   Called when a display update throws away a DOM node that was part
+//   of the previous document view. Can be useful when your node
+//   representations need to be cleaned up somehow. Note that this is
+//   only called with the top of the unmounted tree, not with every
+//   node in it.
+//
 //   domParser:: ?DOMParser
 //   The [parser](#model.DOMParser) to use when reading editor changes
 //   from the DOM. Defaults to calling

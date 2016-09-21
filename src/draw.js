@@ -93,8 +93,9 @@ function findNodeIn(parent, i, node) {
   return -1
 }
 
-function movePast(dom) {
+function movePast(dom, view, onUnmount) {
   let next = dom.nextSibling
+  for (let i = 0; i < onUnmount.length; i++) onUnmount[i](view, dom)
   dom.parentNode.removeChild(dom)
   return next
 }
@@ -104,6 +105,8 @@ function redraw(view, oldState, newState) {
   if (dirty.get(oldState.doc) == DIRTY_REDRAW) return draw(view, newState.doc)
 
   let {serializer, options: opts} = setup(view)
+  let onUnmountDOM = []
+  view.someProp("onUnmountDOM", f => { onUnmountDOM.push(f) })
 
   function scan(dom, node, prev, pos) {
     let iPrev = 0, oPrev = 0, pChild = prev.firstChild
@@ -113,7 +116,7 @@ function redraw(view, oldState, newState) {
       while (domPos) {
         let curOff = domPos.nodeType == 1 && domPos.getAttribute("pm-offset")
         if (!curOff || +curOff < oPrev)
-          domPos = movePast(domPos)
+          domPos = movePast(domPos, view, onUnmountDOM)
         else
           return +curOff == oPrev
       }
@@ -166,7 +169,7 @@ function redraw(view, oldState, newState) {
       offset += child.nodeSize
     }
 
-    while (domPos) domPos = movePast(domPos)
+    while (domPos) domPos = movePast(domPos, view, onUnmountDOM)
 
     if (node.isTextblock) adjustTrailingHacks(serializer, dom, node)
 
