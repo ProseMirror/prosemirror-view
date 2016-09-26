@@ -19,7 +19,7 @@ class EditorView {
     this.props = props
     // :: EditorState
     // The view's current [state](#state.EditorState).
-    this.state = props.state
+    this.state = this.drawnState = props.state
 
     // :: dom.Node
     // The editable DOM node containing the document. (You probably
@@ -60,7 +60,6 @@ class EditorView {
   // Update the editor's `state` prop, without touching any of the
   // other props.
   updateState(state) {
-    let prevState = this.state
     this.state = state
 
     if (this.inDOMChange) {
@@ -73,15 +72,15 @@ class EditorView {
     }
 
     let redrawn = false
-    let docChange = !state.doc.eq(prevState.doc)
+    let docChange = !state.doc.eq(this.drawnState.doc)
 
     if (docChange || this.dirtyNodes.size) {
-      redraw(this, prevState, state)
+      redraw(this, this.drawnState, state)
       this.dirtyNodes.clear()
       redrawn = true
     }
 
-    if (redrawn || !state.selection.eq(prevState.selection))
+    if (redrawn || !state.selection.eq(this.drawnState.selection))
       selectionToDOM(this, state.selection)
 
     // FIXME somehow schedule this relative to ui/update so that it
@@ -91,6 +90,7 @@ class EditorView {
 
     // Make sure we don't use an outdated range on drop event
     if (this.dragging && docChange) this.dragging.move = false
+    this.drawnState = state
   }
 
   updateDOMForProps() {

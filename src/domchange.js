@@ -118,8 +118,9 @@ function readDOMChange(view, oldState, range) {
   for (;;) {
     parseResult = parseBetween(view, oldState, range.from, range.to)
     if (parseResult) break
-    range = {from: doc.resolve(range.from).before(),
-             to: doc.resolve(range.to).after()}
+    let $from = doc.resolve(range.from), $to = doc.resolve(range.to)
+    range = {from: $from.depth ? $from.before() : 0,
+             to: $to.depth ? $to.after() : doc.content.size}
   }
   let {doc: parsed, sel: parsedSel} = parseResult
 
