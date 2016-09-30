@@ -20,7 +20,7 @@
     "prosemirror-state": "^0.11.0"
   },
   "devDependencies": {
-    "prosemirror-transform": "^0.11.0"
+    "prosemirror-transform": "^0.11.0",
     "buble": "~0.14.0",
     "ist": "^1.0.0",
     "mocha": "^3.0.2",

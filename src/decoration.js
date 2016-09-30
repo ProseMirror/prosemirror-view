@@ -13,7 +13,7 @@ class Decoration {
     let start = mapping.map(this.start + oldOffset, this.options.inclusiveLeft ? -1 : 1) - offset
     let end = mapping.map(this.end + oldOffset, this.options.inclusiveRight ? 1 : -1) - offset
     if (start >= end) {
-      if (this.options.clearWhenEmpty !== false) return null
+      if (!this.options.persistent) return null
       else end = start
     }
     return new Decoration(start, end, this.options)
@@ -84,7 +84,7 @@ function mapChildren(oldChildren, newLocal, mapping, node, offset, oldOffset) {
   for (let i = 0; i < children.length; i += 3) if (children[i + 1] == -1) { // Untouched nodes
     let start = mapping.map(children[i] + oldOffset), startLocal = start - offset
     // Must read oldChildren because children was tagged with -1
-    let end = mapping.map(oldChildren[i + 1] + oldOffset), endLocal = end - offset
+    let end = mapping.map(oldChildren[i + 1] + oldOffset, -1), endLocal = end - offset
     let {index, offset: childOffset} = node.content.findIndex(startLocal)
     let childNode = node.maybeChild(index)
     if (childNode && childOffset == startLocal && childOffset + childNode.nodeSize == endLocal) {
