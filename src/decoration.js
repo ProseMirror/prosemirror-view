@@ -159,6 +159,6 @@ function buildTree(decorations, node, offset) {
     if (found.length)
       children.push(localStart, end - offset, buildTree(found, childNode, offset + localStart + 1))
   })
-  
+
   return new DecorationSet(moveDecorations(decorations.filter(x => x), -offset), children)
 }

@@ -1,5 +1,5 @@
 const ist = require("ist")
-const {eq, schema, doc, p, blockquote} = require("prosemirror-model/test/build")
+const {schema, doc, p, blockquote} = require("prosemirror-model/test/build")
 const {Transform} = require("prosemirror-transform")
 
 const { Decoration, DecorationSet } = require("../dist/decoration")

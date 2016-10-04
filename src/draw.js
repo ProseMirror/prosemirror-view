@@ -6,59 +6,40 @@ const {childContainer} = require("./dompos")
 const DIRTY_RESCAN = 1, DIRTY_REDRAW = 2
 exports.DIRTY_RESCAN = DIRTY_RESCAN; exports.DIRTY_REDRAW = DIRTY_REDRAW
 
-// FIXME track dirty ranges in a better way
+function getSerializer(view) {
+  return view.someProp("domSerializer") || DOMSerializer.fromSchema(view.state.schema)
+}
 
-function setup(view) {
-  let serializer = view.someProp("domSerializer") || DOMSerializer.fromSchema(view.state.schema)
+function serialize(node, offset, serializer) {
+  function inner(node, offset) {
+    let dom = serializer.serializeNodeAndMarks(node, options)
+    if (dom.nodeType != 1 || dom.contentEditable == "false") {
+      let wrap = document.createElement(node.isInline ? "span" : "div")
+      wrap.appendChild(dom)
+      dom = wrap
+    }
 
-  let options = {
-    pos: 0,
+    dom.setAttribute("pm-size", node.nodeSize)
+    dom.setAttribute("pm-offset", offset)
+    if (node.isTextblock) adjustTrailingHacks(serializer, dom, node)
 
-    onRender(node, dom, _pos, offset) {
-      if (node.isBlock) {
-        if (offset != null)
-          dom.setAttribute("pm-offset", offset)
-        dom.setAttribute("pm-size", node.nodeSize)
-        if (node.isTextblock)
-          adjustTrailingHacks(serializer, dom, node)
-        if (dom.contentEditable == "false") {
-          let wrap = document.createElement("div")
-          wrap.appendChild(dom)
-          dom = wrap
-        }
-      }
-
-      return dom
-    },
-    onContainer(dom) {
-      dom.setAttribute("pm-container", true)
-    },
-    // : (Node, dom.Node, number, number) → dom.Node
-    renderInlineFlat(node, dom, _pos, offset) {
-      let inner = dom
-      for (let i = 0; i < node.marks.length; i++) inner = inner.firstChild
-
-      if (dom.nodeType != 1) {
-        let wrap = document.createElement("span")
-        wrap.appendChild(dom)
-        dom = wrap
-      }
-
-      dom.setAttribute("pm-offset", offset)
-      dom.setAttribute("pm-size", node.nodeSize)
-
-      return dom
-    },
-    document
+    return dom
   }
 
-  return {serializer, options}
+  let options = {
+    onContent(parent, target) {
+      target.setAttribute("pm-container", true)
+      parent.content.forEach((child, offset) => target.appendChild(inner(child, offset)))
+    }
+  }
+
+  return inner(node, offset)
 }
 
 function draw(view, doc) {
   view.content.textContent = ""
-  let {options, serializer} = setup(view)
-  view.content.appendChild(serializer.serializeFragment(doc.content, options))
+  let serializer = getSerializer(view)
+  doc.content.forEach((node, offset) => view.content.appendChild(serialize(node, offset, serializer)))
 }
 exports.draw = draw
 
@@ -104,7 +85,7 @@ function redraw(view, oldState, newState) {
   let dirty = view.dirtyNodes
   if (dirty.get(oldState.doc) == DIRTY_REDRAW) return draw(view, newState.doc)
 
-  let {serializer, options: opts} = setup(view)
+  let serializer = getSerializer(view)
   let onUnmountDOM = []
   view.someProp("onUnmountDOM", f => { onUnmountDOM.push(f) })
 
@@ -142,9 +123,7 @@ function redraw(view, oldState, newState) {
           scan(childContainer(domPos), child, pChild, pos + offset + 1)
         domPos.setAttribute("pm-size", child.nodeSize)
       } else {
-        opts.pos = pos + offset
-        opts.offset = offset
-        let rendered = serializer.serializeNode(child, opts)
+        let rendered = serialize(child, offset, serializer)
         dom.insertBefore(rendered, domPos)
         reuseDOM = false
       }
