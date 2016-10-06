@@ -2,6 +2,7 @@ const {DOMSerializer} = require("prosemirror-model")
 
 const browser = require("./browser")
 const {childContainer} = require("./dompos")
+const {removeOverlap} = require("./decoration")
 
 const DIRTY_RESCAN = 1, DIRTY_REDRAW = 2
 exports.DIRTY_RESCAN = DIRTY_RESCAN; exports.DIRTY_REDRAW = DIRTY_REDRAW
@@ -10,7 +11,7 @@ function getSerializer(view) {
   return view.someProp("domSerializer") || DOMSerializer.fromSchema(view.state.schema)
 }
 
-function serialize(node, offset, serializer) {
+function serialize(node, offset, serializer, decorations) {
   function inner(node, offset) {
     let dom = serializer.serializeNodeAndMarks(node, options)
     if (dom.nodeType != 1 || dom.contentEditable == "false") {
@@ -26,20 +27,69 @@ function serialize(node, offset, serializer) {
     return dom
   }
 
+  let currentDecorations = decorations
   let options = {
     onContent(parent, target) {
+      let decorations = currentDecorations, locals = removeOverlap(decorations.locals())
       target.setAttribute("pm-container", true)
-      parent.content.forEach((child, offset) => target.appendChild(inner(child, offset)))
+      let i = applyDecorations(locals, 0, 0, 0, target, null, false)
+      parent.content.forEach((child, offset) => {
+        currentDecorations = decorations.forChild(offset, child)
+        let dom = target.appendChild(inner(child, offset))
+        i = applyDecorations(locals, i, offset, offset + child.nodeSize, target, dom, child.isLeaf)
+      })
     }
   }
 
   return inner(node, offset)
 }
 
-function draw(view, doc) {
+function applyDecorations(locals, i, from, to, domParent, domNode, isLeaf) {
+  for (; i < locals.length; i++) {
+    let span = locals[i]
+    if (span.to > to) break
+    if (!isLeaf && span.leafOnly) continue
+    if (from < span.from) {
+      domNode = splitText(domNode, span.from - from)
+      from = span.from
+    }
+    let next = span.to < to && splitText(domNode, span.to - from)
+
+    for (;;) {
+      span.decoration.apply(domParent, domNode)
+      if (i < locals.length - 1 && locals[i + 1].to == span.to) span = locals[++i]
+      else break
+    }
+    if (next) {
+      from = span.to
+      domNode = next
+    }
+  }
+  return i
+}
+
+function splitText(node, offset) {
+  let inner = node
+  while (inner.nodeType != 3) inner = inner.firstChild
+  let newNode = document.createTextNode(inner.nodeValue.slice(offset))
+  inner.nodeValue = inner.nodeValue.slice(0, offset)
+  while (inner != node) {
+    let parent = inner.parentNode, wrap = parent.cloneNode(false)
+    wrap.appendChild(newNode)
+    newNode = wrap
+    inner = parent
+  }
+  node.parentNode.insertBefore(newNode, node.nextSibling)
+  return newNode
+}
+
+function draw(view, doc, decorations) {
   view.content.textContent = ""
   let serializer = getSerializer(view)
-  doc.content.forEach((node, offset) => view.content.appendChild(serialize(node, offset, serializer)))
+  doc.content.forEach((node, offset) => {
+    let decos = decorations.forChild(offset, node)
+    view.content.appendChild(serialize(node, offset, serializer, decos))
+  })
 }
 exports.draw = draw
 

@@ -2,10 +2,20 @@ const ist = require("ist")
 const {schema, doc, p, blockquote} = require("prosemirror-model/test/build")
 const {Transform} = require("prosemirror-transform")
 
-const { Decoration, DecorationSet } = require("../dist/decoration")
+const {WidgetDecoration, AttrDecoration, DecorationSet, removeOverlap} = require("../dist/decoration")
 
 function build(doc, ...decorations) {
-  return DecorationSet.create(doc, decorations.map(d => new Decoration(d.start, d.end, d)))
+  return DecorationSet.create(doc, decorations.map(d => {
+    if (d.pos != null) return WidgetDecoration.create(d.pos, d.widget || {})
+    else return AttrDecoration.create(d.from, d.to, d.attrs || {}, d)
+  }))
+}
+
+function str(set) {
+  let s = "[" + set.local.map(d => d.from + "-" + d.to).join(", ")
+  for (let i = 0; i < set.children.length; i += 3)
+    s += (s.length > 1 ? ", " : "") + set.children[i] + ": " + str(set.children[i + 2])
+  return s + "]"
 }
 
 function buildMap(doc, ...decorations) {
@@ -17,87 +27,103 @@ function buildMap(doc, ...decorations) {
 
 describe("DecorationSet", () => {
   it("builds up a matching tree", () => {
-    let set = build(doc(p("foo"), blockquote(p("bar"))), {start: 2, end: 3}, {start: 8, end: 9})
-    ist(set.toString(), "[0: [1-2], 5: [0: [1-2]]]")
+    let set = build(doc(p("foo"), blockquote(p("bar"))), {from: 2, to: 3}, {from: 8, to: 9})
+    ist(str(set), "[0: [1-2], 5: [0: [1-2]]]")
   })
 
   it("does not build nodes when there are no decorations", () => {
-    let set = build(doc(p("foo"), blockquote(p("bar"))), {start: 8, end: 9})
-    ist(set.toString(), "[5: [0: [1-2]]]")
+    let set = build(doc(p("foo"), blockquote(p("bar"))), {from: 8, to: 9})
+    ist(str(set), "[5: [0: [1-2]]]")
   })
 
   it("puts decorations between children in local", () => {
-    let set = build(doc(p("a"), p("b")), {start: 3, end: 3})
-    ist(set.toString(), "[3-3]")
+    let set = build(doc(p("a"), p("b")), {pos: 3})
+    ist(str(set), "[3-3]")
   })
 
   it("puts decorations spanning children in local", () => {
-    let set = build(doc(p("a"), p("b")), {start: 1, end: 5})
-    ist(set.toString(), "[1-5]")
+    let set = build(doc(p("a"), p("b")), {from: 1, to: 5})
+    ist(str(set), "[1-5]")
   })
 
   it("supports basic mapping", () => {
     let {oldSet, set} = buildMap(doc(p("foo"), p("bar")),
-                                 {start: 2, end: 3}, {start: 7, end: 8},
+                                 {from: 2, to: 3}, {from: 7, to: 8},
                                  tr => tr.replaceWith(4, 4, schema.text("!!")))
-    ist(oldSet.toString(), "[0: [1-2], 5: [1-2]]")
-    ist(set.toString(), "[0: [1-2], 7: [1-2]]")
+    ist(str(oldSet), "[0: [1-2], 5: [1-2]]")
+    ist(str(set), "[0: [1-2], 7: [1-2]]")
   })
 
   it("drops deleted decorations", () => {
-    let {set} = buildMap(doc(p("foobar")), {start: 2, end: 3}, tr => tr.delete(1, 4))
-    ist(set.toString(), "[]")
-  })
-
-  it("preserves persistent decorations", () => {
-    let {set} = buildMap(doc(p("foobar")), {start: 2, end: 3, persistent: true}, tr => tr.delete(1, 4))
-    ist(set.toString(), "[0: [0-0]]")
+    let {set} = buildMap(doc(p("foobar")), {from: 2, to: 3}, tr => tr.delete(1, 4))
+    ist(str(set), "[]")
   })
 
   it("isn't inclusive by default", () => {
-    let {set} = buildMap(doc(p("foo")), {start: 2, end: 3},
+    let {set} = buildMap(doc(p("foo")), {from: 2, to: 3},
                          tr => tr.replaceWith(2, 2, schema.text(".")).replaceWith(4, 4, schema.text("?")))
-    ist(set.toString(), "[0: [2-3]]")
+    ist(str(set), "[0: [2-3]]")
   })
 
   it("understands unclusiveLeft", () => {
-    let {set} = buildMap(doc(p("foo")), {start: 2, end: 3, inclusiveLeft: true},
+    let {set} = buildMap(doc(p("foo")), {from: 2, to: 3, inclusiveLeft: true},
                          tr => tr.replaceWith(2, 2, schema.text(".")).replaceWith(4, 4, schema.text("?")))
-    ist(set.toString(), "[0: [1-3]]")
+    ist(str(set), "[0: [1-3]]")
   })
 
   it("understands unclusiveRight", () => {
-    let {set} = buildMap(doc(p("foo")), {start: 2, end: 3, inclusiveRight: true},
+    let {set} = buildMap(doc(p("foo")), {from: 2, to: 3, inclusiveRight: true},
                          tr => tr.replaceWith(2, 2, schema.text(".")).replaceWith(4, 4, schema.text("?")))
-    ist(set.toString(), "[0: [2-4]]")
+    ist(str(set), "[0: [2-4]]")
   })
 
   it("preserves subtrees not touched by mapping", () => {
     let {oldSet, set} = buildMap(doc(p("foo"), blockquote(p("bar"), p("baz"))),
-                                 {start: 2, end: 3}, {start: 8, end: 9}, {start: 13, end: 14},
+                                 {from: 2, to: 3}, {from: 8, to: 9}, {from: 13, to: 14},
                                  tr => tr.delete(8, 9))
-    ist(set.toString(), "[0: [1-2], 5: [4: [1-2]]]")
+    ist(str(set), "[0: [1-2], 5: [4: [1-2]]]")
     ist(set.children[2], oldSet.children[2]) // FIXME sane accessors?
     ist(set.children[5].children[2], oldSet.children[5].children[5])
   })
 
   it("rebuilds when a node is joined", () => {
     let {set} = buildMap(doc(p("foo"), p("bar")),
-                         {start: 2, end: 3}, {start: 7, end: 8},
+                         {from: 2, to: 3}, {from: 7, to: 8},
                          tr => tr.join(5))
-    ist(set.toString(), "[0: [1-2, 4-5]]")
+    ist(str(set), "[0: [1-2, 4-5]]")
   })
 
   it("rebuilds when a node is split", () => {
-    let {set} = buildMap(doc(p("foobar")), {start: 2, end: 3}, {start: 5, end: 6}, tr => tr.split(4))
-    ist(set.toString(), "[0: [1-2], 5: [1-2]]")
+    let {set} = buildMap(doc(p("foobar")), {from: 2, to: 3}, {from: 5, to: 6}, tr => tr.split(4))
+    ist(str(set), "[0: [1-2], 5: [1-2]]")
   })
 
   it("correctly rebuilds a deep structure", () => {
     let {oldSet, set} = buildMap(doc(blockquote(p("foo")), blockquote(blockquote(p("bar")))),
-                                 {start: 3, end: 4}, {start: 11, end: 12},
+                                 {from: 3, to: 4}, {from: 11, to: 12},
                                  tr => tr.join(7))
-    ist(oldSet.toString(), "[0: [0: [1-2]], 7: [0: [0: [1-2]]]]")
-    ist(set.toString(), "[0: [0: [1-2], 5: [0: [1-2]]]]")
+    ist(str(oldSet), "[0: [0: [1-2]], 7: [0: [0: [1-2]]]]")
+    ist(str(set), "[0: [0: [1-2], 5: [0: [1-2]]]]")
+  })
+})
+
+function arrayStr(arr) {
+  return arr.map(d => d.from + "-" + d.to).join(", ")
+}
+
+describe("removeOverlap", () => {
+  it("returns the original array when there is no overlap", () => {
+    let decs = [WidgetDecoration.create(1, {}), AttrDecoration.create(1, 4, {}), AttrDecoration.create(1, 4, {})]
+    ist(removeOverlap(decs), decs)
+  })
+
+  it("splits a partially overlapping decoration", () => {
+    let decs = [AttrDecoration.create(1, 2, {}), AttrDecoration.create(1, 4, {}), AttrDecoration.create(3, 4, {})]
+    ist(arrayStr(removeOverlap(decs)), "1-2, 1-2, 2-3, 3-4, 3-4")
+  })
+
+  it("splits a decoration that spans multiple others", () => {
+    let decs = [AttrDecoration.create(1, 5, {}), WidgetDecoration.create(2, {}), WidgetDecoration.create(3, {})]
+    ist(arrayStr(removeOverlap(decs)), "1-2, 2-2, 2-3, 3-3, 3-5")
   })
 })
