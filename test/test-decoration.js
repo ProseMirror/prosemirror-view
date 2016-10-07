@@ -2,13 +2,17 @@ const ist = require("ist")
 const {schema, doc, p, blockquote} = require("prosemirror-model/test/build")
 const {Transform} = require("prosemirror-transform")
 
-const {WidgetDecoration, AttrDecoration, DecorationSet, removeOverlap} = require("../dist/decoration")
+const {WidgetDecoration, InlineDecoration, DecorationSet, removeOverlap} = require("../dist/decoration")
+
+let widget = document.createElement("button")
+
+function make(d) {
+  if (d.pos != null) return WidgetDecoration.create(d.pos, d.widget || widget)
+  else return InlineDecoration.create(d.from, d.to, d.attrs || {}, d)
+}
 
 function build(doc, ...decorations) {
-  return DecorationSet.create(doc, decorations.map(d => {
-    if (d.pos != null) return WidgetDecoration.create(d.pos, d.widget || {})
-    else return AttrDecoration.create(d.from, d.to, d.attrs || {}, d)
-  }))
+  return DecorationSet.create(doc, decorations.map(make))
 }
 
 function str(set) {
@@ -23,6 +27,11 @@ function buildMap(doc, ...decorations) {
   let oldSet = build(doc, ...decorations)
   let tr = f(new Transform(doc))
   return {set: oldSet.map(tr.mapping, tr.doc), oldSet}
+}
+
+function buildAdd(doc, ...decorations) {
+  let toAdd = make(decorations.pop())
+  return build(doc, ...decorations).addDecoration(toAdd, doc)
 }
 
 describe("DecorationSet", () => {
@@ -105,6 +114,26 @@ describe("DecorationSet", () => {
     ist(str(oldSet), "[0: [0: [1-2]], 7: [0: [0: [1-2]]]]")
     ist(str(set), "[0: [0: [1-2], 5: [0: [1-2]]]]")
   })
+
+  it("can add a local decoration", () => {
+    ist(str(buildAdd(doc(p("foo"), p("bar")), {pos: 0}, {pos: 5})),
+        "[0-0, 5-5]")
+  })
+
+  it("can add a decoration in a new child", () => {
+    ist(str(buildAdd(doc(p("foo"), p("bar")), {pos: 0}, {pos: 3})),
+        "[0-0, 0: [2-2]]")
+  })
+
+  it("can add a decoration to an existing child", () => {
+    ist(str(buildAdd(doc(p("foo"), p("bar")), {pos: 1}, {pos: 3})),
+        "[0: [0-0, 2-2]]")
+  })
+
+  it("can add a decoration beyond an existing child", () => {
+    ist(str(buildAdd(doc(blockquote(p("foo"))), {pos: 1}, {pos: 4})),
+        "[0: [0-0, 0: [2-2]]]")
+  })
 })
 
 function arrayStr(arr) {
@@ -113,17 +142,17 @@ function arrayStr(arr) {
 
 describe("removeOverlap", () => {
   it("returns the original array when there is no overlap", () => {
-    let decs = [WidgetDecoration.create(1, {}), AttrDecoration.create(1, 4, {}), AttrDecoration.create(1, 4, {})]
+    let decs = [WidgetDecoration.create(1, widget), InlineDecoration.create(1, 4, {}), InlineDecoration.create(1, 4, {})]
     ist(removeOverlap(decs), decs)
   })
 
   it("splits a partially overlapping decoration", () => {
-    let decs = [AttrDecoration.create(1, 2, {}), AttrDecoration.create(1, 4, {}), AttrDecoration.create(3, 4, {})]
+    let decs = [InlineDecoration.create(1, 2, {}), InlineDecoration.create(1, 4, {}), InlineDecoration.create(3, 4, {})]
     ist(arrayStr(removeOverlap(decs)), "1-2, 1-2, 2-3, 3-4, 3-4")
   })
 
   it("splits a decoration that spans multiple others", () => {
-    let decs = [AttrDecoration.create(1, 5, {}), WidgetDecoration.create(2, {}), WidgetDecoration.create(3, {})]
+    let decs = [InlineDecoration.create(1, 5, {}), WidgetDecoration.create(2, widget), WidgetDecoration.create(3, widget)]
     ist(arrayStr(removeOverlap(decs)), "1-2, 2-2, 2-3, 3-3, 3-5")
   })
 })

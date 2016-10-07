@@ -1,5 +1,22 @@
+function viewDecorations(view) {
+  let found = []
+  view.someProp("decorations", f => {
+    let result = f(view.state)
+    if (result) found.push(result)
+  })
+  return DecorationGroup.from(found)
+}
+exports.viewDecorations = viewDecorations
+
 class WidgetDecoration {
   constructor(widget) {
+    if (widget.nodeType != 1) {
+      let wrap = document.createElement("span")
+      wrap.appendChild(widget)
+      widget = wrap
+    }
+    widget.setAttribute("pm-ignore", "true")
+    widget.contentEditable = false
     this.widget = widget
   }
 
@@ -7,8 +24,6 @@ class WidgetDecoration {
     let {pos, deleted} = mapping.mapResult(span.from + oldOffset)
     return deleted ? null : new DecorationSpan(pos - offset, pos - offset, this)
   }
-
-  get leafOnly() { return false }
 
   apply(domParent, domNode) {
     domParent.insertBefore(this.widget, domNode)
@@ -20,7 +35,7 @@ class WidgetDecoration {
 }
 exports.WidgetDecoration = WidgetDecoration
 
-class AttrDecoration {
+class InlineDecoration {
   constructor(attrs, options) {
     this.inclusiveLeft = options && options.inclusiveLeft
     this.inclusiveRight = options && options.inclusiveRight
@@ -33,8 +48,6 @@ class AttrDecoration {
     return from >= to ? null : new DecorationSpan(from, to, this)
   }
 
-  get leafOnly() { return true }
-
   apply(_domParent, domNode) {
     for (let attr in this.attrs) {
       if (attr == "class") domNode.classList.add(this.attrs[attr])
@@ -44,10 +57,14 @@ class AttrDecoration {
   }
 
   static create(from, to, attrs, options) {
-    return new DecorationSpan(from, to, new AttrDecoration(attrs, options))
+    return new DecorationSpan(from, to, new InlineDecoration(attrs, options))
   }
 }
-exports.AttrDecoration = AttrDecoration
+exports.InlineDecoration = InlineDecoration
+
+function isInlineDecoration(span) {
+  return span.decoration instanceof InlineDecoration
+}
 
 class DecorationSpan {
   constructor(from, to, decoration) {
@@ -96,6 +113,36 @@ class DecorationSet {
       return newLocal ? new DecorationSet(newLocal.sort(byPos)) : null
   }
 
+  addDecoration(span, node) {
+    let childOffset, childNode
+    node.forEach((child, offset) => {
+      if (!child.isLeaf && span.from > offset && span.to < offset + child.nodeSize) {
+        childOffset = offset
+        childNode = child
+        return false
+      }
+    })
+    if (childOffset == null) {
+      return new DecorationSet(this.local.concat(span).sort(byPos), this.children)
+    } else {
+      let children = this.children.slice(), i = 0
+      add: {
+        for (; i < children.length; i += 3) {
+          let childFrom = children[i]
+          if (childFrom == childOffset) {
+            let inner = new DecorationSpan(span.from - childOffset - 1, span.to - childOffset - 1, span.decoration)
+            children[i + 2] = children[i + 2].addDecoration(inner, childNode)
+            break add
+          } else if (childFrom > childOffset) {
+            break
+          }
+        }
+        children.splice(i, 0, childOffset, childOffset + childNode.nodeSize, buildTree([span], childNode, childOffset + 1))
+      }
+      return new DecorationSet(this.local, children)
+    }
+  }
+
   forChild(offset, node) {
     let child, local
     for (let i = 0; i < this.children.length; i += 3) if (this.children[i] >= offset) {
@@ -117,6 +164,7 @@ class DecorationSet {
   }
 
   sameOutput(other) {
+    if (this == other) return true
     if (!(other instanceof DecorationSet) ||
         this.local.length != other.local.length ||
         this.children.length != other.children.length) return false
@@ -129,8 +177,14 @@ class DecorationSet {
     return false
   }
 
-  locals() {
-    return this.local
+  locals(node) {
+    if (node.isTextblock || !this.local.some(isInlineDecoration)) return this.local
+    let result = []
+    for (let i = 0; i < this.local.length; i++) {
+      if (!(this.local[i].decoration instanceof InlineDecoration))
+        result.push(this.local[i])
+    }
+    return result
   }
 
   static create(doc, decorations) {
@@ -170,10 +224,10 @@ class DecorationGroup {
     return true
   }
 
-  locals() {
+  locals(node) {
     let result, sorted = true
     for (let i = 0; i < this.members.length; i++) {
-      let locals = this.members[i].locals()
+      let locals = this.members[i].locals(node)
       if (!locals.length) continue
       if (!result) {
         result = locals

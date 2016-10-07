@@ -3,7 +3,10 @@ const {scrollPosIntoView, posAtCoords, coordsAtPos} = require("./dompos")
 const {draw, redraw, DIRTY_REDRAW, DIRTY_RESCAN} = require("./draw")
 const {initInput, finishUpdateFromDOM, dispatchKeyDown, dispatchKeyPress} = require("./input")
 const {SelectionReader, selectionToDOM} = require("./selection")
-const {AttrDecoration, DecorationSet} = require("./decoration")
+const {viewDecorations} = require("./decoration")
+
+;({DecorationSet: exports.DecorationSet, InlineDecoration: exports.InlineDecoration,
+   WidgetDecoration: exports.WidgetDecoration} = require("./decoration"))
 
 // ::- An editor view manages the DOM structure that represents an
 // editor. Its state and behavior are determined by its
@@ -39,7 +42,7 @@ class EditorView {
     if (place && place.appendChild) place.appendChild(this.wrapper)
     else if (place) place(this.wrapper)
 
-    draw(this, this.state.doc, DecorationSet.create(this.state.doc, [AttrDecoration.create(375, 378, {class: "marked"})]))
+    draw(this, this.state.doc, this.drawnDecorations = viewDecorations(this))
     this.content.contentEditable = true
     this.dirtyNodes = new Map // Maps node object to 1 (re-scan content) or 2 (redraw entirely)
 
@@ -75,8 +78,10 @@ class EditorView {
     let redrawn = false
     let docChange = !state.doc.eq(this.drawnState.doc)
 
-    if (docChange || this.dirtyNodes.size) {
-      redraw(this, this.drawnState, state)
+    let decorations = viewDecorations(this)
+    if (docChange || this.dirtyNodes.size || !decorations.sameOutput(this.drawnDecorations)) {
+      redraw(this, this.drawnState, state, this.drawnDecorations, decorations)
+      this.drawnDecorations = decorations
       this.dirtyNodes.clear()
       redrawn = true
     }
