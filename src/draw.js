@@ -76,7 +76,6 @@ function redraw(view, oldState, newState, oldDecorations, newDecorations) {
         decoIndex = matchedLocalDeco
       } else if (pChild && !child.isText && child.sameMarkup(pChild) && dirty.get(pChild) != DIRTY_REDRAW &&
                  (matchedLocalDeco = sameLocalDeco()) != null && syncDOM()) {
-        // FIXME this needs to compare
         reuseDOM = true
         decoIndex = matchedLocalDeco
         if (!pChild.isLeaf)

@@ -113,34 +113,56 @@ class DecorationSet {
       return newLocal ? new DecorationSet(newLocal.sort(byPos)) : null
   }
 
-  addDecoration(span, node) {
-    let childOffset, childNode
-    node.forEach((child, offset) => {
-      if (!child.isLeaf && span.from > offset && span.to < offset + child.nodeSize) {
-        childOffset = offset
-        childNode = child
-        return false
-      }
+  add(spans, node, offset = 0) {
+    if (!spans.length) return this
+    let children, childIndex = 0
+    node.forEach((childNode, childOffset) => {
+      let baseOffset = childOffset + offset, found
+      if (!(found = takeSpansForNode(spans, childNode, baseOffset))) return
+
+      if (!children) children = this.children.slice()
+      while (childIndex < children.length && children[childIndex] < childOffset) childIndex += 3
+      if (children[childIndex] == childOffset)
+        children[childIndex + 2] = children[childIndex + 2].add(found, childNode, baseOffset + 1)
+      else
+        children.splice(childIndex, 0, childOffset, childOffset + childNode.nodeSize, buildTree(found, childNode, baseOffset + 1))
+      childIndex += 3
     })
-    if (childOffset == null) {
-      return new DecorationSet(this.local.concat(span).sort(byPos), this.children)
-    } else {
-      let children = this.children.slice(), i = 0
-      add: {
-        for (; i < children.length; i += 3) {
-          let childFrom = children[i]
-          if (childFrom == childOffset) {
-            let inner = new DecorationSpan(span.from - childOffset - 1, span.to - childOffset - 1, span.decoration)
-            children[i + 2] = children[i + 2].addDecoration(inner, childNode)
-            break add
-          } else if (childFrom > childOffset) {
-            break
-          }
+
+    let local = moveSpans(childIndex ? withoutNulls(spans) : spans, -offset)
+    return new DecorationSet(local.length ? this.local.concat(local).sort(byPos) : this.local,
+                             children || this.children)
+  }
+
+  remove(spans, offset = 0) {
+    let children = this.children, local = this.local
+    for (let i = 0; i < children.length; i += 3) {
+      let found, from = children[i] + offset, to = children[i + 1] + offset
+      for (let j = 0, span; j < spans.length; j++) if (span = spans[j]) {
+        if (span.from > from && span.to < to) {
+          spans[j] = null
+          ;(found || (found = [])).push(span)
         }
-        children.splice(i, 0, childOffset, childOffset + childNode.nodeSize, buildTree([span], childNode, childOffset + 1))
       }
-      return new DecorationSet(this.local, children)
+      if (!found) continue
+      if (children == this.children) children = this.children.slice()
+      let removed = children[i + 2].remove(found, from + 1)
+      if (removed) {
+        children[i + 2] = removed
+      } else {
+        children.splice(i, 3)
+        i -= 3
+      }
     }
+    for (let i = 0, span; i < spans.length; i++) if (span = spans[i]) {
+      let decoration = span.decoration
+      for (let j = 0; j < local.length; j++) if (local[j].decoration == decoration) {
+        if (local == this.local) local = this.local.slice()
+        local.splice(j--, 1)
+      }
+    }
+    if (children == this.children && local == this.local) return this
+    return local.length || children.length ? new DecorationSet(local, children) : null
   }
 
   forChild(offset, node) {
@@ -188,7 +210,7 @@ class DecorationSet {
   }
 
   static create(doc, decorations) {
-    return buildTree(decorations, doc, 0)
+    return decorations.length ? buildTree(decorations, doc, 0) : null
   }
 }
 exports.DecorationSet = DecorationSet
@@ -297,7 +319,7 @@ function mapChildren(oldChildren, newLocal, mapping, node, offset, oldOffset) {
 
   // Remaining children must be collected and rebuilt into the appropriate structure
   if (mustRebuild) {
-    let decorations = mapAndGatherRemainingDecorations(children, newLocal ? moveDecorations(newLocal, offset) : [], mapping, oldOffset)
+    let decorations = mapAndGatherRemainingDecorations(children, newLocal ? moveSpans(newLocal, offset) : [], mapping, oldOffset)
     let built = buildTree(decorations, node, 0)
     newLocal = built.local
     for (let i = 0; i < children.length; i += 3) if (children[i + 1] == -1) {
@@ -314,12 +336,14 @@ function mapChildren(oldChildren, newLocal, mapping, node, offset, oldOffset) {
   return new DecorationSet(newLocal && newLocal.sort(byPos), children)
 }
 
-function moveDecorations(decorations, offset) {
-  if (offset) for (let i = 0; i < decorations.length; i++) {
-    decorations[i].from += offset
-    decorations[i].to += offset
+function moveSpans(spans, offset) {
+  if (!offset || !spans.length) return spans
+  let result = []
+  for (let i = 0; i < spans.length; i++) {
+    let span = spans[i]
+    result.push(new DecorationSpan(span.from + offset, span.to + offset, span.decoration))
   }
-  return decorations
+  return result
 }
 
 function mapAndGatherRemainingDecorations(children, decorations, mapping, oldOffset) {
@@ -338,49 +362,64 @@ function mapAndGatherRemainingDecorations(children, decorations, mapping, oldOff
   return decorations
 }
 
-function buildTree(decorations, node, offset) {
+function takeSpansForNode(spans, node, offset) {
+  if (node.isLeaf) return null
+  let end = offset + node.nodeSize, found = null
+  for (let i = 0, span; i < spans.length; i++) {
+    if ((span = spans[i]) && span.from > offset && span.to < end) {
+      ;(found || (found = [])).push(span)
+      spans[i] = null
+    }
+  }
+  return found
+}
+
+function withoutNulls(array) {
+  let result = []
+  for (let i = 0; i < array.length; i++)
+    if (array[i] != null) result.push(array[i])
+  return result
+}
+
+function buildTree(spans, node, offset) {
   let children = []
   node.forEach((childNode, localStart) => {
-    if (childNode.isLeaf) return
-    let from = offset + localStart, to = from + childNode.nodeSize, found = []
-    for (let i = 0, dec; i < decorations.length; i++) {
-      if ((dec = decorations[i]) && dec.from > from && dec.to < to) {
-        found.push(dec)
-        decorations[i] = null
-      }
-    }
-    if (found.length)
-      children.push(localStart, to - offset, buildTree(found, childNode, offset + localStart + 1))
+    let found = takeSpansForNode(spans, childNode, localStart + offset)
+    if (found)
+      children.push(localStart, localStart + childNode.nodeSize, buildTree(found, childNode, offset + localStart + 1))
   })
-
-  return new DecorationSet(moveDecorations(decorations.filter(x => x), -offset).sort(byPos), children)
+  return new DecorationSet(moveSpans(children.length ? withoutNulls(spans) : spans, -offset).sort(byPos), children)
 }
 
 function byPos(a, b) {
   return a.from - b.from || a.to - b.to
 }
 
-function removeOverlap(locals) {
-  let working = locals
+function removeOverlap(spans) {
+  let working = spans
   for (let i = 0; i < working.length - 1; i++) {
-    let cur = working[i]
-    if (cur.from != cur.to) for (let j = i + 1; j < working.length; j++) {
+    let span = working[i]
+    if (span.from != span.to) for (let j = i + 1; j < working.length; j++) {
       let next = working[j]
-      if (next.from == cur.from) {
-        if (next.to == cur.to) continue
-        if (working == locals) working = locals.slice()
-        // Followed by a partially overlapping larger span. Split that
-        // span.
-        working[j] = next.copy(next.from, cur.to)
-        insertAhead(working, j + 1, next.copy(cur.to, next.to))
-      } else if (next.from < cur.to) {
-        if (working == locals) working = locals.slice()
-        // The end of this one overlaps with a subsequent span. Split
-        // this one.
-        working[i] = cur.copy(cur.from, next.from)
-        insertAhead(working, j, cur.copy(next.from, cur.to))
+      if (next.from == span.from) {
+        if (next.to != span.to) {
+          if (working == spans) working = spans.slice()
+          // Followed by a partially overlapping larger span. Split that
+          // span.
+          working[j] = next.copy(next.from, span.to)
+          insertAhead(working, j + 1, next.copy(span.to, next.to))
+        }
+        continue
+      } else {
+        if (next.from < span.to) {
+          if (working == spans) working = spans.slice()
+          // The end of this one overlaps with a subsequent span. Split
+          // this one.
+          working[i] = span.copy(span.from, next.from)
+          insertAhead(working, j, span.copy(next.from, span.to))
+        }
+        break
       }
-      break
     }
   }
   return working
