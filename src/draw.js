@@ -13,11 +13,7 @@ function getSerializer(view) {
 
 function draw(view, doc, decorations) {
   view.content.textContent = ""
-  let serializer = getSerializer(view)
-  doc.content.forEach((node, offset) => {
-    let decos = decorations.forChild(offset, node)
-    view.content.appendChild(serialize(node, offset, serializer, decos))
-  })
+  new Context(getSerializer(view), decorations).serializeContent(doc, view.content)
 }
 exports.draw = draw
 
@@ -82,7 +78,7 @@ function redraw(view, oldState, newState, oldDecorations, newDecorations) {
           scan(childContainer(domPos), child, pChild, prevChildDeco || oldDecorations.forChild(oPrev, pChild), childDeco)
         domPos.setAttribute("pm-size", child.nodeSize)
       } else {
-        let rendered = serialize(child, offset, serializer, childDeco)
+        let rendered = new Context(serializer, childDeco).serialize(child, offset)
         dom.insertBefore(rendered, domPos)
         reuseDOM = false
         decoIndex = applyDecorations(localDecorations, decoIndex, offset, offset + child.nodeSize, dom, rendered)
@@ -120,37 +116,40 @@ function redraw(view, oldState, newState, oldDecorations, newDecorations) {
 }
 exports.redraw = redraw
 
-function serialize(node, offset, serializer, decorations) {
-  function inner(node, offset) {
-    let dom = serializer.serializeNodeAndMarks(node, options)
+class Context {
+  constructor(serializer, decorations) {
+    this.serializer = serializer
+    this.decorations = decorations
+  }
+
+  onContent(parent, target) {
+    target.setAttribute("pm-container", true)
+    this.serializeContent(parent, target, this.decorations)
+  }
+
+  serialize(node, offset) {
+    let dom = this.serializer.serializeNodeAndMarks(node, this)
     if (dom.nodeType != 1 || dom.contentEditable == "false") {
       let wrap = document.createElement(node.isInline ? "span" : "div")
       wrap.appendChild(dom)
       dom = wrap
     }
-
     dom.setAttribute("pm-size", node.nodeSize)
     dom.setAttribute("pm-offset", offset)
-    if (node.isTextblock) adjustTrailingHacks(serializer, dom, node)
-
+    if (node.isTextblock) adjustTrailingHacks(this.serializer, dom, node)
     return dom
   }
 
-  let currentDecorations = decorations
-  let options = {
-    onContent(parent, target) {
-      let decorations = currentDecorations, locals = removeOverlap(decorations.locals(parent))
-      target.setAttribute("pm-container", true)
-      let i = applyDecorations(locals, 0, 0, 0, target, null, false)
-      parent.content.forEach((child, offset) => {
-        currentDecorations = decorations.forChild(offset, child)
-        let dom = target.appendChild(inner(child, offset))
-        i = applyDecorations(locals, i, offset, offset + child.nodeSize, target, dom)
-      })
-    }
+  serializeContent(node, target) {
+    let decorations = this.decorations
+    let locals = removeOverlap(decorations.locals(node))
+    let i = applyDecorations(locals, 0, 0, 0, target, null, false)
+    node.content.forEach((child, offset) => {
+      this.decorations = decorations.forChild(offset, child)
+      let dom = target.appendChild(this.serialize(child, offset))
+      i = applyDecorations(locals, i, offset, offset + child.nodeSize, target, dom)
+    })
   }
-
-  return inner(node, offset)
 }
 
 function applyDecorations(locals, i, from, to, domParent, domNode) {
@@ -167,7 +166,7 @@ function applyDecorations(locals, i, from, to, domParent, domNode) {
     let next = span.to > span.from && span.to < to && splitText(domNode, span.to - from)
 
     for (;;) {
-      span.decoration.apply(domParent, domNode)
+      domNode = span.decoration.apply(domParent, domNode)
       if (i < locals.length - 1 && locals[i + 1].to == span.to) span = locals[++i]
       else break
     }

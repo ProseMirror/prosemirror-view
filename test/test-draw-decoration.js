@@ -1,10 +1,11 @@
 const {doc, p} = require("prosemirror-model/test/build")
 const {Plugin} = require("prosemirror-state")
 const {tempEditor} = require("./view")
-const {DecorationSet, InlineDecoration, WidgetDecoration} = require("../dist")
+const {DecorationSet, InlineDecoration, WidgetDecoration, NodeDecoration} = require("../dist")
 const ist = require("ist")
 
 function make(str) {
+  if (typeof str != "string") return str
   let match = /^(\d+)(?:-(\d+))?-(\w+)$/.exec(str)
   if (match[3] == "widget") {
     let widget = document.createElement("button")
@@ -46,6 +47,25 @@ describe("EditorView", () => {
       let found = view.content.querySelector(".foo")
       ist(found)
       ist(found.textContent, "oob")
+    })
+
+    it("draws wrapping decorations", () => {
+      let view = tempEditor({doc: doc(p("foo")),
+                             plugins: [decoPlugin([InlineDecoration.create(1, 5, {wrapper: document.createElement("i")})])]})
+      let found = view.content.querySelector("i")
+      ist(found)
+      ist(found.getAttribute("pm-offset"), 0)
+      ist(found.getAttribute("pm-size"), 3)
+      ist(found.innerHTML, "<span>foo</span>")
+    })
+
+    it("draws node decorations", () => {
+      let view = tempEditor({doc: doc(p("foo"), p("bar")),
+                             plugins: [decoPlugin([NodeDecoration.create(5, 10, {class: "cls"})])]})
+      let found = view.content.querySelectorAll(".cls")
+      ist(found.length, 1)
+      ist(found[0].nodeName, "P")
+      ist(found[0].previousSibling.nodeName, "P")
     })
 
     it("draws overlapping inline decorations", () => {

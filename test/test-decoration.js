@@ -2,13 +2,14 @@ const ist = require("ist")
 const {schema, doc, p, blockquote} = require("prosemirror-model/test/build")
 const {Transform} = require("prosemirror-transform")
 
-const {WidgetDecoration, InlineDecoration, DecorationSet, removeOverlap} = require("../dist/decoration")
+const {WidgetDecoration, InlineDecoration, NodeDecoration, DecorationSet, removeOverlap} = require("../dist/decoration")
 
 let widget = document.createElement("button")
 
 function make(d) {
   if (d.decoration) return d
   if (d.pos != null) return WidgetDecoration.create(d.pos, d.widget || widget)
+  if (d.node) return NodeDecoration.create(d.from, d.to, d.attrs || {}, d)
   return InlineDecoration.create(d.from, d.to, d.attrs || {}, d)
 }
 
@@ -17,6 +18,7 @@ function build(doc, ...decorations) {
 }
 
 function str(set) {
+  if (!set) return "[]"
   let s = "[" + set.local.map(d => d.from + "-" + d.to).join(", ")
   for (let i = 0; i < set.children.length; i += 3)
     s += (s.length > 1 ? ", " : "") + set.children[i] + ": " + str(set.children[i + 2])
@@ -61,6 +63,11 @@ describe("DecorationSet", () => {
     ist(str(set), "[1-5]")
   })
 
+  it("puts node decorations in the parent node", () => {
+    let set = build(doc(p("a"), p("b")), {from: 3, to: 6, node: true})
+    ist(str(set), "[3-6]")
+  })
+
   describe("map", () => {
     it("supports basic mapping", () => {
       let {oldSet, set} = buildMap(doc(p("foo"), p("bar")),
@@ -72,6 +79,27 @@ describe("DecorationSet", () => {
 
     it("drops deleted decorations", () => {
       let {set} = buildMap(doc(p("foobar")), {from: 2, to: 3}, tr => tr.delete(1, 4))
+      ist(str(set), "[]")
+    })
+
+    it("can map node decorations", () => {
+      let {set} = buildMap(doc(blockquote(p("a"), p("b"))), {from: 4, to: 7, node: true}, tr => tr.delete(1, 4))
+      ist(str(set), "[0: [0-3]]")
+    })
+
+    it("can map inside node decorations", () => {
+      let {set} = buildMap(doc(blockquote(p("a"), p("b"))), {from: 4, to: 7, node: true}, tr => tr.replaceWith(5, 5, schema.text("c")))
+      ist(str(set), "[0: [3-7]]")
+    })
+
+    it("removes partially overwritten node decorations", () => {
+      let {set} = buildMap(doc(p("a"), p("b")), {from: 0, to: 3, node: true}, tr => tr.delete(2, 4))
+      ist(str(set), "[]")
+    })
+
+    it("removes exactly overwritten node decorations", () => {
+      let {set} = buildMap(doc(p("a"), p("b")), {from: 0, to: 3, node: true},
+                           tr => tr.replaceWith(0, 3, schema.nodes.horizontal_rule.create()))
       ist(str(set), "[]")
     })
 
@@ -161,7 +189,7 @@ describe("DecorationSet", () => {
       let d1 = make({pos: 2}), d2 = make({from: 2, to: 8})
       ist(str(buildRem(doc(p("foo"), p("bar")), {pos: 1}, {from: 6, to: 7}, d1, d2, [d1, d2])),
           "[0: [0-0], 5: [0-1]]")
-      
+
     })
 
     it("ignores decorations that don't exist", () => {

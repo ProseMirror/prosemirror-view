@@ -9,7 +9,7 @@ function viewDecorations(view) {
 exports.viewDecorations = viewDecorations
 
 class WidgetDecoration {
-  constructor(widget) {
+  constructor(widget, options) {
     if (widget.nodeType != 1) {
       let wrap = document.createElement("span")
       wrap.appendChild(widget)
@@ -18,6 +18,7 @@ class WidgetDecoration {
     widget.setAttribute("pm-ignore", "true")
     widget.contentEditable = false
     this.widget = widget
+    this.options = options || noOptions
   }
 
   map(mapping, span, offset, oldOffset) {
@@ -25,45 +26,100 @@ class WidgetDecoration {
     return deleted ? null : new DecorationSpan(pos - offset, pos - offset, this)
   }
 
+  valid() { return true }
+
   apply(domParent, domNode) {
     domParent.insertBefore(this.widget, domNode)
+    return domNode
   }
 
-  static create(pos, widget) {
-    return new DecorationSpan(pos, pos, new WidgetDecoration(widget))
+  static create(pos, widget, options) {
+    return new DecorationSpan(pos, pos, new WidgetDecoration(widget), options)
   }
 }
 exports.WidgetDecoration = WidgetDecoration
 
 class InlineDecoration {
   constructor(attrs, options) {
-    this.inclusiveLeft = options && options.inclusiveLeft
-    this.inclusiveRight = options && options.inclusiveRight
+    this.options = options || noOptions
     this.attrs = attrs
   }
 
   map(mapping, span, offset, oldOffset) {
-    let from = mapping.map(span.from + oldOffset, this.inclusiveLeft ? -1 : 1) - offset
-    let to = mapping.map(span.to + oldOffset, this.inclusiveRight ? 1 : -1) - offset
+    let from = mapping.map(span.from + oldOffset, this.options.inclusiveLeft ? -1 : 1) - offset
+    let to = mapping.map(span.to + oldOffset, this.options.inclusiveRight ? 1 : -1) - offset
     return from >= to ? null : new DecorationSpan(from, to, this)
   }
 
+  valid() { return true }
+
   apply(_domParent, domNode) {
-    for (let attr in this.attrs) {
-      if (attr == "class") domNode.classList.add(this.attrs[attr])
-      else if (attr == "style") domNode.style.cssText += ";" + this.attrs[attr]
-      else domNode.setAttribute(attr, this.attrs[attr])
-    }
+    return applyContentDecoration(this.attrs, domNode)
   }
 
   static create(from, to, attrs, options) {
     return new DecorationSpan(from, to, new InlineDecoration(attrs, options))
   }
+
+  static is(span) { return span.decoration instanceof InlineDecoration }
 }
 exports.InlineDecoration = InlineDecoration
 
-function isInlineDecoration(span) {
-  return span.decoration instanceof InlineDecoration
+class NodeDecoration {
+  constructor(attrs, options) {
+    this.attrs = attrs
+    this.options = options || noOptions
+  }
+
+  map(mapping, span, offset, oldOffset) {
+    let from = mapping.mapResult(span.from + oldOffset, 1)
+    if (from.deleted) return null
+    let to = mapping.mapResult(span.to + oldOffset, -1)
+    if (to.deleted || to.pos <= from.pos) return null
+    return new DecorationSpan(from.pos - offset, to.pos - offset, this)
+  }
+
+  valid(node, span) {
+    let {index, offset} = node.content.findIndex(span.from)
+    return offset == span.from && offset + node.child(index).nodeSize == span.to
+  }
+
+  apply(_domParent, domNode) {
+    return applyContentDecoration(this.attrs, domNode)
+  }
+
+  static create(from, to, attrs, options) {
+    return new DecorationSpan(from, to, new NodeDecoration(attrs, options))
+  }
+}
+exports.NodeDecoration = NodeDecoration
+
+function applyContentDecoration(attrs, domNode) {
+  for (let name in attrs) {
+    let val = attrs[name]
+    if (name == "class") domNode.classList.add(val)
+    else if (name == "style") domNode.style.cssText += ";" + val
+    else if (name != "wrapper") domNode.setAttribute(name, val)
+  }
+  let wrap = attrs.wrapper
+  return wrap ? wrapNode(domNode, wrap) : domNode
+}
+
+function wrapNode(domNode, wrapper) {
+  domNode.parentNode.replaceChild(wrapper, domNode)
+  let position = wrapper.querySelector("[pm-placeholder]")
+  if (position && position != wrapper) {
+    position.parentNode.replaceChild(domNode, position)
+    domNode.setAttribute("pm-placeholder", "true")
+  } else {
+    wrapper.appendChild(domNode)
+  }
+  wrapper.setAttribute("pm-size", domNode.getAttribute("pm-size"))
+  domNode.removeAttribute("pm-size")
+  wrapper.setAttribute("pm-offset", domNode.getAttribute("pm-offset"))
+  domNode.removeAttribute("pm-offset")
+  wrapper.setAttribute("pm-wrapper", "true")
+  return wrapper
 }
 
 class DecorationSpan {
@@ -78,7 +134,6 @@ class DecorationSpan {
   }
 
   sameOutput(other) {
-    // FIXME deep-compare decoration?
     return this.decoration == other.decoration && this.from == other.from && this.to == other.to
   }
 
@@ -88,7 +143,7 @@ class DecorationSpan {
 }
 exports.DecorationSpan = DecorationSpan
 
-const none = []
+const none = [], noOptions = {}
 
 class DecorationSet {
   constructor(local, children) {
@@ -104,7 +159,7 @@ class DecorationSet {
     let newLocal
     for (let i = 0; i < this.local.length; i++) {
       let mapped = this.local[i].map(mapping, offset, oldOffset)
-      if (mapped) (newLocal || (newLocal = [])).push(mapped)
+      if (mapped && mapped.decoration.valid(node, mapped)) (newLocal || (newLocal = [])).push(mapped)
     }
 
     if (this.children.length)
@@ -178,8 +233,8 @@ class DecorationSet {
         (local || (local = [])).push(dec.copy(Math.max(start, dec.from) - start,
                                               Math.min(end, dec.to) - start))
     }
-    if (local) {
-      local = new DecorationSet(local.sort(byPos))
+    if (local && local.some(InlineDecoration.is)) {
+      local = new DecorationSet(local.filter(InlineDecoration.is))
       return child ? new DecorationGroup([local, child]) : local
     }
     return child || noDecoration
@@ -200,7 +255,7 @@ class DecorationSet {
   }
 
   locals(node) {
-    if (node.isTextblock || !this.local.some(isInlineDecoration)) return this.local
+    if (node.isTextblock || !this.local.some(InlineDecoration.is)) return this.local
     let result = []
     for (let i = 0; i < this.local.length; i++) {
       if (!(this.local[i].decoration instanceof InlineDecoration))
@@ -348,13 +403,13 @@ function moveSpans(spans, offset) {
 
 function mapAndGatherRemainingDecorations(children, decorations, mapping, oldOffset) {
   // Gather all decorations from the remaining marked children
-  function gather(node, oldOffset) {
-    for (let i = 0; i < node.local.length; i++) {
-      let mapped = node.local[i].map(mapping, 0, oldOffset)
+  function gather(set, oldOffset) {
+    for (let i = 0; i < set.local.length; i++) {
+      let mapped = set.local[i].map(mapping, 0, oldOffset)
       if (mapped) decorations.push(mapped)
     }
-    for (let i = 0; i < node.children.length; i += 3)
-      gather(node.children[i + 2], node.children[i] + oldOffset + 1)
+    for (let i = 0; i < set.children.length; i += 3)
+      gather(set.children[i + 2], set.children[i] + oldOffset + 1)
   }
   for (let i = 0; i < children.length; i += 3) if (children[i + 1] == -1)
     gather(children[i + 2], children[i] + oldOffset + 1)
@@ -388,7 +443,10 @@ function buildTree(spans, node, offset) {
     if (found)
       children.push(localStart, localStart + childNode.nodeSize, buildTree(found, childNode, offset + localStart + 1))
   })
-  return new DecorationSet(moveSpans(children.length ? withoutNulls(spans) : spans, -offset).sort(byPos), children)
+  let locals = moveSpans(children.length ? withoutNulls(spans) : spans, -offset).sort(byPos)
+  for (let i = 0; i < locals.length; i++)
+    if (!locals[i].decoration.valid(node, locals[i])) locals.splice(i--, 1)
+  return new DecorationSet(locals, children)
 }
 
 function byPos(a, b) {

@@ -6,7 +6,7 @@ const {SelectionReader, selectionToDOM} = require("./selection")
 const {viewDecorations} = require("./decoration")
 
 ;({DecorationSet: exports.DecorationSet, InlineDecoration: exports.InlineDecoration,
-   WidgetDecoration: exports.WidgetDecoration} = require("./decoration"))
+   WidgetDecoration: exports.WidgetDecoration, NodeDecoration: exports.NodeDecoration} = require("./decoration"))
 
 // ::- An editor view manages the DOM structure that represents an
 // editor. Its state and behavior are determined by its
