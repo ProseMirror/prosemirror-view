@@ -7,3 +7,9 @@ to instantiate a ProseMirror editor.
 @EditorView
 
 @EditorProps
+
+@Decoration
+
+@DecorationAttrs
+
+@DecorationSet

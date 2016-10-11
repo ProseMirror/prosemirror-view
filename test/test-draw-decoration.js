@@ -1,7 +1,7 @@
 const {doc, p} = require("prosemirror-model/test/build")
 const {Plugin} = require("prosemirror-state")
 const {tempEditor} = require("./view")
-const {DecorationSet, InlineDecoration, WidgetDecoration, NodeDecoration} = require("../dist")
+const {DecorationSet, Decoration} = require("../dist")
 const ist = require("ist")
 
 function make(str) {
@@ -10,9 +10,9 @@ function make(str) {
   if (match[3] == "widget") {
     let widget = document.createElement("button")
     widget.textContent = "ω"
-    return WidgetDecoration.create(+match[1], widget)
+    return Decoration.widget(+match[1], widget)
   }
-  return InlineDecoration.create(+match[1], +match[2], {class: match[3]})
+  return Decoration.inline(+match[1], +match[2], {class: match[3]})
 }
 
 let id = 0
@@ -28,7 +28,7 @@ function decoPlugin(decos) {
           if (action.type == "transform" && value)
             return value.map(action.transform.mapping, action.transform.doc)
           if (action.type == "addDecorations")
-            return value ? value.add(action.decorations, state.doc) : DecorationSet.create(state.doc, action.decorations)
+            return value ? value.add(state.doc, action.decorations) : DecorationSet.create(state.doc, action.decorations)
           return value
         }
       }
@@ -51,7 +51,7 @@ describe("EditorView", () => {
 
     it("draws wrapping decorations", () => {
       let view = tempEditor({doc: doc(p("foo")),
-                             plugins: [decoPlugin([InlineDecoration.create(1, 5, {wrapper: document.createElement("i")})])]})
+                             plugins: [decoPlugin([Decoration.inline(1, 5, {wrapper: document.createElement("i")})])]})
       let found = view.content.querySelector("i")
       ist(found)
       ist(found.getAttribute("pm-offset"), 0)
@@ -61,7 +61,7 @@ describe("EditorView", () => {
 
     it("draws node decorations", () => {
       let view = tempEditor({doc: doc(p("foo"), p("bar")),
-                             plugins: [decoPlugin([NodeDecoration.create(5, 10, {class: "cls"})])]})
+                             plugins: [decoPlugin([Decoration.node(5, 10, {class: "cls"})])]})
       let found = view.content.querySelectorAll(".cls")
       ist(found.length, 1)
       ist(found[0].nodeName, "P")

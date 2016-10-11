@@ -1,3 +1,5 @@
+// : (EditorView) → union<DecorationSet, DecorationGroup>
+// Get the decorations associated with the current props of a view.
 function viewDecorations(view) {
   let found = []
   view.someProp("decorations", f => {
@@ -8,7 +10,7 @@ function viewDecorations(view) {
 }
 exports.viewDecorations = viewDecorations
 
-class WidgetDecoration {
+class WidgetType {
   constructor(widget, options) {
     if (widget.nodeType != 1) {
       let wrap = document.createElement("span")
@@ -23,7 +25,7 @@ class WidgetDecoration {
 
   map(mapping, span, offset, oldOffset) {
     let {pos, deleted} = mapping.mapResult(span.from + oldOffset)
-    return deleted ? null : new DecorationSpan(pos - offset, pos - offset, this)
+    return deleted ? null : new Decoration(pos - offset, pos - offset, this)
   }
 
   valid() { return true }
@@ -32,14 +34,9 @@ class WidgetDecoration {
     domParent.insertBefore(this.widget, domNode)
     return domNode
   }
-
-  static create(pos, widget, options) {
-    return new DecorationSpan(pos, pos, new WidgetDecoration(widget), options)
-  }
 }
-exports.WidgetDecoration = WidgetDecoration
 
-class InlineDecoration {
+class InlineType {
   constructor(attrs, options) {
     this.options = options || noOptions
     this.attrs = attrs
@@ -48,7 +45,7 @@ class InlineDecoration {
   map(mapping, span, offset, oldOffset) {
     let from = mapping.map(span.from + oldOffset, this.options.inclusiveLeft ? -1 : 1) - offset
     let to = mapping.map(span.to + oldOffset, this.options.inclusiveRight ? 1 : -1) - offset
-    return from >= to ? null : new DecorationSpan(from, to, this)
+    return from >= to ? null : new Decoration(from, to, this)
   }
 
   valid() { return true }
@@ -57,15 +54,10 @@ class InlineDecoration {
     return applyContentDecoration(this.attrs, domNode)
   }
 
-  static create(from, to, attrs, options) {
-    return new DecorationSpan(from, to, new InlineDecoration(attrs, options))
-  }
-
-  static is(span) { return span.decoration instanceof InlineDecoration }
+  static is(span) { return span.type instanceof InlineType }
 }
-exports.InlineDecoration = InlineDecoration
 
-class NodeDecoration {
+class NodeType {
   constructor(attrs, options) {
     this.attrs = attrs
     this.options = options || noOptions
@@ -76,7 +68,7 @@ class NodeDecoration {
     if (from.deleted) return null
     let to = mapping.mapResult(span.to + oldOffset, -1)
     if (to.deleted || to.pos <= from.pos) return null
-    return new DecorationSpan(from.pos - offset, to.pos - offset, this)
+    return new Decoration(from.pos - offset, to.pos - offset, this)
   }
 
   valid(node, span) {
@@ -87,12 +79,7 @@ class NodeDecoration {
   apply(_domParent, domNode) {
     return applyContentDecoration(this.attrs, domNode)
   }
-
-  static create(from, to, attrs, options) {
-    return new DecorationSpan(from, to, new NodeDecoration(attrs, options))
-  }
 }
-exports.NodeDecoration = NodeDecoration
 
 function applyContentDecoration(attrs, domNode) {
   for (let name in attrs) {
@@ -118,48 +105,119 @@ function wrapNode(domNode, wrapper) {
   domNode.removeAttribute("pm-size")
   wrapper.setAttribute("pm-offset", domNode.getAttribute("pm-offset"))
   domNode.removeAttribute("pm-offset")
-  wrapper.setAttribute("pm-wrapper", "true")
+  wrapper.setAttribute("pm-decoration", "true")
   return wrapper
 }
 
-class DecorationSpan {
-  constructor(from, to, decoration) {
+// ::- Decorations can be provided to the view (through the
+// [`decorations` prop](#view.EditorProps.decorations)) to adjust the
+// way the document is drawn. They come in several variants. See the
+// static members of this class for details.
+class Decoration {
+  constructor(from, to, type) {
     this.from = from
     this.to = to
-    this.decoration = decoration
+    this.type = type
   }
 
   copy(from, to) {
-    return new DecorationSpan(from, to, this.decoration)
+    return new Decoration(from, to, this.type)
   }
 
   sameOutput(other) {
-    return this.decoration == other.decoration && this.from == other.from && this.to == other.to
+    return this.type == other.type && this.from == other.from && this.to == other.to
   }
 
   map(mapping, offset, oldOffset) {
-    return this.decoration.map(mapping, this, offset, oldOffset)
+    return this.type.map(mapping, this, offset, oldOffset)
   }
+
+  // :: (number, dom.Node, ?Object) → Decoration
+  // Creates a widget decoration, which is a DOM node that's shown in
+  // the document at the given position.
+  static widget(pos, widget, options) {
+    return new Decoration(pos, pos, new WidgetType(widget, options))
+  }
+
+  // :: (number, number, DecorationAttrs, ?Object) → Decoration
+  // Creates an inline decoration, which adds the given attributes to
+  // each inline node between `from` and `to`.
+  //
+  //   options::- These options are recognized:
+  //
+  //     inclusiveLeft:: ?bool
+  //     Determines how the left side of the decoration is
+  //     [mapped](#transform.Position_Mapping) when content is
+  //     inserted directly at that positon. By default, the decoration
+  //     won't include the new content, but you can set this to `true`
+  //     to make it inclusive.
+  //
+  //     inclusiveRight:: ?bool
+  //     Determines how the right side of the decoration is mapped.
+  //     See
+  //     [`inclusiveLeft`](#view.Decoration.widget.options.inclusiveLeft).
+  static inline(from, to, attrs, options) {
+    return new Decoration(from, to, new InlineType(attrs, options))
+  }
+
+  // :: (number, number, DecorationAttrs, ?Object) → Decoration
+  // Creates a node decoration. `from` and `to` should point precisely
+  // before and after a node in the document. That node, and only that
+  // node, will receive the given attributes.
+  static node(from, to, attrs, options) {
+    return new Decoration(from, to, new NodeType(attrs, options))
+  }
+
+  // :: Object
+  // The options provided when creating this decoration. Can be useful
+  // if you've stored extra information in that object.
+  get options() { return this.type.options }
 }
-exports.DecorationSpan = DecorationSpan
+exports.Decoration = Decoration
+
+// DecorationAttrs:: interface
+// A set of attributes to add to a decorated node. Most properties
+// simply directly correspond to DOM attributes of the same name,
+// which will be set to the property's value. These are exceptions:
+//
+//   class:: ?string
+//   A CSS class name to be _added_ to the classes that the node
+//   already had.
+//
+//   style:: ?string
+//   A string of CSS to be _added_ to the node's existing `style` property.
+//
+//   wrapper:: ?dom.Node
+//   A DOM node to use as a wrapper around the original node. Will be
+//   applied after the other properties. By default, the original node
+//   will be appended to this. If you put a child node with a
+//   `pm-placeholder` attribute in the node, that node will be
+//   replaced with the original node.
 
 const none = [], noOptions = {}
 
+// ::- A collection of [decorations](#view.Decoration), organized in
+// such a way that the drawing algorithm can efficiently use and
+// compare them. This is a persistent data structure—it is not
+// modified, updates create a new value.
 class DecorationSet {
   constructor(local, children) {
     this.local = local && local.length ? local : none
     this.children = children && children.length ? children : none
   }
 
-  map(mapping, node) {
-    return this.mapInner(mapping, node, 0, 0)
+  // :: (Mapping, Node) → DecorationSet
+  // Map the set of decorations in response to a change in the
+  // document.
+  map(mapping, doc) {
+    return this.mapInner(mapping, doc, 0, 0)
   }
 
   mapInner(mapping, node, offset, oldOffset) {
     let newLocal
     for (let i = 0; i < this.local.length; i++) {
       let mapped = this.local[i].map(mapping, offset, oldOffset)
-      if (mapped && mapped.decoration.valid(node, mapped)) (newLocal || (newLocal = [])).push(mapped)
+      if (mapped && mapped.type.valid(node, mapped)) (newLocal || (newLocal = [])).push(mapped)
     }
 
     if (this.children.length)
@@ -168,34 +226,41 @@ class DecorationSet {
       return newLocal ? new DecorationSet(newLocal.sort(byPos)) : null
   }
 
-  add(spans, node, offset = 0) {
-    if (!spans.length) return this
+  // :: (Node, [Decoration]) → DecorationSet
+  // Add the given array of decorations to the ones in the set,
+  // producing a new set. Needs access to the current document to
+  // create the appropriate tree structure.
+  add(doc, decorations, offset = 0) {
+    if (!decorations.length) return this
     let children, childIndex = 0
-    node.forEach((childNode, childOffset) => {
+    doc.forEach((childNode, childOffset) => {
       let baseOffset = childOffset + offset, found
-      if (!(found = takeSpansForNode(spans, childNode, baseOffset))) return
+      if (!(found = takeSpansForNode(decorations, childNode, baseOffset))) return
 
       if (!children) children = this.children.slice()
       while (childIndex < children.length && children[childIndex] < childOffset) childIndex += 3
       if (children[childIndex] == childOffset)
-        children[childIndex + 2] = children[childIndex + 2].add(found, childNode, baseOffset + 1)
+        children[childIndex + 2] = children[childIndex + 2].add(childNode, found, baseOffset + 1)
       else
         children.splice(childIndex, 0, childOffset, childOffset + childNode.nodeSize, buildTree(found, childNode, baseOffset + 1))
       childIndex += 3
     })
 
-    let local = moveSpans(childIndex ? withoutNulls(spans) : spans, -offset)
+    let local = moveSpans(childIndex ? withoutNulls(decorations) : decorations, -offset)
     return new DecorationSet(local.length ? this.local.concat(local).sort(byPos) : this.local,
                              children || this.children)
   }
 
-  remove(spans, offset = 0) {
+  // :: ([Decoration]) → DecorationSet
+  // Create a new set that contains the decorations in this set, minus
+  // the ones in the given array.
+  remove(decorations, offset = 0) {
     let children = this.children, local = this.local
     for (let i = 0; i < children.length; i += 3) {
       let found, from = children[i] + offset, to = children[i + 1] + offset
-      for (let j = 0, span; j < spans.length; j++) if (span = spans[j]) {
+      for (let j = 0, span; j < decorations.length; j++) if (span = decorations[j]) {
         if (span.from > from && span.to < to) {
-          spans[j] = null
+          decorations[j] = null
           ;(found || (found = [])).push(span)
         }
       }
@@ -209,9 +274,8 @@ class DecorationSet {
         i -= 3
       }
     }
-    for (let i = 0, span; i < spans.length; i++) if (span = spans[i]) {
-      let decoration = span.decoration
-      for (let j = 0; j < local.length; j++) if (local[j].decoration == decoration) {
+    if (local.length) for (let i = 0, span; i < decorations.length; i++) if (span = decorations[i]) {
+      for (let j = 0; j < local.length; j++) if (local[j].type == span.type) {
         if (local == this.local) local = this.local.slice()
         local.splice(j--, 1)
       }
@@ -233,8 +297,8 @@ class DecorationSet {
         (local || (local = [])).push(dec.copy(Math.max(start, dec.from) - start,
                                               Math.min(end, dec.to) - start))
     }
-    if (local && local.some(InlineDecoration.is)) {
-      local = new DecorationSet(local.filter(InlineDecoration.is))
+    if (local && local.some(InlineType.is)) {
+      local = new DecorationSet(local.filter(InlineType.is))
       return child ? new DecorationGroup([local, child]) : local
     }
     return child || noDecoration
@@ -255,15 +319,18 @@ class DecorationSet {
   }
 
   locals(node) {
-    if (node.isTextblock || !this.local.some(InlineDecoration.is)) return this.local
+    if (node.isTextblock || !this.local.some(InlineType.is)) return this.local
     let result = []
     for (let i = 0; i < this.local.length; i++) {
-      if (!(this.local[i].decoration instanceof InlineDecoration))
+      if (!(this.local[i].type instanceof InlineType))
         result.push(this.local[i])
     }
     return result
   }
 
+  // :: (Node, [Decoration]) → DecorationSet
+  // Create a set of decorations, using the structure of the given
+  // document.
   static create(doc, decorations) {
     return decorations.length ? buildTree(decorations, doc, 0) : null
   }
@@ -396,7 +463,7 @@ function moveSpans(spans, offset) {
   let result = []
   for (let i = 0; i < spans.length; i++) {
     let span = spans[i]
-    result.push(new DecorationSpan(span.from + offset, span.to + offset, span.decoration))
+    result.push(new Decoration(span.from + offset, span.to + offset, span.type))
   }
   return result
 }
@@ -436,6 +503,11 @@ function withoutNulls(array) {
   return result
 }
 
+// : ([Decoration], Node, number) → DecorationSet
+// Build up a tree that corresponds to a set of decorations. `offset`
+// is a base offset that should be subtractet from the `from` and `to`
+// positions in the spans (so that we don't have to allocate new spans
+// for recursive calls).
 function buildTree(spans, node, offset) {
   let children = []
   node.forEach((childNode, localStart) => {
@@ -445,14 +517,23 @@ function buildTree(spans, node, offset) {
   })
   let locals = moveSpans(children.length ? withoutNulls(spans) : spans, -offset).sort(byPos)
   for (let i = 0; i < locals.length; i++)
-    if (!locals[i].decoration.valid(node, locals[i])) locals.splice(i--, 1)
+    if (!locals[i].type.valid(node, locals[i])) locals.splice(i--, 1)
   return new DecorationSet(locals, children)
 }
 
+// : (Decoration, Decoration) → number
+// Used to sort decorations so that ones with a low start position
+// come first, and within a set with the same start position, those
+// with an smaller end position come first.
 function byPos(a, b) {
   return a.from - b.from || a.to - b.to
 }
 
+// : ([Decoration]) → [Decorations]
+// Scan a sorted array of decorations for partially overlapping spans,
+// and split those so that only fully overlapping spans are left (to
+// make subsequent rendering easier). Will return the input array if
+// no partially overlapping spans are found (the common case).
 function removeOverlap(spans) {
   let working = spans
   for (let i = 0; i < working.length - 1; i++) {

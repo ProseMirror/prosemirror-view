@@ -166,7 +166,7 @@ function applyDecorations(locals, i, from, to, domParent, domNode) {
     let next = span.to > span.from && span.to < to && splitText(domNode, span.to - from)
 
     for (;;) {
-      domNode = span.decoration.apply(domParent, domNode)
+      domNode = span.type.apply(domParent, domNode)
       if (i < locals.length - 1 && locals[i + 1].to == span.to) span = locals[++i]
       else break
     }
@@ -186,7 +186,7 @@ function compareDecorations(old, cur, i, oldFrom, oldTo, curFrom, curTo) {
     if (i == cur.length || cur[i].from >= curTo) return oldEnd ? i : null
     else if (oldEnd) return null
     let oldNext = old[j], curNext = cur[i]
-    if (oldNext.decoration != curNext.decoration ||
+    if (oldNext.type != curNext.type ||
         oldNext.from - oldFrom != curNext.from - curFrom ||
         oldNext.to - oldFrom != curNext.to - curFrom) return null
   }

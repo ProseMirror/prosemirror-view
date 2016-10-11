@@ -5,8 +5,7 @@ const {initInput, finishUpdateFromDOM, dispatchKeyDown, dispatchKeyPress} = requ
 const {SelectionReader, selectionToDOM} = require("./selection")
 const {viewDecorations} = require("./decoration")
 
-;({DecorationSet: exports.DecorationSet, InlineDecoration: exports.InlineDecoration,
-   WidgetDecoration: exports.WidgetDecoration, NodeDecoration: exports.NodeDecoration} = require("./decoration"))
+;({Decoration: exports.Decoration, DecorationSet: exports.DecorationSet} = require("./decoration"))
 
 // ::- An editor view manages the DOM structure that represents an
 // editor. Its state and behavior are determined by its
@@ -301,6 +300,10 @@ exports.EditorView = EditorView
 //   The DOM serializer to use when putting content onto the
 //   clipboard. When not given, the value of the
 //   [`domSerializer`](#view.EditorProps.domSerializer) prop is used.
+//
+//   decorations:: ?DecorationSet
+//   A set of [document decorations](#view.Decoration) to add to the
+//   view.
 //
 //   spellcheck:: ?bool
 //   Controls whether the DOM spellcheck attribute is enabled on the

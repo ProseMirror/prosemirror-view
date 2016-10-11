@@ -2,15 +2,15 @@ const ist = require("ist")
 const {schema, doc, p, blockquote} = require("prosemirror-model/test/build")
 const {Transform} = require("prosemirror-transform")
 
-const {WidgetDecoration, InlineDecoration, NodeDecoration, DecorationSet, removeOverlap} = require("../dist/decoration")
+const {Decoration, DecorationSet, removeOverlap} = require("../dist/decoration")
 
 let widget = document.createElement("button")
 
 function make(d) {
-  if (d.decoration) return d
-  if (d.pos != null) return WidgetDecoration.create(d.pos, d.widget || widget)
-  if (d.node) return NodeDecoration.create(d.from, d.to, d.attrs || {}, d)
-  return InlineDecoration.create(d.from, d.to, d.attrs || {}, d)
+  if (d.type) return d
+  if (d.pos != null) return Decoration.widget(d.pos, d.widget || widget)
+  if (d.node) return Decoration.node(d.from, d.to, d.attrs || {}, d)
+  return Decoration.inline(d.from, d.to, d.attrs || {}, d)
 }
 
 function build(doc, ...decorations) {
@@ -34,7 +34,7 @@ function buildMap(doc, ...decorations) {
 
 function buildAdd(doc, ...decorations) {
   let toAdd = decorations.pop()
-  return build(doc, ...decorations).add(Array.isArray(toAdd) ? toAdd.map(make) : [make(toAdd)], doc)
+  return build(doc, ...decorations).add(doc, Array.isArray(toAdd) ? toAdd.map(make) : [make(toAdd)])
 }
 
 function buildRem(doc, ...decorations) {
