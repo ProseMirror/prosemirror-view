@@ -213,6 +213,31 @@ class DecorationSet {
     return decorations.length ? buildTree(decorations, doc, 0) : empty
   }
 
+  // :: (?number, ?number) → [Decoration]
+  // Find all decorations in this set which touch the given range
+  // (including decorations that start or end directly at the
+  // boundaries). When the arguments are omitted, all decorations in
+  // the set are collected.
+  find(start, end) {
+    let result = []
+    this.findInner(start == null ? 0 : start, end == null ? 1e9 : end, result, 0)
+    return result
+  }
+
+  findInner(start, end, result, offset) {
+    for (let i = 0; i < this.local.length; i++) {
+      let span = this.local[i]
+      if (span.from <= end && span.to >= start)
+        result.push(span.copy(span.from + offset, span.to + offset))
+    }
+    for (let i = 0; i < this.children.length; i += 3) {
+      if (this.children[i] < end && this.children[i + 1] > start) {
+        let childOff = this.children[i] + 1
+        this.children[i + 2].findInner(start - childOff, end - childOff, result, offset + childOff)
+      }
+    }
+  }
+
   // :: (Mapping, Node) → DecorationSet
   // Map the set of decorations in response to a change in the
   // document.

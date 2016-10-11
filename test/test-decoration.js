@@ -25,6 +25,10 @@ function str(set) {
   return s + "]"
 }
 
+function arrayStr(arr) {
+  return arr.map(d => d.from + "-" + d.to).join(", ")
+}
+
 function buildMap(doc, ...decorations) {
   let f = decorations.pop()
   let oldSet = build(doc, ...decorations)
@@ -66,6 +70,28 @@ describe("DecorationSet", () => {
   it("puts node decorations in the parent node", () => {
     let set = build(doc(p("a"), p("b")), {from: 3, to: 6, node: true})
     ist(str(set), "[3-6]")
+  })
+
+  describe("find", () => {
+    it("finds all when no arguments are given", () => {
+      let set = build(doc(p("a"), p("b")), {from: 1, to: 2}, {pos: 3})
+      ist(arrayStr(set.find()), "3-3, 1-2")
+    })
+
+    it("finds only those within the given range", () => {
+      let set = build(doc(p("a"), p("b")), {from: 1, to: 2}, {pos: 1}, {from: 4, to: 5})
+      ist(arrayStr(set.find(0, 3)), "1-1, 1-2")
+    })
+
+    it("finds decorations at the edge of the range", () => {
+      let set = build(doc(p("a"), p("b")), {from: 1, to: 2}, {pos: 3}, {from: 4, to: 5})
+      ist(arrayStr(set.find(2, 3)), "3-3, 1-2")
+    })
+
+    it("returns the correct offset for deeply nested decorations", () => {
+      let set = build(doc(blockquote(blockquote(p("a")))), {from: 3, to: 4})
+      ist(arrayStr(set.find()), "3-4")
+    })
   })
 
   describe("map", () => {
@@ -197,10 +223,6 @@ describe("DecorationSet", () => {
     })
   })
 })
-
-function arrayStr(arr) {
-  return arr.map(d => d.from + "-" + d.to).join(", ")
-}
 
 describe("removeOverlap", () => {
   it("returns the original array when there is no overlap", () => {
