@@ -4,7 +4,7 @@ function viewDecorations(view) {
   let found = []
   view.someProp("decorations", f => {
     let result = f(view.state)
-    if (result) found.push(result)
+    if (result && result != empty) found.push(result)
   })
   return DecorationGroup.from(found)
 }
@@ -206,10 +206,18 @@ class DecorationSet {
     this.children = children && children.length ? children : none
   }
 
+  // :: (Node, [Decoration]) → DecorationSet
+  // Create a set of decorations, using the structure of the given
+  // document.
+  static create(doc, decorations) {
+    return decorations.length ? buildTree(decorations, doc, 0) : empty
+  }
+
   // :: (Mapping, Node) → DecorationSet
   // Map the set of decorations in response to a change in the
   // document.
   map(mapping, doc) {
+    if (this == empty) return this
     return this.mapInner(mapping, doc, 0, 0)
   }
 
@@ -223,15 +231,20 @@ class DecorationSet {
     if (this.children.length)
       return mapChildren(this.children, newLocal, mapping, node, offset, oldOffset)
     else
-      return newLocal ? new DecorationSet(newLocal.sort(byPos)) : null
+      return newLocal ? new DecorationSet(newLocal.sort(byPos)) : empty
   }
 
   // :: (Node, [Decoration]) → DecorationSet
   // Add the given array of decorations to the ones in the set,
   // producing a new set. Needs access to the current document to
   // create the appropriate tree structure.
-  add(doc, decorations, offset = 0) {
+  add(doc, decorations) {
     if (!decorations.length) return this
+    if (this == empty) return DecorationSet.create(doc, decorations)
+    return this.addInner(doc, decorations, 0)
+  }
+
+  addInner(doc, decorations, offset) {
     let children, childIndex = 0
     doc.forEach((childNode, childOffset) => {
       let baseOffset = childOffset + offset, found
@@ -240,7 +253,7 @@ class DecorationSet {
       if (!children) children = this.children.slice()
       while (childIndex < children.length && children[childIndex] < childOffset) childIndex += 3
       if (children[childIndex] == childOffset)
-        children[childIndex + 2] = children[childIndex + 2].add(childNode, found, baseOffset + 1)
+        children[childIndex + 2] = children[childIndex + 2].addInner(childNode, found, baseOffset + 1)
       else
         children.splice(childIndex, 0, childOffset, childOffset + childNode.nodeSize, buildTree(found, childNode, baseOffset + 1))
       childIndex += 3
@@ -254,7 +267,12 @@ class DecorationSet {
   // :: ([Decoration]) → DecorationSet
   // Create a new set that contains the decorations in this set, minus
   // the ones in the given array.
-  remove(decorations, offset = 0) {
+  remove(decorations) {
+    if (decorations.length == 0 || this == empty) return this
+    return this.removeInner(decorations, 0)
+  }
+
+  removeInner(decorations, offset) {
     let children = this.children, local = this.local
     for (let i = 0; i < children.length; i += 3) {
       let found, from = children[i] + offset, to = children[i + 1] + offset
@@ -266,8 +284,8 @@ class DecorationSet {
       }
       if (!found) continue
       if (children == this.children) children = this.children.slice()
-      let removed = children[i + 2].remove(found, from + 1)
-      if (removed) {
+      let removed = children[i + 2].removeInner(found, from + 1)
+      if (removed != empty) {
         children[i + 2] = removed
       } else {
         children.splice(i, 3)
@@ -281,10 +299,12 @@ class DecorationSet {
       }
     }
     if (children == this.children && local == this.local) return this
-    return local.length || children.length ? new DecorationSet(local, children) : null
+    return local.length || children.length ? new DecorationSet(local, children) : empty
   }
 
   forChild(offset, node) {
+    if (this == empty) return this
+
     let child, local
     for (let i = 0; i < this.children.length; i += 3) if (this.children[i] >= offset) {
       if (this.children[i] == offset) child = this.children[i + 2]
@@ -298,10 +318,10 @@ class DecorationSet {
                                               Math.min(end, dec.to) - start))
     }
     if (local && local.some(InlineType.is)) {
-      local = new DecorationSet(local.filter(InlineType.is))
-      return child ? new DecorationGroup([local, child]) : local
+      let localSet = new DecorationSet(local.filter(InlineType.is))
+      return child ? new DecorationGroup([localSet, child]) : localSet
     }
-    return child || noDecoration
+    return child || empty
   }
 
   sameOutput(other) {
@@ -319,6 +339,7 @@ class DecorationSet {
   }
 
   locals(node) {
+    if (this == empty) return none
     if (node.isTextblock || !this.local.some(InlineType.is)) return this.local
     let result = []
     for (let i = 0; i < this.local.length; i++) {
@@ -327,22 +348,14 @@ class DecorationSet {
     }
     return result
   }
-
-  // :: (Node, [Decoration]) → DecorationSet
-  // Create a set of decorations, using the structure of the given
-  // document.
-  static create(doc, decorations) {
-    return decorations.length ? buildTree(decorations, doc, 0) : null
-  }
 }
 exports.DecorationSet = DecorationSet
 
-const noDecoration = {
-  forChild() { return noDecoration },
-  sameOutput(other) { return other == noDecoration },
-  locals() { return none }
-}
-exports.noDecoration = noDecoration
+const empty = new DecorationSet()
+
+// :: DecorationSet
+// The empty set of decorations.
+DecorationSet.empty = empty
 
 class DecorationGroup {
   constructor(members) {
@@ -353,7 +366,7 @@ class DecorationGroup {
     let found = []
     for (let i = 0; i < this.members.length; i++) {
       let result = this.members[i].forChild(offset, child)
-      if (result == noDecoration) continue
+      if (result == empty) continue
       if (result instanceof DecorationGroup) found = found.concat(result.members)
       else found.push(result)
     }
@@ -388,7 +401,7 @@ class DecorationGroup {
 
   static from(members) {
     switch (members.length) {
-      case 0: return noDecoration
+      case 0: return empty
       case 1: return members[0]
       default: return new DecorationGroup(members)
     }
@@ -426,7 +439,7 @@ function mapChildren(oldChildren, newLocal, mapping, node, offset, oldOffset) {
     let childNode = node.maybeChild(index)
     if (childNode && childOffset == fromLocal && childOffset + childNode.nodeSize == toLocal) {
       let mapped = children[i + 2].mapInner(mapping, childNode, from + 1, children[i] + oldOffset + 1)
-      if (mapped) {
+      if (mapped != empty) {
         children[i] = fromLocal
         children[i + 1] = toLocal
         children[i + 2] = mapped

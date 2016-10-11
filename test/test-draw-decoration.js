@@ -25,10 +25,10 @@ function decoPlugin(decos) {
         init(config) { return DecorationSet.create(config.doc, decos.map(make)) },
         applyAction(state, action) {
           let value = state[field]
-          if (action.type == "transform" && value)
+          if (action.type == "transform")
             return value.map(action.transform.mapping, action.transform.doc)
           if (action.type == "addDecorations")
-            return value ? value.add(state.doc, action.decorations) : DecorationSet.create(state.doc, action.decorations)
+            return value.add(state.doc, action.decorations)
           return value
         }
       }
