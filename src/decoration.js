@@ -1,15 +1,3 @@
-// : (EditorView) → union<DecorationSet, DecorationGroup>
-// Get the decorations associated with the current props of a view.
-function viewDecorations(view) {
-  let found = []
-  view.someProp("decorations", f => {
-    let result = f(view.state)
-    if (result && result != empty) found.push(result)
-  })
-  return DecorationGroup.from(found)
-}
-exports.viewDecorations = viewDecorations
-
 class WidgetType {
   constructor(widget, options) {
     if (widget.nodeType != 1) {
@@ -79,6 +67,11 @@ class NodeType {
   apply(_domParent, domNode) {
     return applyContentDecoration(this.attrs, domNode)
   }
+}
+
+class DummyType {
+  valid() { return true }
+  apply() {}
 }
 
 function applyContentDecoration(attrs, domNode) {
@@ -607,3 +600,23 @@ function insertAhead(array, i, deco) {
   while (i < array.length && byPos(deco, array[i]) > 0) i++
   array.splice(i, 0, deco)
 }
+
+// : (EditorView) → union<DecorationSet, DecorationGroup>
+// Get the decorations associated with the current props of a view.
+function viewDecorations(view) {
+  let found = []
+  view.someProp("decorations", f => {
+    let result = f(view.state)
+    if (result && result != empty) found.push(result)
+  })
+  return DecorationGroup.from(found)
+}
+exports.viewDecorations = viewDecorations
+
+function addDummy(decorations, doc, from, to) {
+  let dummy = DecorationSet.create(doc, [new Decoration(from, to, new DummyType)])
+  if (decorations == empty) return dummy
+  let others = decorations instanceof DecorationGroup ? decorations.members : [decorations]
+  return new DecorationGroup(others.concat(dummy))
+}
+exports.addDummy = addDummy

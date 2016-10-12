@@ -1,9 +1,8 @@
-const {Map} = require("./map")
 const {scrollPosIntoView, posAtCoords, coordsAtPos} = require("./dompos")
-const {draw, redraw, DIRTY_REDRAW, DIRTY_RESCAN} = require("./draw")
+const {draw, redraw} = require("./draw")
 const {initInput, finishUpdateFromDOM, dispatchKeyDown, dispatchKeyPress} = require("./input")
 const {SelectionReader, selectionToDOM} = require("./selection")
-const {viewDecorations} = require("./decoration")
+const {viewDecorations, addDummy} = require("./decoration")
 
 ;({Decoration: exports.Decoration, DecorationSet: exports.DecorationSet} = require("./decoration"))
 
@@ -23,6 +22,7 @@ class EditorView {
     // :: EditorState
     // The view's current [state](#state.EditorState).
     this.state = this.drawnState = props.state
+    this.dirty = null
 
     // :: dom.Node
     // The editable DOM node containing the document. (You probably
@@ -43,7 +43,6 @@ class EditorView {
 
     draw(this, this.state.doc, this.drawnDecorations = viewDecorations(this))
     this.content.contentEditable = true
-    this.dirtyNodes = new Map // Maps node object to 1 (re-scan content) or 2 (redraw entirely)
 
     this.lastSelectedNode = null
     this.selectionReader = new SelectionReader(this)
@@ -78,10 +77,8 @@ class EditorView {
     let docChange = !state.doc.eq(this.drawnState.doc)
 
     let decorations = viewDecorations(this)
-    if (docChange || this.dirtyNodes.size || !decorations.sameOutput(this.drawnDecorations)) {
-      redraw(this, this.drawnState, state, this.drawnDecorations, decorations)
-      this.drawnDecorations = decorations
-      this.dirtyNodes.clear()
+    if (docChange || this.dirty || !decorations.sameOutput(this.drawnDecorations)) {
+      this.redraw(state.doc, decorations)
       redrawn = true
     }
 
@@ -96,6 +93,20 @@ class EditorView {
     // Make sure we don't use an outdated range on drop event
     if (this.dragging && docChange) this.dragging.move = false
     this.drawnState = state
+  }
+
+  redraw(doc, decorations) {
+    let oldDecorations = this.drawnDecorations, oldDoc = this.drawnState.doc
+    this.drawnDecorations = decorations
+
+    if (this.dirty) {
+      let $start = oldDoc.resolve(this.dirty.from), $end = oldDoc.resolve(this.dirty.to), same = $start.sameDepth($end)
+      this.dirty = null
+      if (same == 0)
+        return draw(this, doc, decorations)
+      oldDecorations = addDummy(decorations, doc, $start.before(same), $start.after(same))
+    }
+    redraw(this, oldDoc, doc, oldDecorations, decorations)
   }
 
   updateDOMForProps() {
@@ -151,24 +162,6 @@ class EditorView {
         return this._root = search
     }
     return cached || document
-  }
-
-  markRangeDirty(from, to, doc) {
-    let dirty = this.dirtyNodes
-    let $from = doc.resolve(from), $to = doc.resolve(to)
-    let same = $from.sameDepth($to)
-    for (let depth = 0; depth <= same; depth++) {
-      let child = $from.node(depth)
-      if (!dirty.has(child)) dirty.set(child, DIRTY_RESCAN)
-    }
-    let start = $from.index(same), end = $to.indexAfter(same)
-    let parent = $from.node(same)
-    for (let i = start; i < end; i++)
-      dirty.set(parent.child(i), DIRTY_REDRAW)
-  }
-
-  markAllDirty() {
-    this.dirtyNodes.set(this.doc, DIRTY_REDRAW)
   }
 
   // :: ({left: number, top: number}) → ?number

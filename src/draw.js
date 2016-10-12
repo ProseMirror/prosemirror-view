@@ -4,9 +4,6 @@ const browser = require("./browser")
 const {childContainer} = require("./dompos")
 const {removeOverlap} = require("./decoration")
 
-const DIRTY_RESCAN = 1, DIRTY_REDRAW = 2
-exports.DIRTY_RESCAN = DIRTY_RESCAN; exports.DIRTY_REDRAW = DIRTY_REDRAW
-
 function getSerializer(view) {
   return view.someProp("domSerializer") || DOMSerializer.fromSchema(view.state.schema)
 }
@@ -17,10 +14,7 @@ function draw(view, doc, decorations) {
 }
 exports.draw = draw
 
-function redraw(view, oldState, newState, oldDecorations, newDecorations) {
-  let dirty = view.dirtyNodes
-  if (dirty.get(oldState.doc) == DIRTY_REDRAW) return draw(view, newState.doc, newDecorations)
-
+function redraw(view, oldDoc, newDoc, oldDecorations, newDecorations) {
   let serializer = getSerializer(view)
   let onUnmountDOM = []
   view.someProp("onUnmountDOM", f => { onUnmountDOM.push(f) })
@@ -64,13 +58,13 @@ function redraw(view, oldState, newState, oldDecorations, newDecorations) {
       }
 
       let childDeco = newDecorations.forChild(offset, child), prevChildDeco, matchedLocalDeco
-      if (matching && !dirty.get(matching) &&
+      if (matching &&
           childDeco.sameOutput(prevChildDeco = oldDecorations.forChild(offset, child)) &&
           (matchedLocalDeco = sameLocalDeco()) != null &&
           syncDOM()) {
         reuseDOM = true
         decoIndex = matchedLocalDeco
-      } else if (pChild && !child.isText && child.sameMarkup(pChild) && dirty.get(pChild) != DIRTY_REDRAW &&
+      } else if (pChild && !child.isText && child.sameMarkup(pChild) &&
                  (matchedLocalDeco = sameLocalDeco()) != null && syncDOM()) {
         reuseDOM = true
         decoIndex = matchedLocalDeco
@@ -112,7 +106,7 @@ function redraw(view, oldState, newState, oldDecorations, newDecorations) {
 
     if (browser.ios) iosHacks(dom)
   }
-  scan(view.content, newState.doc, oldState.doc, oldDecorations, newDecorations)
+  scan(view.content, newDoc, oldDoc, oldDecorations, newDecorations)
 }
 exports.redraw = redraw
 

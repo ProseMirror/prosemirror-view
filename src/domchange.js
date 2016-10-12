@@ -129,7 +129,7 @@ function readDOMChange(view, oldState, range) {
   if (!change) return false
 
   // Mark nodes touched by this change as 'to be redrawn'
-  markDirtyFor(view, doc, change.start, change.endA)
+  view.dirty = {from: change.start, to: change.endA}
 
   let $from = parsed.resolveNoCache(change.start - range.from)
   let $to = parsed.resolveNoCache(change.endB - range.from)
@@ -198,12 +198,4 @@ function findDiff(a, b, pos, preferedStart) {
     endB = start
   }
   return {start, endA, endB}
-}
-
-function markDirtyFor(view, doc, start, end) {
-  let $start = doc.resolve(start), $end = doc.resolve(end), same = $start.sameDepth($end)
-  if (same == 0)
-    view.markAllDirty()
-  else
-    view.markRangeDirty($start.before(same), $start.after(same), doc)
 }
