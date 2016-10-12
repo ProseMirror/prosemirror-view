@@ -2,7 +2,6 @@ const {DOMSerializer} = require("prosemirror-model")
 
 const browser = require("./browser")
 const {childContainer} = require("./dompos")
-const {removeOverlap} = require("./decoration")
 
 function getSerializer(view) {
   return view.someProp("domSerializer") || DOMSerializer.fromSchema(view.state.schema)
@@ -25,7 +24,7 @@ function redraw(view, oldDoc, newDoc, oldDecorations, newDecorations) {
     while (domPos && (domPos.nodeType != 1 || domPos.hasAttribute("pm-ignore")))
       domPos = movePast(domPos, view, onUnmountDOM)
 
-    let localDecorations = removeOverlap(newDecorations.locals(node))
+    let localDecorations = newDecorations.locals(node)
     let decoIndex = applyDecorations(localDecorations, 0, 0, 0, dom, domPos, false)
 
     function syncDOM() {
@@ -40,7 +39,7 @@ function redraw(view, oldDoc, newDoc, oldDecorations, newDecorations) {
     }
     let oldLocalDecorations, offset = 0, child
     function sameLocalDeco() {
-      return compareDecorations(oldLocalDecorations || (oldLocalDecorations = removeOverlap(oldDecorations.locals(prev))),
+      return compareDecorations(oldLocalDecorations || (oldLocalDecorations = oldDecorations.locals(prev)),
                                 localDecorations, decoIndex,
                                 oPrev, oPrev + pChild.nodeSize, offset, offset + child.nodeSize)
     }
@@ -136,7 +135,7 @@ class Context {
 
   serializeContent(node, target) {
     let decorations = this.decorations
-    let locals = removeOverlap(decorations.locals(node))
+    let locals = decorations.locals(node)
     let i = applyDecorations(locals, 0, 0, 0, target, null, false)
     node.content.forEach((child, offset) => {
       this.decorations = decorations.forChild(offset, child)

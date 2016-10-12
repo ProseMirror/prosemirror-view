@@ -357,6 +357,10 @@ class DecorationSet {
   }
 
   locals(node) {
+    return removeOverlap(this.localsInner(node))
+  }
+
+  localsInner(node) {
     if (this == empty) return none
     if (node.isTextblock || !this.local.some(InlineType.is)) return this.local
     let result = []
@@ -402,7 +406,7 @@ class DecorationGroup {
   locals(node) {
     let result, sorted = true
     for (let i = 0; i < this.members.length; i++) {
-      let locals = this.members[i].locals(node)
+      let locals = this.members[i].localsInner(node)
       if (!locals.length) continue
       if (!result) {
         result = locals
@@ -414,7 +418,7 @@ class DecorationGroup {
         for (let j = 0; j < locals.length; j++) result.push(locals[j])
       }
     }
-    return result ? (sorted ? result : result.sort(byPos)) : none
+    return result ? removeOverlap(sorted ? result : result.sort(byPos)) : none
   }
 
   static from(members) {
