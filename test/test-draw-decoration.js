@@ -15,28 +15,23 @@ function make(str) {
   return Decoration.inline(+match[1], +match[2], {class: match[3]})
 }
 
-let id = 0
 function decoPlugin(decos) {
-  let field = "decos" + ++id
-
-  return new Plugin({
-    stateFields: {
-      [field]: {
-        init(config) { return DecorationSet.create(config.doc, decos.map(make)) },
-        applyAction(state, action) {
-          let value = state[field]
-          if (action.type == "transform")
-            return value.map(action.transform.mapping, action.transform.doc)
-          if (action.type == "addDecorations")
-            return value.add(state.doc, action.decorations)
-          return value
-        }
+  let plugin = new Plugin({
+    state: {
+      init(config) { return DecorationSet.create(config.doc, decos.map(make)) },
+      applyAction(action, set, state) {
+        if (action.type == "transform")
+          return set.map(action.transform.mapping, action.transform.doc)
+        if (action.type == "addDecorations")
+          return set.add(state.doc, action.decorations)
+        return set
       }
     },
     props: {
-      decorations(state) { return state[field] }
+      decorations(state) { return plugin.getState(state) }
     }
   })
+  return plugin
 }
 
 describe("EditorView", () => {
