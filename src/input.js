@@ -173,7 +173,7 @@ function forceDOMFlush(view) {
 handlers.mousedown = (view, event) => {
   let flushed = forceDOMFlush(view)
   let now = Date.now(), type
-  if (now - lastClick.time >= 500 || !isNear(event, lastClick)) type = "singleClick"
+  if (now - lastClick.time >= 500 || !isNear(event, lastClick) || event.ctrlKey) type = "singleClick"
   else if (now - oneButLastClick.time >= 600 || !isNear(event, oneButLastClick)) type = "doubleClick"
   else type = "tripleClick"
   oneButLastClick = lastClick
