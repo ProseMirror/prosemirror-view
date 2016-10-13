@@ -196,7 +196,7 @@ class MouseDown {
     this.pos = pos
     this.flushed = flushed
     this.ctrlKey = event.ctrlKey
-    this.allowDefault = view.shiftKey
+    this.allowDefault = event.shiftKey
 
     let targetNode, targetPos
     if (pos.inLeaf > -1) {
