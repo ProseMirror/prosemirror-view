@@ -1,4 +1,4 @@
-const {doc, p} = require("prosemirror-model/test/build")
+const {doc, p, em} = require("prosemirror-model/test/build")
 const {Plugin} = require("prosemirror-state")
 const {tempEditor} = require("./view")
 const {DecorationSet, Decoration} = require("../dist")
@@ -24,6 +24,8 @@ function decoPlugin(decos) {
           return set.map(action.transform.mapping, action.transform.doc)
         if (action.type == "addDecorations")
           return set.add(state.doc, action.decorations)
+        if (action.type == "removeDecorations")
+          return set.remove(action.decorations)
         return set
       }
     },
@@ -75,7 +77,7 @@ describe("EditorView", () => {
       ist(classes(baz[3]), "bar baz")
     })
 
-    it("draws widgets", () => {
+    it("draws multiple widgets", () => {
       let view = tempEditor({doc: doc(p("foobar")),
                              plugins: [decoPlugin(["1-widget", "4-widget", "7-widget"])]})
       let found = view.content.querySelectorAll("button")
@@ -88,7 +90,13 @@ describe("EditorView", () => {
     it("draws a widget in an empty node", () => {
       let view = tempEditor({doc: doc(p()),
                              plugins: [decoPlugin(["1-widget"])]})
-      ist(view.content.querySelector("button"))
+      ist(view.content.querySelectorAll("button").length, 1)
+    })
+
+    it("draws widgets on node boundaries", () => {
+      let view = tempEditor({doc: doc(p("foo", em("bar"))),
+                             plugins: [decoPlugin(["4-widget"])]})
+      ist(view.content.querySelectorAll("button").length, 1)
     })
 
     it("supports overlapping inline decorations", () => {
@@ -120,6 +128,21 @@ describe("EditorView", () => {
       view.props.onAction(view.state.tr.delete(2, 3).action())
       view.props.onAction(view.state.tr.delete(2, 3).action())
       ist(view.content.lastChild, para2)
+    })
+
+    it("can add a widget on a node boundary", () => {
+      let view = tempEditor({doc: doc(p("foo", em("bar"))),
+                             plugins: [decoPlugin([])]})
+      view.props.onAction({type: "addDecorations", decorations: [make("4-widget")]})
+      ist(view.content.querySelectorAll("button").length, 1)
+    })
+
+    it("can remove a widget on a node boundary", () => {
+      let dec = make("4-widget")
+      let view = tempEditor({doc: doc(p("foo", em("bar"))),
+                             plugins: [decoPlugin([dec])]})
+      view.props.onAction({type: "removeDecorations", decorations: [dec]})
+      ist(view.content.querySelector("button"), null)
     })
 
     it("draws a widget added in the middle of a text node", () => {

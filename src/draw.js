@@ -145,27 +145,42 @@ class Context {
   }
 }
 
+// : ([Decoration], number, number, number, dom.Node, ?dom.Node) → number
+// Used to apply decorations, either at a given point in a node that's
+// being updated, or those in and after a given child node. `i` is an
+// index into the local set of (non-overlapping) decorations, which is
+// used to avoid scanning through the array multiple times.
+//
+// When `from` == `to`, this should only draw inserted decorations at
+// the given position. When `from` < `to`, this should also decorate a
+// node. That node may be a text node, which may have different
+// decorations at different points, in which case it has to be split.
+//
+// `domNode` should be _the node after `from`_. That means that it is
+// the current node when `from` < `to`, and the node after the current
+// position when they are equal. It may be null, when `from` == `to`
+// and there are no nodes after the current point.
+//
+// Returns the updated index, which can be passed back to this
+// function later.
 function applyDecorations(locals, i, from, to, domParent, domNode) {
   for (; i < locals.length; i++) {
     let span = locals[i]
     if (span.from > to || span.to > to) break
-    if (span.from == to) {
-      domNode = domNode && domNode.nextSibling
-      from = to
-    } else if (from < span.from) {
-      domNode = splitText(domNode, span.from - from)
+    if (from < span.from) {
+      domNode = span.from < to ? splitText(domNode, span.from - from) : domNode.nextSibling
       from = span.from
     }
-    let next = span.to > span.from && span.to < to && splitText(domNode, span.to - from)
+    let curNode = domNode
+    if (span.to < to && span.from < span.to) {
+      domNode = splitText(domNode, span.to - from)
+      from = span.to
+    }
 
     for (;;) {
-      domNode = span.type.apply(domParent, domNode)
+      curNode = span.type.apply(domParent, curNode)
       if (i < locals.length - 1 && locals[i + 1].to == span.to) span = locals[++i]
       else break
-    }
-    if (next) {
-      from = span.to
-      domNode = next
     }
   }
   return i
