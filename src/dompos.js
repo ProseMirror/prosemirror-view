@@ -29,6 +29,8 @@ function posFromDOM(dom, domOffset, bias = 0) {
     let adjust = 0
     if (dom.nodeType == 3) {
       innerOffset += domOffset
+    } else if (dom.nodeType != 1 || dom.hasAttribute("pm-ignore")) {
+      innerOffset = 0
     } else if (tag = dom.getAttribute("pm-offset") && !childContainer(dom)) {
       let size = +dom.getAttribute("pm-size")
       if (dom.nodeType == 1 && !dom.firstChild) innerOffset = bias > 0 ? size : 0
