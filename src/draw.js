@@ -179,7 +179,7 @@ function applyDecorations(locals, i, from, to, domParent, domNode) {
 
     for (;;) {
       curNode = span.type.apply(domParent, curNode)
-      if (i < locals.length - 1 && locals[i + 1].to == span.to) span = locals[++i]
+      if (i < locals.length - 1 && locals[i + 1].to == span.to && locals[i + 1].from == span.from) span = locals[++i]
       else break
     }
   }

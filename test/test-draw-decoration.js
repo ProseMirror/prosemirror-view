@@ -99,6 +99,12 @@ describe("EditorView", () => {
       ist(view.content.querySelectorAll("button").length, 1)
     })
 
+    it("draws decorations from multiple plugins", () => {
+      let view = tempEditor({doc: doc(p("foo", em("bar"))),
+                             plugins: [decoPlugin(["2-widget"]), decoPlugin(["6-widget"])]})
+      ist(view.content.querySelectorAll("button").length, 2)
+    })
+
     it("supports overlapping inline decorations", () => {
       let view = tempEditor({doc: doc(p("foobar")),
                              plugins: [decoPlugin(["1-3-foo", "2-5-bar"])]})

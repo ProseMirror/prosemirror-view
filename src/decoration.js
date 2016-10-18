@@ -322,6 +322,7 @@ class DecorationSet {
 
   forChild(offset, node) {
     if (this == empty) return this
+    if (node.isLeaf) return DecorationSet.empty
 
     let child, local
     for (let i = 0; i < this.children.length; i += 3) if (this.children[i] >= offset) {
@@ -385,6 +386,7 @@ class DecorationGroup {
   }
 
   forChild(offset, child) {
+    if (child.isLeaf) return DecorationSet.empty
     let found = []
     for (let i = 0; i < this.members.length; i++) {
       let result = this.members[i].forChild(offset, child)
@@ -412,7 +414,7 @@ class DecorationGroup {
         result = locals
       } else {
         if (sorted) {
-          result = result.splice()
+          result = result.slice()
           sorted = false
         }
         for (let j = 0; j < locals.length; j++) result.push(locals[j])
