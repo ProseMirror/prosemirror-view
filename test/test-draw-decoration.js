@@ -105,6 +105,17 @@ describe("EditorView", () => {
       ist(view.content.querySelectorAll("button").length, 2)
     })
 
+    it("draws inline decorations spanning multiple parents", () => {
+      let view = tempEditor({doc: doc(p("long first ", em("p"), "aragraph"), p("two")),
+                             plugins: [decoPlugin(["7-25-foo"])]})
+      let foos = view.content.querySelectorAll(".foo")
+      ist(foos.length, 4)
+      ist(foos[0].textContent, "irst ")
+      ist(foos[1].textContent, "p")
+      ist(foos[2].textContent, "aragraph")
+      ist(foos[3].textContent, "tw")
+    })
+
     it("supports overlapping inline decorations", () => {
       let view = tempEditor({doc: doc(p("foobar")),
                              plugins: [decoPlugin(["1-3-foo", "2-5-bar"])]})
@@ -171,6 +182,16 @@ describe("EditorView", () => {
       ist(foo)
       ist(foo.textContent, "a")
       ist(foo.nextSibling.textContent, "r")
+    })
+
+    it("correctly redraws a partially decorated node when a widget is added", () => {
+      let view = tempEditor({doc: doc(p("one", em("two"))),
+                             plugins: [decoPlugin(["1-6-foo"])]})
+      view.props.onAction({type: "addDecorations", decorations: [make("6-widget")]})
+      let foos = view.content.querySelectorAll(".foo")
+      ist(foos.length, 2)
+      ist(foos[0].textContent, "one")
+      ist(foos[1].textContent, "tw")
     })
   })
 })

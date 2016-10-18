@@ -164,9 +164,10 @@ class Context {
 // Returns the updated index, which can be passed back to this
 // function later.
 function applyDecorations(locals, i, from, to, domParent, domNode) {
+  let result = i
   for (; i < locals.length; i++) {
     let span = locals[i]
-    if (span.from > to || span.to > to) break
+    if (span.from > to || (span.from == to && span.to > to)) break
     if (from < span.from) {
       domNode = span.from < to ? splitText(domNode, span.from - from) : domNode.nextSibling
       from = span.from
@@ -182,21 +183,23 @@ function applyDecorations(locals, i, from, to, domParent, domNode) {
       if (i < locals.length - 1 && locals[i + 1].to == span.to && locals[i + 1].from == span.from) span = locals[++i]
       else break
     }
+    if (span.to <= to) result = i + 1
   }
-  return i
+  return result
 }
 
 function compareDecorations(old, cur, i, oldFrom, oldTo, curFrom, curTo) {
-  let j = 0
+  let j = 0, result = i
   while (j < old.length && old[j].to <= oldFrom) j++
   for (;; i++, j++) {
     let oldEnd = j == old.length || old[j].from >= oldTo
-    if (i == cur.length || cur[i].from >= curTo) return oldEnd ? i : null
+    if (i == cur.length || cur[i].from >= curTo) return oldEnd ? result : null
     else if (oldEnd) return null
     let oldNext = old[j], curNext = cur[i]
     if (oldNext.type != curNext.type ||
         oldNext.from - oldFrom != curNext.from - curFrom ||
         oldNext.to - oldFrom != curNext.to - curFrom) return null
+    if (curNext.to <= curTo) result = i + 1
   }
 }
 
