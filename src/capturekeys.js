@@ -15,7 +15,7 @@ function apply(view, sel) {
   return true
 }
 
-function selectNodeHorizontally(view, dir) {
+function selectHorizontally(view, dir) {
   let {empty, node, $from, $to} = view.state.selection
   if (!empty && !node) return false
 
@@ -29,6 +29,7 @@ function selectNodeHorizontally(view, dir) {
     if (nextNode) {
       if (isSelectable(nextNode) && offset == $from.parentOffset - (dir > 0 ? 0 : nextNode.nodeSize))
         return apply(view, new NodeSelection(dir < 0 ? view.state.doc.resolve($from.pos - nextNode.nodeSize) : $from))
+      ;(dir < 0 ? skipIgnoredNodesLeft : skipIgnoredNodesRight)(view)
       return null
     }
   }
@@ -40,11 +41,78 @@ function selectNodeHorizontally(view, dir) {
   return false
 }
 
+function nodeLen(node) {
+  return node.nodeType == 3 ? node.nodeValue.length : node.childNodes.length
+}
+
+// Make sure the cursor isn't directly after one or more ignored
+// nodes, which will confuse the browser's cursor motion logic.
+function skipIgnoredNodesLeft(view) {
+  let sel = view.root.getSelection(), moved = false
+  let node = sel.anchorNode, offset = sel.anchorOffset
+  for (;;) {
+    if (offset > 0) {
+      if (node.nodeType != 1) break
+      let before = node.childNodes[offset - 1]
+      if (before.nodeType == 1 && before.hasAttribute("pm-ignore")) { moved = true; offset-- }
+      else break
+    } else {
+      let prev = node.previousSibling
+      while (prev && prev.nodeType == 1 && prev.hasAttribute("pm-ignore")) moved = prev = prev.previousSibling
+      if (!prev) {
+        node = node.parentNode
+        if (node == view.content) break
+        offset = 0
+      } else {
+        node = prev
+        offset = nodeLen(node)
+      }
+    }
+  }
+  if (moved) setSel(sel, node, offset)
+}
+
+// Make sure the cursor isn't directly before one or more ignored
+// nodes.
+function skipIgnoredNodesRight(view) {
+  let sel = view.root.getSelection(), moved = false
+  let node = sel.anchorNode, offset = sel.anchorOffset, len = nodeLen(node)
+  for (;;) {
+    if (offset < len) {
+      if (node.nodeType != 1) break
+      let after = node.childNodes[offset]
+      if (after.nodeType == 1 && after.hasAttribute("pm-ignore")) { moved = true; offset++ }
+      else break
+    } else {
+      let next = node.nextSibling
+      while (next && next.nodeType == 1 && next.hasAttribute("pm-ignore")) { moved = next = next.previousSibling }
+      if (!next) {
+        node = node.parentNode
+        if (node == view.content) break
+        offset = len = 0
+      } else {
+        node = next
+        offset = 0
+        len = nodeLen(node)
+      }
+    }
+  }
+  if (moved) setSel(sel, node, offset)
+}
+
+function setSel(sel, node, offset) {
+  let range = document.createRange()
+  range.setEnd(node, offset)
+  range.setStart(node, offset)
+  sel.removeAllRanges()
+  sel.addRange(range)
+}
+
 // : (EditorState, number)
 // Check whether vertical selection motion would involve node
 // selections. If so, apply it (if not, the result is left to the
 // browser)
-function selectNodeVertically(view, dir) {
+function selectVertically(view, dir) {
   let {empty, node, $from, $to} = view.state.selection
   if (!empty && !node) return false
 
@@ -83,13 +151,13 @@ function captureKeyDown(view, event) {
   } else if (code == 68 && event.altKey && !mod && !event.shiftKey) { // Alt-D
     return true
   } else if (code == 37) { // Left arrow
-    return selectNodeHorizontally(view, -1)
+    return selectHorizontally(view, -1)
   } else if (code == 39) { // Right arrow
-    return selectNodeHorizontally(view, 1)
+    return selectHorizontally(view, 1)
   } else if (code == 38) { // Up arrow
-    return selectNodeVertically(view, -1)
+    return selectVertically(view, -1)
   } else if (code == 40) { // Down arrow
-    return selectNodeVertically(view, 1)
+    return selectVertically(view, 1)
   }
 }
 exports.captureKeyDown = captureKeyDown
