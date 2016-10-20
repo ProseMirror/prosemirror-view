@@ -16,7 +16,7 @@ function make(str) {
 }
 
 function decoPlugin(decos) {
-  let plugin = new Plugin({
+  return new Plugin({
     state: {
       init(config) { return DecorationSet.create(config.doc, decos.map(make)) },
       applyAction(action, set, state) {
@@ -30,10 +30,9 @@ function decoPlugin(decos) {
       }
     },
     props: {
-      decorations(state) { return plugin.getState(state) }
+      decorations(state) { return this.getState(state) }
     }
   })
-  return plugin
 }
 
 describe("EditorView", () => {
