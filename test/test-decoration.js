@@ -72,6 +72,11 @@ describe("DecorationSet", () => {
     ist(str(set), "[3-6]")
   })
 
+  it("drops empty inline decorations", () => {
+    let set = build(doc(p()), {from: 1, to: 1})
+    ist(str(set), "[]")
+  })
+
   describe("find", () => {
     it("finds all when no arguments are given", () => {
       let set = build(doc(p("a"), p("b")), {from: 1, to: 2}, {pos: 3})

@@ -36,7 +36,7 @@ class InlineType {
     return from >= to ? null : new Decoration(from, to, this)
   }
 
-  valid() { return true }
+  valid(_, span) { return span.from < span.to }
 
   apply(_domParent, domNode) {
     return applyContentDecoration(this.attrs, domNode)
@@ -546,16 +546,20 @@ function withoutNulls(array) {
 // positions in the spans (so that we don't have to allocate new spans
 // for recursive calls).
 function buildTree(spans, node, offset) {
-  let children = []
+  let children = [], hasNulls = false
   node.forEach((childNode, localStart) => {
     let found = takeSpansForNode(spans, childNode, localStart + offset)
-    if (found)
-      children.push(localStart, localStart + childNode.nodeSize, buildTree(found, childNode, offset + localStart + 1))
+    if (found) {
+      hasNulls = true
+      let subtree = buildTree(found, childNode, offset + localStart + 1)
+      if (subtree != empty)
+        children.push(localStart, localStart + childNode.nodeSize, subtree)
+    }
   })
-  let locals = moveSpans(children.length ? withoutNulls(spans) : spans, -offset).sort(byPos)
+  let locals = moveSpans(hasNulls ? withoutNulls(spans) : spans, -offset).sort(byPos)
   for (let i = 0; i < locals.length; i++)
     if (!locals[i].type.valid(node, locals[i])) locals.splice(i--, 1)
-  return new DecorationSet(locals, children)
+  return locals.length || children.length ? new DecorationSet(locals, children) : empty
 }
 
 // : (Decoration, Decoration) → number

@@ -115,6 +115,12 @@ describe("EditorView", () => {
       ist(foos[3].textContent, "tw")
     })
 
+    it("can handle inline decorations ending at the start or end of a node", () => {
+      let view = tempEditor({doc: doc(p(), p()),
+                             plugins: [decoPlugin(["1-3-foo"])]})
+      ist(!view.content.querySelector(".foo"))
+    })
+
     it("supports overlapping inline decorations", () => {
       let view = tempEditor({doc: doc(p("foobar")),
                              plugins: [decoPlugin(["1-3-foo", "2-5-bar"])]})
