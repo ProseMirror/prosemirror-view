@@ -148,7 +148,7 @@ class Decoration {
   //     inclusiveRight:: ?bool
   //     Determines how the right side of the decoration is mapped.
   //     See
-  //     [`inclusiveLeft`](#view.Decoration.widget.options.inclusiveLeft).
+  //     [`inclusiveLeft`](#view.Decoration^inline^options.inclusiveLeft).
   static inline(from, to, attrs, options) {
     return new Decoration(from, to, new InlineType(attrs, options))
   }
