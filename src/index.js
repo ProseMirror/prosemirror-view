@@ -164,10 +164,14 @@ class EditorView {
     return cached || document
   }
 
-  // :: ({left: number, top: number}) → ?number
+  // :: ({left: number, top: number}) → ?{pos: number, inside: number}
   // Given a pair of coordinates, return the document position that
   // corresponds to them. May return null if the given coordinates
-  // aren't inside of the visible editor.
+  // aren't inside of the visible editor. When an object is returned,
+  // its `pos` property is the position nearest to the coordinates,
+  // and its `inside` property holds the position before the inner
+  // node that the click happened inside of, or -1 if the click was at
+  // the top level.
   posAtCoords(coords) { return posAtCoords(this, coords) }
 
   // :: (number) → {left: number, right: number, top: number, bottom: number}

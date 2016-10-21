@@ -3,17 +3,18 @@ function isEditorContent(dom) {
 }
 
 // : (dom.Node) → number
-// Get the position before a given a DOM node in a document.
+// Get the position before a given a DOM node in a document. Returns
+// -1 when the first annotated parent node is the top-level document.
 function posBeforeFromDOM(node) {
-  let pos = 0, add = 0
+  let pos = -1
   for (let cur = node; !isEditorContent(cur); cur = cur.parentNode) {
     let attr = cur.nodeType == 1 && cur.getAttribute("pm-offset")
-    if (attr) { pos += +attr + add; add = 1 }
+    if (attr) { pos += +attr + 1 }
   }
   return pos
 }
 
-// : (dom.Node, number) → {pos: number, inLeaf: number}
+// : (dom.Node, number) → number
 function posFromDOM(dom, domOffset, bias = 0) {
   if (domOffset == null) {
     domOffset = Array.prototype.indexOf.call(dom.parentNode.childNodes, dom)
@@ -48,7 +49,7 @@ function posFromDOM(dom, domOffset, bias = 0) {
     bias = 0
   }
 
-  let start = isEditorContent(dom) ? 0 : posBeforeFromDOM(dom) + 1, before = 0
+  let start = posBeforeFromDOM(dom) + 1, before = 0
 
   for (let child = dom.childNodes[domOffset - 1]; child; child = child.previousSibling) {
     if (child.nodeType == 1 && (tag = child.getAttribute("pm-offset"))) {
@@ -258,8 +259,7 @@ function posAtCoords(view, coords) {
     let rect = node.getBoundingClientRect()
     bias = rect.left != rect.right && coords.left > (rect.left + rect.right) / 2 ? 1 : -1
   }
-  let inLeaf = childContainer(node) ? -1 : posBeforeFromDOM(node)
-  return {pos: posFromDOM(node, offset, bias), inLeaf}
+  return {pos: posFromDOM(node, offset, bias), inside: posBeforeFromDOM(node)}
 }
 exports.posAtCoords = posAtCoords
 
