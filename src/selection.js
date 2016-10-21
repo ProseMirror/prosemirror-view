@@ -1,7 +1,7 @@
 const {Selection, NodeSelection, isSelectable} = require("prosemirror-state")
 
 const browser = require("./browser")
-const {posFromDOM, DOMAfterPos, DOMFromPos, coordsAtPos} = require("./dompos")
+const {posFromDOM, DOMAfterPos, DOMFromPos, coordsAtPos, childContainer} = require("./dompos")
 
 // Track the state of the current editor selection. Keeps the editor
 // selection in sync with the DOM selection by polling for changes,
@@ -65,16 +65,14 @@ class SelectionReader {
     if (!this.view.hasFocus() || !this.domChanged()) return
 
     let domSel = this.view.root.getSelection(), doc = this.view.state.doc
-    let {pos: head, inLeaf: headInLeaf} = posFromDOM(domSel.focusNode, domSel.focusOffset)
-    let $head = doc.resolve(head), $anchor, selection
+    let domNode = domSel.focusNode, head = posFromDOM(domNode, domSel.focusOffset)
+    let $head = doc.resolve(head), $anchor, selection, nodeAfter
     if (domSel.isCollapsed) {
       $anchor = $head
-      if (headInLeaf > -1) {
-        let $leaf = doc.resolve(headInLeaf), node = $leaf.nodeAfter
-        if (isSelectable(node) && !node.type.isInline) selection = new NodeSelection($leaf)
-      }
+      if (!childContainer(domNode) && (nodeAfter = $head.nodeAfter) && nodeAfter.isLeaf && isSelectable(nodeAfter))
+        selection = new NodeSelection($head)
     } else {
-      $anchor = doc.resolve(posFromDOM(domSel.anchorNode, domSel.anchorOffset).pos)
+      $anchor = doc.resolve(posFromDOM(domSel.anchorNode, domSel.anchorOffset))
     }
 
     if (!selection) {

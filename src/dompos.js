@@ -1,5 +1,5 @@
 function isEditorContent(dom) {
-  return dom.classList.contains("ProseMirror-content")
+  return dom.nodeType == 1 && dom.classList.contains("ProseMirror-content")
 }
 
 // : (dom.Node) → number
@@ -7,13 +7,11 @@ function isEditorContent(dom) {
 function posBeforeFromDOM(node) {
   let pos = 0, add = 0
   for (let cur = node; !isEditorContent(cur); cur = cur.parentNode) {
-    let attr = cur.getAttribute("pm-offset")
+    let attr = cur.nodeType == 1 && cur.getAttribute("pm-offset")
     if (attr) { pos += +attr + add; add = 1 }
   }
   return pos
 }
-
-const posFromDOMResult = {pos: 0, inLeaf: -1}
 
 // : (dom.Node, number) → {pos: number, inLeaf: number}
 function posFromDOM(dom, domOffset, bias = 0) {
@@ -36,9 +34,7 @@ function posFromDOM(dom, domOffset, bias = 0) {
       if (dom.nodeType == 1 && !dom.firstChild) innerOffset = bias > 0 ? size : 0
       else if (domOffset == dom.childNodes.length) innerOffset = size
       else innerOffset = Math.min(innerOffset, size)
-      let inLeaf = posFromDOMResult.inLeaf = posBeforeFromDOM(dom)
-      posFromDOMResult.pos = inLeaf + innerOffset
-      return posFromDOMResult
+      return posBeforeFromDOM(dom) + innerOffset
     } else if (dom.hasAttribute("pm-container")) {
       break
     } else if (domOffset == dom.childNodes.length) {
@@ -61,15 +57,13 @@ function posFromDOM(dom, domOffset, bias = 0) {
     }
   }
 
-  posFromDOMResult.inLeaf = -1
-  posFromDOMResult.pos = start + before + innerOffset
-  return posFromDOMResult
+  return start + before + innerOffset
 }
 exports.posFromDOM = posFromDOM
 
 // : (dom.Node) → ?dom.Node
 function childContainer(dom) {
-  return dom.hasAttribute("pm-container") ? dom : dom.querySelector("[pm-container]")
+  return dom.nodeType != 1 ? null : dom.hasAttribute("pm-container") ? dom : dom.querySelector("[pm-container]")
 }
 exports.childContainer = childContainer
 
@@ -264,7 +258,8 @@ function posAtCoords(view, coords) {
     let rect = node.getBoundingClientRect()
     bias = rect.left != rect.right && coords.left > (rect.left + rect.right) / 2 ? 1 : -1
   }
-  return posFromDOM(node, offset, bias)
+  let inLeaf = childContainer(node) ? -1 : posBeforeFromDOM(node)
+  return {pos: posFromDOM(node, offset, bias), inLeaf}
 }
 exports.posAtCoords = posAtCoords
 
