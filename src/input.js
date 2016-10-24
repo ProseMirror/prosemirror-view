@@ -423,10 +423,12 @@ function insertRange($from, $to) {
 // "<td>..</td>"` the table cells are ignored.
 const wrapMap = {thead: "table", colgroup: "table", col: "table colgroup",
                  tr: "table tbody", td: "table tbody tr", th: "table tbody tr"}
+let detachedDoc = null
 function readHTML(html) {
   let metas = /(\s*<meta [^>]*>)*/.exec(html)
   if (metas) html = html.slice(metas[0].length)
-  let elt = document.createElement("div")
+  let doc = detachedDoc || (detachedDoc = document.implementation.createHTMLDocument())
+  let elt = doc.createElement("div")
   let firstTag = /(?:<meta [^>]*>)*<([a-z][^>\s]+)/i.exec(html), wrap, depth = 0
   if (wrap = firstTag && wrapMap[firstTag[1].toLowerCase()]) {
     let nodes = wrap.split(" ")
