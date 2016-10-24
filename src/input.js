@@ -427,7 +427,7 @@ let detachedDoc = null
 function readHTML(html) {
   let metas = /(\s*<meta [^>]*>)*/.exec(html)
   if (metas) html = html.slice(metas[0].length)
-  let doc = detachedDoc || (detachedDoc = document.implementation.createHTMLDocument())
+  let doc = detachedDoc || (detachedDoc = document.implementation.createHTMLDocument("title"))
   let elt = doc.createElement("div")
   let firstTag = /(?:<meta [^>]*>)*<([a-z][^>\s]+)/i.exec(html), wrap, depth = 0
   if (wrap = firstTag && wrapMap[firstTag[1].toLowerCase()]) {
