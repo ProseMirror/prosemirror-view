@@ -6,7 +6,7 @@ const ist = require("ist")
 
 function make(str) {
   if (typeof str != "string") return str
-  let match = /^(\d+)(?:-(\d+))?-(\w+)$/.exec(str)
+  let match = /^(\d+)(?:-(\d+))?-(.+)$/.exec(str)
   if (match[3] == "widget") {
     let widget = document.createElement("button")
     widget.textContent = "ω"
@@ -119,6 +119,13 @@ describe("EditorView", () => {
       let view = tempEditor({doc: doc(p(), p()),
                              plugins: [decoPlugin(["1-3-foo"])]})
       ist(!view.content.querySelector(".foo"))
+    })
+
+    it("can draw decorations with multiple classes", () => {
+      let view = tempEditor({doc: doc(p("foo")),
+                             plugins: [decoPlugin(["1-4-foo bar"])]})
+      ist(view.content.querySelectorAll(".foo").length, 1)
+      ist(view.content.querySelectorAll(".bar").length, 1)
     })
 
     it("supports overlapping inline decorations", () => {

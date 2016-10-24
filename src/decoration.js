@@ -77,7 +77,7 @@ class DummyType {
 function applyContentDecoration(attrs, domNode) {
   for (let name in attrs) {
     let val = attrs[name]
-    if (name == "class") domNode.classList.add(val)
+    if (name == "class") domNode.classList.add(...val.split(" "))
     else if (name == "style") domNode.style.cssText += ";" + val
     else if (name != "wrapper") domNode.setAttribute(name, val)
   }
@@ -174,8 +174,8 @@ exports.Decoration = Decoration
 // which will be set to the property's value. These are exceptions:
 //
 //   class:: ?string
-//   A CSS class name to be _added_ to the classes that the node
-//   already had.
+//   A CSS class name or a space-separated set of class names to be
+//   _added_ to the classes that the node already had.
 //
 //   style:: ?string
 //   A string of CSS to be _added_ to the node's existing `style` property.
