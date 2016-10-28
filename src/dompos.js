@@ -14,13 +14,8 @@ function posBeforeFromDOM(node) {
   return pos
 }
 
-// : (dom.Node, number) → number
+// : (dom.Node, number, ?number) → number
 function posFromDOM(dom, domOffset, bias = 0) {
-  if (domOffset == null) {
-    domOffset = Array.prototype.indexOf.call(dom.parentNode.childNodes, dom)
-    dom = dom.parentNode
-  }
-
   // Move up to the wrapping container, counting local offset along
   // the way.
   let innerOffset = 0, tag
