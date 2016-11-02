@@ -332,12 +332,13 @@ class DecorationSet {
     let start = offset + 1, end = start + node.content.size
     for (let i = 0; i < this.local.length; i++) {
       let dec = this.local[i]
-      if (dec.from < end && dec.to > start)
-        (local || (local = [])).push(dec.copy(Math.max(start, dec.from) - start,
-                                              Math.min(end, dec.to) - start))
+      if (dec.from < end && dec.to > start && (dec.type instanceof InlineType)) {
+        let from = Math.max(start, dec.from) - start, to = Math.min(end, dec.to) - start
+        if (from < to) (local || (local = [])).push(dec.copy(from, to))
+      }
     }
-    if (local && local.some(InlineType.is)) {
-      let localSet = new DecorationSet(local.filter(InlineType.is))
+    if (local) {
+      let localSet = new DecorationSet(local)
       return child ? new DecorationGroup([localSet, child]) : localSet
     }
     return child || empty

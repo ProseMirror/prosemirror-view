@@ -115,6 +115,15 @@ describe("EditorView", () => {
       ist(foos[3].textContent, "tw")
     })
 
+    it("draws inline decorations across empty paragraphs", () => {
+      let view = tempEditor({doc: doc(p("first"), p(), p("second")),
+                             plugins: [decoPlugin(["3-12-foo"])]})
+      let foos = view.content.querySelectorAll(".foo")
+      ist(foos.length, 2)
+      ist(foos[0].textContent, "rst")
+      ist(foos[1].textContent, "se")
+    })
+
     it("can handle inline decorations ending at the start or end of a node", () => {
       let view = tempEditor({doc: doc(p(), p()),
                              plugins: [decoPlugin(["1-3-foo"])]})
