@@ -1,9 +1,9 @@
-const {Slice, Fragment, DOMParser, DOMSerializer} = require("prosemirror-model")
 const {Selection, NodeSelection, TextSelection, isSelectable} = require("prosemirror-state")
 
 const browser = require("./browser")
 const {captureKeyDown} = require("./capturekeys")
 const {readInputChange, readCompositionChange} = require("./domchange")
+const {fromClipboard, toClipboard, canUpdateClipboard} = require("./clipboard")
 
 // A collection of DOM events that occur within the editor, and callback functions
 // to invoke when the event fires.
@@ -357,99 +357,16 @@ handlers.input = view => {
   scheduleUpdateFromDOM(view)
 }
 
-function toClipboard(view, from, to, dataTransfer) {
-  let doc = view.state.doc
-  let $from = doc.resolve(from), start = from
-  for (let d = $from.depth; d > 0 && $from.end(d) == start; d--) start++
-  let slice = doc.slice(start, to)
-  if (slice.possibleParent.type != doc.type.schema.nodes.doc)
-    slice = new Slice(Fragment.from(slice.possibleParent.copy(slice.content)), slice.openLeft + 1, slice.openRight + 1)
-  let serializer = view.someProp("clipboardSerializer") || view.someProp("domSerializer") || DOMSerializer.fromSchema(view.state.schema)
-  let dom = serializer.serializeFragment(slice.content), wrap = document.createElement("div")
-  if (dom.firstChild && dom.firstChild.nodeType == 1)
-    dom.firstChild.setAttribute("pm-open-left", slice.openLeft)
-  wrap.appendChild(dom)
-  dataTransfer.clearData()
-  dataTransfer.setData("text/html", wrap.innerHTML)
-  dataTransfer.setData("text/plain", slice.content.textBetween(0, slice.content.size, "\n\n"))
-  return slice
-}
-
-let cachedCanUpdateClipboard = null
-
-function canUpdateClipboard(dataTransfer) {
-  if (cachedCanUpdateClipboard != null) return cachedCanUpdateClipboard
-  dataTransfer.setData("text/html", "<hr>")
-  return cachedCanUpdateClipboard = dataTransfer.getData("text/html") == "<hr>"
-}
-
-// : (DataTransfer, ?bool, ResolvedPos) → ?Slice
-function fromClipboard(view, dataTransfer, plainText, $target) {
-  let txt = dataTransfer.getData("text/plain")
-  let html = dataTransfer.getData("text/html")
-  if (!html && !txt) return null
-  let dom
-  if ((plainText || !html) && txt) {
-    dom = document.createElement("div")
-    txt.split(/(?:\r\n?|\n){2,}/).forEach(block => {
-      let para = dom.appendChild(document.createElement("p"))
-      block.split(/\r\n?|\n/).forEach((line, i) => {
-        if (i) para.appendChild(document.createElement("br"))
-        para.appendChild(document.createTextNode(line))
-      })
-    })
-  } else {
-    dom = readHTML(html)
-  }
-  let openLeft = null, m
-  let foundLeft = dom.querySelector("[pm-open-left]")
-  if (foundLeft && (m = /^\d+$/.exec(foundLeft.getAttribute("pm-open-left"))))
-    openLeft = +m[0]
-
-  let parser = view.someProp("clipboardParser") || view.someProp("domParser") || DOMParser.fromSchema(view.state.schema)
-  let slice = parser.parseInContext($target, dom, {openLeft, preserveWhitespace: true})
-  return slice
-}
-
-function insertRange($from, $to) {
-  let from = $from.pos, to = $to.pos
-  for (let d = $to.depth; d > 0 && $to.end(d) == to; d--) to++
-  for (let d = $from.depth; d > 0 && $from.start(d) == from && $from.end(d) <= to; d--) from--
-  return {from, to}
-}
-
-// Trick from jQuery -- some elements must be wrapped in other
-// elements for innerHTML to work. I.e. if you do `div.innerHTML =
-// "<td>..</td>"` the table cells are ignored.
-const wrapMap = {thead: "table", colgroup: "table", col: "table colgroup",
-                 tr: "table tbody", td: "table tbody tr", th: "table tbody tr"}
-let detachedDoc = null
-function readHTML(html) {
-  let metas = /(\s*<meta [^>]*>)*/.exec(html)
-  if (metas) html = html.slice(metas[0].length)
-  let doc = detachedDoc || (detachedDoc = document.implementation.createHTMLDocument("title"))
-  let elt = doc.createElement("div")
-  let firstTag = /(?:<meta [^>]*>)*<([a-z][^>\s]+)/i.exec(html), wrap, depth = 0
-  if (wrap = firstTag && wrapMap[firstTag[1].toLowerCase()]) {
-    let nodes = wrap.split(" ")
-    html = nodes.map(n => "<" + n + ">").join("") + html + nodes.map(n => "</" + n + ">").reverse().join("")
-    depth = nodes.length
-  }
-  elt.innerHTML = html
-  for (let i = 0; i < depth; i++) elt = elt.firstChild
-  return elt
-}
-
 handlers.copy = handlers.cut = (view, e) => {
-  let {from, to, empty} = view.state.selection, cut = e.type == "cut"
-  if (empty) return
+  let sel = view.state.selection, cut = e.type == "cut"
+  if (sel.empty) return
   if (!e.clipboardData || !canUpdateClipboard(e.clipboardData)) {
     if (cut && browser.ie && browser.ie_version <= 11) scheduleUpdateFromDOM(view)
     return
   }
-  toClipboard(view, from, to, e.clipboardData)
+  toClipboard(view, sel, e.clipboardData)
   e.preventDefault()
-  if (cut) view.props.onAction(view.state.tr.delete(from, to).scrollAction())
+  if (cut) view.props.onAction(view.state.tr.delete(sel.from, sel.to).scrollAction())
 }
 
 handlers.paste = (view, e) => {
@@ -458,20 +375,19 @@ handlers.paste = (view, e) => {
     if (browser.ie && browser.ie_version <= 11) scheduleUpdateFromDOM(view)
     return
   }
-  let range = insertRange(view.state.selection.$from, view.state.selection.$to)
-  let slice = fromClipboard(view, e.clipboardData, view.shiftKey, view.state.doc.resolve(range.from))
+  let sel = view.state.selection
+  let slice = fromClipboard(view, e.clipboardData, view.shiftKey, sel.$from)
   if (slice) {
     e.preventDefault()
     view.someProp("transformPasted", f => { slice = f(slice) })
-    view.props.onAction(view.state.tr.replace(range.from, range.to, slice).scrollAction())
+    view.props.onAction(view.state.tr.replace(sel.from, sel.to, slice).scrollAction())
   }
 }
 
 class Dragging {
-  constructor(slice, from, to, move) {
+  constructor(slice, range, move) {
     this.slice = slice
-    this.from = from
-    this.to = to
+    this.range = range
     this.move = move
   }
 }
@@ -501,18 +417,16 @@ handlers.dragstart = (view, e) => {
   if (mouseDown) mouseDown.done()
   if (!e.dataTransfer) return
 
-  let {from, to, empty} = view.state.selection, dragging
-  let pos = empty ? null : view.posAtCoords(eventCoords(e))
-  if (pos != null && pos.pos >= from && pos.pos <= to) {
-    dragging = {from, to}
-  } else if (mouseDown && mouseDown.mightDrag) {
-    let pos = mouseDown.mightDrag.pos
-    dragging = {from: pos, to: pos + mouseDown.mightDrag.node.nodeSize}
-  }
+  let sel = view.state.selection, draggedRange
+  let pos = sel.empty ? null : view.posAtCoords(eventCoords(e))
+  if (pos != null && pos.pos >= sel.from && pos.pos <= sel.to)
+    draggedRange = sel
+  else if (mouseDown && mouseDown.mightDrag)
+    draggedRange = new NodeSelection(view.state.doc.resolve(mouseDown.mightDrag.pos))
 
-  if (dragging) {
-    let slice = toClipboard(view, dragging.from, dragging.to, e.dataTransfer)
-    view.dragging = new Dragging(slice, dragging.from, dragging.to, !e.ctrlKey)
+  if (draggedRange) {
+    let slice = toClipboard(view, draggedRange, e.dataTransfer)
+    view.dragging = new Dragging(slice, draggedRange, !e.ctrlKey)
   }
 }
 
@@ -557,15 +471,14 @@ handlers.drop = (view, e) => {
 
   let $mouse = view.state.doc.resolve(view.posAtCoords(eventCoords(e)).pos)
   if (!$mouse) return
-  let range = insertRange($mouse, $mouse)
   let slice = dragging && dragging.slice || fromClipboard(view, e.dataTransfer, false, $mouse)
   if (!slice) return
-  let insertPos = dropPos(slice, view.state.doc.resolve(range.from))
+  let insertPos = dropPos(slice, view.state.doc.resolve($mouse.pos))
 
   e.preventDefault()
   let tr = view.state.tr
   if (dragging && dragging.move)
-    tr.delete(dragging.from, dragging.to)
+    tr.delete(dragging.range.from, dragging.range.to)
   view.someProp("transformPasted", f => { slice = f(slice) })
   let pos = tr.mapping.map(insertPos)
   tr.replace(pos, pos, slice)
