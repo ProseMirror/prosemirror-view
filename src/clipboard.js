@@ -1,15 +1,24 @@
 const {Slice, Fragment, DOMParser, DOMSerializer} = require("prosemirror-model")
 
+// : (EditorView, Selection, dom.DataTransfer) → Slice
+// Store the content of a selection in the clipboard (or whatever the
+// given data transfer refers to)
 function toClipboard(view, range, dataTransfer) {
-  let doc = view.state.doc, slice = doc.slice(range.from, range.to)
-  let parent = range.$from.node(range.$from.sharedDepth(range.to))
-  if (parent.type != doc.type.schema.nodes.doc)
-    slice = new Slice(Fragment.from(parent.copy(slice.content)), slice.openLeft + 1, slice.openRight + 1)
+  let doc = view.state.doc, slice = doc.slice(range.from, range.to), shared
+  if (!range.node && (shared = range.$from.sharedDepth(range.to)))
+    slice = new Slice(Fragment.from(range.$from.node(shared).copy(slice.content)), slice.openLeft + 1, slice.openRight + 1)
 
   let serializer = view.someProp("clipboardSerializer") || view.someProp("domSerializer") || DOMSerializer.fromSchema(view.state.schema)
   let dom = serializer.serializeFragment(slice.content), wrap = document.createElement("div")
   wrap.appendChild(dom)
-  
+  let child = wrap.firstChild.nodeType == 1 && wrap.firstChild
+  if (child) {
+    if (range.node)
+      child.setAttribute("data-pm-node-selection", true)
+    else
+      child.setAttribute("data-pm-context", sliceContext(range.$from, shared))
+  }
+
   dataTransfer.clearData()
   dataTransfer.setData("text/html", wrap.innerHTML)
   dataTransfer.setData("text/plain", slice.content.textBetween(0, slice.content.size, "\n\n"))
@@ -25,7 +34,8 @@ function canUpdateClipboard(dataTransfer) {
 }
 exports.canUpdateClipboard = canUpdateClipboard
 
-// : (DataTransfer, ?bool, ResolvedPos) → ?Slice
+// : (EditorView, dom.DataTransfer, ?bool, ResolvedPos) → ?Slice
+// Read a slice of content from the clipboard (or drop data).
 function fromClipboard(view, dataTransfer, plainText, $context) {
   let txt = dataTransfer.getData("text/plain")
   let html = dataTransfer.getData("text/html")
@@ -45,11 +55,25 @@ function fromClipboard(view, dataTransfer, plainText, $context) {
   }
 
   let parser = view.someProp("clipboardParser") || view.someProp("domParser") || DOMParser.fromSchema(view.state.schema)
-  let slice = normalizeSiblings(parser.parseOpen(dom, {preserveWhitespace: true}), $context)
+  let slice = parser.parseOpen(dom, {preserveWhitespace: true}), context
+  if (dom.querySelector("[data-pm-node-selection]"))
+    slice = new Slice(slice.content, 0, 0)
+  else if (context = dom.querySelector("[data-pm-context]"))
+    slice = addContext(slice, context.getAttribute("data-pm-context"))
+  else // HTML wasn't created by ProseMirror. Make sure top-level siblings are coherent
+    slice = normalizeSiblings(slice, $context)
   return slice
 }
 exports.fromClipboard = fromClipboard
 
+// Takes a slice parsed with parseOpen, which means there hasn't been
+// any content-expression checking done on the top nodes, tries to
+// find a parent node in the current context that might fit the nodes,
+// and if successful, rebuilds the slice so that it fits into that parent.
+//
+// This addresses the problem that Transform.replace expects a
+// coherent slice, and will fail to place a set of siblings that don't
+// fit anywhere in the schema.
 function normalizeSiblings(slice, $context) {
   if (slice.content.childCount < 2) return slice
   let firstNode
@@ -69,7 +93,7 @@ function normalizeSiblings(slice, $context) {
           node = wrap[i].type.create(wrap[i].attrs, Fragment.from(node))
         content.push(node)
       })
-      if (content) return console.log("::" + Slice.maxOpen(Fragment.from(content))), Slice.maxOpen(Fragment.from(content))
+      if (content) return Slice.maxOpen(Fragment.from(content))
     }
   }
   return slice
@@ -95,4 +119,28 @@ function readHTML(html) {
   elt.innerHTML = html
   for (let i = 0; i < depth; i++) elt = elt.firstChild
   return elt
+}
+
+function sliceContext($pos, depth) {
+  let result = []
+  for (let d = depth - 1; d > 0; d--) {
+    let node = $pos.node(d)
+    result.push(node.type.name, node.type.hasRequiredAttrs() ? node.attrs : null)
+  }
+  return JSON.stringify(result)
+}
+
+function addContext(slice, context) {
+  if (!slice.size) return slice
+  let schema = slice.content.firstChild.type.schema, array
+  try { array = JSON.parse(context) }
+  catch(e) { return slice }
+  let {content, openLeft, openRight} = slice
+  for (let i = 0; i < array.length; i += 2) {
+    let type = schema.nodes[array[i]]
+    if (!type || type.hasRequiredAttrs()) break
+    content = Fragment.from(type.create(array[i + 1], content))
+    openLeft++; openRight++
+  }
+  return new Slice(content, openLeft, openRight)
 }
