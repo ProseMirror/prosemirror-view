@@ -100,7 +100,7 @@ class EditorView {
     this.drawnDecorations = decorations
 
     if (this.dirty) {
-      let $start = oldDoc.resolve(this.dirty.from), $end = oldDoc.resolve(this.dirty.to), same = $start.sameDepth($end)
+      let $start = oldDoc.resolve(this.dirty.from), same = $start.sharedDepth(this.dirty.to)
       this.dirty = null
       if (same == 0)
         return draw(this, doc, decorations)
