@@ -369,14 +369,6 @@ handlers.copy = handlers.cut = (view, e) => {
   if (cut) view.props.onAction(view.state.tr.delete(sel.from, sel.to).scrollAction())
 }
 
-function pasteStart(sel) {
-  let $head = sel.$head
-  if (!$head) return sel.from
-  let parent = $head.parent
-  if (parent.content.size || parent.type != $head.node(-1).defaultContentType($head.index(-1))) return sel.from
-  return sel.from - 1
-}
-
 handlers.paste = (view, e) => {
   if (!view.hasFocus()) return
   if (!e.clipboardData) {
@@ -388,7 +380,7 @@ handlers.paste = (view, e) => {
   if (slice) {
     e.preventDefault()
     view.someProp("transformPasted", f => { slice = f(slice) })
-    view.props.onAction(view.state.tr.replace(pasteStart(sel), sel.to, slice).scrollAction())
+    view.props.onAction(view.state.tr.replaceSelection(slice).scrollAction())
   }
 }
 
