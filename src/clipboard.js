@@ -65,7 +65,7 @@ function fromClipboard(view, dataTransfer, plainText, $context) {
   }
 
   let parser = view.someProp("clipboardParser") || view.someProp("domParser") || DOMParser.fromSchema(view.state.schema)
-  let slice = parser.parseOpen(dom, {preserveWhitespace: true}), context
+  let slice = parser.parseSlice(dom, {preserveWhitespace: true}), context
   if (dom.querySelector("[data-pm-node-selection]"))
     slice = new Slice(slice.content, 0, 0)
   else if (context = dom.querySelector("[data-pm-context]"))
@@ -76,7 +76,7 @@ function fromClipboard(view, dataTransfer, plainText, $context) {
 }
 exports.fromClipboard = fromClipboard
 
-// Takes a slice parsed with parseOpen, which means there hasn't been
+// Takes a slice parsed with parseSlice, which means there hasn't been
 // any content-expression checking done on the top nodes, tries to
 // find a parent node in the current context that might fit the nodes,
 // and if successful, rebuilds the slice so that it fits into that parent.
