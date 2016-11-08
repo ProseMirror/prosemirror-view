@@ -207,10 +207,10 @@ describe("EditorView", () => {
 
   it("allows moving directly from an inline node to a block node", () => {
     let view = tempEditor({doc: doc(p("foo", img), hr, p(img, "bar"))})
-    setSel(view, new NodeSelection(view.state.doc.resolve(4)))
+    setSel(view, NodeSelection.create(view.state.doc, 4))
     view.dispatchKeyDown(event(DOWN))
     ist(view.state.selection.from, 6)
-    setSel(view, new NodeSelection(view.state.doc.resolve(8)))
+    setSel(view, NodeSelection.create(view.state.doc, 8))
     view.dispatchKeyDown(event(UP))
     ist(view.state.selection.from, 6)
   })

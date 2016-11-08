@@ -126,7 +126,7 @@ function selectClickedNode(view, inside) {
   }
 
   if (selectAt != null) {
-    updateSelection(view, new NodeSelection(view.state.doc.resolve(selectAt)))
+    updateSelection(view, NodeSelection.create(view.state.doc, selectAt))
     return true
   } else {
     return false
@@ -156,7 +156,7 @@ function defaultTripleClick(view, inside) {
   let doc = view.state.doc
   if (inside == -1) {
     if (doc.isTextblock) {
-      updateSelection(view, new TextSelection(doc.resolve(0), doc.resolve(doc.content.size)))
+      updateSelection(view, TextSelection.create(doc, 0, doc.content.size))
       return true
     }
     return false
@@ -167,10 +167,9 @@ function defaultTripleClick(view, inside) {
     let node = i > $pos.depth ? $pos.nodeAfter : $pos.node(i)
     let nodePos = $pos.before(i)
     if (node.isTextblock)
-      updateSelection(view, new TextSelection(doc.resolve(nodePos + 1),
-                                              doc.resolve(nodePos + 1 + node.content.size)))
+      updateSelection(view, TextSelection.create(doc, nodePos + 1, nodePos + 1 + node.content.size))
     else if (isSelectable(node))
-      updateSelection(view, new NodeSelection(doc.resolve(nodePos)))
+      updateSelection(view, NodeSelection.create(doc, nodePos))
     else
       continue
     return true
@@ -422,7 +421,7 @@ handlers.dragstart = (view, e) => {
   if (pos != null && pos.pos >= sel.from && pos.pos <= sel.to)
     draggedRange = sel
   else if (mouseDown && mouseDown.mightDrag)
-    draggedRange = new NodeSelection(view.state.doc.resolve(mouseDown.mightDrag.pos))
+    draggedRange = NodeSelection.create(view.state.doc, mouseDown.mightDrag.pos)
 
   if (draggedRange) {
     let slice = toClipboard(view, draggedRange, e.dataTransfer)
