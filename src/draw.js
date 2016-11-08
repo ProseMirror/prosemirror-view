@@ -122,7 +122,7 @@ class Context {
 
   serialize(node, offset) {
     let dom = this.serializer.serializeNodeAndMarks(node, this)
-    if (dom.nodeType != 1 || dom.contentEditable == "false") {
+    if (dom.nodeType != 1 || dom.contentEditable == "false" || (node.isBlock && node.isLeaf && !dom.hasChildNodes())) {
       let wrap = document.createElement(node.isInline ? "span" : "div")
       wrap.appendChild(dom)
       dom = wrap
