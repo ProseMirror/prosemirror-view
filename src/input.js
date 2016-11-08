@@ -365,7 +365,11 @@ handlers.copy = handlers.cut = (view, e) => {
   }
   toClipboard(view, sel, e.clipboardData)
   e.preventDefault()
-  if (cut) view.props.onAction(view.state.tr.delete(sel.from, sel.to).scrollAction())
+  if (cut) view.props.onAction(view.state.tr.deleteRange(sel.from, sel.to).scrollAction())
+}
+
+function sliceSingleNode(slice) {
+  return slice.openLeft == 0 && slice.openRight == 0 && slice.content.childCount == 1 ? slice.content.firstChild : null
 }
 
 handlers.paste = (view, e) => {
@@ -379,7 +383,9 @@ handlers.paste = (view, e) => {
   if (slice) {
     e.preventDefault()
     view.someProp("transformPasted", f => { slice = f(slice) })
-    view.props.onAction(view.state.tr.replaceSelection(slice).scrollAction())
+    let singleNode = sliceSingleNode(slice)
+    let tr = singleNode ? view.state.tr.replaceSelectionWith(singleNode) : view.state.tr.replaceSelection(slice)
+    view.props.onAction(tr.scrollAction())
   }
 }
 
@@ -477,10 +483,13 @@ handlers.drop = (view, e) => {
   e.preventDefault()
   let tr = view.state.tr
   if (dragging && dragging.move)
-    tr.delete(dragging.range.from, dragging.range.to)
+    tr.deleteRange(dragging.range.from, dragging.range.to)
   view.someProp("transformPasted", f => { slice = f(slice) })
   let pos = tr.mapping.map(insertPos)
-  tr.replace(pos, pos, slice)
+  if (slice.openLeft == 0 && slice.openRight == 0 && slice.content.childCount == 1)
+    tr.replaceRangeWith(pos, pos, slice.content.firstChild)
+  else
+    tr.replaceRange(pos, pos, slice)
   tr.setSelection(Selection.between(tr.doc.resolve(pos), tr.doc.resolve(tr.mapping.map(insertPos))))
   view.focus()
   view.props.onAction(tr.action())

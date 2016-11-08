@@ -4,9 +4,19 @@ const {Slice, Fragment, DOMParser, DOMSerializer} = require("prosemirror-model")
 // Store the content of a selection in the clipboard (or whatever the
 // given data transfer refers to)
 function toClipboard(view, range, dataTransfer) {
-  let doc = view.state.doc, slice = doc.slice(range.from, range.to), shared
-  if (!range.node && (shared = range.$from.sharedDepth(range.to)))
-    slice = new Slice(Fragment.from(range.$from.node(shared).copy(slice.content)), slice.openLeft + 1, slice.openRight + 1)
+  // Node selections are copied using just the node, text selection include parents
+  let doc = view.state.doc, fullSlice = doc.slice(range.from, range.to, !range.node)
+  let slice = fullSlice, context
+  if (!range.node) {
+    // Shrink slices for non-node selections to hold only the parent
+    // node, store rest in context string, so that other tools don't
+    // get confused
+    let cut = Math.max(0, range.$from.sharedDepth(range.to) - 1)
+    context = sliceContext(slice, cut)
+    let content = slice.content
+    for (let i = 0; i < cut; i++) content = content.firstChild.content
+    slice = new Slice(content, slice.openLeft - cut, slice.openRight - cut)
+  }
 
   let serializer = view.someProp("clipboardSerializer") || view.someProp("domSerializer") || DOMSerializer.fromSchema(view.state.schema)
   let dom = serializer.serializeFragment(slice.content), wrap = document.createElement("div")
@@ -16,13 +26,13 @@ function toClipboard(view, range, dataTransfer) {
     if (range.node)
       child.setAttribute("data-pm-node-selection", true)
     else
-      child.setAttribute("data-pm-context", sliceContext(range.$from, shared))
+      child.setAttribute("data-pm-context", context)
   }
 
   dataTransfer.clearData()
   dataTransfer.setData("text/html", wrap.innerHTML)
   dataTransfer.setData("text/plain", slice.content.textBetween(0, slice.content.size, "\n\n"))
-  return slice
+  return fullSlice
 }
 exports.toClipboard = toClipboard
 
@@ -121,11 +131,12 @@ function readHTML(html) {
   return elt
 }
 
-function sliceContext($pos, depth) {
-  let result = []
-  for (let d = depth - 1; d > 0; d--) {
-    let node = $pos.node(d)
+function sliceContext(slice, depth) {
+  let result = [], content = slice.content
+  for (let i = 0; i < depth; i++) {
+    let node = content.firstChild
     result.push(node.type.name, node.type.hasRequiredAttrs() ? node.attrs : null)
+    content = node.content
   }
   return JSON.stringify(result)
 }
@@ -136,7 +147,7 @@ function addContext(slice, context) {
   try { array = JSON.parse(context) }
   catch(e) { return slice }
   let {content, openLeft, openRight} = slice
-  for (let i = 0; i < array.length; i += 2) {
+  for (let i = array.length - 2; i >= 0; i -= 2) {
     let type = schema.nodes[array[i]]
     if (!type || type.hasRequiredAttrs()) break
     content = Fragment.from(type.create(array[i + 1], content))
