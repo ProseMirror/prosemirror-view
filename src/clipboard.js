@@ -52,13 +52,11 @@ function fromClipboard(view, dataTransfer, plainText, $context) {
   if (!html && !txt) return null
   let dom
   if ((plainText || !html) && txt) {
+    if ($context.parent.type.spec.code)
+      return new Slice(Fragment.from(view.state.schema.text(txt)), 0, 0)
     dom = document.createElement("div")
-    txt.split(/(?:\r\n?|\n){2,}/).forEach(block => {
-      let para = dom.appendChild(document.createElement("p"))
-      block.split(/\r\n?|\n/).forEach((line, i) => {
-        if (i) para.appendChild(document.createElement("br"))
-        para.appendChild(document.createTextNode(line))
-      })
+    txt.split(/(?:\r\n?|\n)+/).forEach(block => {
+      dom.appendChild(document.createElement("p")).textContent = block
     })
   } else {
     dom = readHTML(html)

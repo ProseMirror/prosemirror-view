@@ -378,8 +378,7 @@ handlers.paste = (view, e) => {
     if (browser.ie && browser.ie_version <= 11) scheduleUpdateFromDOM(view)
     return
   }
-  let sel = view.state.selection
-  let slice = fromClipboard(view, e.clipboardData, view.shiftKey, sel.$from)
+  let slice = fromClipboard(view, e.clipboardData, view.shiftKey, view.state.selection.$from)
   if (slice) {
     e.preventDefault()
     view.someProp("transformPasted", f => { slice = f(slice) })
