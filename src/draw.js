@@ -101,7 +101,7 @@ function redraw(view, oldDoc, newDoc, oldDecorations, newDecorations) {
 
     while (domPos) domPos = movePast(domPos, view, onUnmountDOM)
 
-    if (node.isTextblock) adjustTrailingHacks(serializer, dom, node)
+    if (node.isTextblock) addTrailingHacks(dom)
 
     if (browser.ios) iosHacks(dom)
   }
@@ -129,7 +129,7 @@ class Context {
     }
     dom.setAttribute("pm-size", node.nodeSize)
     dom.setAttribute("pm-offset", offset)
-    if (node.isTextblock) adjustTrailingHacks(this.serializer, dom, node)
+    if (node.isTextblock) addTrailingHacks(dom)
     return dom
   }
 
@@ -237,27 +237,12 @@ function movePast(dom, view, onUnmount) {
   return next
 }
 
-function isBR(node, serializer) {
-  if (!node.isLeaf || node.isText || !node.isInline) return false
-  let ser = serializer.nodes[node.type.name](node)
-  return Array.isArray(ser) ? ser[0] == "br" : ser && ser.nodeName == "BR"
-}
-
-function adjustTrailingHacks(serializer, dom, node) {
-  let needs = node.content.size == 0 || isBR(node.lastChild, serializer) ||
-      (node.type.spec.code && node.lastChild.isText && /\n$/.test(node.lastChild.text))
-      ? "br" : !node.lastChild.isText && node.lastChild.isLeaf ? "text" : null
-  let last = dom.lastChild
-  let has = !last || last.nodeType != 1 || !last.hasAttribute("pm-ignore") ? null
-      : last.nodeName == "BR" ? "br" : "text"
-  if (needs != has) {
-    if (has == "br") dom.removeChild(last)
-    if (needs) {
-      let add = document.createElement(needs == "br" ? "br" : "span")
-      add.setAttribute("pm-ignore", needs == "br" ? "trailing-break" : "cursor-text")
-      dom.appendChild(add)
-    }
-  }
+function addTrailingHacks(dom) {
+  let lastChild = dom.lastChild
+  if (!lastChild || lastChild.nodeName == "BR")
+    dom.appendChild(document.createElement("br")).setAttribute("pm-ignore", "trailing-break")
+  else if (lastChild.contentEditable == "false" || lastChild.hasAttribute("pm-ignore"))
+    dom.appendChild(document.createElement("span")).setAttribute("pm-ignore", "true")
 }
 
 function iosHacks(dom) {
