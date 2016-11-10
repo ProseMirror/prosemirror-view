@@ -8,7 +8,7 @@ let widget = document.createElement("button")
 
 function make(d) {
   if (d.type) return d
-  if (d.pos != null) return Decoration.widget(d.pos, d.widget || widget)
+  if (d.pos != null) return Decoration.widget(d.pos, d.widget || widget, d)
   if (d.node) return Decoration.node(d.from, d.to, d.attrs || {}, d)
   return Decoration.inline(d.from, d.to, d.attrs || {}, d)
 }
@@ -179,6 +179,17 @@ describe("DecorationSet", () => {
                                    tr => tr.join(7))
       ist(str(oldSet), "[0: [0: [1-2]], 7: [0: [0: [1-2]]]]")
       ist(str(set), "[0: [0: [1-2], 5: [0: [1-2]]]]")
+    })
+
+    it("calls onRemove when dropping decorations", () => {
+      let d = doc(blockquote(p("hello"), p("abc")))
+      let set = build(d, {from: 3, to: 5, name: "a"}, {pos: 10, name: "b"})
+      let tr = new Transform(d).delete(2, 6), dropped = []
+      set.map(tr.mapping, tr.doc, {onRemove: o => dropped.push(o.name)})
+      ist(JSON.stringify(dropped), '["a"]')
+      let tr2 = new Transform(d).delete(0, d.content.size), dropped2 = []
+      set.map(tr2.mapping, tr2.doc, {onRemove: o => dropped2.push(o.name)})
+      ist(JSON.stringify(dropped2.sort()), '["a","b"]')
     })
   })
 

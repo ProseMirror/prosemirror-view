@@ -203,7 +203,7 @@ class DecorationSet {
   // Create a set of decorations, using the structure of the given
   // document.
   static create(doc, decorations) {
-    return decorations.length ? buildTree(decorations, doc, 0) : empty
+    return decorations.length ? buildTree(decorations, doc, 0, noOptions) : empty
   }
 
   // :: (?number, ?number) → [Decoration]
@@ -231,23 +231,31 @@ class DecorationSet {
     }
   }
 
-  // :: (Mapping, Node) → DecorationSet
+  // :: (Mapping, Node, ?Object) → DecorationSet
   // Map the set of decorations in response to a change in the
   // document.
-  map(mapping, doc) {
+  //
+  //   options::- An optional set of options.
+  //
+  //     onRemove:: ?(decorationOptions: Object)
+  //     When given, this function will be called for each decoration
+  //     that gets dropped as a result of the mapping, passing the
+  //     options of that decoration.
+  map(mapping, doc, options) {
     if (this == empty) return this
-    return this.mapInner(mapping, doc, 0, 0)
+    return this.mapInner(mapping, doc, 0, 0, options || noOptions)
   }
 
-  mapInner(mapping, node, offset, oldOffset) {
+  mapInner(mapping, node, offset, oldOffset, options) {
     let newLocal
     for (let i = 0; i < this.local.length; i++) {
       let mapped = this.local[i].map(mapping, offset, oldOffset)
       if (mapped && mapped.type.valid(node, mapped)) (newLocal || (newLocal = [])).push(mapped)
+      else if (options.onRemove) options.onRemove(this.local[i].options)
     }
 
     if (this.children.length)
-      return mapChildren(this.children, newLocal, mapping, node, offset, oldOffset)
+      return mapChildren(this.children, newLocal, mapping, node, offset, oldOffset, options)
     else
       return newLocal ? new DecorationSet(newLocal.sort(byPos)) : empty
   }
@@ -273,7 +281,7 @@ class DecorationSet {
       if (children[childIndex] == childOffset)
         children[childIndex + 2] = children[childIndex + 2].addInner(childNode, found, baseOffset + 1)
       else
-        children.splice(childIndex, 0, childOffset, childOffset + childNode.nodeSize, buildTree(found, childNode, baseOffset + 1))
+        children.splice(childIndex, 0, childOffset, childOffset + childNode.nodeSize, buildTree(found, childNode, baseOffset + 1, noOptions))
       childIndex += 3
     })
 
@@ -434,11 +442,11 @@ class DecorationGroup {
 }
 exports.DecorationGroup = DecorationGroup
 
-function mapChildren(oldChildren, newLocal, mapping, node, offset, oldOffset) {
+function mapChildren(oldChildren, newLocal, mapping, node, offset, oldOffset, options) {
   let children = oldChildren.slice()
 
   // Mark the children that are directly touched by changes, and
-  // move those after changes.
+  // move those that are after the changes.
   let shift = (oldStart, oldEnd, newStart, newEnd) => {
     for (let i = 0; i < children.length; i += 3) {
       let end = children[i + 1], dSize
@@ -467,7 +475,7 @@ function mapChildren(oldChildren, newLocal, mapping, node, offset, oldOffset) {
     let {index, offset: childOffset} = node.content.findIndex(fromLocal)
     let childNode = node.maybeChild(index)
     if (childNode && childOffset == fromLocal && childOffset + childNode.nodeSize == toLocal) {
-      let mapped = children[i + 2].mapInner(mapping, childNode, from + 1, children[i] + oldOffset + 1)
+      let mapped = children[i + 2].mapInner(mapping, childNode, from + 1, children[i] + oldOffset + 1, options)
       if (mapped != empty) {
         children[i] = fromLocal
         children[i + 1] = toLocal
@@ -483,8 +491,8 @@ function mapChildren(oldChildren, newLocal, mapping, node, offset, oldOffset) {
 
   // Remaining children must be collected and rebuilt into the appropriate structure
   if (mustRebuild) {
-    let decorations = mapAndGatherRemainingDecorations(children, newLocal ? moveSpans(newLocal, offset) : [], mapping, oldOffset)
-    let built = buildTree(decorations, node, 0)
+    let decorations = mapAndGatherRemainingDecorations(children, newLocal ? moveSpans(newLocal, offset) : [], mapping, oldOffset, options)
+    let built = buildTree(decorations, node, 0, options)
     newLocal = built.local
     for (let i = 0; i < children.length; i += 3) if (children[i + 1] == -1) {
       children.splice(i, 3)
@@ -510,12 +518,13 @@ function moveSpans(spans, offset) {
   return result
 }
 
-function mapAndGatherRemainingDecorations(children, decorations, mapping, oldOffset) {
+function mapAndGatherRemainingDecorations(children, decorations, mapping, oldOffset, options) {
   // Gather all decorations from the remaining marked children
   function gather(set, oldOffset) {
     for (let i = 0; i < set.local.length; i++) {
       let mapped = set.local[i].map(mapping, 0, oldOffset)
       if (mapped) decorations.push(mapped)
+      else if (options.onRemove) options.onRemove(set.local[i].options)
     }
     for (let i = 0; i < set.children.length; i += 3)
       gather(set.children[i + 2], set.children[i] + oldOffset + 1)
@@ -550,20 +559,22 @@ function withoutNulls(array) {
 // is a base offset that should be subtractet from the `from` and `to`
 // positions in the spans (so that we don't have to allocate new spans
 // for recursive calls).
-function buildTree(spans, node, offset) {
+function buildTree(spans, node, offset, options) {
   let children = [], hasNulls = false
   node.forEach((childNode, localStart) => {
     let found = takeSpansForNode(spans, childNode, localStart + offset)
     if (found) {
       hasNulls = true
-      let subtree = buildTree(found, childNode, offset + localStart + 1)
+      let subtree = buildTree(found, childNode, offset + localStart + 1, options)
       if (subtree != empty)
         children.push(localStart, localStart + childNode.nodeSize, subtree)
     }
   })
   let locals = moveSpans(hasNulls ? withoutNulls(spans) : spans, -offset).sort(byPos)
-  for (let i = 0; i < locals.length; i++)
-    if (!locals[i].type.valid(node, locals[i])) locals.splice(i--, 1)
+  for (let i = 0; i < locals.length; i++) if (!locals[i].type.valid(node, locals[i])) {
+    if (options.onRemove) options.onRemove(locals[i].options)
+    locals.splice(i--, 1)
+  }
   return locals.length || children.length ? new DecorationSet(locals, children) : empty
 }
 
