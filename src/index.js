@@ -298,7 +298,7 @@ exports.EditorView = EditorView
 //   clipboard. When not given, the value of the
 //   [`domSerializer`](#view.EditorProps.domSerializer) prop is used.
 //
-//   decorations:: ?DecorationSet
+//   decorations:: (EditorState) → ?DecorationSet
 //   A set of [document decorations](#view.Decoration) to add to the
 //   view.
 //
