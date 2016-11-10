@@ -19,24 +19,33 @@ function initInput(view) {
 
   for (let event in handlers) {
     let handler = handlers[event]
-    view.content.addEventListener(event, e => {
-      if (!view.someProp("handleDOMEvent", f => f(view, e)))
-        handler(view, e)
+    view.content.addEventListener(event, event => {
+      if (eventBelongsToView(view, event) && !view.someProp("handleDOMEvent", f => f(view, event)))
+        handler(view, event)
     })
   }
 }
 exports.initInput = initInput
 
-function dispatchKeyDown(view, event) {
-  return view.someProp("handleKeyDown", f => f(view, event)) || captureKeyDown(view, event)
+function eventBelongsToView(view, event) {
+  if (!event.bubbles) return true
+  for (let node = event.target; node != view.content; node = node.parentNode)
+    if (!node || node.nodeType == 11 || node.tabIndex >= 0 ||
+        /^(texarea|input|select|button|iframe)$/i.test(node.nodeName)) return false
+  return true
 }
-exports.dispatchKeyDown = dispatchKeyDown
 
-handlers.keydown = (view, e) => {
-  if (e.keyCode == 16) view.shiftKey = true
-  if (!view.hasFocus() || view.inDOMChange) return
-  if (dispatchKeyDown(view, e))
-    e.preventDefault()
+function dispatchEvent(view, event) {
+  let handler = handlers[event.type]
+  if (handler && !view.someProp("handleDOMEvent", f => f(view, event))) handler(view, event)
+}
+exports.dispatchEvent = dispatchEvent
+
+handlers.keydown = (view, event) => {
+  if (event.keyCode == 16) view.shiftKey = true
+  if (view.inDOMChange) return
+  if (view.someProp("handleKeyDown", f => f(view, event)) || captureKeyDown(view, event))
+    event.preventDefault()
   else
     view.selectionReader.fastPoll()
 }
@@ -51,16 +60,12 @@ function insertText(view, text) {
     view.props.onAction(view.state.tr.insertText(text).scrollAction())
 }
 
-function dispatchKeyPress(view, event) {
-  return view.someProp("handleKeyPress", f => f(view, event))
-}
-exports.dispatchKeyPress = dispatchKeyPress
+handlers.keypress = (view, event) => {
+  if (view.inDOMChange || !event.charCode ||
+      event.ctrlKey && !event.altKey || browser.mac && event.metaKey) return
 
-handlers.keypress = (view, e) => {
-  if (!view.hasFocus() || view.inDOMChange || !e.charCode ||
-      e.ctrlKey && !e.altKey || browser.mac && e.metaKey) return
-  if (dispatchKeyPress(view, e)) {
-    e.preventDefault()
+  if (view.someProp("handleKeyPress", f => f(view, event))) {
+    event.preventDefault()
     return
   }
 
@@ -68,8 +73,8 @@ handlers.keypress = (view, e) => {
   // keyboard's default case doesn't update (it only does so when the
   // user types or taps, not on selection updates from JavaScript).
   if (!browser.ios) {
-    insertText(view, String.fromCharCode(e.charCode))
-    e.preventDefault()
+    insertText(view, String.fromCharCode(event.charCode))
+    event.preventDefault()
   }
 }
 
@@ -315,17 +320,16 @@ function scheduleUpdateFromDOM(view) {
 }
 
 handlers.compositionstart = (view, e) => {
-  if (!view.inDOMChange && view.hasFocus())
+  if (!view.inDOMChange)
     startComposition(view, e.data ? e.data.length : 0)
 }
 
 handlers.compositionupdate = view => {
-  if (!view.inDOMChange && view.hasFocus())
+  if (!view.inDOMChange)
     startComposition(view, 0)
 }
 
 handlers.compositionend = (view, e) => {
-  if (!view.hasFocus()) return
   if (!view.inDOMChange) {
     // We received a compositionend without having seen any previous
     // events for the composition. If there's data in the event
@@ -350,7 +354,7 @@ function finishUpdateFromDOM(view) {
 exports.finishUpdateFromDOM = finishUpdateFromDOM
 
 handlers.input = view => {
-  if (view.inDOMChange || !view.hasFocus()) return
+  if (view.inDOMChange) return
   view.inDOMChange = {id: domChangeID(), state: view.state}
   view.props.onAction({type: "startDOMChange", id: view.inDOMChange.id})
   scheduleUpdateFromDOM(view)
@@ -373,7 +377,6 @@ function sliceSingleNode(slice) {
 }
 
 handlers.paste = (view, e) => {
-  if (!view.hasFocus()) return
   if (!e.clipboardData) {
     if (browser.ie && browser.ie_version <= 11) scheduleUpdateFromDOM(view)
     return

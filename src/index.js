@@ -1,6 +1,6 @@
 const {scrollPosIntoView, posAtCoords, coordsAtPos} = require("./dompos")
 const {draw, redraw} = require("./draw")
-const {initInput, finishUpdateFromDOM, dispatchKeyDown, dispatchKeyPress} = require("./input")
+const {initInput, finishUpdateFromDOM, dispatchEvent} = require("./input")
 const {SelectionReader, selectionToDOM} = require("./selection")
 const {viewDecorations, addDummy} = require("./decoration")
 
@@ -180,12 +180,9 @@ class EditorView {
   // cursor-ish rectangle.
   coordsAtPos(pos) { return coordsAtPos(this, pos) }
 
-  dispatchKeyDown(event) {
-    return dispatchKeyDown(this, event)
-  }
-
-  dispatchKeyPress(event) {
-    return dispatchKeyPress(this, event)
+  // Used for testing.
+  dispatchEvent(event) {
+    return dispatchEvent(this, event)
   }
 }
 exports.EditorView = EditorView
