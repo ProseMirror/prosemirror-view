@@ -456,8 +456,12 @@ function mapChildren(oldChildren, newLocal, mapping, node, offset, oldOffset) {
   // Find the child nodes that still correspond to a single node,
   // recursively call mapInner on them and update their positions.
   let mustRebuild = false
-  for (let i = 0; i < children.length; i += 3) if (children[i + 1] == -1) { // Untouched nodes
+  for (let i = 0; i < children.length; i += 3) if (children[i + 1] == -1) { // Touched nodes
     let from = mapping.map(children[i] + oldOffset), fromLocal = from - offset
+    if (fromLocal >= node.content.size) {
+      mustRebuild = true
+      continue
+    }
     // Must read oldChildren because children was tagged with -1
     let to = mapping.map(oldChildren[i + 1] + oldOffset, -1), toLocal = to - offset
     let {index, offset: childOffset} = node.content.findIndex(fromLocal)
