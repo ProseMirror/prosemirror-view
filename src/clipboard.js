@@ -52,6 +52,7 @@ function fromClipboard(view, dataTransfer, plainText, $context) {
   if (!html && !txt) return null
   let dom
   if ((plainText || !html) && txt) {
+    view.someProp("transformPastedText", f => txt = f(txt))
     if ($context.parent.type.spec.code)
       return new Slice(Fragment.from(view.state.schema.text(txt)), 0, 0)
     dom = document.createElement("div")
@@ -59,6 +60,7 @@ function fromClipboard(view, dataTransfer, plainText, $context) {
       dom.appendChild(document.createElement("p")).textContent = block
     })
   } else {
+    view.someProp("transformPastedHTML", f => html = f(html))
     dom = readHTML(html)
   }
 

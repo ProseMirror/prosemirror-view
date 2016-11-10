@@ -287,6 +287,13 @@ exports.EditorView = EditorView
 //   Can be used to transform pasted content before it is applied to
 //   the document.
 //
+//   transformPastedHTML:: ?(string) → string
+//   Can be used to transform pasted HTML text, _before_ it is parsed,
+//   for example to clean it up.
+//
+//   transformPastedText:: ?(string) → string
+//   Transform pasted plain text.
+//
 //   domSerializer:: ?DOMSerializer
 //   The [serializer](#model.DOMSerializer) to use when drawing the
 //   document to the display. If not given, the result of
