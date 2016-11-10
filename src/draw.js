@@ -20,7 +20,7 @@ function redraw(view, oldDoc, newDoc, oldDecorations, newDecorations) {
 
   function scan(dom, node, prev, oldDecorations, newDecorations) {
     let iPrev = 0, oPrev = 0, pChild = prev.firstChild
-    let domPos = dom.firstChild
+    let domPos = skipIgnored(dom.firstChild)
     while (domPos && (domPos.nodeType != 1 || domPos.hasAttribute("pm-ignore")))
       domPos = movePast(domPos, view, onUnmountDOM)
 
@@ -84,12 +84,12 @@ function redraw(view, oldDoc, newDoc, oldDecorations, newDecorations) {
             if (offset != oPrev)
               domPos.setAttribute("pm-offset", off)
             off += +domPos.getAttribute("pm-size")
-            domPos = domPos.nextSibling
+            domPos = skipIgnored(domPos.nextSibling)
           }
         } else {
           if (offset != oPrev)
             domPos.setAttribute("pm-offset", offset)
-          domPos = domPos.nextSibling
+          domPos = skipIgnored(domPos.nextSibling)
         }
         oPrev += pChild.nodeSize
         pChild = prev.maybeChild(++iPrev)
@@ -234,7 +234,16 @@ function movePast(dom, view, onUnmount) {
   let next = dom.nextSibling
   for (let i = 0; i < onUnmount.length; i++) onUnmount[i](view, dom)
   dom.parentNode.removeChild(dom)
-  return next
+  return skipIgnored(next)
+}
+
+function skipIgnored(dom) {
+  while (dom && dom.nodeType == 1 && dom.hasAttribute("pm-ignore")) {
+    let next = dom.nextSibling
+    dom.parentNode.removeChild(dom)
+    dom = next
+  }
+  return dom
 }
 
 function addTrailingHacks(dom) {
