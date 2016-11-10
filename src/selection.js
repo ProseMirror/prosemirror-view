@@ -1,4 +1,4 @@
-const {Selection, NodeSelection, isSelectable} = require("prosemirror-state")
+const {Selection, NodeSelection} = require("prosemirror-state")
 
 const browser = require("./browser")
 const {posFromDOM, DOMAfterPos, DOMFromPos, coordsAtPos, childContainer} = require("./dompos")
@@ -69,7 +69,7 @@ class SelectionReader {
     let $head = doc.resolve(head), $anchor, selection, nodeAfter
     if (domSel.isCollapsed) {
       $anchor = $head
-      if (!childContainer(domNode) && (nodeAfter = $head.nodeAfter) && nodeAfter.isLeaf && isSelectable(nodeAfter))
+      if (!childContainer(domNode) && (nodeAfter = $head.nodeAfter) && nodeAfter.isLeaf && NodeSelection.isSelectable(nodeAfter))
         selection = new NodeSelection($head)
     } else {
       $anchor = doc.resolve(posFromDOM(domSel.anchorNode, domSel.anchorOffset))

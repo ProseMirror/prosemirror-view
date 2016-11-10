@@ -1,4 +1,4 @@
-const {Selection, NodeSelection, TextSelection, isSelectable} = require("prosemirror-state")
+const {Selection, NodeSelection, TextSelection} = require("prosemirror-state")
 const browser = require("./browser")
 
 const {verticalMotionLeavesTextblock} = require("./selection")
@@ -27,7 +27,7 @@ function selectHorizontally(view, dir) {
         ? $from.parent.childAfter($from.parentOffset)
         : $from.parent.childBefore($from.parentOffset)
     if (nextNode) {
-      if (isSelectable(nextNode) && offset == $from.parentOffset - (dir > 0 ? 0 : nextNode.nodeSize))
+      if (NodeSelection.isSelectable(nextNode) && offset == $from.parentOffset - (dir > 0 ? 0 : nextNode.nodeSize))
         return apply(view, new NodeSelection(dir < 0 ? view.state.doc.resolve($from.pos - nextNode.nodeSize) : $from))
       ;(dir < 0 ? skipIgnoredNodesLeft : skipIgnoredNodesRight)(view)
       return null
