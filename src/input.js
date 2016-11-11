@@ -30,7 +30,7 @@ exports.initInput = initInput
 function eventBelongsToView(view, event) {
   if (!event.bubbles) return true
   for (let node = event.target; node != view.content; node = node.parentNode)
-    if (!node || node.nodeType == 11 || node.tabIndex >= 0 ||
+    if (!node || node.nodeType == 11 || (node.hasAttribute("tabindex") && node.getAttribute("tabindex") >= 0) ||
         /^(texarea|input|select|button|iframe)$/i.test(node.nodeName)) return false
   return true
 }
