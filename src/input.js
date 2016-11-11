@@ -138,9 +138,7 @@ function selectClickedNode(view, inside) {
   }
 }
 
-function handleSingleClick(view, pos, inside, ctrl, event) {
-  if (ctrl) return selectClickedNode(view, inside)
-
+function handleSingleClick(view, pos, inside, event) {
   return runHandlerOnContext(view, "handleClickOn", pos, inside, event) ||
     view.someProp("handleClick", f => f(view, pos, event)) ||
     selectClickedLeaf(view, inside)
@@ -187,10 +185,12 @@ function forceDOMFlush(view) {
   return true
 }
 
+const selectNodeModifier = browser.mac ? "metaKey" : "ctrlKey"
+
 handlers.mousedown = (view, event) => {
   let flushed = forceDOMFlush(view)
   let now = Date.now(), type
-  if (now - lastClick.time >= 500 || !isNear(event, lastClick) || event.ctrlKey) type = "singleClick"
+  if (now - lastClick.time >= 500 || !isNear(event, lastClick) || event[selectNodeModifier]) type = "singleClick"
   else if (now - oneButLastClick.time >= 600 || !isNear(event, oneButLastClick)) type = "doubleClick"
   else type = "tripleClick"
   oneButLastClick = lastClick
@@ -212,7 +212,7 @@ class MouseDown {
     this.view = view
     this.pos = pos
     this.flushed = flushed
-    this.ctrlKey = event.ctrlKey
+    this.selectNode = event[selectNodeModifier]
     this.allowDefault = event.shiftKey
 
     let targetNode, targetPos
@@ -256,7 +256,9 @@ class MouseDown {
 
     if (this.allowDefault) {
       this.view.selectionReader.fastPoll()
-    } else if (handleSingleClick(this.view, this.pos.pos, this.pos.inside, this.ctrlKey, event)) {
+    } else if (this.selectNode
+               ? selectClickedNode(this.view, this.pos.inside)
+               : handleSingleClick(this.view, this.pos.pos, this.pos.inside, event)) {
       event.preventDefault()
     } else if (this.flushed) {
       this.view.focus()
