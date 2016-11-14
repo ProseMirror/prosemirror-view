@@ -1,5 +1,5 @@
 const ist = require("ist")
-const {eq, doc, p, blockquote, ul, li, hr} = require("prosemirror-model/test/build")
+const {eq, doc, p, blockquote, ul, ol, li, hr, br} = require("prosemirror-model/test/build")
 const {NodeSelection, TextSelection} = require("prosemirror-state")
 const {Slice} = require("prosemirror-model")
 const {tempEditor} = require("./view")
@@ -37,5 +37,15 @@ describe("Clipboard interface", () => {
     let view = tempEditor(), $p = view.state.doc.resolve(1)
     ist(fromClipboard(view, transfer("<p>hello</p><hr>"), false, $p), new Slice(doc(p("hello"), hr).content, 1, 0), eq)
     ist(fromClipboard(view, transfer("<p>hello</p>bar"), false, $p), new Slice(doc(p("hello"), p("bar")).content, 1, 1), eq)
+  })
+
+  it("will sanely clean up top-level nodes in HTML", () => {
+    let view = tempEditor(), $p = view.state.doc.resolve(1)
+    ist(fromClipboard(view, transfer("<ul><li>foo</li></ul>bar<br>"), false, $p),
+        new Slice(doc(ul(li(p("foo"))), p("bar", br)).content, 3, 1), eq)
+    ist(fromClipboard(view, transfer("<ul><li>foo</li></ul>bar<br><p>x</p>"), false, $p),
+        new Slice(doc(ul(li(p("foo"))), p("bar", br), p("x")).content, 3, 1), eq)
+    ist(fromClipboard(view, transfer("<li>foo</li><li>bar</li><p>x</p>"), false, $p),
+        new Slice(doc(ol(li(p("foo")), li(p("bar"))), p("x")).content, 3, 1), eq)
   })
 })

@@ -85,27 +85,52 @@ exports.fromClipboard = fromClipboard
 // fit anywhere in the schema.
 function normalizeSiblings(slice, $context) {
   if (slice.content.childCount < 2) return slice
-  let firstNode
-  slice.content.forEach(node => {
-    if (!node.isText) { firstNode = node; return false }
-  })
-  if (!firstNode) return slice
   for (let d = $context.depth; d >= 0; d--) {
-    let parent = $context.node(d), expr = parent.type.contentExpr, match
-    if (match = expr.atType(parent.attrs, firstNode.type, firstNode.attrs, firstNode.marks)) {
-      if (firstNode != slice.content.firstChild) match = expr.start(parent.attrs)
-      let content = []
-      slice.content.forEach(node => {
-        let wrap = match.findWrappingFor(node)
-        if (!wrap) { content = null; return false }
-        for (let i = wrap.length - 1; i >= 0; i--)
-          node = wrap[i].type.create(wrap[i].attrs, Fragment.from(node))
-        content.push(node)
-      })
-      if (content) return Slice.maxOpen(Fragment.from(content))
-    }
+    let parent = $context.node(d)
+    let match = parent.contentMatchAt($context.index(d))
+    let lastWrap, result = []
+    slice.content.forEach(node => {
+      if (!result) return
+      let wrap = match.findWrappingFor(node), inLast
+      if (!wrap) return result = null
+      if (inLast = result.length && lastWrap.length && addToSibling(wrap, lastWrap, node, result[result.length - 1], 0)) {
+        result[result.length - 1] = inLast
+      } else {
+        if (result.length) result[result.length - 1] = closeRight(result[result.length - 1], lastWrap.length)
+        let wrapped = withWrappers(node, wrap)
+        result.push(wrapped)
+        match = match.matchType(wrapped.type, wrapped.attrs)
+        lastWrap = wrap
+      }
+    })
+    if (result) return Slice.maxOpen(Fragment.from(result))
   }
   return slice
+}
+
+function withWrappers(node, wrap, from = 0) {
+  for (let i = wrap.length - 1; i >= from; i--)
+    node = wrap[i].type.create(wrap[i].attrs, Fragment.from(node))
+  return node
+}
+
+// Used to group adjacent nodes wrapped in similar parents by
+// normalizeSiblings into the same parent node
+function addToSibling(wrap, lastWrap, node, sibling, depth) {
+  if (depth < wrap.length && depth < lastWrap.length && wrap[depth].type == lastWrap[depth].type) {
+    let inner = addToSibling(wrap, lastWrap, node, sibling.lastChild, depth + 1)
+    if (inner) return sibling.copy(sibling.content.replaceChild(sibling.childCount - 1, inner))
+    let match = sibling.contentMatchAt(sibling.childCount)
+    if (depth == wrap.length - 1 ? match.matchNode(node) : match.matchType(wrap[depth + 1].type, wrap[depth + 1].attrs))
+      return sibling.copy(sibling.content.append(Fragment.from(withWrappers(node, wrap, depth + 1))))
+  }
+}
+
+function closeRight(node, depth) {
+  if (depth == 0) return node
+  let fragment = node.content.replaceChild(node.childCount - 1, closeRight(node.lastChild, depth - 1))
+  let fill = node.contentMatchAt(node.childCount).fillBefore(Fragment.empty, true)
+  return node.copy(fragment.append(fill))
 }
 
 // Trick from jQuery -- some elements must be wrapped in other
