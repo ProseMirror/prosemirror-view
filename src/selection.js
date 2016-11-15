@@ -94,7 +94,7 @@ function selectionToDOM(view, sel, takeFocus) {
   if (!view.hasFocus()) {
     if (!takeFocus) return
     // See https://bugzilla.mozilla.org/show_bug.cgi?id=921444
-    else if (browser.gecko) this.view.content.focus()
+    else if (browser.gecko) view.content.focus()
   }
 
   if (sel instanceof NodeSelection)
