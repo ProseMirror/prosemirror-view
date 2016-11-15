@@ -83,14 +83,16 @@ function redraw(view, oldDoc, newDoc, oldDecorations, newDecorations) {
           for (let off = offset, end = off + child.nodeSize; off < end;) {
             if (offset != oPrev)
               domPos.setAttribute("pm-offset", off)
-            off += +domPos.getAttribute("pm-size")
-            domPos = skipIgnored(domPos.nextSibling)
+            let size = domPos.getAttribute("pm-size")
+            if (size) off += +size
+            domPos = domPos.nextSibling
           }
         } else {
           if (offset != oPrev)
             domPos.setAttribute("pm-offset", offset)
-          domPos = skipIgnored(domPos.nextSibling)
+          domPos = domPos.nextSibling
         }
+        domPos = skipIgnored(domPos)
         oPrev += pChild.nodeSize
         pChild = prev.maybeChild(++iPrev)
         let end = offset + child.nodeSize

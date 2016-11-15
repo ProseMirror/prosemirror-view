@@ -214,5 +214,12 @@ describe("EditorView", () => {
       ist(foos[0].textContent, "one")
       ist(foos[1].textContent, "tw")
     })
+
+    it("correctly redraws when skipping split text node", () => {
+      let view = tempEditor({doc: doc(p("foo")),
+                             plugins: [decoPlugin(["3-widget", "3-4-foo"])]})
+      view.props.onAction({type: "addDecorations", decorations: [make("4-widget")]})
+      ist(view.content.querySelectorAll("button").length, 2)
+    })
   })
 })
