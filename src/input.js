@@ -98,16 +98,16 @@ function runHandlerOnContext(view, propName, pos, inside, event) {
   return false
 }
 
-function updateSelection(view, selection) {
+function updateSelection(view, selection, origin) {
   view.focus()
-  view.props.onAction(selection.action())
+  view.props.onAction(selection.action({origin}))
 }
 
 function selectClickedLeaf(view, inside) {
   if (inside == -1) return false
   let $pos = view.state.doc.resolve(inside), node = $pos.nodeAfter
   if (node && node.isLeaf && NodeSelection.isSelectable(node)) {
-    updateSelection(view, new NodeSelection($pos))
+    updateSelection(view, new NodeSelection($pos), "mouse")
     return true
   }
   return false
@@ -131,7 +131,7 @@ function selectClickedNode(view, inside) {
   }
 
   if (selectAt != null) {
-    updateSelection(view, NodeSelection.create(view.state.doc, selectAt))
+    updateSelection(view, NodeSelection.create(view.state.doc, selectAt), "mouse")
     return true
   } else {
     return false
@@ -159,7 +159,7 @@ function defaultTripleClick(view, inside) {
   let doc = view.state.doc
   if (inside == -1) {
     if (doc.isTextblock) {
-      updateSelection(view, TextSelection.create(doc, 0, doc.content.size))
+      updateSelection(view, TextSelection.create(doc, 0, doc.content.size), "mouse")
       return true
     }
     return false
@@ -170,9 +170,9 @@ function defaultTripleClick(view, inside) {
     let node = i > $pos.depth ? $pos.nodeAfter : $pos.node(i)
     let nodePos = $pos.before(i)
     if (node.isTextblock)
-      updateSelection(view, TextSelection.create(doc, nodePos + 1, nodePos + 1 + node.content.size))
+      updateSelection(view, TextSelection.create(doc, nodePos + 1, nodePos + 1 + node.content.size), "mouse")
     else if (NodeSelection.isSelectable(node))
-      updateSelection(view, NodeSelection.create(doc, nodePos))
+      updateSelection(view, NodeSelection.create(doc, nodePos), "mouse")
     else
       continue
     return true
@@ -204,7 +204,7 @@ handlers.mousedown = (view, event) => {
   else if ((type == "doubleClick" ? handleDoubleClick : handleTripleClick)(view, pos.pos, pos.inside, event))
     event.preventDefault()
   else
-    view.selectionReader.fastPoll()
+    view.selectionReader.fastPoll("mouse")
 }
 
 class MouseDown {
@@ -235,7 +235,7 @@ class MouseDown {
 
     view.root.addEventListener("mouseup", this.up = this.up.bind(this))
     view.root.addEventListener("mousemove", this.move = this.move.bind(this))
-    view.selectionReader.fastPoll()
+    view.selectionReader.fastPoll("mouse")
   }
 
   done() {
@@ -255,17 +255,17 @@ class MouseDown {
       return
 
     if (this.allowDefault) {
-      this.view.selectionReader.fastPoll()
+      this.view.selectionReader.fastPoll("mouse")
     } else if (this.selectNode
                ? selectClickedNode(this.view, this.pos.inside)
                : handleSingleClick(this.view, this.pos.pos, this.pos.inside, event)) {
       event.preventDefault()
     } else if (this.flushed) {
       this.view.focus()
-      this.view.props.onAction(Selection.near(this.view.state.doc.resolve(this.pos.pos)).action())
+      this.view.props.onAction(Selection.near(this.view.state.doc.resolve(this.pos.pos)).action({origin: "mouse"}))
       event.preventDefault()
     } else {
-      this.view.selectionReader.fastPoll()
+      this.view.selectionReader.fastPoll("mouse")
     }
   }
 
@@ -273,13 +273,13 @@ class MouseDown {
     if (!this.allowDefault && (Math.abs(this.x - event.clientX) > 4 ||
                                Math.abs(this.y - event.clientY) > 4))
       this.allowDefault = true
-    this.view.selectionReader.fastPoll()
+    this.view.selectionReader.fastPoll("mouse")
   }
 }
 
 handlers.touchdown = view => {
   forceDOMFlush(view)
-  view.selectionReader.fastPoll()
+  view.selectionReader.fastPoll("mouse")
 }
 
 handlers.contextmenu = (view, e) => {

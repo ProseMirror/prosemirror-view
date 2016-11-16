@@ -17,25 +17,25 @@ class SelectionReader {
 
     // The timeout ID for the poller when active.
     this.polling = null
-    this.poller = this.poller.bind(this)
+    this.poller = this.pollFunc.bind(this, null)
   }
 
-  poller() {
+  pollFunc(origin) {
     if (this.view.hasFocus()) {
-      this.readFromDOM()
+      this.readFromDOM(origin)
       this.polling = setTimeout(this.poller, 100)
     } else {
       this.polling = null
     }
   }
 
-  startPolling() {
+  startPolling(origin) {
     clearTimeout(this.polling)
-    this.polling = setTimeout(this.poller, 50)
+    this.polling = setTimeout(origin ? () => this.pollFunc(origin) : this.poller, 50)
   }
 
-  fastPoll() {
-    this.startPolling()
+  fastPoll(origin) {
+    this.startPolling(origin)
   }
 
   stopPolling() {
@@ -58,10 +58,10 @@ class SelectionReader {
     this.lastHeadNode = sel.focusNode; this.lastHeadOffset = sel.focusOffset
   }
 
-  // : () → bool
+  // : (?string) → bool
   // When the DOM selection changes in a notable manner, modify the
   // current selection state to match.
-  readFromDOM() {
+  readFromDOM(origin) {
     if (!this.view.hasFocus() || !this.domChanged()) return
 
     let domSel = this.view.root.getSelection(), doc = this.view.state.doc
@@ -81,7 +81,7 @@ class SelectionReader {
     }
     if ($head.pos == selection.head && $anchor.pos == selection.anchor)
       this.storeDOMState()
-    this.view.props.onAction(selection.action())
+    this.view.props.onAction(selection.action(origin && {origin}))
   }
 
   receivedFocus() {
