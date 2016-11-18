@@ -3,17 +3,23 @@ const {DOMSerializer} = require("prosemirror-model")
 const browser = require("./browser")
 const {childContainer} = require("./dompos")
 
+const {NodeView} = require("./elementview")
+
 function getSerializer(view) {
   return view.someProp("domSerializer") || DOMSerializer.fromSchema(view.state.schema)
 }
 
 function draw(view, doc, decorations) {
-  view.content.textContent = ""
-  new Context(getSerializer(view), decorations).serializeContent(doc, view.content)
+  view.nodeViews = NodeView.buildChildren(null, doc.content, decorations)
+  NodeView.flushChildren(view.content, view.nodeViews)
 }
 exports.draw = draw
 
 function redraw(view, oldDoc, newDoc, oldDecorations, newDecorations) {
+  NodeView.updateChildren(null, view.nodeViews, newDoc.content, oldDoc.content)
+  NodeView.flushChildren(view.content, view.nodeViews)
+}
+/*
   let serializer = getSerializer(view)
   let onUnmountDOM = []
   view.someProp("onUnmountDOM", f => { onUnmountDOM.push(f) })
@@ -109,8 +115,8 @@ function redraw(view, oldDoc, newDoc, oldDecorations, newDecorations) {
   }
   scan(view.content, newDoc, oldDoc, oldDecorations, newDecorations)
 }
+*/
 exports.redraw = redraw
-
 class Context {
   constructor(serializer, decorations) {
     this.serializer = serializer
