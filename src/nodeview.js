@@ -1,30 +1,92 @@
 const {DOMSerializer} = require("prosemirror-model")
 
+class WidgetView {
+  constructor(parent, widget) {
+    this.parent = parent
+    this.children = nothing
+    this.dom = widget.type.widget
+  }
+}
+
+class MarkView {
+  constructor(parent, mark) {
+    this.parent = parent
+    this.children = []
+    let serializer = DOMSerializer.fromSchema(mark.type.schema) // FIXME
+    this.dom = serializer.serializeMark(mark, serializeOptions)
+    this.contentDOM = this.dom
+  }
+}
+
+let serializedContentNode = null
+const serializeOptions = {onContent(_, dom) { serializedContentNode = dom }}
+
 class NodeView {
-  constructor(parent, node, outerDeco, innerDeco) {
+  constructor(parent, node, deco) {
     this.parent = parent
     this.contentDOM = null
     let serializer = DOMSerializer.fromSchema(node.type.schema) // FIXME
-    this.dom = serializer.serializeNodeAndMarks(node, {onContent: (_, dom) => { this.contentDOM = dom }})
+    serializedContentNode = null
+    this.dom = serializer.serializeNode(node, serializeOptions)
+    this.contentDOM = serializedContentNode
     this.dom.pmView = this
     if (node.isLeaf) {
       this.children = nothing
     } else {
-      this.children = NodeView.buildChildren(this, node.content, innerDeco)
+      this.children = NodeView.buildChildren(this, node, deco)
       NodeView.flushChildren(this.contentDOM, this.children)
     }
   }
 
-  static buildChildren(parent, fragment, deco) {
-    let result = []
-    fragment.forEach((child, offset) => {
-      let childView = new NodeView(parent, child, nothing, deco.forChild(offset, child))
-      result.push(childView)
+  static buildChildren(parent, node, deco) {
+    let result = [], target = result, openMarks = [], curParent = parent
+    iterDeco(node, deco, widgets => {
+      for (let i = 0; i < widgets.length; i++)
+        target.push(new WidgetView(curParent, widgets[i]))
+    }, (child, outerDeco, innerDeco) => {
+      let keep = 0
+      for (; keep < Math.min(openMarks.length, child.marks.length); ++keep)
+        if (!child.marks[keep].eq(openMarks[keep])) break
+      while (keep < openMarks.length) {
+        curParent = curParent.parent
+        openMarks.pop()
+        target = openMarks.length ? openMarks[openMarks.length - 1].children : result
+      }
+      while (openMarks.length < child.marks.length) {
+        let add = new MarkView(curParent, child.marks[openMarks.length])
+        openMarks.push(add)
+        target.push(add)
+        target = add.children
+        curParent = add
+      }
+      let nodeParent = curParent, nodeTarget = target
+      if (outerDeco.length) {
+        nodeParent = new DecoView(curParent, outerDeco)
+        nodeTarget = nodeParent.children
+      }
+      let nodeView = new NodeView(nodeParent, child, innerDeco)
+      nodeTarget.push(nodeView)
     })
     return result
   }
 
-  update(node, prevNode, outerDeco, innerDeco) {
+  static renderViews(parentDOM, views, stopAt) {
+    let dom = parentDOM.firstChild
+    for (let i = 0; i < views.length; i++) {
+      let view = views[i], childDOM = view.dom
+      if (childDOM.parentNode == parentDOM) {
+        while (childDOM != dom) dom = rm(dom)
+        dom = dom.nextSibling
+      } else {
+        parentDOM.insertBefore(childDOM, dom)
+      }
+      if (!(stopAt && stopAt(view)) && view.contentDOM)
+        NodeView.renderViews(view.contentDOM, view.children)
+    }
+    while (dom) dom = rm(dom)
+  }
+
+  update(node, prevNode, deco) {
     if (!node.sameMarkup(prevNode) || (node.isText && node.text != prevNode.text)) return false
     if (!node.isLeaf) {
       NodeView.updateChildren(this, this.children, node.content, prevNode.content)
@@ -59,17 +121,6 @@ class NodeView {
   }
 
   static flushChildren(parentDOM, children) {
-    let dom = parentDOM.firstChild
-    for (let i = 0; i < children.length; i++) {
-      let childDOM = children[i].dom
-      if (childDOM.parentNode == parentDOM) {
-        while (childDOM != dom) dom = rm(dom)
-        dom = dom.nextSibling
-      } else {
-        parentDOM.insertBefore(childDOM, dom)
-      }
-    }
-    while (dom) dom = rm(dom)
   }
 
   destroy() {
@@ -96,25 +147,55 @@ function sameOuterDeco(a, b) {
 
 const nothing = []
 
-class DecoIter {
-  constructor(locals) {
-    this.locals = locals
-    this.index = 0
-  }
-
-  at(offset) {
-    return this.between(offset - 1, offset + 1)
-  }
-
-  between(start, end) {
-    let result
-    for (let i = this.index; i < this.locals.length; i++) {
-      let span = this.locals[i]
-      if (span.from >= end) break
-      if (span.to < end && this.index == i) this.index = i + 1
-      if (span.to > start) (result || (result = [])).push(span)
+// FIXME move into decoration.js?
+function iterDeco(parent, deco, onWidgets, onNode) {
+  let locals = deco.locals(parent), offset = 0
+  // Simple, cheap variant for when there are no local decorations
+  if (locals.length == 0) {
+    for (let i = 0; i < parent.childCount; i++) {
+      let child = parent.child(i), end = offset + child.nodeSize
+      onNode(child, locals, deco.forChild(offset, child), offset, end)
+      offset = end
     }
-    return result || nothing
+    return
+  }
+
+  let decoIndex = 0, active = [], widgets = [], restNode = null
+  for (let parentIndex = 0;;) {
+    while (decoIndex < locals.length && locals[decoIndex].to == offset)
+      widgets.push(locals[decoIndex++])
+    if (widgets.length) {
+      onWidgets(widgets, offset)
+      widgets.length = 0
+    }
+
+    let child
+    if (restNode) {
+      child = restNode
+      restNode = null
+    } else if (parentIndex < parent.childCount) {
+      child = parent.child(parentIndex++)
+    } else {
+      break
+    }
+
+    for (let i = 0; i < active.length; i++) if (active[i].to <= offset) active.splice(i--, 1)
+
+    let end = offset + child.nodeSize
+    if (child.isText) {
+      let cutAt = end
+      if (decoIndex < locals.length && locals[decoIndex].from < cutAt) cutAt = locals[decoIndex].from
+      for (let i = 0; i < active.length; i++) if (active[i].to < cutAt) cutAt = active[i].to
+      if (cutAt < end) {
+        restNode = child.cut(end - cutAt)
+        child = child.cut(0, end - cutAt)
+        end = cutAt
+      }
+    }
+
+    while (decoIndex < locals.length && locals[decoIndex].from < end) active.push(locals[decoIndex++])
+    onNode(child, active, deco.forChild(offset, child), offset, end)
+    offset = end
   }
 }
 

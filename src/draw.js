@@ -3,15 +3,15 @@ const {DOMSerializer} = require("prosemirror-model")
 const browser = require("./browser")
 const {childContainer} = require("./dompos")
 
-const {NodeView} = require("./elementview")
+const {NodeView} = require("./nodeview")
 
 function getSerializer(view) {
   return view.someProp("domSerializer") || DOMSerializer.fromSchema(view.state.schema)
 }
 
 function draw(view, doc, decorations) {
-  view.nodeViews = NodeView.buildChildren(null, doc.content, decorations)
-  NodeView.flushChildren(view.content, view.nodeViews)
+  view.nodeViews = NodeView.buildChildren(null, doc, decorations)
+  NodeView.renderViews(view.content, view.nodeViews)
 }
 exports.draw = draw
 
