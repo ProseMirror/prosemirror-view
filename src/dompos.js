@@ -1,152 +1,3 @@
-function isEditorContent(dom) {
-  return dom.nodeType == 1 && dom.classList.contains("ProseMirror-content")
-}
-
-// : (dom.Node) → number
-// Get the position before a given a DOM node in a document. Returns
-// -1 when the first annotated parent node is the top-level document.
-function posBeforeFromDOM(node) {
-  let pos = -1
-  for (let cur = node; !isEditorContent(cur); cur = cur.parentNode) {
-    let attr = cur.nodeType == 1 && cur.getAttribute("pm-offset")
-    if (attr) { pos += +attr + 1 }
-  }
-  return pos
-}
-
-// : (dom.Node, number, ?number) → number
-function posFromDOM(dom, domOffset, bias = 0) {
-  // Move up to the wrapping container, counting local offset along
-  // the way.
-  let innerOffset = 0, tag
-  for (;;) {
-    let adjust = 0
-    if (dom.nodeType == 3) {
-      innerOffset += domOffset
-    } else if (dom.nodeType != 1 || dom.hasAttribute("pm-ignore")) {
-      innerOffset = 0
-    } else if (tag = dom.getAttribute("pm-offset") && !childContainer(dom)) {
-      let size = +dom.getAttribute("pm-size")
-      if (dom.nodeType == 1 && !dom.firstChild) innerOffset = bias > 0 ? size : 0
-      else if (domOffset == dom.childNodes.length) innerOffset = size
-      else innerOffset = Math.min(innerOffset, size)
-      return posBeforeFromDOM(dom) + innerOffset
-    } else if (dom.hasAttribute("pm-container")) {
-      break
-    } else if (domOffset == dom.childNodes.length) {
-      if (domOffset) adjust = 1
-      else adjust = bias > 0 ? 1 : 0
-    }
-
-    let parent = dom.parentNode
-    domOffset = adjust < 0 ? 0 : Array.prototype.indexOf.call(parent.childNodes, dom) + adjust
-    dom = parent
-    bias = 0
-  }
-
-  let start = posBeforeFromDOM(dom) + 1, before = 0
-
-  for (let child = dom.childNodes[domOffset - 1]; child; child = child.previousSibling) {
-    if (child.nodeType == 1 && (tag = child.getAttribute("pm-offset"))) {
-      before += +tag + +child.getAttribute("pm-size")
-      break
-    }
-  }
-
-  return start + before + innerOffset
-}
-exports.posFromDOM = posFromDOM
-
-// : (dom.Node) → ?dom.Node
-function childContainer(dom) {
-  return dom.nodeType != 1 ? null : dom.hasAttribute("pm-container") ? dom : dom.querySelector("[pm-container]")
-}
-exports.childContainer = childContainer
-
-// : (ProseMirror, number) → {node: dom.Node, offset: number}
-// Find the DOM node and offset into that node that the given document
-// position refers to.
-function DOMFromPos(view, pos, loose) {
-  let container = view.content, offset = pos
-  for (;;) {
-    for (let child = container.firstChild, i = 0;; child = child.nextSibling, i++) {
-      if (!child) {
-        if (offset && !loose) throw new RangeError("Failed to find node at " + pos)
-        return {node: container, offset: i}
-      }
-
-      let size = child.nodeType == 1 && child.getAttribute("pm-size")
-      if (size) {
-        if (!offset) return {node: container, offset: i}
-        size = +size
-        if (offset < size) {
-          container = childContainer(child)
-          if (!container) {
-            return leafAt(child, offset)
-          } else {
-            offset--
-            break
-          }
-        } else {
-          offset -= size
-        }
-      }
-    }
-  }
-}
-exports.DOMFromPos = DOMFromPos
-
-// : (ProseMirror, number) → {node: dom.Node, offset: number}
-// The same as DOMFromPos, but searching from the bottom instead of
-// the top. This is needed in domchange.js, when there is an arbitrary
-// DOM change somewhere in our document, and we can no longer rely on
-// the DOM structure around the selection.
-function DOMFromPosFromEnd(view, pos) {
-  let container = view.content, dist = view.state.doc.content.size - pos
-  for (;;) {
-    for (let child = container.lastChild, i = container.childNodes.length;; child = child.previousSibling, i--) {
-      if (!child) return {node: container, offset: i}
-
-      let size = child.nodeType == 1 && child.getAttribute("pm-size")
-      if (size) {
-        if (!dist) return {node: container, offset: i}
-        size = +size
-        if (dist < size) {
-          container = childContainer(child)
-          if (!container) {
-            return leafAt(child, size - dist)
-          } else {
-            dist--
-            break
-          }
-        } else {
-          dist -= size
-        }
-      }
-    }
-  }
-}
-exports.DOMFromPosFromEnd = DOMFromPosFromEnd
-
-// : (ProseMirror, number) → dom.Node
-function DOMAfterPos(view, pos) {
-  let {node, offset} = DOMFromPos(view, pos)
-  if (node.nodeType != 1 || offset == node.childNodes.length)
-    throw new RangeError("No node after pos " + pos)
-  return node.childNodes[offset]
-}
-exports.DOMAfterPos = DOMAfterPos
-
-// : (dom.Node, number) → {node: dom.Node, offset: number}
-function leafAt(node, offset) {
-  for (;;) {
-    let child = node.firstChild
-    if (!child) return {node, offset}
-    if (child.nodeType != 1) return {node: child, offset}
-    node = child
-  }
-}
-
 function windowRect() {
   return {left: 0, right: window.innerWidth,
           top: 0, bottom: window.innerHeight}
@@ -254,7 +105,8 @@ function posAtCoords(view, coords) {
     let rect = node.getBoundingClientRect()
     bias = rect.left != rect.right && coords.left > (rect.left + rect.right) / 2 ? 1 : -1
   }
-  return {pos: posFromDOM(node, offset, bias), inside: posBeforeFromDOM(node)}
+  return {pos: view.docView.posFromDOM(node, offset, bias),
+          inside: 0} // FIXME position before elt
 }
 exports.posAtCoords = posAtCoords
 
@@ -274,7 +126,7 @@ function singleRect(object, bias) {
 // Given a position in the document model, get a bounding box of the
 // character at that position, relative to the window.
 function coordsAtPos(view, pos) {
-  let {node, offset} = DOMFromPos(view, pos)
+  let {node, offset} = view.docView.domFromPos(pos)
   let side, rect
   if (node.nodeType == 3) {
     if (offset < node.nodeValue.length) {

@@ -1,8 +1,6 @@
 const {Mark, DOMParser} = require("prosemirror-model")
 const {Selection} = require("prosemirror-state")
 
-const {DOMFromPos, DOMFromPosFromEnd} = require("./dompos")
-
 function readInputChange(view, oldState) {
   return readDOMChange(view, oldState, rangeAroundSelection(oldState.selection))
 }
@@ -20,8 +18,8 @@ exports.readCompositionChange = readCompositionChange
 // readDOMChange.
 
 function parseBetween(view, oldState, from, to) {
-  let {node: parent, offset: startOff} = DOMFromPos(view, from, true)
-  let {node: parentRight, offset: endOff} = DOMFromPosFromEnd(view, to)
+  let {node: parent, offset: startOff} = view.docView.domFromPos(from)
+  let {node: parentRight, offset: endOff} = view.docView.domFromPos(to)
   if (parent != parentRight) return null
   while (startOff) {
     let prev = parent.childNodes[startOff - 1]

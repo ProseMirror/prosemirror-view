@@ -1,7 +1,7 @@
 const {Selection, NodeSelection} = require("prosemirror-state")
 
 const browser = require("./browser")
-const {posFromDOM, DOMAfterPos, DOMFromPos, coordsAtPos, childContainer} = require("./dompos")
+const {coordsAtPos} = require("./dompos")
 
 // Track the state of the current editor selection. Keeps the editor
 // selection in sync with the DOM selection by polling for changes,
@@ -65,14 +65,15 @@ class SelectionReader {
     if (!this.view.hasFocus() || !this.domChanged()) return
 
     let domSel = this.view.root.getSelection(), doc = this.view.state.doc
-    let domNode = domSel.focusNode, head = posFromDOM(domNode, domSel.focusOffset)
-    let $head = doc.resolve(head), $anchor, selection, nodeAfter
+    let domNode = domSel.focusNode, head = this.view.docView.posFromDOM(domNode, domSel.focusOffset)
+    let $head = doc.resolve(head), $anchor, selection
     if (domSel.isCollapsed) {
       $anchor = $head
-      if (!childContainer(domNode) && (nodeAfter = $head.nodeAfter) && nodeAfter.isLeaf && NodeSelection.isSelectable(nodeAfter))
+      let nearestView = this.view.docView.nearestView(domNode)
+      if (nearestView && nearestView.node && nearestView.node.isLeaf && NodeSelection.isSelectable(nearestView.node))
         selection = new NodeSelection($head)
     } else {
-      $anchor = doc.resolve(posFromDOM(domSel.anchorNode, domSel.anchorOffset))
+      $anchor = doc.resolve(this.view.docView.posFromDOM(domSel.anchorNode, domSel.anchorOffset))
     }
 
     if (!selection) {
@@ -106,7 +107,7 @@ exports.selectionToDOM = selectionToDOM
 
 // Make changes to the DOM for a node selection.
 function nodeSelectionToDOM(view, sel) {
-  let dom = DOMAfterPos(view, sel.from)
+  let dom = view.docView.domAfterPos(sel.from)
   if (dom != view.lastSelectedNode) {
     clearNodeSelection(view)
     dom.classList.add("ProseMirror-selectednode")
@@ -124,8 +125,8 @@ function nodeSelectionToDOM(view, sel) {
 function textSelectionToDOM(view, sel) {
   clearNodeSelection(view)
 
-  let anchor = DOMFromPos(view, sel.anchor)
-  let head = DOMFromPos(view, sel.head)
+  let anchor = view.docView.domFromPos(sel.anchor)
+  let head = view.docView.domFromPos(sel.head)
 
   let domSel = view.root.getSelection(), range = document.createRange()
   if (domSel.extend) {
@@ -158,7 +159,7 @@ function clearNodeSelection(view) {
 function verticalMotionLeavesTextblock(view, dir) {
   let $pos = dir < 0 ? view.state.selection.$from : view.state.selection.$to
   if (!$pos.depth) return false
-  let dom = DOMAfterPos(view, $pos.before())
+  let dom = view.docView.domAfterPos($pos.before())
   let coords = coordsAtPos(view, $pos.pos)
   for (let child = dom.firstChild; child; child = child.nextSibling) {
     if (child.nodeType != 1) continue

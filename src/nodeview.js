@@ -22,11 +22,78 @@ class ElementView {
     return size
   }
 
-  get startOffset() { return 0 }
+  get border() { return 0 }
 
   destroy() {
+    if (this.dom) this.dom.pmView = null
     for (let i = 0; i < this.children.length; i++)
       this.children[i].destroy()
+  }
+
+  posBeforeChild(child) {
+    for (let i = 0, pos = this.posAtStart; i < this.children.length; i++) {
+      let cur = this.children[i]
+      if (cur == child) return pos
+      pos += cur.size
+    }
+  }
+
+  get posAtStart() {
+    return this.parent ? this.parent.posBeforeChild(this) + this.border : 0
+  }
+
+  get posAtEnd() {
+    return this.posAtStart + this.size - 2 * this.border
+  }
+
+  localPosFromDOM(dom, offset, bias) {
+    if (dom == this.contentDOM) {
+      let domAfter = this.contentDOM.childNodes[offset]
+      while (domAfter && !domAfter.pmView) domAfter = domAfter.nextSibling
+      return domAfter ? this.posBeforeChild(domAfter.pmView) : this.posAtEnd
+    } else if (this.contentDOM ? dom.compareDocumentPosition(this.contentDOM) & 2 : bias < 0) {
+      return this.posAtStart
+    } else {
+      return this.posAtEnd
+    }
+  }
+
+  nearestView(dom) {
+    for (; dom; dom = dom.parentNode) if (dom.pmView && dom.pmView.descendantOf(this))
+      return dom.pmView
+  }
+
+  descendantOf(parent) {
+    for (let cur = this; cur; cur = cur.parent) if (cur == parent) return true
+    return false
+  }
+
+  posFromDOM(dom, offset, bias) {
+    for (;;) {
+      let view = dom.pmView
+      if (view && view.descendantOf(this))
+        return view.localPosFromDOM(dom, offset, bias)
+      offset = Array.prototype.indexOf.call(dom.parentNode.childNodes, dom)
+      dom = dom.parentNode
+    }
+  }
+
+  domFromPos(pos) {
+    if (!this.contentDOM) return {node: this.dom, offset: 0}
+    for (let offset = 0, i = 0;; i++) {
+      if (offset == pos) return {node: this.contentDOM, offset: i}
+      if (i == this.children.length) throw new Error("Invalid position " + pos)
+      let child = this.children[i], end = offset + child.size
+      if (pos < end) return child.domFromPos(pos - offset - child.border)
+      offset = end
+    }
+  }
+
+  domAfterPos(pos) {
+    let {node, offset} = this.domFromPos(pos)
+    if (node.nodeType != 1 || offset == node.childNodes.length)
+      throw new RangeError("No node after pos " + pos)
+    return node.childNodes[offset]
   }
 }
 
@@ -104,7 +171,15 @@ class NodeView extends ElementView {
 
   get size() { return this.node.nodeSize }
 
-  get startOffset() { return 1 }
+  get border() { return this.node.isLeaf ? 0 : 1 }
+
+  localPosFromDOM(dom, offset, bias) {
+    return this.node.isText ? this.posAtStart + offset : super.localPosFromDOM(dom, offset, bias)
+  }
+
+  domFromPos(pos) {
+    return this.node.isText ? {node: this.dom, offset: pos} : super.domFromPos(pos)
+  }
 
   updateChildren() {
     let updater = new ViewTreeUpdater(this)
@@ -146,7 +221,7 @@ function markDirty(view, from, to) {
     let child = view.children[i], end = offset + child.size
     if (from < end && to > offset) {
       if (from > offset && to < end) {
-        let start = offset + child.startOffset
+        let start = offset + child.border
         markDirty(child, from - start, to - start)
       } else {
         child.destroy()
