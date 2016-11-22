@@ -105,8 +105,10 @@ function posAtCoords(view, coords) {
     let rect = node.getBoundingClientRect()
     bias = rect.left != rect.right && coords.left > (rect.left + rect.right) / 2 ? 1 : -1
   }
+
+  let nodeView = view.docView.nearestView(elt)
   return {pos: view.docView.posFromDOM(node, offset, bias),
-          inside: 0} // FIXME position before elt
+          inside: nodeView && (nodeView.posAtStart - nodeView.border)}
 }
 exports.posAtCoords = posAtCoords
 

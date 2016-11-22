@@ -1,7 +1,7 @@
 const {Selection, NodeSelection} = require("prosemirror-state")
 
 const browser = require("./browser")
-const {coordsAtPos} = require("./dompos")
+const {coordsAtPos} = require("./domcoords")
 
 // Track the state of the current editor selection. Keeps the editor
 // selection in sync with the DOM selection by polling for changes,

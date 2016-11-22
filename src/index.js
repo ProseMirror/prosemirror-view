@@ -1,4 +1,4 @@
-const {scrollPosIntoView, posAtCoords, coordsAtPos} = require("./dompos")
+const {scrollPosIntoView, posAtCoords, coordsAtPos} = require("./domcoords")
 const {NodeView} = require("./nodeview")
 const {initInput, finishUpdateFromDOM, dispatchEvent} = require("./input")
 const {SelectionReader, selectionToDOM} = require("./selection")
