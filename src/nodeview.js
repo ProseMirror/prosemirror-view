@@ -294,7 +294,9 @@ class ViewTreeUpdater {
   syncToMarks(marks) {
     let keep = 0, depth = this.stack.length >> 1
     let maxKeep = Math.min(depth, marks.length), next
-    while (keep < maxKeep && this.stack[keep << 1].matchesMark(marks[keep])) keep++
+    while (keep < maxKeep &&
+           (keep == depth - 1 ? this.top : this.stack[(keep + 1) << 1]).matchesMark(marks[keep]))
+      keep++
 
     while (keep < depth) {
       this.destroyRest()
