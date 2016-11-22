@@ -76,7 +76,6 @@ class EditorView {
     let redrawn = false
     let decorations = viewDecorations(this)
 
-    // FIXME dirty tracking
     if (!this.docView.matchesNode(state.doc, decorations)) {
       this.docView.update(state.doc, decorations)
       redrawn = true

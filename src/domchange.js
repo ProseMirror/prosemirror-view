@@ -132,7 +132,7 @@ function readDOMChange(view, oldState, range) {
   if (!change) return false
 
   // Mark nodes touched by this change as 'to be redrawn'
-  view.dirty = {from: change.start, to: change.endA}
+  view.docView.markDirty(change.start, change.endA)
 
   let $from = parsed.resolveNoCache(change.start - range.from)
   let $to = parsed.resolveNoCache(change.endB - range.from)

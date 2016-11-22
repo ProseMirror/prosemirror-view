@@ -22,6 +22,8 @@ class ElementView {
     return size
   }
 
+  get startOffset() { return 0 }
+
   destroy() {
     for (let i = 0; i < this.children.length; i++)
       this.children[i].destroy()
@@ -102,6 +104,8 @@ class NodeView extends ElementView {
 
   get size() { return this.node.nodeSize }
 
+  get startOffset() { return 1 }
+
   updateChildren() {
     let updater = new ViewTreeUpdater(this)
     iterDeco(this.node, this.deco, widgets => {
@@ -132,8 +136,26 @@ class NodeView extends ElementView {
     if (!node.isLeaf) this.updateChildren()
     return true
   }
+
+  markDirty(from, to) { markDirty(this, from, to) }
 }
 exports.NodeView = NodeView
+
+function markDirty(view, from, to) {
+  for (let offset = 0, i = 0; i < view.children.length; i++) {
+    let child = view.children[i], end = offset + child.size
+    if (from < end && to > offset) {
+      if (from > offset && to < end) {
+        let start = offset + child.startOffset
+        markDirty(child, from - start, to - start)
+      } else {
+        child.destroy()
+        view.children.splice(i--, 1)
+      }
+    }
+    offset = end
+  }
+}
 
 function renderViews(parentDOM, views) {
   let dom = parentDOM.firstChild
