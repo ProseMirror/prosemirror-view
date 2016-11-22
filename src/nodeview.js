@@ -16,6 +16,8 @@ class ElementView {
   matchesMark() { return false }
   matchesNode() { return false }
 
+  parseRule() { return null }
+
   get size() {
     let size = 0
     for (let i = 0; i < this.children.length; i++) size += this.children[i].size
@@ -108,6 +110,8 @@ class WidgetView extends ElementView {
   // FIXME use constructors and better compare
   matchesWidget(widget) { return widget.type == this.widget.type }
 
+  parseRule() { return {ignore: true} }
+
   get size() { return 0 }
 }
 
@@ -118,6 +122,8 @@ class MarkView extends ElementView {
     super(parent, [], dom, dom)
     this.mark = mark
   }
+
+  parseRule() { return {mark: this.mark.type.name, attrs: this.mark.attrs, contentElement: this.contentDOM} }
 
   matchesMark(mark) { return this.mark.eq(mark) }
 }
@@ -138,6 +144,8 @@ class DecoView extends ElementView {
     child.parent = this
     this.deco = deco
   }
+
+  parseRule() { return {skip: this.contentDOM} }
 
   matchesDeco(deco) {
     if (deco.length != this.deco.length) return false
@@ -164,6 +172,8 @@ class NodeView extends ElementView {
     let dom = serializer.serializeNode(node, serializeOptions)
     return new NodeView(parent, node, deco, dom, serializedContentNode)
   }
+
+  parseRule() { return {node: this.node.type.name, attrs: this.node.attrs, contentElement: this.contentDOM} }
 
   matchesNode(node, deco) {
     return node.eq(this.node) && deco.sameOutput(this.deco)
@@ -406,16 +416,19 @@ function iterDeco(parent, deco, onWidgets, onNode) {
   }
 }
 
-function dummyView(parent, dom) {
-  return new ElementView(parent, nothing, dom, null)
+class DummyView extends ElementView {
+  constructor(parent, dom) {
+    super(parent, nothing, dom, null)
+  }
+  parseRule() { return {ignore: true} }
 }
 
 function addTrailingHacks(dom, parent) {
   let lastChild = dom.lastChild
   if (!lastChild || lastChild.nodeName == "BR")
-    dom.appendChild(dummyView(parent, document.createElement("br")).dom)
+    dom.appendChild(new DummyView(parent, document.createElement("br")).dom)
   else if (lastChild.contentEditable == "false" || (lastChild.pmView instanceof WidgetView))
-    dom.appendChild(dummyView(parent, document.createElement("span")).dom)
+    dom.appendChild(new DummyView(parent, document.createElement("span")).dom)
 }
 
 function iosHacks(dom) {

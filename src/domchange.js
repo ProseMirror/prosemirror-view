@@ -48,7 +48,8 @@ function parseBetween(view, oldState, from, to) {
     to: endOff,
     preserveWhitespace: true,
     editableContent: true,
-    findPositions: find
+    findPositions: find,
+    ruleFromNode
   })
   if (find && find[0].pos != null) {
     let anchor = find[0].pos, head = find[1] && find[1].pos
@@ -56,6 +57,11 @@ function parseBetween(view, oldState, from, to) {
     sel = {anchor: anchor + from, head: head + from}
   }
   return {doc, sel}
+}
+
+function ruleFromNode(dom) {
+  let nodeView = dom.pmView
+  return nodeView && nodeView.parseRule()
 }
 
 function isAtEnd($pos, depth) {
