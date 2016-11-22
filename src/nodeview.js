@@ -1,136 +1,156 @@
 const {DOMSerializer} = require("prosemirror-model")
 
-class WidgetView {
-  constructor(parent, widget) {
+const browser = require("./browser")
+
+class ElementView {
+  constructor(parent, children, dom, contentDOM) {
     this.parent = parent
-    this.children = nothing
-    this.dom = widget.type.widget
-  }
-}
-
-class MarkView {
-  constructor(parent, mark) {
-    this.parent = parent
-    this.children = []
-    let serializer = DOMSerializer.fromSchema(mark.type.schema) // FIXME
-    this.dom = serializer.serializeMark(mark, serializeOptions)
-    this.contentDOM = this.dom
-  }
-}
-
-let serializedContentNode = null
-const serializeOptions = {onContent(_, dom) { serializedContentNode = dom }}
-
-class NodeView {
-  constructor(parent, node, deco) {
-    this.parent = parent
-    this.contentDOM = null
-    let serializer = DOMSerializer.fromSchema(node.type.schema) // FIXME
-    serializedContentNode = null
-    this.dom = serializer.serializeNode(node, serializeOptions)
-    this.contentDOM = serializedContentNode
-    this.dom.pmView = this
-    if (node.isLeaf) {
-      this.children = nothing
-    } else {
-      this.children = NodeView.buildChildren(this, node, deco)
-      NodeView.flushChildren(this.contentDOM, this.children)
-    }
+    this.children = children
+    this.dom = dom
+    if (dom) dom.pmView = this
+    this.contentDOM = contentDOM
   }
 
-  static buildChildren(parent, node, deco) {
-    let result = [], target = result, openMarks = [], curParent = parent
-    iterDeco(node, deco, widgets => {
-      for (let i = 0; i < widgets.length; i++)
-        target.push(new WidgetView(curParent, widgets[i]))
-    }, (child, outerDeco, innerDeco) => {
-      let keep = 0
-      for (; keep < Math.min(openMarks.length, child.marks.length); ++keep)
-        if (!child.marks[keep].eq(openMarks[keep])) break
-      while (keep < openMarks.length) {
-        curParent = curParent.parent
-        openMarks.pop()
-        target = openMarks.length ? openMarks[openMarks.length - 1].children : result
-      }
-      while (openMarks.length < child.marks.length) {
-        let add = new MarkView(curParent, child.marks[openMarks.length])
-        openMarks.push(add)
-        target.push(add)
-        target = add.children
-        curParent = add
-      }
-      let nodeParent = curParent, nodeTarget = target
-      if (outerDeco.length) {
-        nodeParent = new DecoView(curParent, outerDeco)
-        nodeTarget = nodeParent.children
-      }
-      let nodeView = new NodeView(nodeParent, child, innerDeco)
-      nodeTarget.push(nodeView)
-    })
-    return result
-  }
+  matchesWidget() { return false }
+  matchesDeco() { return false }
+  matchesMark() { return false }
+  matchesNode() { return false }
 
-  static renderViews(parentDOM, views, stopAt) {
-    let dom = parentDOM.firstChild
-    for (let i = 0; i < views.length; i++) {
-      let view = views[i], childDOM = view.dom
-      if (childDOM.parentNode == parentDOM) {
-        while (childDOM != dom) dom = rm(dom)
-        dom = dom.nextSibling
-      } else {
-        parentDOM.insertBefore(childDOM, dom)
-      }
-      if (!(stopAt && stopAt(view)) && view.contentDOM)
-        NodeView.renderViews(view.contentDOM, view.children)
-    }
-    while (dom) dom = rm(dom)
-  }
-
-  update(node, prevNode, deco) {
-    if (!node.sameMarkup(prevNode) || (node.isText && node.text != prevNode.text)) return false
-    if (!node.isLeaf) {
-      NodeView.updateChildren(this, this.children, node.content, prevNode.content)
-      NodeView.flushChildren(this.contentDOM, this.children)
-    }
-    return true
-  }
-
-  static destroyBetween(children, start, end) {
-    if (start == end) return
-    for (let i = start; i < end; i++) children[i].destroy()
-    children.splice(start, end - start)
-  }
-
-  static updateChildren(parent, children, fragment, prevFragment) {
-    let matching = pairNodes(fragment, prevFragment)
-    let prevI = 0, i = 0
-    for (let mI = 0; i < fragment.childCount; i++) {
-      if (matching[mI] == i) { // There is a matching child in prevNode
-        let skip = matching[mI + 1] - prevI
-        NodeView.destroyBetween(children, i, i + skip)
-        prevI += skip + 1
-        mI += 2
-      } else if (i < children.length && children[i].update(fragment.child(i), prevFragment.child(prevI))) {
-        prevI++
-      } else {
-        children.splice(i, 0, new NodeView(parent, fragment.child(i)))
-      }
-    }
-    NodeView.destroyBetween(children, i, children.length)
-    return children
-  }
-
-  static flushChildren(parentDOM, children) {
+  get size() {
+    let size = 0
+    for (let i = 0; i < this.children.length; i++) size += this.children[i].size
+    return size
   }
 
   destroy() {
     for (let i = 0; i < this.children.length; i++)
       this.children[i].destroy()
   }
+}
+
+const nothing = []
+
+class WidgetView extends ElementView {
+  constructor(parent, widget) {
+    super(parent, nothing, widget.type.widget, null)
+    this.widget = widget
+  }
+
+  // FIXME use constructors and better compare
+  matchesWidget(widget) { return widget.type == this.widget.type }
+
+  get size() { return 0 }
+}
+
+class MarkView extends ElementView {
+  constructor(parent, mark) {
+    let serializer = DOMSerializer.fromSchema(mark.type.schema) // FIXME
+    let dom = serializer.serializeMark(mark, serializeOptions)
+    super(parent, [], dom, dom)
+    this.mark = mark
+  }
+
+  matchesMark(mark) { return this.mark.eq(mark) }
+}
+
+class DecoView extends ElementView {
+  constructor(parent, deco, child) {
+    let inner, outer
+    for (let i = 0; i < deco.length; i++) {
+      let attrs = deco[i].type.attrs
+      let dom = document.createElement(attrs.nodeName || (inner.isInline ? "span" : "div"))
+      for (let name in attrs) if (name != "nodeName") dom.setAttribute(name, attrs[name])
+      if (outer) dom.appendChild(outer)
+      else inner = dom
+      outer = dom
+    }
+
+    super(parent, [child], outer, inner)
+    child.parent = this
+    this.deco = deco
+  }
+
+  matchesDeco(deco) {
+    if (deco.length != this.deco.length) return false
+    for (let i = 0; i < deco.length; i++)
+      if (!deco[i].sameOutput(this.deco[i])) return false
+    return true
+  }
+}
+
+let serializedContentNode = null
+const serializeOptions = {onContent(_, dom) { serializedContentNode = dom }}
+
+class NodeView extends ElementView {
+  constructor(parent, node, deco, dom, contentDOM) {
+    super(parent, node.isLeaf ? nothing : [], dom, contentDOM)
+    this.node = node
+    this.deco = deco
+    if (!node.isLeaf) this.updateChildren()
+  }
+
+  static create(parent, node, deco) {
+    serializedContentNode = null
+    let serializer = DOMSerializer.fromSchema(node.type.schema) // FIXME
+    let dom = serializer.serializeNode(node, serializeOptions)
+    return new NodeView(parent, node, deco, dom, serializedContentNode)
+  }
+
+  matchesNode(node, deco) {
+    return node.eq(this.node) && deco.sameOutput(this.deco)
+  }
 
   get size() { return this.node.nodeSize }
+
+  updateChildren() {
+    let updater = new ViewTreeUpdater(this)
+    iterDeco(this.node, this.deco, widgets => {
+      updater.placeWidgets(widgets)
+    }, (child, outerDeco, innerDeco) => {
+      updater.syncToMarks(child.marks)
+      updater.findNodeMatch(child, outerDeco, innerDeco) ||
+        updater.updateNode(child, outerDeco, innerDeco) ||
+        updater.addNode(child, outerDeco, innerDeco)
+    })
+    updater.close()
+
+    this.renderChildren()
+  }
+
+  renderChildren() {
+    renderViews(this.contentDOM, this.children, NodeView.is)
+    if (this.node.isTextblock) addTrailingHacks(this.contentDOM, this)
+    if (browser.ios) iosHacks(this.dom)
+  }
+
+  update(node, deco) {
+    if (!node.sameMarkup(this.node) ||
+        (node.isText && node.text != this.node.text) ||
+        !deco.sameOutput(this.deco)) return false
+    this.node = node
+    this.deco = deco
+    if (!node.isLeaf) this.updateChildren()
+    return true
+  }
 }
 exports.NodeView = NodeView
+
+function renderViews(parentDOM, views) {
+  let dom = parentDOM.firstChild
+  for (let i = 0; i < views.length; i++) {
+    let view = views[i], childDOM = view.dom
+    if (childDOM.parentNode == parentDOM) {
+      while (childDOM != dom) dom = rm(dom)
+      dom = dom.nextSibling
+    } else {
+      parentDOM.insertBefore(childDOM, dom)
+    }
+    if (!(view instanceof NodeView))
+      renderViews(view.contentDOM, view.children)
+  }
+  while (dom) dom = rm(dom)
+}
+exports.renderViews = renderViews
 
 function rm(dom) {
   let next = dom.nextSibling
@@ -138,14 +158,104 @@ function rm(dom) {
   return next
 }
 
-function sameOuterDeco(a, b) {
-  if (a.length != b.length) return false
-  for (let i = 0; i < a.length; i++)
-    if (!a[i].sameOutput(b[i])) return false
-  return true
-}
+class ViewTreeUpdater {
+  constructor(top) {
+    this.top = top
+    this.index = 0
+    this.stack = []
+  }
 
-const nothing = []
+  destroyBetween(start, end) {
+    if (start == end) return
+    for (let i = start; i < end; i++) this.top.children[i].destroy()
+    this.top.children.splice(start, end - start)
+  }
+
+  destroyRest() {
+    this.destroyBetween(this.index, this.top.children.length)
+  }
+
+  close() {
+    for (;;) {
+      this.destroyRest()
+      if (this.stack.length == 0) break
+      this.index = this.stack.pop()
+      this.top = this.stack.pop()
+    }
+  }
+
+  syncToMarks(marks) {
+    let keep = 0, depth = this.stack.length >> 1
+    let maxKeep = Math.min(depth, marks.length), next
+    while (keep < maxKeep && this.stack[keep << 1].matchesMark(marks[keep])) keep++
+
+    while (keep < depth) {
+      this.destroyRest()
+      this.index = this.stack.pop()
+      this.top = this.stack.pop()
+      depth--
+    }
+    while (depth < marks.length) {
+      this.stack.push(this.top, this.index + 1)
+      if (this.index < this.top.children.length &&
+          (next = this.top.children[this.index]).matchesMark(marks[depth])) {
+        this.top = next
+      } else {
+        let markView = new MarkView(this.top, marks[depth])
+        this.top.children.splice(this.index, 0, markView)
+        this.top = markView
+      }
+      this.index = 0
+      depth++
+    }
+  }
+
+  // FIXME think about failure cases where updates will redraw too much
+  findNodeMatch(node, outerDeco, innerDeco) {
+    for (let i = this.index, children = this.top.children, e = Math.min(children.length, i + 5); i < e; i++) {
+      let next = children[i]
+      if (outerDeco.length) {
+        if (next.matchesDeco(outerDeco)) next = next.children[0]
+        else continue
+      }
+      if (next.matchesNode(node, innerDeco)) {
+        this.destroyBetween(this.index, i)
+        this.index++
+        return true
+      }
+    }
+    return false
+  }
+
+  updateNode(node, outerDeco, innerDeco) {
+    if (this.index == this.top.children.length) return false
+    let next = this.top.children[this.index]
+    if (outerDeco.length) {
+      if (next.matchesDeco(outerDeco)) next = next.children[0]
+      else return false
+    }
+    if (!(next instanceof NodeView && next.update(node, innerDeco))) return false
+    this.index++
+    return true
+  }
+
+  addNode(node, outerDeco, innerDeco) {
+    let nodeView = NodeView.create(this.top, node, innerDeco)
+    if (outerDeco.length) nodeView = new DecoView(top, outerDeco, nodeView)
+    this.top.children.splice(this.index++, 0, nodeView)
+  }
+
+  placeWidgets(widgets) {
+    let placed = 0
+    while (placed < widgets.length && this.index < this.top.children.length &&
+           this.top.children[this.index].matchesWidget(widgets[placed])) {
+      this.index++
+      placed++
+    }
+    for (let i = placed; i < widgets.length; i++)
+      this.top.children.splice(this.index++, 0, new WidgetView(top, widgets[i]))
+  }
+}
 
 // FIXME move into decoration.js?
 function iterDeco(parent, deco, onWidgets, onNode) {
@@ -199,35 +309,23 @@ function iterDeco(parent, deco, onWidgets, onNode) {
   }
 }
 
-const SCAN_DIST = 5
+function dummyView(parent, dom) {
+  return new ElementView(parent, nothing, dom, null)
+}
 
-// : (Fragment, Fragment) → [number]
-// This is a crude, non-optimal (but with relatively low complexity
-// bounds) longest common subsequence algorithm that returns an array
-// of indices, where each pair of indices refer to a matched pair of
-// nodes.
-function pairNodes(a, b) {
-  let lenA = a.childCount, lenB = b.childCount, dLen = lenA - lenB
-  let maxA = Math.max(0, dLen) + SCAN_DIST, maxB = Math.max(0, -dLen) + SCAN_DIST
-  let path = []
-  for (let iA = 0, iB = 0; iA < lenA && iB < lenB; iA++, iB++) {
-    // The distances that we can scan ahead on both sides.
-    let nodeA = a.child(iA), nodeB = b.child(iB), found = false
-    if (nodeA.eq(nodeB)) {
-      found = true
-    } else {
-      let distA = Math.min(maxA, lenA - iA), distB = Math.min(maxB, lenB - iB)
-      for (let dist = 1, maxDist = Math.max(distA, distB); !found && dist < maxDist; dist++) {
-        if (dist < distA && nodeB.eq(a.child(iA + dist))) {
-          iA += dist
-          found = true
-        } else if (dist < distB && nodeA.eq(b.child(iB + dist))) {
-          iB += dist
-          found = true
-        }
-      }
-    }
-    if (found) path.push(iA, iB)
+function addTrailingHacks(dom, parent) {
+  let lastChild = dom.lastChild
+  if (!lastChild || lastChild.nodeName == "BR")
+    dom.appendChild(dummyView(parent, document.createElement("br")).dom)
+  else if (lastChild.contentEditable == "false" || (lastChild.pmView instanceof WidgetView))
+    dom.appendChild(dummyView(parent, document.createElement("span")).dom)
+}
+
+function iosHacks(dom) {
+  if (dom.nodeName == "UL" || dom.nodeName == "OL") {
+    let oldCSS = dom.style.cssText
+    dom.style.cssText = oldCSS + "; list-style: square !important"
+    window.getComputedStyle(dom).listStyle
+    dom.style.cssText = oldCSS
   }
-  return path
 }

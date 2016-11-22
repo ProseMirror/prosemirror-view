@@ -69,11 +69,6 @@ class NodeType {
   }
 }
 
-class DummyType {
-  valid() { return true }
-  apply() {}
-}
-
 function applyContentDecoration(attrs, domNode) {
   for (let name in attrs) {
     let val = attrs[name]
@@ -638,11 +633,3 @@ function viewDecorations(view) {
   return DecorationGroup.from(found)
 }
 exports.viewDecorations = viewDecorations
-
-function addDummy(decorations, doc, from, to) {
-  let dummy = DecorationSet.create(doc, [new Decoration(from, to, new DummyType)])
-  if (decorations == empty) return dummy
-  let others = decorations instanceof DecorationGroup ? decorations.members : [decorations]
-  return new DecorationGroup(others.concat(dummy))
-}
-exports.addDummy = addDummy

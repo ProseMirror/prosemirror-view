@@ -1,8 +1,8 @@
 const {scrollPosIntoView, posAtCoords, coordsAtPos} = require("./dompos")
-const {draw, redraw} = require("./draw")
+const {NodeView} = require("./nodeview")
 const {initInput, finishUpdateFromDOM, dispatchEvent} = require("./input")
 const {SelectionReader, selectionToDOM} = require("./selection")
-const {viewDecorations, addDummy} = require("./decoration")
+const {viewDecorations} = require("./decoration")
 
 ;({Decoration: exports.Decoration, DecorationSet: exports.DecorationSet} = require("./decoration"))
 
@@ -21,8 +21,7 @@ class EditorView {
     this.props = props
     // :: EditorState
     // The view's current [state](#state.EditorState).
-    this.state = this.drawnState = props.state
-    this.dirty = null
+    this.state = props.state
 
     // :: dom.Node
     // The editable DOM node containing the document. (You probably
@@ -41,7 +40,7 @@ class EditorView {
     if (place && place.appendChild) place.appendChild(this.wrapper)
     else if (place) place(this.wrapper)
 
-    draw(this, this.state.doc, this.drawnDecorations = viewDecorations(this))
+    this.docView = new NodeView(null, this.state.doc, viewDecorations(this), null, this.content)
     this.content.contentEditable = true
 
     this.lastSelectedNode = null
@@ -62,6 +61,7 @@ class EditorView {
   // Update the editor's `state` prop, without touching any of the
   // other props.
   updateState(state) {
+    let prevSel = this.state.selection
     this.state = state
 
     if (this.inDOMChange) {
@@ -74,39 +74,21 @@ class EditorView {
     }
 
     let redrawn = false
-    let docChange = !state.doc.eq(this.drawnState.doc)
-
     let decorations = viewDecorations(this)
-    if (docChange || this.dirty || !decorations.sameOutput(this.drawnDecorations)) {
-      this.redraw(state.doc, decorations)
+
+    // FIXME dirty tracking
+    if (!this.docView.matchesNode(state.doc, decorations)) {
+      this.docView.update(state.doc, decorations)
       redrawn = true
     }
 
-    if (redrawn || !state.selection.eq(this.drawnState.selection))
+    if (redrawn || !state.selection.eq(prevSel))
       selectionToDOM(this, state.selection)
 
     // FIXME somehow schedule this relative to ui/update so that it
     // doesn't cause extra layout
     if (state.view.scrollToSelection)
       scrollPosIntoView(this, state.selection.head == null ? state.selection.from : state.selection.from)
-
-    // Make sure we don't use an outdated range on drop event
-    if (this.dragging && docChange) this.dragging.move = false
-    this.drawnState = state
-  }
-
-  redraw(doc, decorations) {
-    let oldDecorations = this.drawnDecorations, oldDoc = this.drawnState.doc
-    this.drawnDecorations = decorations
-
-    if (this.dirty) {
-      let $start = oldDoc.resolve(this.dirty.from), same = $start.sharedDepth(this.dirty.to)
-      this.dirty = null
-      if (same == 0)
-        return draw(this, doc, decorations)
-      oldDecorations = addDummy(decorations, doc, $start.before(same), $start.after(same))
-    }
-    redraw(this, oldDoc, doc, oldDecorations, decorations)
   }
 
   updateDOMForProps() {

@@ -437,7 +437,7 @@ handlers.dragstart = (view, e) => {
 
   if (draggedRange) {
     let slice = toClipboard(view, draggedRange, e.dataTransfer)
-    view.dragging = new Dragging(slice, draggedRange, !e.ctrlKey)
+    view.dragging = new Dragging(slice, draggedRange, !e.ctrlKey && view.state.doc)
   }
 }
 
@@ -488,7 +488,7 @@ handlers.drop = (view, e) => {
 
   e.preventDefault()
   let tr = view.state.tr
-  if (dragging && dragging.move)
+  if (dragging && dragging.move && dragging.move.eq(view.state.doc))
     tr.deleteRange(dragging.range.from, dragging.range.to)
   view.someProp("transformPasted", f => { slice = f(slice) })
   let pos = tr.mapping.map(insertPos)
