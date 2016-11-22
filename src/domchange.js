@@ -23,12 +23,12 @@ function parseBetween(view, oldState, from, to) {
   if (parent != parentRight) return null
   while (startOff) {
     let prev = parent.childNodes[startOff - 1]
-    if (prev.nodeType != 1 || !prev.hasAttribute("pm-offset")) --startOff
+    if (!prev.pmView) --startOff
     else break
   }
   while (endOff < parent.childNodes.length) {
     let next = parent.childNodes[endOff]
-    if (next.nodeType != 1 || !next.hasAttribute("pm-offset")) ++endOff
+    if (!next.pmView) ++endOff
     else break
   }
   let domSel = view.root.getSelection(), find = null

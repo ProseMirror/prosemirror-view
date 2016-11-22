@@ -44,6 +44,11 @@ function nodeLen(node) {
   return node.nodeType == 3 ? node.nodeValue.length : node.childNodes.length
 }
 
+function isIgnorable(dom) {
+  let view = dom.pmView
+  return view && view.size == 0
+}
+
 // Make sure the cursor isn't directly after one or more ignored
 // nodes, which will confuse the browser's cursor motion logic.
 function skipIgnoredNodesLeft(view) {
@@ -54,14 +59,14 @@ function skipIgnoredNodesLeft(view) {
     if (offset > 0) {
       if (node.nodeType != 1) break
       let before = node.childNodes[offset - 1]
-      if (before.nodeType == 1 && before.hasAttribute("pm-ignore")) {
+      if (isIgnorable(before)) {
         moveNode = node
         moveOffset = --offset
       }
       else break
     } else {
       let prev = node.previousSibling
-      while (prev && prev.nodeType == 1 && prev.hasAttribute("pm-ignore")) {
+      while (prev && isIgnorable(prev)) {
         moveNode = node.parentNode
         moveOffset = Array.prototype.indexOf.call(moveNode.childNodes, prev)
         prev = prev.previousSibling
@@ -89,14 +94,14 @@ function skipIgnoredNodesRight(view) {
     if (offset < len) {
       if (node.nodeType != 1) break
       let after = node.childNodes[offset]
-      if (after.nodeType == 1 && after.hasAttribute("pm-ignore")) {
+      if (isIgnorable(after)) {
         moveNode = node
         moveOffset = ++offset
       }
       else break
     } else {
       let next = node.nextSibling
-      while (next && next.nodeType == 1 && next.hasAttribute("pm-ignore")) {
+      while (next && isIgnorable(next)) {
         moveNode = next.parentNode
         moveOffset = Array.prototype.indexOf.call(moveNode.childNodes, next) + 1
         next = next.previousSibling

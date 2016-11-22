@@ -27,7 +27,6 @@ class EditorView {
     // The editable DOM node containing the document. (You probably
     // should not be directly interfering with its child nodes.)
     this.content = document.createElement("div")
-    this.content.setAttribute("pm-container", "true")
     this.content.classList.add("ProseMirror-content")
 
     this.wrapper = document.createElement("div")

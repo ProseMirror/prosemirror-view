@@ -5,7 +5,6 @@ class WidgetType {
       wrap.appendChild(widget)
       widget = wrap
     }
-    widget.setAttribute("pm-ignore", "true")
     widget.contentEditable = false
     this.widget = widget
     this.options = options || noOptions
@@ -17,11 +16,6 @@ class WidgetType {
   }
 
   valid() { return true }
-
-  apply(domParent, domNode) {
-    domParent.insertBefore(this.widget, domNode)
-    return domNode
-  }
 }
 
 class InlineType {
@@ -37,10 +31,6 @@ class InlineType {
   }
 
   valid(_, span) { return span.from < span.to }
-
-  apply(_domParent, domNode) {
-    return applyContentDecoration(this.attrs, domNode)
-  }
 
   static is(span) { return span.type instanceof InlineType }
 }
@@ -63,38 +53,6 @@ class NodeType {
     let {index, offset} = node.content.findIndex(span.from)
     return offset == span.from && offset + node.child(index).nodeSize == span.to
   }
-
-  apply(_domParent, domNode) {
-    return applyContentDecoration(this.attrs, domNode)
-  }
-}
-
-function applyContentDecoration(attrs, domNode) {
-  for (let name in attrs) {
-    let val = attrs[name]
-    if (name == "class") domNode.classList.add(...val.split(" "))
-    else if (name == "style") domNode.style.cssText += ";" + val
-    else if (name != "wrapper") domNode.setAttribute(name, val)
-  }
-  let wrap = attrs.wrapper
-  return wrap ? wrapNode(domNode, wrap) : domNode
-}
-
-function wrapNode(domNode, wrapper) {
-  domNode.parentNode.replaceChild(wrapper, domNode)
-  let position = wrapper.querySelector("[pm-placeholder]")
-  if (position && position != wrapper) {
-    position.parentNode.replaceChild(domNode, position)
-    domNode.setAttribute("pm-placeholder", "true")
-  } else {
-    wrapper.appendChild(domNode)
-  }
-  wrapper.setAttribute("pm-size", domNode.getAttribute("pm-size"))
-  domNode.removeAttribute("pm-size")
-  wrapper.setAttribute("pm-offset", domNode.getAttribute("pm-offset"))
-  domNode.removeAttribute("pm-offset")
-  wrapper.setAttribute("pm-decoration", "true")
-  return wrapper
 }
 
 // ::- Decorations can be provided to the view (through the
