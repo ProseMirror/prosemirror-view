@@ -1,3 +1,10 @@
+function compareObjs(a, b) {
+  if (a == b) return true
+  for (let p in a) if (a[p] !== b[p]) return false
+  for (let p in b) if (!(p in a)) return false
+  return true
+}
+
 class WidgetType {
   constructor(widget, options) {
     if (widget.nodeType != 1) {
@@ -16,6 +23,12 @@ class WidgetType {
   }
 
   valid() { return true }
+
+  eq(other) {
+    return this == other ||
+      (other instanceof WidgetType && (this.widget == other.widget || this.options.key) &&
+       compareObjs(this.options, other.options))
+  }
 }
 
 class InlineType {
@@ -31,6 +44,12 @@ class InlineType {
   }
 
   valid(_, span) { return span.from < span.to }
+
+  eq(other) {
+    return this == other ||
+      (other instanceof InlineType && compareObjs(this.attrs, other.attrs) &&
+       compareObjs(this.options, other.options))
+  }
 
   static is(span) { return span.type instanceof InlineType }
 }
@@ -53,6 +72,12 @@ class NodeType {
     let {index, offset} = node.content.findIndex(span.from)
     return offset == span.from && offset + node.child(index).nodeSize == span.to
   }
+
+  eq(other) {
+    return this == other ||
+      (other instanceof NodeType && compareObjs(this.attrs, other.attrs) &&
+       compareObjs(this.options, other.options))
+  }
 }
 
 // ::- Decorations can be provided to the view (through the
@@ -70,8 +95,8 @@ class Decoration {
     return new Decoration(from, to, this.type)
   }
 
-  sameOutput(other) {
-    return this.type == other.type && this.from == other.from && this.to == other.to
+  eq(other) {
+    return this.type.eq(other.type) && this.from == other.from && this.to == other.to
   }
 
   map(mapping, offset, oldOffset) {
@@ -81,6 +106,16 @@ class Decoration {
   // :: (number, dom.Node, ?Object) → Decoration
   // Creates a widget decoration, which is a DOM node that's shown in
   // the document at the given position.
+  //
+  //   options::- These options are supported:
+  //
+  //     key:: ?string
+  //     When comparing decorations of this type (in order to decide
+  //     whether it needs to be redrawn), ProseMirror will by default
+  //     compare the widget DOM node by identity. If you pass a key,
+  //     that key will be compared instead, which can be useful when
+  //     you generate decorations on the fly and don't want to store
+  //     and reuse DOM nodes.
   static widget(pos, widget, options) {
     return new Decoration(pos, pos, new WidgetType(widget, options))
   }
@@ -133,12 +168,9 @@ exports.Decoration = Decoration
 //   style:: ?string
 //   A string of CSS to be _added_ to the node's existing `style` property.
 //
-//   wrapper:: ?dom.Node
-//   A DOM node to use as a wrapper around the original node. Will be
-//   applied after the other properties. By default, the original node
-//   will be appended to this. If you put a child node with a
-//   `pm-placeholder` attribute in the node, that node will be
-//   replaced with the original node.
+//   nodeName:: ?string
+//   When non-null, the target node is wrapped in a DOM element of
+//   this type (and the other attributes are applied to this element).
 
 const none = [], noOptions = {}
 
@@ -305,17 +337,17 @@ class DecorationSet {
     return child || empty
   }
 
-  sameOutput(other) {
+  eq(other) {
     if (this == other) return true
     if (!(other instanceof DecorationSet) ||
         this.local.length != other.local.length ||
         this.children.length != other.children.length) return false
     for (let i = 0; i < this.local.length; i++)
-      if (!this.local[i].sameOutput(other.local[i])) return false
+      if (!this.local[i].eq(other.local[i])) return false
     for (let i = 0; i < this.children.length; i += 3)
       if (this.children[i] != other.children[i] ||
           this.children[i + 1] != other.children[i + 1] ||
-          !this.children[i + 2].sameOutput(other.children[i + 2])) return false
+          !this.children[i + 2].eq(other.children[i + 2])) return false
     return false
   }
 
@@ -359,11 +391,11 @@ class DecorationGroup {
     return DecorationGroup.from(found)
   }
 
-  sameOutput(other) {
+  eq(other) {
     if (!(other instanceof DecorationGroup) ||
         other.members.length != this.members.length) return false
     for (let i = 0; i < this.members.length; i++)
-      if (!this.members[i].sameOutput(other.members[i])) return false
+      if (!this.members[i].eq(other.members[i])) return false
     return true
   }
 

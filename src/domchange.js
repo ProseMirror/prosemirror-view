@@ -18,8 +18,8 @@ exports.readCompositionChange = readCompositionChange
 // readDOMChange.
 
 function parseBetween(view, oldState, from, to) {
-  let {node: parent, offset: startOff} = view.docView.domFromPos(from)
-  let {node: parentRight, offset: endOff} = view.docView.domFromPos(to)
+  let {node: parent, offset: startOff} = view.docView.domFromPos(from, true)
+  let {node: parentRight, offset: endOff} = view.docView.domFromPos(to, true)
   if (parent != parentRight) return null
   while (startOff) {
     let prev = parent.childNodes[startOff - 1]
@@ -31,6 +31,16 @@ function parseBetween(view, oldState, from, to) {
     if (!next.pmView) ++endOff
     else break
   }
+  // If there's non-view nodes directly after the end of this region,
+  // fail and let the caller try again with a wider range.
+  if (endOff == parent.childNodes.length) for (let scan = parent; scan != view.content;) {
+    if (scan.nextSibling) {
+      if (!scan.nextSibling.pmView) return null
+      break
+    }
+    scan = scan.parentNode
+  }
+
   let domSel = view.root.getSelection(), find = null
   if (domSel.anchorNode && view.content.contains(domSel.anchorNode)) {
     find = [{node: domSel.anchorNode, offset: domSel.anchorOffset}]

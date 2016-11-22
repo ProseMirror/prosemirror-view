@@ -70,7 +70,8 @@ class SelectionReader {
     if (domSel.isCollapsed) {
       $anchor = $head
       let nearestView = this.view.docView.nearestView(domNode)
-      if (nearestView && nearestView.node && nearestView.node.isLeaf && NodeSelection.isSelectable(nearestView.node))
+      while (nearestView && !nearestView.node) nearestView = nearestView.parent
+      if (nearestView && nearestView.node.isLeaf && NodeSelection.isSelectable(nearestView.node))
         selection = new NodeSelection($head)
     } else {
       $anchor = doc.resolve(this.view.docView.posFromDOM(domSel.anchorNode, domSel.anchorOffset))

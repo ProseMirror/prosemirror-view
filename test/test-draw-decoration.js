@@ -47,12 +47,9 @@ describe("EditorView", () => {
 
     it("draws wrapping decorations", () => {
       let view = tempEditor({doc: doc(p("foo")),
-                             plugins: [decoPlugin([Decoration.inline(1, 5, {wrapper: document.createElement("i")})])]})
+                             plugins: [decoPlugin([Decoration.inline(1, 5, {nodeName: "i"})])]})
       let found = view.content.querySelector("i")
-      ist(found)
-      ist(found.getAttribute("pm-offset"), 0)
-      ist(found.getAttribute("pm-size"), 3)
-      ist(found.innerHTML, "<span>foo</span>")
+      ist(found && found.innerHTML, "foo")
     })
 
     it("draws node decorations", () => {

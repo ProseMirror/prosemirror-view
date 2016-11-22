@@ -54,14 +54,5 @@ describe("EditorView", () => {
       ist(view.content.querySelector("p"), oldP)
       ist(view.content.querySelector("pre"), oldPre)
     })
-
-    it("calls onUnmountNode", () => {
-      let called = []
-      let view = tempEditor({doc: doc(p("a"), h1("b"), p("c")),
-                             onUnmountDOM: (_, node) => called.push(node)})
-      apply(view, view.state.tr.delete(3, 6))
-      ist(called.length, 1)
-      ist(called[0].nodeName, "H1")
-    })
   })
 })

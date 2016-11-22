@@ -12,7 +12,6 @@ class ElementView {
   }
 
   matchesWidget() { return false }
-  matchesDeco() { return false }
   matchesMark() { return false }
   matchesNode() { return false }
 
@@ -27,7 +26,7 @@ class ElementView {
   get border() { return 0 }
 
   destroy() {
-    if (this.dom) this.dom.pmView = null
+    this.dom.pmView = null
     for (let i = 0; i < this.children.length; i++)
       this.children[i].destroy()
   }
@@ -51,9 +50,9 @@ class ElementView {
   localPosFromDOM(dom, offset, bias) {
     if (dom == this.contentDOM) {
       let domAfter = this.contentDOM.childNodes[offset]
-      while (domAfter && !domAfter.pmView) domAfter = domAfter.nextSibling
+      while (domAfter && (!domAfter.pmView || domAfter.pmView.parent != this)) domAfter = domAfter.nextSibling
       return domAfter ? this.posBeforeChild(domAfter.pmView) : this.posAtEnd
-    } else if (this.contentDOM ? dom.compareDocumentPosition(this.contentDOM) & 2 : bias < 0) {
+    } else if (this.contentDOM ? dom.compareDocumentPosition(this.contentDOM) & 2 : !bias || bias < 0) {
       return this.posAtStart
     } else {
       return this.posAtEnd
@@ -71,24 +70,42 @@ class ElementView {
   }
 
   posFromDOM(dom, offset, bias) {
+    let textOffset = 0
+    if (dom.nodeType == 3) { textOffset = offset; offset = 0 }
     for (;;) {
       let view = dom.pmView
       if (view && view.descendantOf(this))
-        return view.localPosFromDOM(dom, offset, bias)
+        return view.localPosFromDOM(dom, offset, bias) +
+          (textOffset && view.node && view.node.isText ? textOffset : 0)
       offset = Array.prototype.indexOf.call(dom.parentNode.childNodes, dom)
       dom = dom.parentNode
     }
   }
 
-  domFromPos(pos) {
+  domFromPos(pos, changedDOM) {
     if (!this.contentDOM) return {node: this.dom, offset: 0}
     for (let offset = 0, i = 0;; i++) {
-      if (offset == pos) return {node: this.contentDOM, offset: i}
+      if (offset == pos)
+        return {node: this.contentDOM,
+                offset: changedDOM ? this.findDOMOffset(i) : i}
       if (i == this.children.length) throw new Error("Invalid position " + pos)
       let child = this.children[i], end = offset + child.size
-      if (pos < end) return child.domFromPos(pos - offset - child.border)
+      if (pos < end) return child.domFromPos(pos - offset - child.border, changedDOM)
       offset = end
     }
+  }
+
+  findDOMOffset(i) {
+    let childNodes = this.contentDOM.childNodes
+    if (i) {
+      let found = Array.prototype.indexOf.call(childNodes, this.children[i - 1].dom)
+      if (found > -1) return found + 1
+    }
+    if (i < this.children.length) {
+      let found = Array.prototype.indexOf.call(childNodes, this.children[i].dom)
+      if (found > -1) return found
+    }
+    return i ? childNodes.length : 0
   }
 
   domAfterPos(pos) {
@@ -128,72 +145,46 @@ class MarkView extends ElementView {
   matchesMark(mark) { return this.mark.eq(mark) }
 }
 
-class DecoView extends ElementView {
-  constructor(parent, deco, child) {
-    let inner, outer
-    for (let i = 0; i < deco.length; i++) {
-      let attrs = deco[i].type.attrs
-      let dom = document.createElement(attrs.nodeName || (inner.isInline ? "span" : "div"))
-      for (let name in attrs) if (name != "nodeName") dom.setAttribute(name, attrs[name])
-      if (outer) dom.appendChild(outer)
-      else inner = dom
-      outer = dom
-    }
-
-    super(parent, [child], outer, inner)
-    child.parent = this
-    this.deco = deco
-  }
-
-  parseRule() { return {skip: this.contentDOM} }
-
-  matchesDeco(deco) {
-    if (deco.length != this.deco.length) return false
-    for (let i = 0; i < deco.length; i++)
-      if (!deco[i].sameOutput(this.deco[i])) return false
-    return true
-  }
-}
-
 let serializedContentNode = null
 const serializeOptions = {onContent(_, dom) { serializedContentNode = dom }}
 
 class NodeView extends ElementView {
-  constructor(parent, node, deco, dom, contentDOM) {
+  constructor(parent, node, outerDeco, innerDeco, dom, contentDOM) {
     super(parent, node.isLeaf ? nothing : [], dom, contentDOM)
     this.node = node
-    this.deco = deco
+    this.outerDeco = outerDeco
+    this.innerDeco = innerDeco
+    if (!this.innerDeco.locals) throw new Error("NOT LOCLA")
     if (!node.isLeaf) this.updateChildren()
   }
 
-  static create(parent, node, deco) {
-    serializedContentNode = null
+  static create(parent, node, outerDeco, innerDeco) {
     let serializer = DOMSerializer.fromSchema(node.type.schema) // FIXME
+    serializedContentNode = null
     let dom = serializer.serializeNode(node, serializeOptions)
-    return new NodeView(parent, node, deco, dom, serializedContentNode)
+    let contentDOM = serializedContentNode
+    for (let i = 0; i < outerDeco.length; i++)
+      dom = applyOuterDeco(dom, outerDeco[i].type.attrs, node)
+    return new NodeView(parent, node, outerDeco, innerDeco, dom, contentDOM)
   }
 
   parseRule() { return {node: this.node.type.name, attrs: this.node.attrs, contentElement: this.contentDOM} }
 
-  matchesNode(node, deco) {
-    return node.eq(this.node) && deco.sameOutput(this.deco)
+  matchesNode(node, outerDeco, innerDeco) {
+    return node.eq(this.node) && sameOuterDeco(outerDeco, this.outerDeco) && innerDeco.eq(this.innerDeco)
   }
 
   get size() { return this.node.nodeSize }
 
   get border() { return this.node.isLeaf ? 0 : 1 }
 
-  localPosFromDOM(dom, offset, bias) {
-    return this.node.isText ? this.posAtStart + offset : super.localPosFromDOM(dom, offset, bias)
-  }
-
-  domFromPos(pos) {
-    return this.node.isText ? {node: this.dom, offset: pos} : super.domFromPos(pos)
+  domFromPos(pos, changedDOM) {
+    return this.node.isText ? {node: findText(this.dom), offset: pos} : super.domFromPos(pos, changedDOM)
   }
 
   updateChildren() {
     let updater = new ViewTreeUpdater(this)
-    iterDeco(this.node, this.deco, widgets => {
+    iterDeco(this.node, this.innerDeco, widgets => {
       updater.placeWidgets(widgets)
     }, (child, outerDeco, innerDeco) => {
       updater.syncToMarks(child.marks)
@@ -208,18 +199,23 @@ class NodeView extends ElementView {
 
   renderChildren() {
     renderViews(this.contentDOM, this.children, NodeView.is)
-    if (this.node.isTextblock) addTrailingHacks(this.contentDOM, this)
+    if (this.node.isTextblock) addTrailingHacks(this.contentDOM)
     if (browser.ios) iosHacks(this.dom)
   }
 
-  update(node, deco) {
+  maybeUpdate(node, outerDeco, innerDeco) {
     if (!node.sameMarkup(this.node) ||
         (node.isText && node.text != this.node.text) ||
-        !deco.sameOutput(this.deco)) return false
-    this.node = node
-    this.deco = deco
-    if (!node.isLeaf) this.updateChildren()
+        !sameOuterDeco(outerDeco, this.outerDeco)) return false
+    this.update(node, outerDeco, innerDeco)
     return true
+  }
+
+  update(node, outerDeco, innerDeco) {
+    this.node = node
+    this.outerDeco = outerDeco
+    this.innerDeco = innerDeco
+    if (!node.isLeaf) this.updateChildren()
   }
 
   markDirty(from, to) { markDirty(this, from, to) }
@@ -252,17 +248,44 @@ function renderViews(parentDOM, views) {
     } else {
       parentDOM.insertBefore(childDOM, dom)
     }
-    if (!(view instanceof NodeView))
+    if (!(view instanceof NodeView) && view.contentDOM)
       renderViews(view.contentDOM, view.children)
   }
   while (dom) dom = rm(dom)
 }
-exports.renderViews = renderViews
+
+function applyOuterDeco(dom, attrs, node) {
+  if (attrs.nodeName || dom.nodeType != 1) {
+    let wrap = document.createElement(attrs.nodeName || (node.isInline ? "span" : "div"))
+    wrap.appendChild(dom)
+    dom = wrap
+  }
+  for (let name in attrs) {
+    let val = attrs[name]
+    if (name == "class") dom.classList.add(...val.split(" "))
+    else if (name == "style") dom.style.cssText += ";" + val
+    else if (name != "nodeName") dom.setAttribute(name, val)
+  }
+  return dom
+}
+
+function sameOuterDeco(a, b) {
+  if (a.length != b.length) return false
+  for (let i = 0; i < a.length; i++) if (!a[i].eq(b[i])) return false
+  return true
+}
 
 function rm(dom) {
   let next = dom.nextSibling
   dom.parentNode.removeChild(dom)
   return next
+}
+
+function findText(dom) {
+  for (;;) {
+    if (dom.nodeType == 3) return dom
+    dom = dom.firstChild
+  }
 }
 
 class ViewTreeUpdater {
@@ -322,12 +345,7 @@ class ViewTreeUpdater {
   // FIXME think about failure cases where updates will redraw too much
   findNodeMatch(node, outerDeco, innerDeco) {
     for (let i = this.index, children = this.top.children, e = Math.min(children.length, i + 5); i < e; i++) {
-      let next = children[i]
-      if (outerDeco.length) {
-        if (next.matchesDeco(outerDeco)) next = next.children[0]
-        else continue
-      }
-      if (next.matchesNode(node, innerDeco)) {
+      if (children[i].matchesNode(node, outerDeco, innerDeco)) {
         this.destroyBetween(this.index, i)
         this.index++
         return true
@@ -339,19 +357,13 @@ class ViewTreeUpdater {
   updateNode(node, outerDeco, innerDeco) {
     if (this.index == this.top.children.length) return false
     let next = this.top.children[this.index]
-    if (outerDeco.length) {
-      if (next.matchesDeco(outerDeco)) next = next.children[0]
-      else return false
-    }
-    if (!(next instanceof NodeView && next.update(node, innerDeco))) return false
+    if (!(next instanceof NodeView && next.maybeUpdate(node, outerDeco, innerDeco))) return false
     this.index++
     return true
   }
 
   addNode(node, outerDeco, innerDeco) {
-    let nodeView = NodeView.create(this.top, node, innerDeco)
-    if (outerDeco.length) nodeView = new DecoView(top, outerDeco, nodeView)
-    this.top.children.splice(this.index++, 0, nodeView)
+    this.top.children.splice(this.index++, 0, NodeView.create(this.top, node, outerDeco, innerDeco))
   }
 
   placeWidgets(widgets) {
@@ -384,8 +396,8 @@ function iterDeco(parent, deco, onWidgets, onNode) {
     while (decoIndex < locals.length && locals[decoIndex].to == offset)
       widgets.push(locals[decoIndex++])
     if (widgets.length) {
-      onWidgets(widgets, offset)
-      widgets.length = 0
+      onWidgets(widgets)
+      widgets = []
     }
 
     let child
@@ -399,6 +411,7 @@ function iterDeco(parent, deco, onWidgets, onNode) {
     }
 
     for (let i = 0; i < active.length; i++) if (active[i].to <= offset) active.splice(i--, 1)
+    while (decoIndex < locals.length && locals[decoIndex].from == offset) active.push(locals[decoIndex++])
 
     let end = offset + child.nodeSize
     if (child.isText) {
@@ -406,31 +419,30 @@ function iterDeco(parent, deco, onWidgets, onNode) {
       if (decoIndex < locals.length && locals[decoIndex].from < cutAt) cutAt = locals[decoIndex].from
       for (let i = 0; i < active.length; i++) if (active[i].to < cutAt) cutAt = active[i].to
       if (cutAt < end) {
-        restNode = child.cut(end - cutAt)
-        child = child.cut(0, end - cutAt)
+        restNode = child.cut(cutAt - offset)
+        child = child.cut(0, cutAt - offset)
         end = cutAt
       }
     }
 
-    while (decoIndex < locals.length && locals[decoIndex].from < end) active.push(locals[decoIndex++])
-    onNode(child, active, deco.forChild(offset, child), offset, end)
+    onNode(child, active, deco.forChild(offset, child))
     offset = end
   }
 }
 
 class DummyView extends ElementView {
-  constructor(parent, dom) {
-    super(parent, nothing, dom, null)
+  constructor(dom) {
+    super(null, nothing, dom, null)
   }
   parseRule() { return {ignore: true} }
 }
 
-function addTrailingHacks(dom, parent) {
+function addTrailingHacks(dom) {
   let lastChild = dom.lastChild
   if (!lastChild || lastChild.nodeName == "BR")
-    dom.appendChild(new DummyView(parent, document.createElement("br")).dom)
+    dom.appendChild(new DummyView(document.createElement("br")).dom)
   else if (lastChild.contentEditable == "false" || (lastChild.pmView instanceof WidgetView))
-    dom.appendChild(new DummyView(parent, document.createElement("span")).dom)
+    dom.appendChild(new DummyView(document.createElement("span")).dom)
 }
 
 function iosHacks(dom) {

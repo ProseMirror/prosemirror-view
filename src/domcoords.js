@@ -39,6 +39,7 @@ exports.scrollPosIntoView = scrollPosIntoView
 
 function findOffsetInNode(node, coords) {
   let closest, dxClosest = 2e8, coordsClosest, offset = 0
+  let rowBot = coords.top, rowTop = coords.top
   for (let child = node.firstChild, childIndex = 0; child; child = child.nextSibling, childIndex++) {
     let rects
     if (child.nodeType == 1) rects = child.getClientRects()
@@ -47,7 +48,9 @@ function findOffsetInNode(node, coords) {
 
     for (let i = 0; i < rects.length; i++) {
       let rect = rects[i]
-      if (rect.top <= coords.top && rect.bottom >= coords.top) {
+      if (rect.top <= rowBot && rect.bottom >= rowTop) {
+        rowBot = Math.max(rect.bottom, rowBot)
+        rowTop = Math.min(rect.top, rowTop)
         let dx = rect.left > coords.left ? rect.left - coords.left
             : rect.right < coords.left ? coords.left - rect.right : 0
         if (dx < dxClosest) {

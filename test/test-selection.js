@@ -51,6 +51,8 @@ function event(code) {
 }
 const LEFT = 37, RIGHT = 39, UP = 38, DOWN = 40
 
+if (!document.hasFocus()) console["warn"]("Document doesn't have focus. Skipping some tests.")
+
 describe("EditorView", () => {
   it("can read the DOM selection", () => {
     // disabled when the document doesn't have focus, since that causes this to fail
@@ -73,7 +75,7 @@ describe("EditorView", () => {
     test(two, 0, 8)
     test(two, 3, 11)
     test(two.parentNode, 1, 11)
-    test(view.content, 1, 5)
+    test(view.content, 1, 4)
     test(view.content, 2, 8)
     test(view.content, 3, 11)
   })
