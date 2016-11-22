@@ -196,7 +196,7 @@ exports.EditorView = EditorView
 // The various event-handling functions may all return `true` to
 // indicate that they handled the given event. The view will then take
 // care to call `preventDefault` on the event, except with
-// `handleDOMEvent, where the handler itself is responsible for that.
+// `handleDOMEvent`, where the handler itself is responsible for that.
 //
 // Except for `state` and `onAction`, these may also be present on the
 // `props` property of plugins. How a prop is resolved depends on the
