@@ -108,15 +108,23 @@ exports.selectionToDOM = selectionToDOM
 
 // Make changes to the DOM for a node selection.
 function nodeSelectionToDOM(view, sel) {
-  let dom = view.docView.domAfterPos(sel.from)
-  if (dom != view.lastSelectedNode) {
+  let nodeView = view.docView.viewAt(sel.from)
+  if (nodeView != view.lastSelectedNodeView) {
     clearNodeSelection(view)
-    dom.classList.add("ProseMirror-selectednode")
-    view.content.classList.add("ProseMirror-nodeselection")
-    view.lastSelectedNode = dom
+    if (nodeView) {
+      view.content.classList.add("ProseMirror-nodeselection")
+      nodeView.selectNode()
+    }
+    view.lastSelectedNodeView = nodeView
   }
   let range = document.createRange(), domSel = view.root.getSelection()
-  range.selectNode(dom)
+  if (nodeView) {
+    range.selectNode(nodeView.dom)
+  } else {
+    let {node, offset} = view.docView.domFromPos(sel.from)
+    range.setEnd(node, offset)
+    range.collapse(false)
+  }
   domSel.removeAllRanges()
   domSel.addRange(range)
   view.selectionReader.storeDOMState()
@@ -147,10 +155,10 @@ function textSelectionToDOM(view, sel) {
 
 // Clear all DOM statefulness of the last node selection.
 function clearNodeSelection(view) {
-  if (view.lastSelectedNode) {
-    view.lastSelectedNode.classList.remove("ProseMirror-selectednode")
+  if (view.lastSelectedNodeView) {
     view.content.classList.remove("ProseMirror-nodeselection")
-    view.lastSelectedNode = null
+    view.lastSelectedNodeView.deselectNode()
+    view.lastSelectedNodeView = null
   }
 }
 

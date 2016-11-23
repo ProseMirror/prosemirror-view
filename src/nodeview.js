@@ -82,6 +82,21 @@ class ElementView {
     }
   }
 
+  // : (number) → ?NodeView
+  // Find the view for the node after the given pos, if any. (When a
+  // parent node overrode rendering, there might not be a view.)
+  viewAt(pos) {
+    for (let i = 0, offset = 0; i < this.children.length; i++) {
+      let child = this.children[i], end = offset + child.size
+      if (offset == pos && end != offset) {
+        while (!child.border && child.children.length) child = child.children[0]
+        return child
+      }
+      if (pos < end) return child.viewAt(pos - offset - child.border)
+      offset = end
+    }
+  }
+
   domFromPos(pos, changedDOM) {
     if (!this.contentDOM) return {node: this.dom, offset: 0}
     for (let offset = 0, i = 0;; i++) {
@@ -214,6 +229,14 @@ class NodeView extends ElementView {
   }
 
   markDirty(from, to) { markDirty(this, from, to) }
+
+  selectNode() {
+    this.dom.classList.add("ProseMirror-selectednode")
+  }
+
+  deselectNode() {
+    this.dom.classList.remove("ProseMirror-selectednode")
+  }    
 }
 exports.NodeView = NodeView
 
@@ -234,6 +257,18 @@ class CustomNodeView extends NodeView {
     } else {
       return super.update(node, outerDeco, innerDeco, view)
     }
+  }
+
+  parseRule() {
+    return this.spec.parseRule ? this.spec.parseRule() : super.parseRule()
+  }
+
+  selectNode() {
+    this.spec.selectNode ? this.spec.selectNode() : super.selectNode()
+  }
+
+  deslectNode() {
+    this.spec.deselectNode ? this.spec.deselectNode() : super.deselectNode()
   }
 }
 

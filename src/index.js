@@ -43,7 +43,7 @@ class EditorView {
                                 this.content, this.content, this)
     this.content.contentEditable = true
 
-    this.lastSelectedNode = null
+    this.lastSelectedNodeView = null
     this.selectionReader = new SelectionReader(this)
     initInput(this)
   }
