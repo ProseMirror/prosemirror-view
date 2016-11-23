@@ -40,7 +40,7 @@ class EditorView {
     else if (place) place(this.wrapper)
 
     this.docView = new NodeView(null, this.state.doc, [], viewDecorations(this),
-                                this.content, this.content)
+                                this.content, this.content, viewSpecs(this))
     this.content.contentEditable = true
 
     this.lastSelectedNode = null
@@ -77,7 +77,7 @@ class EditorView {
     let decorations = viewDecorations(this)
 
     if (!this.docView.matchesNode(state.doc, decorations)) {
-      this.docView.update(state.doc, [], decorations)
+      this.docView.update(state.doc, [], decorations, viewSpecs(this))
       redrawn = true
     }
 
@@ -167,6 +167,10 @@ class EditorView {
   }
 }
 exports.EditorView = EditorView
+
+function viewSpecs(view) {
+  return view.someProp("nodeViews") || NodeView.specsFromSchema(view.state.schema)
+}
 
 // EditorProps:: interface
 //
@@ -265,16 +269,14 @@ exports.EditorView = EditorView
 //   transformPastedText:: ?(string) → string
 //   Transform pasted plain text.
 //
-//   domSerializer:: ?DOMSerializer
-//   The [serializer](#model.DOMSerializer) to use when drawing the
-//   document to the display. If not given, the result of
-//   [`DOMSerializer.fromSchema`](#model.DOMSerializer^fromSchema)
-//   will be used.
+//   nodeViews:: ?Object<NodeViewSpec>
+//   FIXME
 //
 //   clipboardSerializer:: ?DOMSerializer
 //   The DOM serializer to use when putting content onto the
-//   clipboard. When not given, the value of the
-//   [`domSerializer`](#view.EditorProps.domSerializer) prop is used.
+//   clipboard. If not given, the result of
+//   [`DOMSerializer.fromSchema`](#model.DOMSerializer^fromSchema)
+//   will be used.
 //
 //   decorations:: (EditorState) → ?DecorationSet
 //   A set of [document decorations](#view.Decoration) to add to the

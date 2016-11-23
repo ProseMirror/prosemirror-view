@@ -2,6 +2,17 @@ const {DOMSerializer} = require("prosemirror-model")
 
 const browser = require("./browser")
 
+function buildViewSpecs(schema) {
+  let result = {}
+  ;[schema.nodes, schema.marks].forEach(set => {
+    for (let name in set) {
+      let toDOM = set[name].spec.toDOM
+      if (toDOM) result[name] = {toDOM: value => DOMSerializer.renderSpec(document, toDOM(value))}
+    }
+  })
+  return result
+}
+
 class ElementView {
   constructor(parent, children, dom, contentDOM) {
     this.parent = parent
@@ -124,7 +135,6 @@ class WidgetView extends ElementView {
     this.widget = widget
   }
 
-  // FIXME use constructors and better compare
   matchesWidget(widget) { return widget.type == this.widget.type }
 
   parseRule() { return {ignore: true} }
@@ -133,11 +143,15 @@ class WidgetView extends ElementView {
 }
 
 class MarkView extends ElementView {
-  constructor(parent, mark) {
-    let serializer = DOMSerializer.fromSchema(mark.type.schema) // FIXME
-    let dom = serializer.serializeMark(mark, serializeOptions)
+  constructor(parent, mark, dom) {
     super(parent, [], dom, dom)
     this.mark = mark
+  }
+
+  static create(parent, mark, specs) {
+    let spec = specs[mark.type.name]
+    let {dom} = spec.toDOM(mark)
+    return new MarkView(parent, mark, dom)
   }
 
   parseRule() { return {mark: this.mark.type.name, attrs: this.mark.attrs, contentElement: this.contentDOM} }
@@ -145,27 +159,21 @@ class MarkView extends ElementView {
   matchesMark(mark) { return this.mark.eq(mark) }
 }
 
-let serializedContentNode = null
-const serializeOptions = {onContent(_, dom) { serializedContentNode = dom }}
-
 class NodeView extends ElementView {
-  constructor(parent, node, outerDeco, innerDeco, dom, contentDOM) {
+  constructor(parent, node, outerDeco, innerDeco, dom, contentDOM, specs) {
     super(parent, node.isLeaf ? nothing : [], dom, contentDOM)
     this.node = node
     this.outerDeco = outerDeco
     this.innerDeco = innerDeco
-    if (!this.innerDeco.locals) throw new Error("NOT LOCLA")
-    if (!node.isLeaf) this.updateChildren()
+    if (!node.isLeaf) this.updateChildren(specs)
   }
 
-  static create(parent, node, outerDeco, innerDeco) {
-    let serializer = DOMSerializer.fromSchema(node.type.schema) // FIXME
-    serializedContentNode = null
-    let dom = serializer.serializeNode(node, serializeOptions)
-    let contentDOM = serializedContentNode
+  static create(parent, node, outerDeco, innerDeco, specs) {
+    let spec = specs[node.type.name]
+    let {dom, contentDOM} = spec.toDOM(node)
     for (let i = 0; i < outerDeco.length; i++)
       dom = applyOuterDeco(dom, outerDeco[i].type.attrs, node)
-    return new NodeView(parent, node, outerDeco, innerDeco, dom, contentDOM)
+    return new NodeView(parent, node, outerDeco, innerDeco, dom, contentDOM, specs)
   }
 
   parseRule() { return {node: this.node.type.name, attrs: this.node.attrs, contentElement: this.contentDOM} }
@@ -182,15 +190,15 @@ class NodeView extends ElementView {
     return this.node.isText ? {node: findText(this.dom), offset: pos} : super.domFromPos(pos, changedDOM)
   }
 
-  updateChildren() {
+  updateChildren(specs) {
     let updater = new ViewTreeUpdater(this)
     iterDeco(this.node, this.innerDeco, widgets => {
       updater.placeWidgets(widgets)
     }, (child, outerDeco, innerDeco) => {
-      updater.syncToMarks(child.marks)
+      updater.syncToMarks(child.marks, specs)
       updater.findNodeMatch(child, outerDeco, innerDeco) ||
-        updater.updateNode(child, outerDeco, innerDeco) ||
-        updater.addNode(child, outerDeco, innerDeco)
+        updater.updateNode(child, outerDeco, innerDeco, specs) ||
+        updater.addNode(child, outerDeco, innerDeco, specs)
     })
     updater.close()
 
@@ -203,22 +211,27 @@ class NodeView extends ElementView {
     if (browser.ios) iosHacks(this.dom)
   }
 
-  maybeUpdate(node, outerDeco, innerDeco) {
+  maybeUpdate(node, outerDeco, innerDeco, specs) {
     if (!node.sameMarkup(this.node) ||
         (node.isText && node.text != this.node.text) ||
         !sameOuterDeco(outerDeco, this.outerDeco)) return false
-    this.update(node, outerDeco, innerDeco)
+    this.update(node, outerDeco, innerDeco, specs)
     return true
   }
 
-  update(node, outerDeco, innerDeco) {
+  update(node, outerDeco, innerDeco, specs) {
     this.node = node
     this.outerDeco = outerDeco
     this.innerDeco = innerDeco
-    if (!node.isLeaf) this.updateChildren()
+    if (!node.isLeaf) this.updateChildren(specs)
   }
 
   markDirty(from, to) { markDirty(this, from, to) }
+
+  static specsFromSchema(schema) {
+    return schema.cached.nodeViewSpecs ||
+      (schema.cached.nodeViewSpecs = buildViewSpecs(schema))
+  }
 }
 exports.NodeView = NodeView
 
@@ -314,7 +327,7 @@ class ViewTreeUpdater {
     }
   }
 
-  syncToMarks(marks) {
+  syncToMarks(marks, specs) {
     let keep = 0, depth = this.stack.length >> 1
     let maxKeep = Math.min(depth, marks.length), next
     while (keep < maxKeep &&
@@ -333,7 +346,7 @@ class ViewTreeUpdater {
           (next = this.top.children[this.index]).matchesMark(marks[depth])) {
         this.top = next
       } else {
-        let markView = new MarkView(this.top, marks[depth])
+        let markView = MarkView.create(this.top, marks[depth], specs)
         this.top.children.splice(this.index, 0, markView)
         this.top = markView
       }
@@ -354,16 +367,16 @@ class ViewTreeUpdater {
     return false
   }
 
-  updateNode(node, outerDeco, innerDeco) {
+  updateNode(node, outerDeco, innerDeco, specs) {
     if (this.index == this.top.children.length) return false
     let next = this.top.children[this.index]
-    if (!(next instanceof NodeView && next.maybeUpdate(node, outerDeco, innerDeco))) return false
+    if (!(next instanceof NodeView && next.maybeUpdate(node, outerDeco, innerDeco, specs))) return false
     this.index++
     return true
   }
 
-  addNode(node, outerDeco, innerDeco) {
-    this.top.children.splice(this.index++, 0, NodeView.create(this.top, node, outerDeco, innerDeco))
+  addNode(node, outerDeco, innerDeco, specs) {
+    this.top.children.splice(this.index++, 0, NodeView.create(this.top, node, outerDeco, innerDeco, specs))
   }
 
   placeWidgets(widgets) {
@@ -378,7 +391,6 @@ class ViewTreeUpdater {
   }
 }
 
-// FIXME move into decoration.js?
 function iterDeco(parent, deco, onWidgets, onNode) {
   let locals = deco.locals(parent), offset = 0
   // Simple, cheap variant for when there are no local decorations

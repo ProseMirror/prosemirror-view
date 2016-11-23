@@ -18,7 +18,7 @@ function toClipboard(view, range, dataTransfer) {
     slice = new Slice(content, slice.openLeft - cut, slice.openRight - cut)
   }
 
-  let serializer = view.someProp("clipboardSerializer") || view.someProp("domSerializer") || DOMSerializer.fromSchema(view.state.schema)
+  let serializer = view.someProp("clipboardSerializer") || DOMSerializer.fromSchema(view.state.schema)
   let dom = serializer.serializeFragment(slice.content), wrap = document.createElement("div")
   wrap.appendChild(dom)
   let child = wrap.firstChild.nodeType == 1 && wrap.firstChild
