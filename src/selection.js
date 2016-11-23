@@ -31,7 +31,7 @@ class SelectionReader {
 
   startPolling(origin) {
     clearTimeout(this.polling)
-    this.polling = setTimeout(origin ? () => this.pollFunc(origin) : this.poller, 50)
+    this.polling = setTimeout(origin ? () => this.pollFunc(origin) : this.poller, 0)
   }
 
   fastPoll(origin) {
