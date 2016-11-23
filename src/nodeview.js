@@ -2,17 +2,6 @@ const {DOMSerializer} = require("prosemirror-model")
 
 const browser = require("./browser")
 
-function buildViewSpecs(schema) {
-  let result = {}
-  ;[schema.nodes, schema.marks].forEach(set => {
-    for (let name in set) {
-      let toDOM = set[name].spec.toDOM
-      if (toDOM) result[name] = {toDOM: value => DOMSerializer.renderSpec(document, toDOM(value))}
-    }
-  })
-  return result
-}
-
 class ElementView {
   constructor(parent, children, dom, contentDOM) {
     this.parent = parent
@@ -148,9 +137,9 @@ class MarkView extends ElementView {
     this.mark = mark
   }
 
-  static create(parent, mark, specs) {
-    let spec = specs[mark.type.name]
-    let {dom} = spec.toDOM(mark)
+  static create(parent, mark, view) {
+    let spec = viewSpecFor(view, mark)
+    let dom = spec && spec.dom || DOMSerializer.renderSpec(document, mark.type.spec.toDOM(mark)).dom
     return new MarkView(parent, mark, dom)
   }
 
@@ -160,20 +149,23 @@ class MarkView extends ElementView {
 }
 
 class NodeView extends ElementView {
-  constructor(parent, node, outerDeco, innerDeco, dom, contentDOM, specs) {
+  constructor(parent, node, outerDeco, innerDeco, dom, contentDOM, view) {
     super(parent, node.isLeaf ? nothing : [], dom, contentDOM)
     this.node = node
     this.outerDeco = outerDeco
     this.innerDeco = innerDeco
-    if (!node.isLeaf) this.updateChildren(specs)
+    if (!node.isLeaf) this.updateChildren(view)
   }
 
-  static create(parent, node, outerDeco, innerDeco, specs) {
-    let spec = specs[node.type.name]
-    let {dom, contentDOM} = spec.toDOM(node)
+  static create(parent, node, outerDeco, innerDeco, view) {
+    let spec = viewSpecFor(view, node), dom = spec && spec.dom, contentDOM
+    if (!dom) ({dom, contentDOM} = DOMSerializer.renderSpec(document, node.type.spec.toDOM(node)))
     for (let i = 0; i < outerDeco.length; i++)
       dom = applyOuterDeco(dom, outerDeco[i].type.attrs, node)
-    return new NodeView(parent, node, outerDeco, innerDeco, dom, contentDOM, specs)
+    if (spec)
+      return new CustomNodeView(parent, node, outerDeco, innerDeco, dom, contentDOM, spec, view)
+    else
+      return new NodeView(parent, node, outerDeco, innerDeco, dom, contentDOM, view)
   }
 
   parseRule() { return {node: this.node.type.name, attrs: this.node.attrs, contentElement: this.contentDOM} }
@@ -190,15 +182,15 @@ class NodeView extends ElementView {
     return this.node.isText ? {node: findText(this.dom), offset: pos} : super.domFromPos(pos, changedDOM)
   }
 
-  updateChildren(specs) {
+  updateChildren(view) {
     let updater = new ViewTreeUpdater(this)
     iterDeco(this.node, this.innerDeco, widgets => {
       updater.placeWidgets(widgets)
     }, (child, outerDeco, innerDeco) => {
-      updater.syncToMarks(child.marks, specs)
+      updater.syncToMarks(child.marks, view)
       updater.findNodeMatch(child, outerDeco, innerDeco) ||
-        updater.updateNode(child, outerDeco, innerDeco, specs) ||
-        updater.addNode(child, outerDeco, innerDeco, specs)
+        updater.updateNode(child, outerDeco, innerDeco, view) ||
+        updater.addNode(child, outerDeco, innerDeco, view)
     })
     updater.close()
 
@@ -211,29 +203,39 @@ class NodeView extends ElementView {
     if (browser.ios) iosHacks(this.dom)
   }
 
-  maybeUpdate(node, outerDeco, innerDeco, specs) {
+  update(node, outerDeco, innerDeco, view) {
     if (!node.sameMarkup(this.node) ||
         (node.isText && node.text != this.node.text) ||
         !sameOuterDeco(outerDeco, this.outerDeco)) return false
-    this.update(node, outerDeco, innerDeco, specs)
+    this.node = node
+    this.innerDeco = innerDeco
+    if (!node.isLeaf) this.updateChildren(view)
     return true
   }
 
-  update(node, outerDeco, innerDeco, specs) {
-    this.node = node
-    this.outerDeco = outerDeco
-    this.innerDeco = innerDeco
-    if (!node.isLeaf) this.updateChildren(specs)
-  }
-
   markDirty(from, to) { markDirty(this, from, to) }
-
-  static specsFromSchema(schema) {
-    return schema.cached.nodeViewSpecs ||
-      (schema.cached.nodeViewSpecs = buildViewSpecs(schema))
-  }
 }
 exports.NodeView = NodeView
+
+class CustomNodeView extends NodeView {
+  constructor(parent, node, outerDeco, innerDeco, dom, contentDOM, spec, view) {
+    super(parent, node, outerDeco, innerDeco, dom, contentDOM, view)
+    this.spec = spec
+  }
+
+  update(node, outerDeco, innerDeco, view) {
+    if (this.spec.update) {
+      let result = this.spec.update(node, innerDeco)
+      if (result) {
+        this.node = node
+        if (this.contentDOM) this.updateChildren(view)
+      }
+      return result
+    } else {
+      return super.update(node, outerDeco, innerDeco, view)
+    }
+  }
+}
 
 function markDirty(view, from, to) {
   for (let offset = 0, i = 0; i < view.children.length; i++) {
@@ -327,7 +329,7 @@ class ViewTreeUpdater {
     }
   }
 
-  syncToMarks(marks, specs) {
+  syncToMarks(marks, view) {
     let keep = 0, depth = this.stack.length >> 1
     let maxKeep = Math.min(depth, marks.length), next
     while (keep < maxKeep &&
@@ -346,7 +348,7 @@ class ViewTreeUpdater {
           (next = this.top.children[this.index]).matchesMark(marks[depth])) {
         this.top = next
       } else {
-        let markView = MarkView.create(this.top, marks[depth], specs)
+        let markView = MarkView.create(this.top, marks[depth], view)
         this.top.children.splice(this.index, 0, markView)
         this.top = markView
       }
@@ -367,16 +369,16 @@ class ViewTreeUpdater {
     return false
   }
 
-  updateNode(node, outerDeco, innerDeco, specs) {
+  updateNode(node, outerDeco, innerDeco, view) {
     if (this.index == this.top.children.length) return false
     let next = this.top.children[this.index]
-    if (!(next instanceof NodeView && next.maybeUpdate(node, outerDeco, innerDeco, specs))) return false
+    if (!(next instanceof NodeView && next.update(node, outerDeco, innerDeco, view))) return false
     this.index++
     return true
   }
 
-  addNode(node, outerDeco, innerDeco, specs) {
-    this.top.children.splice(this.index++, 0, NodeView.create(this.top, node, outerDeco, innerDeco, specs))
+  addNode(node, outerDeco, innerDeco, view) {
+    this.top.children.splice(this.index++, 0, NodeView.create(this.top, node, outerDeco, innerDeco, view))
   }
 
   placeWidgets(widgets) {
@@ -440,6 +442,16 @@ function iterDeco(parent, deco, onWidgets, onNode) {
     onNode(child, active, deco.forChild(offset, child))
     offset = end
   }
+}
+
+let readValue
+function readSpec(nodeViews) {
+  let create = nodeViews[readValue.type.name]
+  return create ? create(readValue) : null
+}
+function viewSpecFor(view, value) {
+  readValue = value
+  return view.someProp("nodeViews", readSpec)
 }
 
 class DummyView extends ElementView {

@@ -40,7 +40,7 @@ class EditorView {
     else if (place) place(this.wrapper)
 
     this.docView = new NodeView(null, this.state.doc, [], viewDecorations(this),
-                                this.content, this.content, viewSpecs(this))
+                                this.content, this.content, this)
     this.content.contentEditable = true
 
     this.lastSelectedNode = null
@@ -77,7 +77,7 @@ class EditorView {
     let decorations = viewDecorations(this)
 
     if (!this.docView.matchesNode(state.doc, decorations)) {
-      this.docView.update(state.doc, [], decorations, viewSpecs(this))
+      this.docView.update(state.doc, [], decorations, this)
       redrawn = true
     }
 
@@ -167,10 +167,6 @@ class EditorView {
   }
 }
 exports.EditorView = EditorView
-
-function viewSpecs(view) {
-  return view.someProp("nodeViews") || NodeView.specsFromSchema(view.state.schema)
-}
 
 // EditorProps:: interface
 //
