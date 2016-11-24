@@ -77,7 +77,7 @@ class ElementView {
       if (view && view.descendantOf(this))
         return view.localPosFromDOM(dom, offset, bias) +
           (textOffset && view.node && view.node.isText ? textOffset : 0)
-      offset = Array.prototype.indexOf.call(dom.parentNode.childNodes, dom)
+      offset = Array.prototype.indexOf.call(dom.parentNode.childNodes, dom) + (bias < 0 ? 0 : 1)
       dom = dom.parentNode
     }
   }
@@ -180,7 +180,8 @@ class MarkView extends ElementView {
   }
 
   static create(parent, mark, view) {
-    let spec = viewSpecFor(view, mark)
+    let custom = customNodeViews(view)[mark.type.name]
+    let spec = custom && custom(mark, view)
     let dom = spec && spec.dom || DOMSerializer.renderSpec(document, mark.type.spec.toDOM(mark)).dom
     return new MarkView(parent, mark, dom)
   }
@@ -196,16 +197,23 @@ class NodeView extends ElementView {
     this.node = node
     this.outerDeco = outerDeco
     this.innerDeco = innerDeco
-    if (!node.isLeaf) this.updateChildren(view)
+    if (contentDOM) this.updateChildren(view)
   }
 
   static create(parent, node, outerDeco, innerDeco, view) {
-    let spec = viewSpecFor(view, node), dom = spec && spec.dom, contentDOM
+    let custom = customNodeViews(view)[node.type.name], viewObj
+    let spec = custom && custom(node, view, () => {
+      if (!viewObj) return parent.posAtStart + parent.size
+      if (viewObj.parent) return viewObj.parent.posBeforeChild(viewObj)
+    })
+
+    let dom = spec && spec.dom, contentDOM
     if (!dom) ({dom, contentDOM} = DOMSerializer.renderSpec(document, node.type.spec.toDOM(node)))
     for (let i = 0; i < outerDeco.length; i++)
       dom = applyOuterDeco(dom, outerDeco[i].type.attrs, node)
+
     if (spec)
-      return new CustomNodeView(parent, node, outerDeco, innerDeco, dom, contentDOM, spec, view)
+      return viewObj = new CustomNodeView(parent, node, outerDeco, innerDeco, dom, contentDOM, spec, view)
     else
       return new NodeView(parent, node, outerDeco, innerDeco, dom, contentDOM, view)
   }
@@ -300,6 +308,11 @@ class CustomNodeView extends NodeView {
 
   setSelection(anchor, head, root) {
     this.spec.setSelection ? this.spec.setSelection(anchor, head, root) : super.setSelection(anchor, head, root)
+  }
+
+  destroy() {
+    if (this.spec.destroy) this.spec.destroy()
+    super.destroy()
   }
 }
 
@@ -510,14 +523,19 @@ function iterDeco(parent, deco, onWidgets, onNode) {
   }
 }
 
-let readValue
-function readSpec(nodeViews) {
-  let create = nodeViews[readValue.type.name]
-  return create ? create(readValue) : null
+let cachedCustomViews, cachedCustomFor
+function customNodeViews(view) {
+  if (cachedCustomFor == view.props) return cachedCustomViews
+  cachedCustomFor = view.props
+  return cachedCustomViews = buildCustomViews(view)
 }
-function viewSpecFor(view, value) {
-  readValue = value
-  return view.someProp("nodeViews", readSpec)
+function buildCustomViews(view) {
+  let result = {}
+  view.someProp("nodeViews", obj => {
+    for (let prop in obj) if (!Object.prototype.hasOwnProperty.call(result, prop))
+      result[prop] = obj[prop]
+  })
+  return result
 }
 
 class DummyView extends ElementView {
