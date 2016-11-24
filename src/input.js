@@ -29,6 +29,7 @@ exports.initInput = initInput
 
 function eventBelongsToView(view, event) {
   if (!event.bubbles) return true
+  if (event.defaultPrevented) return false
   for (let node = event.target; node != view.content; node = node.parentNode)
     if (!node || node.nodeType == 11 ||
         (node.nodeType == 1 && ((node.hasAttribute("tabindex") && node.getAttribute("tabindex") >= 0) ||
