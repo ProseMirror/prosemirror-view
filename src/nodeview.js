@@ -129,6 +129,33 @@ class ElementView {
       throw new RangeError("No node after pos " + pos)
     return node.childNodes[offset]
   }
+
+  setSelection(anchor, head, root) {
+    // If the selection falls entirely in a child, give it to that child
+    let from = Math.min(anchor, head), to = Math.max(anchor, head)
+    for (let i = 0, offset = 0; i < this.children.length; i++) {
+      let child = this.children[i], end = offset + child.size
+      if (from > offset && to < end)
+        return child.setSelection(from - offset - child.border, to - offset - child.border, root)
+      offset = end
+    }
+
+    let anchorDOM = this.domFromPos(anchor), headDOM = this.domFromPos(head)
+    let domSel = root.getSelection(), range = document.createRange()
+
+    if (domSel.extend) {
+      range.setEnd(anchorDOM.node, anchorDOM.offset)
+      range.collapse(false)
+    } else {
+      if (anchor > head) { let tmp = anchorDOM; anchorDOM = headDOM; headDOM = tmp }
+      range.setEnd(headDOM.node, headDOM.offset)
+      range.setStart(anchorDOM.node, anchorDOM.offset)
+    }
+    domSel.removeAllRanges()
+    domSel.addRange(range)
+    if (domSel.extend)
+      domSel.extend(headDOM.node, headDOM.offset)
+  }
 }
 
 const nothing = []
@@ -236,7 +263,7 @@ class NodeView extends ElementView {
 
   deselectNode() {
     this.dom.classList.remove("ProseMirror-selectednode")
-  }    
+  }
 }
 exports.NodeView = NodeView
 
@@ -267,8 +294,12 @@ class CustomNodeView extends NodeView {
     this.spec.selectNode ? this.spec.selectNode() : super.selectNode()
   }
 
-  deslectNode() {
+  deselectNode() {
     this.spec.deselectNode ? this.spec.deselectNode() : super.deselectNode()
+  }
+
+  setSelection(anchor, head, root) {
+    this.spec.setSelection ? this.spec.setSelection(anchor, head, root) : super.setSelection(anchor, head, root)
   }
 }
 

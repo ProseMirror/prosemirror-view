@@ -117,39 +117,14 @@ function nodeSelectionToDOM(view, sel) {
     }
     view.lastSelectedNodeView = nodeView
   }
-  let range = document.createRange(), domSel = view.root.getSelection()
-  if (nodeView) {
-    range.selectNode(nodeView.dom)
-  } else {
-    let {node, offset} = view.docView.domFromPos(sel.from)
-    range.setEnd(node, offset)
-    range.collapse(false)
-  }
-  domSel.removeAllRanges()
-  domSel.addRange(range)
+  view.docView.setSelection(sel.from, sel.to, view.root)
   view.selectionReader.storeDOMState()
 }
 
 // Make changes to the DOM for a text selection.
 function textSelectionToDOM(view, sel) {
   clearNodeSelection(view)
-
-  let anchor = view.docView.domFromPos(sel.anchor)
-  let head = view.docView.domFromPos(sel.head)
-
-  let domSel = view.root.getSelection(), range = document.createRange()
-  if (domSel.extend) {
-    range.setEnd(anchor.node, anchor.offset)
-    range.collapse(false)
-  } else {
-    if (sel.anchor > sel.head) { let tmp = anchor; anchor = head; head = tmp }
-    range.setEnd(head.node, head.offset)
-    range.setStart(anchor.node, anchor.offset)
-  }
-  domSel.removeAllRanges()
-  domSel.addRange(range)
-  if (domSel.extend)
-    domSel.extend(head.node, head.offset)
+  view.docView.setSelection(sel.anchor, sel.head, view.root)
   view.selectionReader.storeDOMState()
 }
 
