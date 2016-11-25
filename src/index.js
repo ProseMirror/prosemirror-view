@@ -165,6 +165,17 @@ class EditorView {
   dispatchEvent(event) {
     return dispatchEvent(this, event)
   }
+
+  // :: ()
+  // Removes the editor from the DOM and destroys all [node
+  // views](#view.NodeView). By default, a ProseMirror view does not
+  // leave anything around that leaks, and simply removing it from the
+  // DOM is enough. But if you have node views that need to be
+  // destroyed, that may not be the case.
+  destroy() {
+    this.docView.destroy()
+    if (this.wrapper.parentNode) this.wrapper.parentNode.removeChild(this.wrapper)
+  }
 }
 exports.EditorView = EditorView
 
