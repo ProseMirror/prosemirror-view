@@ -50,7 +50,7 @@ handlers.keydown = (view, event) => {
   if (view.someProp("handleKeyDown", f => f(view, event)) || captureKeyDown(view, event))
     event.preventDefault()
   else
-    view.selectionReader.fastPoll()
+    view.selectionReader.poll()
 }
 
 handlers.keyup = (view, e) => {
@@ -207,7 +207,7 @@ handlers.mousedown = (view, event) => {
   else if ((type == "doubleClick" ? handleDoubleClick : handleTripleClick)(view, pos.pos, pos.inside, event))
     event.preventDefault()
   else
-    view.selectionReader.fastPoll("mouse")
+    view.selectionReader.poll("mouse")
 }
 
 class MouseDown {
@@ -238,7 +238,7 @@ class MouseDown {
 
     view.root.addEventListener("mouseup", this.up = this.up.bind(this))
     view.root.addEventListener("mousemove", this.move = this.move.bind(this))
-    view.selectionReader.fastPoll("mouse")
+    view.selectionReader.poll("mouse")
   }
 
   done() {
@@ -258,7 +258,7 @@ class MouseDown {
       return
 
     if (this.allowDefault) {
-      this.view.selectionReader.fastPoll("mouse")
+      this.view.selectionReader.poll("mouse")
     } else if (this.selectNode
                ? selectClickedNode(this.view, this.pos.inside)
                : handleSingleClick(this.view, this.pos.pos, this.pos.inside, event)) {
@@ -268,7 +268,7 @@ class MouseDown {
       this.view.props.onAction(Selection.near(this.view.state.doc.resolve(this.pos.pos)).action({origin: "mouse"}))
       event.preventDefault()
     } else {
-      this.view.selectionReader.fastPoll("mouse")
+      this.view.selectionReader.poll("mouse")
     }
   }
 
@@ -276,13 +276,13 @@ class MouseDown {
     if (!this.allowDefault && (Math.abs(this.x - event.clientX) > 4 ||
                                Math.abs(this.y - event.clientY) > 4))
       this.allowDefault = true
-    this.view.selectionReader.fastPoll("mouse")
+    this.view.selectionReader.poll("mouse")
   }
 }
 
 handlers.touchdown = view => {
   forceDOMFlush(view)
-  view.selectionReader.fastPoll("mouse")
+  view.selectionReader.poll("mouse")
 }
 
 handlers.contextmenu = (view, e) => {
