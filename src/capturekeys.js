@@ -45,8 +45,8 @@ function nodeLen(node) {
 }
 
 function isIgnorable(dom) {
-  let view = dom.pmView
-  return view && view.size == 0
+  let desc = dom.pmViewDesc
+  return desc && desc.size == 0
 }
 
 // Make sure the cursor isn't directly after one or more ignored
@@ -138,7 +138,7 @@ function selectVertically(view, dir) {
 
   let leavingTextblock = true, $start = dir < 0 ? $from : $to
   if (!node || node.isInline)
-    leavingTextblock = verticalMotionLeavesTextblock(view, dir) // FIXME need access to the view
+    leavingTextblock = verticalMotionLeavesTextblock(view, dir)
 
   if (leavingTextblock) {
     let next = moveSelectionBlock(view.state, dir)

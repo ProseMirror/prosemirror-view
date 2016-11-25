@@ -1,5 +1,5 @@
 const {scrollPosIntoView, posAtCoords, coordsAtPos} = require("./domcoords")
-const {NodeView} = require("./nodeview")
+const {NodeViewDesc} = require("./viewdesc")
 const {initInput, finishUpdateFromDOM, dispatchEvent} = require("./input")
 const {SelectionReader, selectionToDOM} = require("./selection")
 const {viewDecorations} = require("./decoration")
@@ -39,11 +39,11 @@ class EditorView {
     if (place && place.appendChild) place.appendChild(this.wrapper)
     else if (place) place(this.wrapper)
 
-    this.docView = new NodeView(null, this.state.doc, [], viewDecorations(this),
-                                this.content, this.content, this)
+    this.docView = new NodeViewDesc(null, this.state.doc, [], viewDecorations(this),
+                                    this.content, this.content, this)
     this.content.contentEditable = true
 
-    this.lastSelectedNodeView = null
+    this.lastSelectedViewDesc = null
     this.selectionReader = new SelectionReader(this)
     initInput(this)
   }
@@ -265,8 +265,13 @@ exports.EditorView = EditorView
 //   transformPastedText:: ?(string) → string
 //   Transform pasted plain text.
 //
-//   nodeViews:: ?Object<NodeViewSpec>
-//   FIXME
+//   nodeViews:: ?Object<(node: Node, view: EditorView, getPos: () → number) → NodeView>
+//   Allows you to pass custom rendering and behavior logic for nodes
+//   and marks. Should map node and mark names to constructor function
+//   that produce a [`NodeView`](#view.NodeView) object implementing
+//   the node's display behavior. `getPos` is a function that can be
+//   called to get the node's current position, which can be useful
+//   when creating actions that update it.
 //
 //   clipboardSerializer:: ?DOMSerializer
 //   The DOM serializer to use when putting content onto the

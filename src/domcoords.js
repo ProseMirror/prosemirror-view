@@ -89,7 +89,7 @@ function findOffsetInText(node, coords) {
 function targetKludge(dom, coords) {
   if (/^[uo]l$/i.test(dom.nodeName)) {
     for (let child = dom.firstChild; child; child = child.nextSibling) {
-      if (!child.pmView || !/^li$/i.test(child.nodeName)) continue
+      if (!child.pmViewDesc || !/^li$/i.test(child.nodeName)) continue
       let childBox = child.getBoundingClientRect()
       if (coords.left > childBox.left - 2) break
       if (childBox.top <= coords.top && childBox.bottom >= coords.top) return child

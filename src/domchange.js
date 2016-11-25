@@ -23,19 +23,19 @@ function parseBetween(view, oldState, from, to) {
   if (parent != parentRight) return null
   while (startOff) {
     let prev = parent.childNodes[startOff - 1]
-    if (!prev.pmView) --startOff
+    if (!prev.pmViewDesc) --startOff
     else break
   }
   while (endOff < parent.childNodes.length) {
     let next = parent.childNodes[endOff]
-    if (!next.pmView) ++endOff
+    if (!next.pmViewDesc) ++endOff
     else break
   }
   // If there's non-view nodes directly after the end of this region,
   // fail and let the caller try again with a wider range.
   if (endOff == parent.childNodes.length) for (let scan = parent; scan != view.content;) {
     if (scan.nextSibling) {
-      if (!scan.nextSibling.pmView) return null
+      if (!scan.nextSibling.pmViewDesc) return null
       break
     }
     scan = scan.parentNode
@@ -70,8 +70,8 @@ function parseBetween(view, oldState, from, to) {
 }
 
 function ruleFromNode(dom) {
-  let nodeView = dom.pmView
-  return nodeView && nodeView.parseRule()
+  let desc = dom.pmViewDesc
+  return desc && desc.parseRule()
 }
 
 function isAtEnd($pos, depth) {
