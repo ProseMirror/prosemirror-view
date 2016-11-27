@@ -1,5 +1,5 @@
 const {scrollPosIntoView, posAtCoords, coordsAtPos} = require("./domcoords")
-const {NodeViewDesc} = require("./viewdesc")
+const {docViewDesc} = require("./viewdesc")
 const {initInput, finishUpdateFromDOM, dispatchEvent} = require("./input")
 const {SelectionReader, selectionToDOM} = require("./selection")
 const {viewDecorations} = require("./decoration")
@@ -39,8 +39,7 @@ class EditorView {
     if (place && place.appendChild) place.appendChild(this.wrapper)
     else if (place) place(this.wrapper)
 
-    this.docView = new NodeViewDesc(null, this.state.doc, [], viewDecorations(this),
-                                    this.content, this.content, this)
+    this.docView = docViewDesc(this.state.doc, viewDecorations(this), this.content, this)
     this.content.contentEditable = true
 
     this.lastSelectedViewDesc = null

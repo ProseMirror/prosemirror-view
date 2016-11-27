@@ -128,8 +128,14 @@ class ViewDesc {
   localPosFromDOM(dom, offset, bias) {
     // If the DOM position is in the content, use the child desc after
     // it to figure out a position.
-    if (dom == this.contentDOM) {
-      let domAfter = this.contentDOM.childNodes[offset]
+    if (this.contentDOM && this.contentDOM.contains(dom.nodeType == 1 ? dom : dom.parentNode)) {
+      let domAfter
+      if (dom == this.contentDOM) {
+        domAfter = dom.childNodes[offset]
+      } else {
+        while (dom.parentNode != this.contentDOM) dom = dom.parentNode
+        domAfter = dom.nextSibling
+      }
       while (domAfter && (!domAfter.pmViewDesc || domAfter.pmViewDesc.parent != this)) domAfter = domAfter.nextSibling
       return domAfter ? this.posBeforeChild(domAfter.pmViewDesc) : this.posAtEnd
     }
@@ -167,15 +173,9 @@ class ViewDesc {
   }
 
   posFromDOM(dom, offset, bias) {
-    let textOffset = 0
-    if (dom.nodeType == 3) { textOffset = offset; offset = 0 }
-    for (;;) {
-      let desc = dom.pmViewDesc
-      if (desc && desc.descendantOf(this))
-        return desc.localPosFromDOM(dom, offset, bias) +
-          (textOffset && desc.node && desc.node.isText ? textOffset : 0)
-      offset = Array.prototype.indexOf.call(dom.parentNode.childNodes, dom) + (bias < 0 ? 0 : 1)
-      dom = dom.parentNode
+    for (let scan = dom;; scan = scan.parentNode) {
+      let desc = scan.pmViewDesc
+      if (desc && desc.descendantOf(this)) return desc.localPosFromDOM(dom, offset, bias)
     }
   }
 
@@ -362,11 +362,14 @@ class NodeViewDesc extends ViewDesc {
 
     let dom = spec && spec.dom, contentDOM
     if (!dom) ({dom, contentDOM} = DOMSerializer.renderSpec(document, node.type.spec.toDOM(node)))
+    let startDOM = dom
     for (let i = 0; i < outerDeco.length; i++)
       dom = applyOuterDeco(dom, outerDeco[i].type.attrs, node)
 
     if (spec)
       return descObj = new CustomNodeViewDesc(parent, node, outerDeco, innerDeco, dom, contentDOM, spec, view)
+    else if (node.isText)
+      return new TextViewDesc(parent, node, outerDeco, innerDeco, dom, startDOM, view)
     else
       return new NodeViewDesc(parent, node, outerDeco, innerDeco, dom, contentDOM, view)
   }
@@ -380,10 +383,6 @@ class NodeViewDesc extends ViewDesc {
   get size() { return this.node.nodeSize }
 
   get border() { return this.node.isLeaf ? 0 : 1 }
-
-  domFromPos(pos, changedDOM) {
-    return this.node.isText ? {node: findText(this.dom), offset: pos} : super.domFromPos(pos, changedDOM)
-  }
 
   // Syncs `this.children` to match `this.node.content` and the local
   // decorations, possibly introducing nesting for marks. Then, in a
@@ -424,7 +423,6 @@ class NodeViewDesc extends ViewDesc {
   // do so and return true.
   update(node, outerDeco, innerDeco, view) {
     if (!node.sameMarkup(this.node) ||
-        (node.isText && node.text != this.node.text) ||
         !sameOuterDeco(outerDeco, this.outerDeco)) return false
     this.node = node
     this.innerDeco = innerDeco
@@ -442,7 +440,37 @@ class NodeViewDesc extends ViewDesc {
     this.dom.classList.remove("ProseMirror-selectednode")
   }
 }
-exports.NodeViewDesc = NodeViewDesc
+
+// Create a view desc for the top-level document node, to be exported
+// and used by the view class.
+function docViewDesc(doc, deco, dom, view) {
+  return new NodeViewDesc(null, doc, nothing, deco, dom, dom, view)
+}
+exports.docViewDesc = docViewDesc
+
+class TextViewDesc extends NodeViewDesc {
+  constructor(parent, node, outerDeco, innerDeco, dom, textDOM, view) {
+    super(parent, node, outerDeco, innerDeco, dom, null, view)
+    this.textDOM = textDOM
+  }
+
+  update(node, outerDeco) {
+    if (!node.sameMarkup(this.node) ||
+        !sameOuterDeco(outerDeco, this.outerDeco)) return false
+    if (node.text != this.node.text) this.textDOM.nodeValue = node.text
+    this.node = node
+    return true
+  }
+
+  domFromPos(pos) {
+    return {node: this.textDOM, offset: pos}
+  }
+
+  localPosFromDOM(dom, offset, bias) {
+    if (dom == this.textDOM) return this.posAtStart + Math.min(offset, this.node.text.length)
+    return super.localPosFromDOM(dom, offset, bias)
+  }
+}
 
 // A separate subclass is used for customized node views, so that the
 // extra checks only have to be made for nodes that are actually
@@ -538,13 +566,6 @@ function rm(dom) {
   let next = dom.nextSibling
   dom.parentNode.removeChild(dom)
   return next
-}
-
-function findText(dom) {
-  for (;;) {
-    if (dom.nodeType == 3) return dom
-    dom = dom.firstChild
-  }
 }
 
 // Helper class for incrementally updating a tree of mark descs and
