@@ -5,11 +5,11 @@ const browser = require("./browser")
 // NodeView:: interface
 //
 // By default, document nodes are rendered using the result of the
-// [`toDOM`](#view.NodeSpec.toDOM) method of its spec, and managed
+// [`toDOM`](#view.NodeSpec.toDOM) method of their spec, and managed
 // entirely by the editor. For some use cases, such as embedded
 // node-specific editing interfaces, when you need more control over
 // the behavior of a node's in-editor representation, and can
-// [define](#view.EditorProps.nodeViews] a custom node view.
+// [define](#view.EditorProps.nodeViews) a custom node view.
 //
 //   dom:: ?dom.Node
 //   The outer DOM node that represents the document node. When not
