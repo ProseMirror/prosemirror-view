@@ -75,7 +75,7 @@ class EditorView {
     let redrawn = false
     let decorations = viewDecorations(this)
 
-    if (!this.docView.matchesNode(state.doc, decorations)) {
+    if (!this.docView.matchesNode(state.doc, [], decorations)) {
       this.docView.update(state.doc, [], decorations, this)
       redrawn = true
     }

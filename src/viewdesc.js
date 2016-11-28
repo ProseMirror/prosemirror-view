@@ -88,6 +88,7 @@ class ViewDesc {
   matchesWidget() { return false }
   matchesMark() { return false }
   matchesNode() { return false }
+  matchesHack() { return false }
 
   // : () → ?ParseRule
   // When parsing in-editor content (in domchange.js), we allow
@@ -420,15 +421,16 @@ class NodeViewDesc extends ViewDesc {
         updater.addNode(child, outerDeco, innerDeco, view)
     })
     // Drop all remaining descs after the current position.
-    updater.close()
+    updater.syncToMarks(nothing, view)
+    if (this.node.isTextblock) updater.addTextblockHacks()
+    updater.destroyRest()
 
-    // Sync the DOM.
-    this.renderChildren()
+    // Sync the DOM if anything changed
+    if (updater.changed) this.renderChildren()
   }
 
   renderChildren() {
     renderDescs(this.contentDOM, this.children, NodeViewDesc.is)
-    if (this.node.isTextblock) textblockHacks(this.contentDOM)
     if (browser.ios) iosHacks(this.dom)
   }
 
@@ -484,6 +486,17 @@ class TextViewDesc extends NodeViewDesc {
     if (dom == this.textDOM) return this.posAtStart + Math.min(offset, this.node.text.length)
     return super.localPosFromDOM(dom, offset, bias)
   }
+}
+
+// A dummy desc used to tag trailing BR or span nodes created to work
+// around contentEditable terribleness.
+class HackViewDesc extends ViewDesc {
+  constructor(parent, type, dom) {
+    super(parent, nothing, dom, null)
+    this.type = type
+  }
+  parseRule() { return {ignore: true} }
+  matchesHack(type) { return this.type == type }
 }
 
 // A separate subclass is used for customized node views, so that the
@@ -598,6 +611,8 @@ class ViewTreeUpdater {
     // When entering a mark, the current top and index are pushed
     // onto this.
     this.stack = []
+    // Tracks whether anything was changed
+    this.changed = false
   }
 
   // Destroy and remove the children between the given indices in
@@ -606,22 +621,12 @@ class ViewTreeUpdater {
     if (start == end) return
     for (let i = start; i < end; i++) this.top.children[i].destroy()
     this.top.children.splice(start, end - start)
+    this.changed = true
   }
 
   // Destroy all remaining children in `this.top`.
   destroyRest() {
     this.destroyBetween(this.index, this.top.children.length)
-  }
-
-  // Unwind the stack, destroying all remaining children at each
-  // level.
-  close() {
-    for (;;) {
-      this.destroyRest()
-      if (this.stack.length == 0) break
-      this.index = this.stack.pop()
-      this.top = this.stack.pop()
-    }
   }
 
   // : ([Mark], EditorView)
@@ -649,6 +654,7 @@ class ViewTreeUpdater {
         let markDesc = MarkViewDesc.create(this.top, marks[depth], view)
         this.top.children.splice(this.index, 0, markDesc)
         this.top = markDesc
+        this.changed = true
       }
       this.index = 0
       depth++
@@ -684,13 +690,36 @@ class ViewTreeUpdater {
   // Insert the node as a newly created node desc.
   addNode(node, outerDeco, innerDeco, view) {
     this.top.children.splice(this.index++, 0, NodeViewDesc.create(this.top, node, outerDeco, innerDeco, view))
+    this.changed = true
   }
 
   placeWidget(widget) {
-    if (this.index < this.top.children.length && this.top.children[this.index].matchesWidget(widget))
+    if (this.index < this.top.children.length && this.top.children[this.index].matchesWidget(widget)) {
       this.index++
-    else
+    } else {
       this.top.children.splice(this.index++, 0, new WidgetViewDesc(this.top, widget))
+      this.changed = true
+    }
+  }
+
+  // Make sure a textblock looks and behaves correctly in
+  // contentEditable.
+  addTextblockHacks() {
+    let lastChild = this.top.children[this.index - 1], hack
+    while (lastChild instanceof MarkViewDesc) lastChild = lastChild.children[lastChild.children.length - 1]
+    if (!lastChild || lastChild.dom.nodeName == "BR")
+      hack = "br"
+    else if (!lastChild instanceof TextViewDesc)
+      hack = "text"
+
+    if (hack) {
+      if (this.index < this.top.children.length && this.top.children[this.index].matchesHack(hack)) {
+        this.index++
+      } else {
+        this.top.children.splice(this.index++, 0, new HackViewDesc(this.top, hack, document.createElement(hack == "br" ? "br" : "span")))
+        this.changed = true
+      }
+    }
   }
 }
 
@@ -761,25 +790,6 @@ function buildCustomViews(view) {
       result[prop] = obj[prop]
   })
   return result
-}
-
-// A dummy desc used to tag trailing BR or span nodes created to work
-// around contentEditable terribleness.
-class DummyViewDesc extends ViewDesc {
-  constructor(dom) {
-    super(null, nothing, dom, null)
-  }
-  parseRule() { return {ignore: true} }
-}
-
-// Make sure a textblock looks and behaves correctly in
-// contentEditable.
-function textblockHacks(dom) {
-  let lastChild = dom.lastChild
-  if (!lastChild || lastChild.nodeName == "BR")
-    dom.appendChild(new DummyViewDesc(document.createElement("br")).dom)
-  else if (lastChild.contentEditable == "false" || (lastChild.pmViewDesc instanceof WidgetViewDesc))
-    dom.appendChild(new DummyViewDesc(document.createElement("span")).dom)
 }
 
 // List markers in Mobile Safari will mysteriously disappear
