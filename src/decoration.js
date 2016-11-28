@@ -109,6 +109,10 @@ class Decoration {
   //
   //   options::- These options are supported:
   //
+  //     stopEvent:: ?(event: dom.Event) → bool
+  //     Can be used to control which DOM events, when they bubble out
+  //     of this widget, the editor view should ignore.
+  //
   //     key:: ?string
   //     When comparing decorations of this type (in order to decide
   //     whether it needs to be redrawn), ProseMirror will by default

@@ -46,6 +46,10 @@ const browser = require("./browser")
 //   positions corresponding to the given anchor and head positions,
 //   but if you override it you can do something else.
 //
+//   stopEvent:: ?(event: dom.Event) → bool
+//   Can be used to prevent the editor view from trying to handle some
+//   or all DOM events that bubble up from the node view.
+//
 //   destroy:: ?()
 //   Called when the node view is removed from the editor or the whole
 //   editor is detached.
@@ -90,6 +94,11 @@ class ViewDesc {
   // descriptions to determine the parse rules that should be used to
   // parse them.
   parseRule() { return null }
+
+  // : (dom.Event) → bool
+  // Used by the editor's event handler to ignore events that come
+  // from certain descs.
+  stopEvent() { return false }
 
   // The size of the content represented by this desc.
   get size() {
@@ -303,6 +312,11 @@ class WidgetViewDesc extends ViewDesc {
   matchesWidget(widget) { return widget.type == this.widget.type }
 
   parseRule() { return {ignore: true} }
+
+  stopEvent(event) {
+    let stop = this.widget.type.options.stopEvent
+    return stop ? stop(event) : false
+  }
 }
 
 // A mark desc represents a mark. May have multiple children,
@@ -514,6 +528,10 @@ class CustomNodeViewDesc extends NodeViewDesc {
     if (this.spec.destroy) this.spec.destroy()
     super.destroy()
   }
+
+  stopEvent(event) {
+    return this.spec.stopEvent ? this.spec.stopEvent(event) : false
+  }
 }
 
 // : (dom.Node, [ViewDesc])
@@ -557,7 +575,7 @@ function applyOuterDeco(dom, attrs, node) {
 // : ([Decoration], [Decoration]) → bool
 function sameOuterDeco(a, b) {
   if (a.length != b.length) return false
-  for (let i = 0; i < a.length; i++) if (!a[i].eq(b[i])) return false
+  for (let i = 0; i < a.length; i++) if (!a[i].type.eq(b[i].type)) return false
   return true
 }
 

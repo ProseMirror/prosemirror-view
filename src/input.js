@@ -32,8 +32,7 @@ function eventBelongsToView(view, event) {
   if (event.defaultPrevented) return false
   for (let node = event.target; node != view.content; node = node.parentNode)
     if (!node || node.nodeType == 11 ||
-        (node.nodeType == 1 && ((node.hasAttribute("tabindex") && node.getAttribute("tabindex") >= 0) ||
-                                /^(texarea|input|select|button|iframe)$/i.test(node.nodeName))))
+        (node.pmViewDesc && node.pmViewDesc.stopEvent(event)))
       return false
   return true
 }
