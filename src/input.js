@@ -94,8 +94,8 @@ function runHandlerOnContext(view, propName, pos, inside, event) {
   if (inside == -1) return false
   let $pos = view.state.doc.resolve(inside)
   for (let i = $pos.depth + 1; i > 0; i--) {
-    let node = i > $pos.depth ? $pos.nodeAfter : $pos.node(i)
-    if (view.someProp(propName, f => f(view, pos, node, $pos.before(i), event)))
+    if (view.someProp(propName, f => i > $pos.depth ? f(view, pos, $pos.nodeAfter, $pos.before(i), event, true)
+                                                    : f(view, pos, $pos.node(i), $pos.before(i), event, false)))
       return true
   }
   return false

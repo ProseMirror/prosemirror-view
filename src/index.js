@@ -225,20 +225,21 @@ exports.EditorView = EditorView
 //   before the input is applied. If it returns `true`, the default
 //   effect of actually inserting the text is suppressed.
 //
-//   handleClickOn:: ?(view: EditorView, pos: number, node: Node, nodePos: number, event: dom.MouseEvent) → bool
-//   Called for each node around a click, from the inside out.
+//   handleClickOn:: ?(view: EditorView, pos: number, node: Node, nodePos: number, event: dom.MouseEvent, direct: bool) → bool
+//   Called for each node around a click, from the inside out. The
+//   `direct` flag will be true for the inner node.
 //
 //   handleClick:: ?(view: EditorView, pos: number, event: dom.MouseEvent) → bool
 //   Called when the editor is clicked, after `handleClickOn` handlers
 //   have been called.
 //
-//   handleDoubleClickOn:: ?(view: EditorView, pos: number, node: Node, nodePos: number, event: dom.MouseEvent) → bool
+//   handleDoubleClickOn:: ?(view: EditorView, pos: number, node: Node, nodePos: number, event: dom.MouseEvent, direct: bool) → bool
 //   Called for each node around a double click.
 //
 //   handleDoubleClick:: ?(view: EditorView, pos: number, event: dom.MouseEvent) → bool
 //   Called when the editor is double-clicked, after `handleDoubleClickOn`.
 //
-//   handleTripleClickOn:: ?(view: EditorView, pos: number, node: Node, nodePos: number, event: dom.MouseEvent) → bool
+//   handleTripleClickOn:: ?(view: EditorView, pos: number, node: Node, nodePos: number, event: dom.MouseEvent, direct: bool) → bool
 //   Called for each node around a triple click.
 //
 //   handleTripleClick:: ?(view: EditorView, pos: number, event: dom.MouseEvent) → bool
