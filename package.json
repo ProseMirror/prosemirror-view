@@ -1,6 +1,6 @@
 {
   "name": "prosemirror-view",
-  "version": "0.13.2",
+  "version": "0.14.0",
   "description": "ProseMirror's view component",
   "main": "dist/index.js",
   "style": "style/prosemirror.css",
@@ -17,11 +17,11 @@
     "url": "git://github.com/prosemirror/prosemirror-view.git"
   },
   "dependencies": {
-    "prosemirror-model": "^0.13.0",
-    "prosemirror-state": "^0.13.0"
+    "prosemirror-model": "^0.14.0",
+    "prosemirror-state": "^0.14.0"
   },
   "devDependencies": {
-    "prosemirror-transform": "^0.13.0",
+    "prosemirror-transform": "^0.14.0",
     "buble": "~0.14.0",
     "ist": "^1.0.0",
     "mocha": "^3.0.2",
