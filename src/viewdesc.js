@@ -160,22 +160,22 @@ class ViewDesc {
 
   // Scan up the dom finding the first desc that is a descendant of
   // this one.
-  nearestView(dom) {
+  nearestDesc(dom) {
     for (; dom; dom = dom.parentNode) {
-      let desc = dom.pmViewDesc
-      if (desc && desc.descendantOf(this)) return desc
+      let desc = this.getDesc(dom)
+      if (desc) return desc
     }
   }
 
-  descendantOf(parent) {
-    for (let cur = this; cur; cur = cur.parent) if (cur == parent) return true
-    return false
+  getDesc(dom) {
+    let desc = dom.pmViewDesc
+    for (let cur = desc; cur; cur = cur.parent) if (cur == this) return desc
   }
 
   posFromDOM(dom, offset, bias) {
     for (let scan = dom;; scan = scan.parentNode) {
-      let desc = scan.pmViewDesc
-      if (desc && desc.descendantOf(this)) return desc.localPosFromDOM(dom, offset, bias)
+      let desc = this.getDesc(scan)
+      if (desc) return desc.localPosFromDOM(dom, offset, bias)
     }
   }
 
