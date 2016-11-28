@@ -127,6 +127,13 @@ describe("readInputChange", () => {
     ist(view.state.doc, doc(blockquote(p("abx")), blockquote(p("cd"))), eq)
     ist(view.state.selection.anchor, 9)
   })
+
+  it("can delete the third instance of a character", () => {
+    let view = tempEditor({doc: doc(p("foo xxx<a> bar"))})
+    findTextNode(view.content, "foo xxx bar").nodeValue = "foo xx bar"
+    readInputChange(view, view.state)
+    ist(view.state.doc, doc(p("foo xx bar")), eq)
+  })
 })
 
 describe("readCompositionChange", () => {

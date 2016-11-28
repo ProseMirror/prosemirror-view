@@ -203,7 +203,7 @@ function findDiff(a, b, pos, preferedStart) {
   let start = a.findDiffStart(b, pos)
   if (!start) return null
   let {a: endA, b: endB} = a.findDiffEnd(b, pos + a.size, pos + b.size)
-  if (endA < start) {
+  if (endA < start && a.size < b.size) {
     let move = preferedStart <= start && preferedStart >= endA ? start - preferedStart : 0
     start -= move
     endB = start + (endB - endA)
