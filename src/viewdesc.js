@@ -709,7 +709,7 @@ class ViewTreeUpdater {
     while (lastChild instanceof MarkViewDesc) lastChild = lastChild.children[lastChild.children.length - 1]
     if (!lastChild || lastChild.dom.nodeName == "BR")
       hack = "br"
-    else if (!lastChild instanceof TextViewDesc)
+    else if (!(lastChild instanceof TextViewDesc))
       hack = "text"
 
     if (hack) {
