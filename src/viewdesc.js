@@ -254,7 +254,7 @@ class ViewDesc {
     for (let i = 0, offset = 0; i < this.children.length; i++) {
       let child = this.children[i], end = offset + child.size
       if (from > offset && to < end)
-        return child.setSelection(from - offset - child.border, to - offset - child.border, root)
+        return child.setSelection(anchor - offset - child.border, head - offset - child.border, root)
       offset = end
     }
 
