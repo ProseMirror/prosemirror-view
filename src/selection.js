@@ -12,6 +12,7 @@ class SelectionReader {
 
     // Track the state of the DOM selection.
     this.lastAnchorNode = this.lastHeadNode = this.lastAnchorOffset = this.lastHeadOffset = null
+    this.lastSelection = view.state.selection
     this.poller = poller(this)
 
     view.content.addEventListener("focus", () => this.poller.receivedFocus())
@@ -29,10 +30,11 @@ class SelectionReader {
   }
 
   // Store the current state of the DOM selection.
-  storeDOMState() {
+  storeDOMState(selection) {
     let sel = this.view.root.getSelection()
     this.lastAnchorNode = sel.anchorNode; this.lastAnchorOffset = sel.anchorOffset
     this.lastHeadNode = sel.focusNode; this.lastHeadOffset = sel.focusOffset
+    this.lastSelection = selection
   }
 
   // : (?string) → bool
@@ -59,7 +61,7 @@ class SelectionReader {
       selection = Selection.between($anchor, $head, bias)
     }
     if ($head.pos == selection.head && $anchor.pos == selection.anchor)
-      this.storeDOMState()
+      this.storeDOMState(selection)
     this.view.props.onAction(selection.action(origin && {origin}))
   }
 }
@@ -157,14 +159,16 @@ function nodeSelectionToDOM(view, sel) {
     view.lastSelectedViewDesc = desc
   }
   view.docView.setSelection(sel.from, sel.to, view.root)
-  view.selectionReader.storeDOMState()
+  view.selectionReader.storeDOMState(sel)
 }
 
 // Make changes to the DOM for a text selection.
 function textSelectionToDOM(view, sel) {
+  let reader = view.selectionReader
+  if (sel.eq(reader.lastSelection) && !reader.domChanged()) return
   clearNodeSelection(view)
   view.docView.setSelection(sel.anchor, sel.head, view.root)
-  view.selectionReader.storeDOMState()
+  view.selectionReader.storeDOMState(sel)
 }
 
 // Clear all DOM statefulness of the last node selection.
