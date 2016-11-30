@@ -134,41 +134,37 @@ function poller(reader) {
 }
 
 function selectionToDOM(view, sel, takeFocus) {
+  syncNodeSelection(view, sel)
+
   if (!view.hasFocus()) {
     if (!takeFocus) return
     // See https://bugzilla.mozilla.org/show_bug.cgi?id=921444
     else if (browser.gecko) view.content.focus()
   }
 
-  if (sel instanceof NodeSelection)
-    nodeSelectionToDOM(view, sel)
-  else
-    textSelectionToDOM(view, sel)
+  let reader = view.selectionReader
+  if (sel.eq(reader.lastSelection) && !reader.domChanged()) return
+  let anchor = sel.anchor, head = sel.head
+  if (anchor == null) { anchor = sel.from; head = sel.to }
+  view.docView.setSelection(anchor, head, view.root)
+  reader.storeDOMState(sel)
 }
 exports.selectionToDOM = selectionToDOM
 
-// Make changes to the DOM for a node selection.
-function nodeSelectionToDOM(view, sel) {
-  let desc = view.docView.descAt(sel.from)
-  if (desc != view.lastSelectedViewDesc) {
-    clearNodeSelection(view)
-    if (desc) {
-      view.content.classList.add("ProseMirror-nodeselection")
-      desc.selectNode()
+function syncNodeSelection(view, sel) {
+  if (sel instanceof NodeSelection) {
+    let desc = view.docView.descAt(sel.from)
+    if (desc != view.lastSelectedViewDesc) {
+      clearNodeSelection(view)
+      if (desc) {
+        view.content.classList.add("ProseMirror-nodeselection")
+        desc.selectNode()
+      }
+      view.lastSelectedViewDesc = desc
     }
-    view.lastSelectedViewDesc = desc
+  } else {
+    clearNodeSelection(view)
   }
-  view.docView.setSelection(sel.from, sel.to, view.root)
-  view.selectionReader.storeDOMState(sel)
-}
-
-// Make changes to the DOM for a text selection.
-function textSelectionToDOM(view, sel) {
-  let reader = view.selectionReader
-  if (sel.eq(reader.lastSelection) && !reader.domChanged()) return
-  clearNodeSelection(view)
-  view.docView.setSelection(sel.anchor, sel.head, view.root)
-  view.selectionReader.storeDOMState(sel)
 }
 
 // Clear all DOM statefulness of the last node selection.
