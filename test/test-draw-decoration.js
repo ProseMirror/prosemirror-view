@@ -22,10 +22,11 @@ function decoPlugin(decos) {
       applyAction(action, set, state) {
         if (action.type == "transform")
           return set.map(action.transform.mapping, action.transform.doc)
-        if (action.type == "addDecorations")
-          return set.add(state.doc, action.decorations)
-        if (action.type == "removeDecorations")
-          return set.remove(action.decorations)
+        if (action.type == "changeDecorations") {
+          if (action.add) set = set.add(state.doc, action.add)
+          if (action.remove) set = set.remove(action.remove)
+          return set
+        }
         return set
       }
     },
@@ -151,7 +152,7 @@ describe("EditorView", () => {
       let view = tempEditor({doc: doc(p("foo"), p("baz")),
                              plugins: [decoPlugin(["7-8-foo"])]})
       let para2 = view.content.lastChild
-      view.props.onAction({type: "addDecorations", decorations: [make("2-3-bar")]})
+      view.props.onAction({type: "changeDecorations", add: [make("2-3-bar")]})
       ist(view.content.lastChild, para2)
       ist(view.content.querySelector(".bar"))
     })
@@ -168,7 +169,7 @@ describe("EditorView", () => {
     it("can add a widget on a node boundary", () => {
       let view = tempEditor({doc: doc(p("foo", em("bar"))),
                              plugins: [decoPlugin([])]})
-      view.props.onAction({type: "addDecorations", decorations: [make("4-widget")]})
+      view.props.onAction({type: "changeDecorations", add: [make("4-widget")]})
       ist(view.content.querySelectorAll("button").length, 1)
     })
 
@@ -176,13 +177,42 @@ describe("EditorView", () => {
       let dec = make("4-widget")
       let view = tempEditor({doc: doc(p("foo", em("bar"))),
                              plugins: [decoPlugin([dec])]})
-      view.props.onAction({type: "removeDecorations", decorations: [dec]})
+      view.props.onAction({type: "changeDecorations", remove: [dec]})
       ist(view.content.querySelector("button"), null)
+    })
+
+    it("can remove the class from a text node", () => {
+      let dec = make("1-4-foo")
+      let view = tempEditor({doc: doc(p("abc")),
+                             plugins: [decoPlugin([dec])]})
+      ist(view.content.querySelector(".foo"))
+      view.props.onAction({type: "changeDecorations", remove: [dec]})
+      ist(view.content.querySelector(".foo"), null)
+    })
+
+    it("can remove the class from part of a text node", () => {
+      let dec = make("2-4-foo")
+      let view = tempEditor({doc: doc(p("abcd")),
+                             plugins: [decoPlugin([dec])]})
+      ist(view.content.querySelector(".foo"))
+      view.props.onAction({type: "changeDecorations", remove: [dec]})
+      ist(view.content.querySelector(".foo"), null)
+      ist(view.content.firstChild.innerHTML, "abcd")
+    })
+
+    it("can remove the class for part of a text node", () => {
+      let dec = make("2-4-foo")
+      let view = tempEditor({doc: doc(p("abcd")),
+                             plugins: [decoPlugin([dec])]})
+      ist(view.content.querySelector(".foo"))
+      view.props.onAction({type: "changeDecorations", remove: [dec], add: [make("2-4-bar")]})
+      ist(view.content.querySelector(".foo"), null)
+      ist(view.content.querySelector(".bar"))
     })
 
     it("draws a widget added in the middle of a text node", () => {
       let view = tempEditor({doc: doc(p("foo")), plugins: [decoPlugin([])]})
-      view.props.onAction({type: "addDecorations", decorations: [make("3-widget")]})
+      view.props.onAction({type: "changeDecorations", add: [make("3-widget")]})
       ist(view.content.firstChild.textContent, "foωo")
     })
 
@@ -205,7 +235,7 @@ describe("EditorView", () => {
     it("correctly redraws a partially decorated node when a widget is added", () => {
       let view = tempEditor({doc: doc(p("one", em("two"))),
                              plugins: [decoPlugin(["1-6-foo"])]})
-      view.props.onAction({type: "addDecorations", decorations: [make("6-widget")]})
+      view.props.onAction({type: "changeDecorations", add: [make("6-widget")]})
       let foos = view.content.querySelectorAll(".foo")
       ist(foos.length, 2)
       ist(foos[0].textContent, "one")
@@ -215,7 +245,7 @@ describe("EditorView", () => {
     it("correctly redraws when skipping split text node", () => {
       let view = tempEditor({doc: doc(p("foo")),
                              plugins: [decoPlugin(["3-widget", "3-4-foo"])]})
-      view.props.onAction({type: "addDecorations", decorations: [make("4-widget")]})
+      view.props.onAction({type: "changeDecorations", add: [make("4-widget")]})
       ist(view.content.querySelectorAll("button").length, 2)
     })
   })
