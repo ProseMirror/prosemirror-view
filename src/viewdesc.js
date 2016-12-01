@@ -770,7 +770,7 @@ function iterDeco(parent, deco, onWidget, onNode) {
       }
     }
 
-    onNode(child, active, deco.forChild(offset, child))
+    onNode(child, active.length ? active.slice() : nothing, deco.forChild(offset, child))
     offset = end
   }
 }

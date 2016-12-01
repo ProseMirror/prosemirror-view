@@ -1,4 +1,4 @@
-const {doc, p, em} = require("prosemirror-model/test/build")
+const {doc, p, em, blockquote} = require("prosemirror-model/test/build")
 const {Plugin} = require("prosemirror-state")
 const {tempEditor} = require("./view")
 const {DecorationSet, Decoration} = require("../dist")
@@ -25,7 +25,6 @@ function decoPlugin(decos) {
         if (action.type == "changeDecorations") {
           if (action.add) set = set.add(state.doc, action.add)
           if (action.remove) set = set.remove(action.remove)
-          return set
         }
         return set
       }
@@ -247,6 +246,14 @@ describe("EditorView", () => {
                              plugins: [decoPlugin(["3-widget", "3-4-foo"])]})
       view.props.onAction({type: "changeDecorations", add: [make("4-widget")]})
       ist(view.content.querySelectorAll("button").length, 2)
+    })
+
+    it("drops removed node decorations from the view", () => {
+      let deco = Decoration.node(1, 6, {class: "cls"})
+      let view = tempEditor({doc: doc(blockquote(p("foo"), p("bar"))),
+                             plugins: [decoPlugin([deco])]})
+      view.props.onAction({type: "changeDecorations", remove: [deco]})
+      ist(!view.content.querySelector(".cls"))
     })
   })
 })
