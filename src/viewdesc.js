@@ -709,6 +709,8 @@ class ViewTreeUpdater {
     while (lastChild instanceof MarkViewDesc) lastChild = lastChild.children[lastChild.children.length - 1]
     if (!lastChild || lastChild.dom.nodeName == "BR")
       hack = "br"
+    else if (this.wrapsInPRE())
+      hack = "newline"
     else if (!(lastChild instanceof TextViewDesc))
       hack = "text"
 
@@ -716,9 +718,19 @@ class ViewTreeUpdater {
       if (this.index < this.top.children.length && this.top.children[this.index].matchesHack(hack)) {
         this.index++
       } else {
-        this.top.children.splice(this.index++, 0, new HackViewDesc(this.top, hack, document.createElement(hack == "br" ? "br" : "span")))
+        let dom = document.createElement(hack == "br" ? "br" : "span")
+        if (hack == "newline") dom.textContent = "\n"
+        this.top.children.splice(this.index++, 0, new HackViewDesc(this.top, hack, dom))
         this.changed = true
       }
+    }
+  }
+
+  wrapsInPRE() {
+    let top = this.top
+    for (let dom = top.contentDOM;; dom = dom.parentNode) {
+      if (dom.nodeName == "PRE") return true
+      if (dom == top.dom) return false
     }
   }
 }
