@@ -375,7 +375,7 @@ class NodeViewDesc extends ViewDesc {
       if (descObj.parent) return descObj.parent.posBeforeChild(descObj)
     })
 
-    let dom = spec && spec.dom, contentDOM
+    let dom = spec && spec.dom, contentDOM = spec && spec.contentDOM
     if (!dom) ({dom, contentDOM} = DOMSerializer.renderSpec(document, node.type.spec.toDOM(node)))
     let startDOM = dom
     for (let i = 0; i < outerDeco.length; i++)
