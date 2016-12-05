@@ -50,6 +50,13 @@ const browser = require("./browser")
 //   Can be used to prevent the editor view from trying to handle some
 //   or all DOM events that bubble up from the node view.
 //
+//   ignoreMutation:: ?(dom.MutationRecord) → bool
+//   Called when a DOM
+//   [mutation](https://developer.mozilla.org/en-US/docs/Web/API/MutationObserver)
+//   happens within the view. Return false if the editor should
+//   re-parse the range around the mutation, true if it can safely be
+//   ignored.
+//
 //   destroy:: ?()
 //   Called when the node view is removed from the editor or the whole
 //   editor is detached.
@@ -139,15 +146,27 @@ class ViewDesc {
     // If the DOM position is in the content, use the child desc after
     // it to figure out a position.
     if (this.contentDOM && this.contentDOM.contains(dom.nodeType == 1 ? dom : dom.parentNode)) {
-      let domAfter
-      if (dom == this.contentDOM) {
-        domAfter = dom.childNodes[offset]
+      if (bias < 0) {
+        let domBefore, desc
+        if (dom == this.contentDOM) {
+          domBefore = dom.childNodes[offset - 1]
+        } else {
+          while (dom.parentNode != this.contentDOM) dom = dom.parentNode
+          domBefore = dom.previousSibling
+        }
+        while (domBefore && !((desc = domBefore.pmViewDesc) && desc.parent == this)) domBefore = domBefore.previousSibling
+        return domBefore ? this.posBeforeChild(desc) + desc.size : this.posAtStart
       } else {
-        while (dom.parentNode != this.contentDOM) dom = dom.parentNode
-        domAfter = dom.nextSibling
+        let domAfter, desc
+        if (dom == this.contentDOM) {
+          domAfter = dom.childNodes[offset]
+        } else {
+          while (dom.parentNode != this.contentDOM) dom = dom.parentNode
+          domAfter = dom.nextSibling
+        }
+        while (domAfter && !((desc = domAfter.pmViewDesc) && desc.parent == this)) domAfter = domAfter.nextSibling
+        return domAfter ? this.posBeforeChild(desc) : this.posAtEnd
       }
-      while (domAfter && (!domAfter.pmViewDesc || domAfter.pmViewDesc.parent != this)) domAfter = domAfter.nextSibling
-      return domAfter ? this.posBeforeChild(domAfter.pmViewDesc) : this.posAtEnd
     }
     // Otherwise, use various heuristics, falling back on the bias
     // parameter, to determine whether to return the position at the
@@ -276,6 +295,11 @@ class ViewDesc {
     domSel.addRange(range)
     if (domSel.extend)
       domSel.extend(headDOM.node, headDOM.offset)
+  }
+
+  // : (dom.MutationRecord) → bool
+  ignoreMutation(_mutation) {
+    return !this.contentDOM
   }
 
   // Remove a subtree of the element tree that has been touched
@@ -486,6 +510,10 @@ class TextViewDesc extends NodeViewDesc {
     if (dom == this.textDOM) return this.posAtStart + Math.min(offset, this.node.text.length)
     return super.localPosFromDOM(dom, offset, bias)
   }
+
+  ignoreMutation(mutation) {
+    return mutation.type != "characterData"
+  }
 }
 
 // A dummy desc used to tag trailing BR or span nodes created to work
@@ -544,6 +572,10 @@ class CustomNodeViewDesc extends NodeViewDesc {
 
   stopEvent(event) {
     return this.spec.stopEvent ? this.spec.stopEvent(event) : false
+  }
+
+  ignoreMutation(mutation) {
+    return this.spec.ignoreMutation ? this.spec.ignoreMutation(mutation) : super.ignoreMutation(mutation)
   }
 }
 

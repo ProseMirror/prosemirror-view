@@ -1,15 +1,69 @@
 const {Mark, DOMParser} = require("prosemirror-model")
 const {Selection} = require("prosemirror-state")
 
-function readInputChange(view, oldState) {
-  return readDOMChange(view, oldState, rangeAroundSelection(oldState.selection))
-}
-exports.readInputChange = readInputChange
+class DOMChange {
+  constructor(view, id, composing) {
+    this.view = view
+    this.id = id
+    this.state = view.state
+    this.composing = composing
+    this.from = this.to = null
+    this.timeout = composing ? null : setTimeout(() => this.finish(), 50)
+  }
 
-function readCompositionChange(view, oldState, margin) {
-  return readDOMChange(view, oldState, rangeAroundComposition(oldState.selection, margin))
+  addRange(from, to) {
+    if (this.from == null) {
+      this.from = from
+      this.to = to
+    } else {
+      this.from = Math.min(from, this.from)
+      this.to = Math.max(to, this.to)
+    }
+  }
+
+  read() {
+    let range
+    if (this.from == null) {
+      let {$from, $to} = this.state.selection
+      if ($from.sameParent($to) && $from.parent.isTextblock && $from.parentOffset && $to.parentOffset < $to.parent.content.size)
+        range = rangeAroundText(this.state.selection)
+      else
+        range = rangeAroundSelection(this.state.selection)
+    } else {
+      range = {from: this.from, to: this.to}
+    }
+    readDOMChange(this.view, this.state, range)
+  }
+
+  finish() {
+    clearTimeout(this.timeout)
+    if (this.composing) return
+    this.read()
+    this.view.inDOMChange = null
+    this.view.props.onAction({type: "endDOMChange"})
+  }
+
+  compositionEnd() {
+    if (this.composing) {
+      this.composing = false
+      this.timeout = setTimeout(() => this.finish(), 50)
+    }
+  }
+
+  static start(view, composing) {
+    if (view.inDOMChange) {
+      if (composing) {
+        clearTimeout(view.inDOMChange.timeout)
+        view.inDOMChange.composing = true
+      }
+    } else {
+      let id = Math.floor(Math.random() * 0xffffffff)
+      view.inDOMChange = new DOMChange(view, id, composing)
+      view.props.onAction({type: "startDOMChange", id})
+    }
+  }
 }
-exports.readCompositionChange = readCompositionChange
+exports.DOMChange = DOMChange
 
 // Note that all referencing and parsing is done with the
 // start-of-operation selection and document, since that's the one
@@ -87,11 +141,6 @@ function isAtStart($pos, depth) {
 
 function rangeAroundSelection(selection) {
   let {$from, $to} = selection
-  // When the selection is entirely inside a text block, use
-  // rangeAroundComposition to get a narrow range.
-  if ($from.sameParent($to) && $from.parent.isTextblock && $from.parentOffset && $to.parentOffset < $to.parent.content.size)
-    return rangeAroundComposition(selection, 0)
-
   for (let depth = 0;; depth++) {
     let fromStart = isAtStart($from, depth + 1), toEnd = isAtEnd($to, depth + 1)
     if (fromStart || toEnd || $from.index(depth) != $to.index(depth) || $to.node(depth).isTextblock) {
@@ -105,12 +154,11 @@ function rangeAroundSelection(selection) {
   }
 }
 
-function rangeAroundComposition(selection, margin) {
+function rangeAroundText(selection) {
   let {$from, $to} = selection
-  if (!$from.sameParent($to)) return rangeAroundSelection(selection)
-  let startOff = Math.max(0, $from.parentOffset - margin)
+  let startOff = Math.max(0, $from.parentOffset)
   let size = $from.parent.content.size
-  let endOff = Math.min(size, $to.parentOffset + margin)
+  let endOff = Math.min(size, $to.parentOffset)
 
   if (startOff > 0)
     startOff = $from.parent.childBefore(startOff).offset

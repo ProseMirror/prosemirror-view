@@ -1,6 +1,6 @@
 const {scrollPosIntoView, posAtCoords, coordsAtPos} = require("./domcoords")
 const {docViewDesc} = require("./viewdesc")
-const {initInput, finishUpdateFromDOM, dispatchEvent} = require("./input")
+const {initInput, dispatchEvent, startObserving, stopObserving} = require("./input")
 const {SelectionReader, selectionToDOM} = require("./selection")
 const {viewDecorations} = require("./decoration")
 
@@ -65,7 +65,7 @@ class EditorView {
 
     if (this.inDOMChange) {
       if (state.view.inDOMChange != this.inDOMChange.id)
-        setTimeout(() => finishUpdateFromDOM(this), 0)
+        setTimeout(() => this.inDOMChange && this.inDOMChange.finish(), 0)
       return
     } else if (state.view.inDOMChange != null) {
       setTimeout(() => this.props.onAction({type: "endDOMChange"}), 0)
@@ -76,7 +76,9 @@ class EditorView {
     let decorations = viewDecorations(this)
 
     if (!this.docView.matchesNode(state.doc, [], decorations)) {
+      stopObserving(this)
       this.docView.update(state.doc, [], decorations, this)
+      startObserving(this)
       redrawn = true
     }
 

@@ -2,7 +2,7 @@ const {Selection, NodeSelection, TextSelection} = require("prosemirror-state")
 
 const browser = require("./browser")
 const {captureKeyDown} = require("./capturekeys")
-const {readInputChange, readCompositionChange} = require("./domchange")
+const {DOMChange} = require("./domchange")
 const {fromClipboard, toClipboard, canUpdateClipboard} = require("./clipboard")
 
 // A collection of DOM events that occur within the editor, and callback functions
@@ -14,8 +14,10 @@ function initInput(view) {
   view.mouseDown = null
   view.dragging = null
   view.dropTarget = null
-  view.finishUpdateFromDOM = null
   view.inDOMChange = null
+  view.mutationObserver = window.MutationObserver &&
+    new window.MutationObserver(mutations => registerMutations(view, mutations))
+  startObserving(view)
 
   for (let event in handlers) {
     let handler = handlers[event]
@@ -70,6 +72,7 @@ handlers.keypress = (view, event) => {
     event.preventDefault()
     return
   }
+  return
 
   // On iOS, let input through, because if we handle it the virtual
   // keyboard's default case doesn't update (it only does so when the
@@ -183,7 +186,7 @@ function defaultTripleClick(view, inside) {
 
 function forceDOMFlush(view) {
   if (!view.inDOMChange) return false
-  finishUpdateFromDOM(view)
+  view.inDOMChange.finish()
   return true
 }
 
@@ -230,9 +233,11 @@ class MouseDown {
     this.mightDrag = (targetNode.type.spec.draggable || targetNode == view.state.selection.node) ? {node: targetNode, pos: targetPos} : null
     this.target = flushed ? null : event.target
     if (this.target && this.mightDrag) {
+      stopObserving(this.view)
       this.target.draggable = true
       if (browser.gecko && (this.setContentEditable = !this.target.hasAttribute("contentEditable")))
         this.target.setAttribute("contentEditable", "false")
+      startObserving(this.view)
     }
 
     view.root.addEventListener("mouseup", this.up = this.up.bind(this))
@@ -305,33 +310,7 @@ handlers.contextmenu = (view, e) => {
 // plain wrong. Instead, when a composition ends, we parse the dom
 // around the original selection, and derive an update from that.
 
-function startComposition(view, dataLen) {
-  view.inDOMChange = {id: domChangeID(), state: view.state,
-                      composition: true, composeMargin: dataLen}
-  clearTimeout(view.finishUpdateFromDOM)
-  view.props.onAction({type: "startDOMChange", id: view.inDOMChange.id})
-}
-
-function domChangeID() {
-  return Math.floor(Math.random() * 0xffffffff)
-}
-
-function scheduleUpdateFromDOM(view) {
-  clearTimeout(view.finishUpdateFromDOM)
-  // Give the browser a moment to fire input events or start a new
-  // composition, and only apply the change from the DOM afterwards.
-  view.finishUpdateFromDOM = window.setTimeout(() => finishUpdateFromDOM(view), 50)
-}
-
-handlers.compositionstart = (view, e) => {
-  if (!view.inDOMChange)
-    startComposition(view, e.data ? e.data.length : 0)
-}
-
-handlers.compositionupdate = view => {
-  if (!view.inDOMChange)
-    startComposition(view, 0)
-}
+handlers.compositionstart = handlers.compositionupdate = view => DOMChange.start(view, true)
 
 handlers.compositionend = (view, e) => {
   if (!view.inDOMChange) {
@@ -339,36 +318,59 @@ handlers.compositionend = (view, e) => {
     // events for the composition. If there's data in the event
     // object, we assume that it's a real change, and start a
     // composition. Otherwise, we just ignore it.
-    if (e.data) startComposition(view, e.data.length)
+    if (e.data) DOMChange.start(view, true)
     else return
   }
 
-  scheduleUpdateFromDOM(view)
+  view.inDOMChange.compositionEnd()
 }
 
-function finishUpdateFromDOM(view) {
-  clearTimeout(view.finishUpdateFromDOM)
-  let change = view.inDOMChange
-  if (!change) return
-  if (change.composition) readCompositionChange(view, change.state, change.composeMargin)
-  else readInputChange(view, change.state)
-  view.inDOMChange = null
-  view.props.onAction({type: "endDOMChange"})
+const observeOptions = {childList: true, characterData: true, attributes: true, subtree: true}
+function startObserving(view) {
+  if (view.mutationObserver) view.mutationObserver.observe(view.content, observeOptions)
 }
-exports.finishUpdateFromDOM = finishUpdateFromDOM
+exports.startObserving = startObserving
 
-handlers.input = view => {
-  if (view.inDOMChange) return
-  view.inDOMChange = {id: domChangeID(), state: view.state}
-  view.props.onAction({type: "startDOMChange", id: view.inDOMChange.id})
-  scheduleUpdateFromDOM(view)
+function stopObserving(view) {
+  if (view.mutationObserver) view.mutationObserver.disconnect()
 }
+exports.stopObserving = stopObserving
+
+function registerMutations(view, mutations) {
+  for (let i = 0; i < mutations.length; i++) {
+    let mut = mutations[i]
+    if (mut.target == view.content && mut.type == "attributes") continue
+    let desc = view.docView.nearestDesc(mut.target)
+    if (!desc || desc.ignoreMutation(mut)) continue
+
+    let from, to
+    if (mut.type == "childList") {
+      let fromOffset = mut.previousSibling && mut.previousSibling.parentNode == mut.target
+          ? Array.prototype.indexOf.call(mut.target.childNodes, desc.previousSibling) + 1 : 0
+      from = desc.localPosFromDOM(mut.target, fromOffset, -1)
+      let toOffset = mut.nextSibling && mut.nextSibling.parentNode == mut.target
+          ? Array.prototype.indexOf.call(mut.target.childNodes, desc.nextSibling) : mut.target.childNodes.length
+      to = desc.localPosFromDOM(mut.target, toOffset, 1)
+    } else if (mut.type == "attributes") {
+      from = desc.posAtStart - desc.border
+      to = desc.posAtEnd + desc.border
+    } else { // "characterData"
+      from = desc.posAtStart
+      to = desc.posAtEnd
+    }
+
+    DOMChange.start(view)
+    view.inDOMChange.addRange(from, to)
+  }
+}
+
+handlers.input = view => DOMChange.start(view)
 
 handlers.copy = handlers.cut = (view, e) => {
   let sel = view.state.selection, cut = e.type == "cut"
   if (sel.empty) return
   if (!e.clipboardData || !canUpdateClipboard(e.clipboardData)) {
-    if (cut && browser.ie && browser.ie_version <= 11) scheduleUpdateFromDOM(view)
+    if (cut && browser.ie && browser.ie_version <= 11) DOMChange.start(view)
     return
   }
   toClipboard(view, sel, e.clipboardData)
@@ -382,7 +384,7 @@ function sliceSingleNode(slice) {
 
 handlers.paste = (view, e) => {
   if (!e.clipboardData) {
-    if (browser.ie && browser.ie_version <= 11) scheduleUpdateFromDOM(view)
+    if (browser.ie && browser.ie_version <= 11) DOMChange.start(view)
     return
   }
   let slice = fromClipboard(view, e.clipboardData, view.shiftKey, view.state.selection.$from)
