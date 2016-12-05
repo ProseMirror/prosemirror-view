@@ -21,18 +21,15 @@ class DOMChange {
     }
   }
 
+  changedRange() {
+    if (this.from == null) return rangeAroundSelection(this.state.selection)
+    let $from = this.state.doc.resolve(this.from), $to = this.state.doc.resolve(this.to)
+    let shared = $from.sharedDepth(this.to)
+    return {from: $from.before(shared + 1), to: $to.after(shared + 1)}
+  }
+
   read() {
-    let range
-    if (this.from == null) {
-      let {$from, $to} = this.state.selection
-      if ($from.sameParent($to) && $from.parent.isTextblock && $from.parentOffset && $to.parentOffset < $to.parent.content.size)
-        range = rangeAroundText(this.state.selection)
-      else
-        range = rangeAroundSelection(this.state.selection)
-    } else {
-      range = {from: this.from, to: this.to}
-    }
-    readDOMChange(this.view, this.state, range)
+    readDOMChange(this.view, this.state, this.changedRange())
   }
 
   finish() {
@@ -141,33 +138,33 @@ function isAtStart($pos, depth) {
 
 function rangeAroundSelection(selection) {
   let {$from, $to} = selection
-  for (let depth = 0;; depth++) {
-    let fromStart = isAtStart($from, depth + 1), toEnd = isAtEnd($to, depth + 1)
-    if (fromStart || toEnd || $from.index(depth) != $to.index(depth) || $to.node(depth).isTextblock) {
-      let from = $from.before(depth + 1), to = $to.after(depth + 1)
-      if (fromStart && $from.index(depth) > 0)
-        from -= $from.node(depth).child($from.index(depth) - 1).nodeSize
-      if (toEnd && $to.index(depth) + 1 < $to.node(depth).childCount)
-        to += $to.node(depth).child($to.index(depth) + 1).nodeSize
-      return {from, to}
+
+  if ($from.sameParent($to) && $from.parent.isTextblock && $from.parentOffset && $to.parentOffset < $to.parent.content.size) {
+    let startOff = Math.max(0, $from.parentOffset)
+    let size = $from.parent.content.size
+    let endOff = Math.min(size, $to.parentOffset)
+
+    if (startOff > 0)
+      startOff = $from.parent.childBefore(startOff).offset
+    if (endOff < size) {
+      let after = $from.parent.childAfter(endOff)
+      endOff = after.offset + after.node.nodeSize
+    }
+    let nodeStart = $from.start()
+    return {from: nodeStart + startOff, to: nodeStart + endOff}
+  } else {
+    for (let depth = 0;; depth++) {
+      let fromStart = isAtStart($from, depth + 1), toEnd = isAtEnd($to, depth + 1)
+      if (fromStart || toEnd || $from.index(depth) != $to.index(depth) || $to.node(depth).isTextblock) {
+        let from = $from.before(depth + 1), to = $to.after(depth + 1)
+        if (fromStart && $from.index(depth) > 0)
+          from -= $from.node(depth).child($from.index(depth) - 1).nodeSize
+        if (toEnd && $to.index(depth) + 1 < $to.node(depth).childCount)
+          to += $to.node(depth).child($to.index(depth) + 1).nodeSize
+        return {from, to}
+      }
     }
   }
-}
-
-function rangeAroundText(selection) {
-  let {$from, $to} = selection
-  let startOff = Math.max(0, $from.parentOffset)
-  let size = $from.parent.content.size
-  let endOff = Math.min(size, $to.parentOffset)
-
-  if (startOff > 0)
-    startOff = $from.parent.childBefore(startOff).offset
-  if (endOff < size) {
-    let after = $from.parent.childAfter(endOff)
-    endOff = after.offset + after.node.nodeSize
-  }
-  let nodeStart = $from.start()
-  return {from: nodeStart + startOff, to: nodeStart + endOff}
 }
 
 function enterEvent() {
@@ -193,8 +190,14 @@ function readDOMChange(view, oldState, range) {
   let change = findDiff(compare.content, parsed.content, range.from, oldState.selection.from)
   if (!change) return false
 
-  // Mark nodes touched by this change as 'to be redrawn'
-  view.docView.markDirty(change.start, change.endA)
+  // Mark nodes touched by this change as 'to be redrawn', except if
+  // the whole change falls within a single textnode, in which case we
+  // leave it alone and rely on the viewdesc update to fix the text
+  // content if necessary.
+  let $start = doc.resolve(change.start)
+  if ($start.atNodeBoundary || $start.sharedDepth(change.endA) != $start.depth ||
+      $start.index() != doc.resolve(change.endA).index())
+    view.docView.markDirty(change.start, change.endA)
 
   let $from = parsed.resolveNoCache(change.start - range.from)
   let $to = parsed.resolveNoCache(change.endB - range.from)

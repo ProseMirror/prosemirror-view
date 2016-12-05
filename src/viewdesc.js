@@ -497,7 +497,8 @@ class TextViewDesc extends NodeViewDesc {
   update(node, outerDeco) {
     if (!node.sameMarkup(this.node) ||
         !sameOuterDeco(outerDeco, this.outerDeco)) return false
-    if (node.text != this.node.text) this.textDOM.nodeValue = node.text
+    if (node.text != this.node.text && node.text != this.textDOM.nodeValue)
+      this.textDOM.nodeValue = node.text
     this.node = node
     return true
   }

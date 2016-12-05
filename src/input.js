@@ -58,12 +58,6 @@ handlers.keyup = (view, e) => {
   if (e.keyCode == 16) view.shiftKey = false
 }
 
-function insertText(view, text) {
-  let {from, to} = view.state.selection
-  if (!view.someProp("handleTextInput", f => f(view, from, to, text)))
-    view.props.onAction(view.state.tr.insertText(text).scrollAction())
-}
-
 handlers.keypress = (view, event) => {
   if (view.inDOMChange || !event.charCode ||
       event.ctrlKey && !event.altKey || browser.mac && event.metaKey) return
@@ -71,15 +65,6 @@ handlers.keypress = (view, event) => {
   if (view.someProp("handleKeyPress", f => f(view, event))) {
     event.preventDefault()
     return
-  }
-  return
-
-  // On iOS, let input through, because if we handle it the virtual
-  // keyboard's default case doesn't update (it only does so when the
-  // user types or taps, not on selection updates from JavaScript).
-  if (!browser.ios) {
-    insertText(view, String.fromCharCode(event.charCode))
-    event.preventDefault()
   }
 }
 

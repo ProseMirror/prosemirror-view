@@ -152,6 +152,13 @@ function selectVertically(view, dir) {
   return beyond ? apply(view, beyond) : true
 }
 
+function stopNativeHorizontalDelete(view, dir) {
+  let {$head, $anchor, empty} = view.state.selection
+  if (!$head || !$head.sameParent($anchor) || !$head.parent.isTextblock) return true
+  if (!empty) return false
+  return $head.parentOffset == (dir > 0 ? $head.parent.content.size : 0)
+}
+
 // A backdrop keymap used to make sure we always suppress keys that
 // have a dangerous default effect, even if the commands they are
 // bound to return false, and to make sure that cursor-motion keys
@@ -162,13 +169,10 @@ function selectVertically(view, dir) {
 function captureKeyDown(view, event) {
   let code = event.keyCode, mod = browser.mac ? event.metaKey : event.ctrlKey
   if (code == 8) { // Backspace
-    return browser.ios ? false : true
-  } else if (code == 13 || code == 27 || code == 46) { // Enter, Esc, Delete
-    return true
-  } else if (mod && !event.altKey && !event.shiftKey &&
-             (code == 66 || code == 73 || code == 89 || code == 90 || code == 68 || code == 72)) { // Mod-[BIYZDH]
-    return true
-  } else if (code == 68 && event.altKey && !mod && !event.shiftKey) { // Alt-D
+    return stopNativeHorizontalDelete(view, -1)
+  } else if (code == 46) { // Delete
+    return stopNativeHorizontalDelete(view, 1)
+  } else if (code == 13 || code == 27) { // Enter, Esc
     return true
   } else if (code == 37) { // Left arrow
     return selectHorizontally(view, -1) || skipIgnoredNodesLeft(view)
@@ -178,6 +182,13 @@ function captureKeyDown(view, event) {
     return selectVertically(view, -1)
   } else if (code == 40) { // Down arrow
     return selectVertically(view, 1)
+  } else if (mod && !event.altKey && !event.shiftKey) { // Mod-
+    if (code == 66 || code == 73 || code == 89 || code == 90) return true // Mod-[biyz]
+    if (browser.mac && code == 68) return stopNativeHorizontalDelete(view, 1) // Mod-d
+    if (browser.mac && code == 72) return stopNativeHorizontalDelete(view, -1) // Mod-h
+  } else if (browser.mac && code == 68 && event.altKey && !mod && !event.shiftKey) { // Alt-d
+    return stopNativeHorizontalDelete(view, 1)
   }
+  return false
 }
 exports.captureKeyDown = captureKeyDown
