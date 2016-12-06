@@ -169,9 +169,9 @@ function stopNativeHorizontalDelete(view, dir) {
 function captureKeyDown(view, event) {
   let code = event.keyCode, mod = browser.mac ? event.metaKey : event.ctrlKey
   if (code == 8) { // Backspace
-    return stopNativeHorizontalDelete(view, -1)
+    return stopNativeHorizontalDelete(view, -1) || skipIgnoredNodesLeft(view)
   } else if (code == 46) { // Delete
-    return stopNativeHorizontalDelete(view, 1)
+    return stopNativeHorizontalDelete(view, 1) || skipIgnoredNodesRight(view)
   } else if (code == 13 || code == 27) { // Enter, Esc
     return true
   } else if (code == 37) { // Left arrow
@@ -183,11 +183,14 @@ function captureKeyDown(view, event) {
   } else if (code == 40) { // Down arrow
     return selectVertically(view, 1)
   } else if (mod && !event.altKey && !event.shiftKey) { // Mod-
-    if (code == 66 || code == 73 || code == 89 || code == 90) return true // Mod-[biyz]
-    if (browser.mac && code == 68) return stopNativeHorizontalDelete(view, 1) // Mod-d
-    if (browser.mac && code == 72) return stopNativeHorizontalDelete(view, -1) // Mod-h
+    if (code == 66 || code == 73 || code == 89 || code == 90) // Mod-[biyz]
+      return true
+    if (browser.mac && code == 68) // Mod-d
+      return stopNativeHorizontalDelete(view, 1) || skipIgnoredNodesRight(view)
+    if (browser.mac && code == 72) // Mod-h
+      return stopNativeHorizontalDelete(view, -1) || skipIgnoredNodesLeft(view)
   } else if (browser.mac && code == 68 && event.altKey && !mod && !event.shiftKey) { // Alt-d
-    return stopNativeHorizontalDelete(view, 1)
+    return stopNativeHorizontalDelete(view, 1) || skipIgnoredNodesRight(view)
   }
   return false
 }
