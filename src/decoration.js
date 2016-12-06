@@ -13,6 +13,7 @@ class WidgetType {
       widget = wrap
     }
     widget.contentEditable = false
+    widget.classList.add("ProseMirror-widget")
     this.widget = widget
     this.options = options || noOptions
   }
