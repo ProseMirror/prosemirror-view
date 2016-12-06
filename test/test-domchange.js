@@ -17,7 +17,7 @@ function flush(view, f) {
   })
 }
 
-describe("readInputChange", () => {
+describe("DOM change", () => {
   it("notices when text is added", () => {
     let view = tempEditor({doc: doc(p("hello"))})
     findTextNode(view.content, "hello").nodeValue = "heLllo"
@@ -132,9 +132,7 @@ describe("readInputChange", () => {
     findTextNode(view.content, "foo xxx bar").nodeValue = "foo xx bar"
     return flush(view, () => ist(view.state.doc, doc(p("foo xx bar")), eq))
   })
-})
 
-describe("readCompositionChange", () => {
   it("can read a simple composition", () => {
     let view = tempEditor({doc: doc(p("hello"))})
     findTextNode(view.content, "hello").nodeValue = "hellox"
@@ -158,5 +156,17 @@ describe("readCompositionChange", () => {
     view.props.onAction({type: "addStoredMark", mark: view.state.schema.marks.strong.create()})
     findTextNode(view.content, "foo").nodeValue = "fooo"
     return flush(view, () => ist(view.state.doc, doc(p("fo", strong("o"), "o")), eq))
+  })
+
+  it("does not repaint a text node when it's typed into", () => {
+    let view = tempEditor({doc: doc(p("fo<a>o"))})
+    findTextNode(view.content, "foo").nodeValue = "fojo"
+    let mutated = false, observer = new MutationObserver(() => mutated = true)
+    observer.observe(view.content, {subtree: true, characterData: true, childList: true})
+    return flush(view, () => {
+      ist(view.state.doc, doc(p("fojo")), eq)
+      ist(!mutated)
+      observer.disconnect()
+    })
   })
 })
