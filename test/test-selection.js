@@ -61,6 +61,7 @@ describe("EditorView", () => {
     let view = tempEditor({doc: doc(p("one"), hr, blockquote(p("two")))})
     function test(node, offset, expected) {
       setDOMSel(node, offset)
+      view.content.focus()
       view.selectionReader.readFromDOM()
       let sel = view.state.selection
       ist(sel.head == null ? sel.from : sel.head, expected)
