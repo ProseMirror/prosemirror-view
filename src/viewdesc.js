@@ -224,15 +224,15 @@ class ViewDesc {
   }
 
   // : (number, ?bool) → {node: dom.Node, offset: number}
-  domFromPos(pos, changedDOM) {
+  domFromPos(pos, searchDOM) {
     if (!this.contentDOM) return {node: this.dom, offset: 0}
     for (let offset = 0, i = 0;; i++) {
       if (offset == pos)
         return {node: this.contentDOM,
-                offset: changedDOM ? this.findDOMOffset(i) : i}
+                offset: searchDOM ? this.findDOMOffset(i, searchDOM) : i}
       if (i == this.children.length) throw new Error("Invalid position " + pos)
       let child = this.children[i], end = offset + child.size
-      if (pos < end) return child.domFromPos(pos - offset - child.border, changedDOM)
+      if (pos < end) return child.domFromPos(pos - offset - child.border, searchDOM)
       offset = end
     }
   }
@@ -240,17 +240,22 @@ class ViewDesc {
   // If the DOM was directly edited, we can't trust the child view
   // desc offsets anymore, so we search the actual DOM to figure out
   // the offset that corresponds to a given child.
-  findDOMOffset(i) {
-    let childNodes = this.contentDOM.childNodes
-    if (i) {
-      let found = Array.prototype.indexOf.call(childNodes, this.children[i - 1].dom)
-      if (found > -1) return found + 1
+  findDOMOffset(i, searchDOM) {
+    let content = this.contentDOM
+    // The loop makes sure the preferred side is used first, and the
+    // other is only used as a fallback.
+    for (let retry = 0; retry < 2; retry++) {
+      if ((retry == 0) == (searchDOM < 0)) {
+        if (i == 0) return 0
+        let found = Array.prototype.indexOf.call(content.childNodes, this.children[i - 1].dom)
+        if (found > -1) return found + 1
+      } else {
+        if (i == this.children.length) return content.childNodes.length
+        let found = Array.prototype.indexOf.call(content.childNodes, this.children[i].dom)
+        if (found > -1) return found
+      }
     }
-    if (i < this.children.length) {
-      let found = Array.prototype.indexOf.call(childNodes, this.children[i].dom)
-      if (found > -1) return found
-    }
-    return i ? childNodes.length : 0
+    return i ? content.childNodes.length : 0
   }
 
   // : (number) → dom.Node
@@ -503,8 +508,8 @@ class TextViewDesc extends NodeViewDesc {
     return true
   }
 
-  domFromPos(pos) {
-    return {node: this.textDOM, offset: pos}
+  domFromPos(pos, searchDOM) {
+    return {node: this.textDOM, offset: searchDOM ? Math.max(pos, this.textDOM.nodeValue.length) : pos}
   }
 
   localPosFromDOM(dom, offset, bias) {

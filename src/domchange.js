@@ -69,19 +69,9 @@ exports.DOMChange = DOMChange
 // readDOMChange.
 
 function parseBetween(view, oldState, from, to) {
-  let {node: parent, offset: startOff} = view.docView.domFromPos(from, true)
-  let {node: parentRight, offset: endOff} = view.docView.domFromPos(to, true)
+  let {node: parent, offset: startOff} = view.docView.domFromPos(from, -1)
+  let {node: parentRight, offset: endOff} = view.docView.domFromPos(to, 1)
   if (parent != parentRight) return null
-  while (startOff) {
-    let prev = parent.childNodes[startOff - 1]
-    if (!prev.pmViewDesc) --startOff
-    else break
-  }
-  while (endOff < parent.childNodes.length) {
-    let next = parent.childNodes[endOff]
-    if (!next.pmViewDesc) ++endOff
-    else break
-  }
   // If there's non-view nodes directly after the end of this region,
   // fail and let the caller try again with a wider range.
   if (endOff == parent.childNodes.length) for (let scan = parent; scan != view.content;) {
