@@ -2,30 +2,30 @@
   position: relative;
 }
 
-.ProseMirror-content {
+.ProseMirror {
   white-space: pre-wrap;
 }
 
-.ProseMirror-content ul, .ProseMirror-content ol {
+.ProseMirror ul, .ProseMirror ol {
   padding-left: 30px;
   cursor: default;
 }
 
-.ProseMirror-content blockquote {
+.ProseMirror blockquote {
   padding-left: 1em;
   border-left: 3px solid #eee;
   margin-left: 0; margin-right: 0;
 }
 
-.ProseMirror-content pre {
+.ProseMirror pre {
   white-space: pre-wrap;
 }
 
-.ProseMirror-content li {
+.ProseMirror li {
   position: relative;
   pointer-events: none; /* Don't do weird stuff with marker clicks */
 }
-.ProseMirror-content li > * {
+.ProseMirror li > * {
   pointer-events: auto;
 }
 

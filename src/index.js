@@ -23,21 +23,18 @@ class EditorView {
     // The view's current [state](#state.EditorState).
     this.state = props.state
 
+    this._root = null
+    this.focused = false
+
     // :: dom.Node
     // The editable DOM node containing the document. (You probably
     // should not be directly interfering with its child nodes.)
     this.content = document.createElement("div")
-    this.content.classList.add("ProseMirror-content")
-
-    this.wrapper = document.createElement("div")
-    this.wrapper.appendChild(this.content)
-
-    this._root = null
 
     this.updateDOMForProps()
 
-    if (place && place.appendChild) place.appendChild(this.wrapper)
-    else if (place) place(this.wrapper)
+    if (place && place.appendChild) place.appendChild(this.content)
+    else if (place) place(this.content)
 
     this.docView = docViewDesc(this.state.doc, viewDecorations(this), this.content, this)
     this.content.contentEditable = true
@@ -53,7 +50,6 @@ class EditorView {
   update(props) {
     this.props = props
     this.updateState(props.state)
-    this.updateDOMForProps()
   }
 
   // :: (EditorState)
@@ -85,6 +81,8 @@ class EditorView {
     if (redrawn || !state.selection.eq(prevSel))
       selectionToDOM(this, state.selection)
 
+    this.updateDOMForProps()
+
     // FIXME somehow schedule this relative to ui/update so that it
     // doesn't cause extra layout
     if (state.view.scrollToSelection)
@@ -96,9 +94,16 @@ class EditorView {
     if (spellcheck != this.content.spellcheck) this.content.spellcheck = spellcheck
     let label = this.someProp("label", f => f(this.state)) || ""
     if (this.content.getAttribute("aria-label") != label) this.content.setAttribute("aria-label", label)
-    let className = "ProseMirror"
-    this.someProp("class", f => { let cls = f(this.state); if (cls) className += " " + cls })
-    if (this.wrapper.className != className) this.wrapper.className = className
+    let classes = ["ProseMirror", "ProseMirror-content"] // FIXME remove backwards-compat class
+    if (this.focused) classes.push("ProseMirror-focused")
+    this.someProp("class", f => {
+      let cls = f(this.state)
+      if (!cls) return
+      let array = cls.split(" ")
+      for (let i = 0; i < array.length; i++) classes.push(array[i])
+    })
+    let className = classes.sort().join(" ")
+    if (this.content.className != className) this.content.className = className
   }
 
   // :: () → bool
@@ -139,7 +144,7 @@ class EditorView {
   // root if the editor is inside a shadow DOM.
   get root() {
     let cached = this._root
-    if (cached == null) for (let search = this.wrapper.parentNode; search; search = search.parentNode) {
+    if (cached == null) for (let search = this.content.parentNode; search; search = search.parentNode) {
       if (search.nodeType == 9 || (search.nodeType == 11 && search.host))
         return this._root = search
     }
@@ -175,7 +180,7 @@ class EditorView {
   // destroyed, that may not be the case.
   destroy() {
     this.docView.destroy()
-    if (this.wrapper.parentNode) this.wrapper.parentNode.removeChild(this.wrapper)
+    if (this.content.parentNode) this.content.parentNode.removeChild(this.content)
   }
 }
 exports.EditorView = EditorView

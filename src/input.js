@@ -456,11 +456,17 @@ handlers.drop = (view, e) => {
 }
 
 handlers.focus = (view, event) => {
-  view.wrapper.classList.add("ProseMirror-focused")
+  if (!view.focused) {
+    view.content.classList.add("ProseMirror-focused")
+    view.focused = true
+  }
   view.someProp("onFocus", f => { f(view, event) })
 }
 
 handlers.blur = (view, event) => {
-  view.wrapper.classList.remove("ProseMirror-focused")
+  if (view.focused) {
+    view.content.classList.remove("ProseMirror-focused")
+    view.focused = false
+  }
   view.someProp("onBlur", f => { f(view, event) })
 }

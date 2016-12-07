@@ -8,7 +8,7 @@ let tempView = null
 function tempEditor(inProps) {
   let space = document.querySelector("#workspace")
   if (tempView) {
-    space.removeChild(tempView.wrapper)
+    tempView.destroy()
     tempView = null
   }
 
