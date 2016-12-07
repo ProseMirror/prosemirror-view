@@ -169,4 +169,10 @@ describe("DOM change", () => {
       observer.disconnect()
     })
   })
+
+  it("understands text typed into an empty paragraph", () => {
+    let view = tempEditor({doc: doc(p("<a>"))})
+    view.content.querySelector("p").textContent = "i"
+    return flush(view, () => ist(view.state.doc, doc(p("i")), eq))
+  })
 })

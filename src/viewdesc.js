@@ -242,20 +242,19 @@ class ViewDesc {
   // the offset that corresponds to a given child.
   findDOMOffset(i, searchDOM) {
     let content = this.contentDOM
-    // The loop makes sure the preferred side is used first, and the
-    // other is only used as a fallback.
-    for (let retry = 0; retry < 2; retry++) {
-      if ((retry == 0) == (searchDOM < 0)) {
-        if (i == 0) return 0
-        let found = Array.prototype.indexOf.call(content.childNodes, this.children[i - 1].dom)
+    if (searchDOM < 0) {
+      for (let j = i - 1; j >= 0; j--) {
+        let found = Array.prototype.indexOf.call(content.childNodes, this.children[j].dom)
         if (found > -1) return found + 1
-      } else {
-        if (i == this.children.length) return content.childNodes.length
-        let found = Array.prototype.indexOf.call(content.childNodes, this.children[i].dom)
+      }
+      return 0
+    } else {
+      for (let j = i; j < this.children.length; j++) {
+        let found = Array.prototype.indexOf.call(content.childNodes, this.children[j].dom)
         if (found > -1) return found
       }
+      return content.childNodes.length
     }
-    return i ? content.childNodes.length : 0
   }
 
   // : (number) → dom.Node
