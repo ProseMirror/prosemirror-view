@@ -4,6 +4,7 @@ const browser = require("./browser")
 const {captureKeyDown} = require("./capturekeys")
 const {DOMChange} = require("./domchange")
 const {fromClipboard, toClipboard, canUpdateClipboard} = require("./clipboard")
+const {TrackMappings} = require("./trackmappings")
 
 // A collection of DOM events that occur within the editor, and callback functions
 // to invoke when the event fires.
@@ -382,10 +383,10 @@ handlers.paste = (view, e) => {
 }
 
 class Dragging {
-  constructor(slice, range, move) {
+  constructor(state, slice, range, move) {
     this.slice = slice
     this.range = range
-    this.move = move
+    this.move = move && new TrackMappings(state)
   }
 }
 
@@ -416,7 +417,7 @@ handlers.dragstart = (view, e) => {
 
   if (draggedRange) {
     let slice = toClipboard(view, draggedRange, e.dataTransfer)
-    view.dragging = new Dragging(slice, draggedRange, !e.ctrlKey && view.state.doc)
+    view.dragging = new Dragging(view.state, slice, draggedRange, !e.ctrlKey)
   }
 }
 
@@ -440,8 +441,11 @@ handlers.drop = (view, e) => {
 
   e.preventDefault()
   let tr = view.state.tr
-  if (dragging && dragging.move && dragging.move.eq(view.state.doc))
-    tr.deleteRange(dragging.range.from, dragging.range.to)
+  if (dragging && dragging.move) {
+    let {from, to} = dragging.range, mapping = dragging.move.getMapping(view.state)
+    tr.deleteRange(mapping ? mapping.map(from, 1) : from,
+                   mapping ? mapping.map(to, -1) : to)
+  }
   view.someProp("transformPasted", f => { slice = f(slice) })
   let pos = tr.mapping.map(insertPos)
   if (slice.openLeft == 0 && slice.openRight == 0 && slice.content.childCount == 1)

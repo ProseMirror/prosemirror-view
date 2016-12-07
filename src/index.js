@@ -25,7 +25,13 @@ class EditorView {
     // The view's current [state](#state.EditorState).
     this.state = props.state
 
-    EditorState.addApplyListener(this.trackState = this.trackState.bind(this))
+    // Kludge to listen to state changes globally in order to be able
+    // to find mappings from a given state to another when necessary
+    // (during a drag or a DOM change).
+    EditorState.addApplyListener(this.trackState = (old, action, state) => {
+      if (this.inDOMChange) this.inDOMChange.mappings.track(old, action, state)
+      if (this.dragging && this.dragging.move) this.dragging.move.track(old, action, state)
+    })
 
     this._root = null
     this.focused = false
@@ -178,11 +184,6 @@ class EditorView {
   // Used for testing.
   dispatchEvent(event) {
     return dispatchEvent(this, event)
-  }
-
-  trackState(old, action, state) {
-    if (this.inDOMChange) this.inDOMChange.mappings.track(old, action, state)
-    // FIXME same for dragged range
   }
 }
 exports.EditorView = EditorView
