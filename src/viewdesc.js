@@ -317,6 +317,7 @@ class ViewDesc {
           child.markDirty(from - start, to - start)
         } else {
           child.destroy()
+          if (child.dom.parentNode) child.dom.parentNode.removeChild(child.dom)
           this.children.splice(i--, 1)
         }
       }
