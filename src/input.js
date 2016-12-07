@@ -424,9 +424,7 @@ handlers.dragend = view => {
   window.setTimeout(() => view.dragging = null, 50)
 }
 
-handlers.dragover = handlers.dragenter = (view, e) => {
-  e.preventDefault()
-}
+handlers.dragover = handlers.dragenter = (_, e) => e.preventDefault()
 
 handlers.drop = (view, e) => {
   let dragging = view.dragging

@@ -1,3 +1,5 @@
+const {EditorState} = require("prosemirror-state")
+
 const {scrollPosIntoView, posAtCoords, coordsAtPos} = require("./domcoords")
 const {docViewDesc} = require("./viewdesc")
 const {initInput, dispatchEvent, startObserving, stopObserving} = require("./input")
@@ -22,6 +24,8 @@ class EditorView {
     // :: EditorState
     // The view's current [state](#state.EditorState).
     this.state = props.state
+
+    EditorState.addApplyListener(this.trackState = this.trackState.bind(this))
 
     this._root = null
     this.focused = false
@@ -56,17 +60,10 @@ class EditorView {
   // Update the editor's `state` prop, without touching any of the
   // other props.
   updateState(state) {
-    let prevSel = this.state.selection
+    let prev = this.state
     this.state = state
 
-    if (this.inDOMChange) {
-      if (state.view.inDOMChange != this.inDOMChange.id)
-        setTimeout(() => this.inDOMChange && this.inDOMChange.finish(), 0)
-      return
-    } else if (state.view.inDOMChange != null) {
-      setTimeout(() => this.props.onAction({type: "endDOMChange"}), 0)
-      return
-    }
+    if (this.inDOMChange) return
 
     let redrawn = false
     let decorations = viewDecorations(this)
@@ -78,15 +75,17 @@ class EditorView {
       redrawn = true
     }
 
-    if (redrawn || !state.selection.eq(prevSel))
+    if (redrawn || !state.selection.eq(prev.selection))
       selectionToDOM(this, state.selection)
 
     this.updateDOMForProps()
 
     // FIXME somehow schedule this relative to ui/update so that it
     // doesn't cause extra layout
-    if (state.view.scrollToSelection)
+    if (state.scrollToSelection > prev.scrollToSelection || prev.config != state.config) {
+      console.log("sc")
       scrollPosIntoView(this, state.selection.head == null ? state.selection.from : state.selection.from)
+    }
   }
 
   updateDOMForProps() {
@@ -167,20 +166,23 @@ class EditorView {
   // cursor-ish rectangle.
   coordsAtPos(pos) { return coordsAtPos(this, pos) }
 
+  // :: ()
+  // Removes the editor from the DOM and destroys all [node
+  // views](#view.NodeView).
+  destroy() {
+    this.docView.destroy()
+    EditorState.removeApplyListener(this.trackState)
+    if (this.content.parentNode) this.content.parentNode.removeChild(this.content)
+  }
+
   // Used for testing.
   dispatchEvent(event) {
     return dispatchEvent(this, event)
   }
 
-  // :: ()
-  // Removes the editor from the DOM and destroys all [node
-  // views](#view.NodeView). By default, a ProseMirror view does not
-  // leave anything around that leaks, and simply removing it from the
-  // DOM is enough. But if you have node views that need to be
-  // destroyed, that may not be the case.
-  destroy() {
-    this.docView.destroy()
-    if (this.content.parentNode) this.content.parentNode.removeChild(this.content)
+  trackState(old, action, state) {
+    if (this.inDOMChange) this.inDOMChange.mappings.track(old, action, state)
+    // FIXME same for dragged range
   }
 }
 exports.EditorView = EditorView

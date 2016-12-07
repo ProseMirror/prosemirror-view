@@ -194,4 +194,15 @@ describe("DOM change", () => {
     para.replaceChild(document.createElement("img"), para.lastChild)
     return flush(view, () => ist(view.content.textContent, "foobar"))
   })
+
+  it("maps through concurrent changes", () => {
+    let view = tempEditor({doc: doc(p("one two three"))})
+    findTextNode(view.content, "one two three").nodeValue = "one two THREE"
+    view.dispatchEvent({type: "input"})
+    view.props.onAction(view.state.tr.insertText("ONE AND A HALF", 1, 4).action())
+    return flush(view, () => {
+      ist(view.content.textContent, "ONE AND A HALF two THREE")
+      ist(view.state.doc, doc(p("ONE AND A HALF two THREE")), eq)
+    })
+  })
 })

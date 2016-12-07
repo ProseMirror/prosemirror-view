@@ -1,6 +1,8 @@
 const {Mark, DOMParser} = require("prosemirror-model")
 const {Selection} = require("prosemirror-state")
 
+const {TrackMappings} = require("./trackmappings")
+
 class DOMChange {
   constructor(view, id, composing) {
     this.view = view
@@ -9,6 +11,7 @@ class DOMChange {
     this.composing = composing
     this.from = this.to = null
     this.timeout = composing ? null : setTimeout(() => this.finish(), 50)
+    this.mappings = new TrackMappings(view.state)
   }
 
   addRange(from, to) {
@@ -29,7 +32,7 @@ class DOMChange {
   }
 
   read(range) {
-    readDOMChange(this.view, this.state, range)
+    readDOMChange(this, this.state, range)
   }
 
   finish() {
@@ -38,9 +41,8 @@ class DOMChange {
     let range = this.changedRange()
     if (this.from == null) this.view.docView.markDirty(range.from, range.to)
     else this.view.docView.markDirty(this.from, this.to)
-    this.read(range)
     this.view.inDOMChange = null
-    this.view.props.onAction({type: "endDOMChange"})
+    this.read(range)
   }
 
   compositionEnd() {
@@ -59,7 +61,6 @@ class DOMChange {
     } else {
       let id = Math.floor(Math.random() * 0xffffffff)
       view.inDOMChange = new DOMChange(view, id, composing)
-      view.props.onAction({type: "startDOMChange", id})
     }
   }
 }
@@ -169,8 +170,8 @@ function enterEvent() {
   return event
 }
 
-function readDOMChange(view, oldState, range) {
-  let parseResult, doc = oldState.doc
+function readDOMChange(domChange, oldState, range) {
+  let parseResult, doc = oldState.doc, view = domChange.view
   for (;;) {
     parseResult = parseBetween(view, oldState, range.from, range.to)
     if (parseResult) break
@@ -200,7 +201,7 @@ function readDOMChange(view, oldState, range) {
   // If there have been changes since this DOM update started, we must
   // map our start and end positions, as well as the new selection
   // positions, through them.
-  let mapping = view.state.view.domChangeMapping
+  let mapping = domChange.mappings.getMapping(view.state)
   if (mapping) {
     from = mapping.map(from)
     to = mapping.map(to)
