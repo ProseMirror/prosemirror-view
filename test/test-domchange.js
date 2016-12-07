@@ -1,5 +1,5 @@
 const ist = require("ist")
-const {eq, doc, p, h1, em, img, strong, blockquote} = require("prosemirror-model/test/build")
+const {eq, doc, p, h1, em, img, br, strong, blockquote} = require("prosemirror-model/test/build")
 const {tempEditor, findTextNode} = require("./view")
 
 function setSel(aNode, aOff, fNode, fOff) {
@@ -180,5 +180,18 @@ describe("DOM change", () => {
     let view = tempEditor({doc: doc(p("i<a>"))})
     view.content.querySelector("p").innerHTML = "<br>"
     return flush(view, () => ist(view.state.doc, doc(p()), eq))
+  })
+
+  it("fixes text changes when input is ignored", () => {
+    let view = tempEditor({doc: doc(p("foo")), onAction: () => view.updateState(view.state)})
+    findTextNode(view.content, "foo").nodeValue = "food"
+    return flush(view, () => ist(view.content.textContent, "foo"))
+  })
+
+  it("fixes structure changes when input is ignored", () => {
+    let view = tempEditor({doc: doc(p("foo", br, "bar")), onAction: () => view.updateState(view.state)})
+    let para = view.content.querySelector("p")
+    para.replaceChild(document.createElement("img"), para.lastChild)
+    return flush(view, () => ist(view.content.textContent, "foobar"))
   })
 })

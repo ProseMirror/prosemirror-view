@@ -425,7 +425,8 @@ class NodeViewDesc extends ViewDesc {
   parseRule() { return {node: this.node.type.name, attrs: this.node.attrs, contentElement: this.contentDOM} }
 
   matchesNode(node, outerDeco, innerDeco) {
-    return this.dirty != NODE_DIRTY && node.eq(this.node) && sameOuterDeco(outerDeco, this.outerDeco) && innerDeco.eq(this.innerDeco)
+    return this.dirty == NOT_DIRTY && node.eq(this.node) &&
+      sameOuterDeco(outerDeco, this.outerDeco) && innerDeco.eq(this.innerDeco)
   }
 
   get size() { return this.node.nodeSize }
@@ -509,7 +510,7 @@ class TextViewDesc extends NodeViewDesc {
     if (this.dirty == NODE_DIRTY || (this.dirty != NOT_DIRTY && !this.inParent) ||
         !node.sameMarkup(this.node) ||
         !sameOuterDeco(outerDeco, this.outerDeco)) return false
-    if (node.text != this.node.text && node.text != this.textDOM.nodeValue)
+    if ((this.dirty != NOT_DIRTY || node.text != this.node.text) && node.text != this.textDOM.nodeValue)
       this.textDOM.nodeValue = node.text
     this.node = node
     this.dirty = NOT_DIRTY
