@@ -88,10 +88,8 @@ class EditorView {
 
     // FIXME somehow schedule this relative to ui/update so that it
     // doesn't cause extra layout
-    if (state.scrollToSelection > prev.scrollToSelection || prev.config != state.config) {
-      console.log("sc")
+    if (state.scrollToSelection > prev.scrollToSelection || prev.config != state.config)
       scrollPosIntoView(this, state.selection.head == null ? state.selection.from : state.selection.from)
-    }
   }
 
   updateDOMForProps() {
