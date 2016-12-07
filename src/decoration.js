@@ -456,7 +456,7 @@ function mapChildren(oldChildren, newLocal, mapping, node, offset, oldOffset, op
   let mustRebuild = false
   for (let i = 0; i < children.length; i += 3) if (children[i + 1] == -1) { // Touched nodes
     let from = mapping.map(children[i] + oldOffset), fromLocal = from - offset
-    if (fromLocal >= node.content.size) {
+    if (fromLocal < 0 || fromLocal >= node.content.size) {
       mustRebuild = true
       continue
     }
