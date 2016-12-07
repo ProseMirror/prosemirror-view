@@ -6,13 +6,6 @@
   white-space: pre-wrap;
 }
 
-.ProseMirror-drop-target {
-  position: absolute;
-  width: 1px;
-  background: #666;
-  pointer-events: none;
-}
-
 .ProseMirror-content ul, .ProseMirror-content ol {
   padding-left: 30px;
   cursor: default;

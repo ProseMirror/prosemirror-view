@@ -13,7 +13,6 @@ function initInput(view) {
   view.shiftKey = false
   view.mouseDown = null
   view.dragging = null
-  view.dropTarget = null
   view.inDOMChange = null
   view.mutationObserver = window.MutationObserver &&
     new window.MutationObserver(mutations => registerMutations(view, mutations))
@@ -403,13 +402,6 @@ function dropPos(slice, $pos) {
   return $pos.pos
 }
 
-function removeDropTarget(view) {
-  if (view.dropTarget) {
-    view.wrapper.removeChild(view.dropTarget)
-    view.dropTarget = null
-  }
-}
-
 handlers.dragstart = (view, e) => {
   let mouseDown = view.mouseDown
   if (mouseDown) mouseDown.done()
@@ -429,41 +421,16 @@ handlers.dragstart = (view, e) => {
 }
 
 handlers.dragend = view => {
-  removeDropTarget(view)
   window.setTimeout(() => view.dragging = null, 50)
 }
 
 handlers.dragover = handlers.dragenter = (view, e) => {
   e.preventDefault()
-
-  let target = view.dropTarget
-  if (!target) {
-    target = view.dropTarget = view.wrapper.appendChild(document.createElement("div"))
-    target.className = "ProseMirror-drop-target"
-  }
-
-  let pos = dropPos(view.dragging && view.dragging.slice,
-                    view.state.doc.resolve(view.posAtCoords(eventCoords(e)).pos))
-  if (pos == null) return
-  let coords = view.coordsAtPos(pos)
-  let rect = view.wrapper.getBoundingClientRect()
-  coords.top -= rect.top
-  coords.right -= rect.left
-  coords.bottom -= rect.top
-  coords.left -= rect.left
-  target.style.left = (coords.left - 1) + "px"
-  target.style.top = coords.top + "px"
-  target.style.height = (coords.bottom - coords.top) + "px"
-}
-
-handlers.dragleave = (view, e) => {
-  if (e.target == view.content) removeDropTarget(view)
 }
 
 handlers.drop = (view, e) => {
   let dragging = view.dragging
   view.dragging = null
-  removeDropTarget(view)
 
   if (!e.dataTransfer) return
 
