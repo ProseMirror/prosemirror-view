@@ -63,7 +63,7 @@ function findOffsetInNode(node, coords) {
         }
       }
       if (!closest && (coords.left >= rect.right || coords.left >= rect.left && coords.top >= rect.bottom))
-        offset = i + 1
+        offset = childIndex + 1
     }
   }
   if (closest && closest.nodeType == 3) return findOffsetInText(closest, coordsClosest)
