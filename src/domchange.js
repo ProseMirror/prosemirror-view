@@ -181,14 +181,7 @@ function readDOMChange(view, oldState, range) {
   let change = findDiff(compare.content, parsed.content, range.from, oldState.selection.from)
   if (!change) return false
 
-  // Mark nodes touched by this change as 'to be redrawn', except if
-  // the whole change falls within a single textnode, in which case we
-  // leave it alone and rely on the viewdesc update to fix the text
-  // content if necessary.
-  let $start = doc.resolve(change.start)
-  if ($start.atNodeBoundary || $start.sharedDepth(change.endA) != $start.depth ||
-      $start.index() != doc.resolve(change.endA).index())
-    view.docView.markDirty(change.start, change.endA)
+  view.docView.markDirty(change.start, change.endA)
 
   let $from = parsed.resolveNoCache(change.start - range.from)
   let $to = parsed.resolveNoCache(change.endB - range.from)

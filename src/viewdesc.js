@@ -74,6 +74,8 @@ const browser = require("./browser")
 //
 // They form a doubly-linked mutable tree, starting at `view.docView`.
 
+const NOT_DIRTY = 0, CHILD_DIRTY = 1, CONTENT_DIRTY = 2, NODE_DIRTY = 3
+
 // Superclass for the various kinds of descriptions. Defines their
 // basic structure and shared methods.
 class ViewDesc {
@@ -88,6 +90,7 @@ class ViewDesc {
     // This is the node that holds the child views. It may be null for
     // descs that don't have children.
     this.contentDOM = contentDOM
+    this.dirty = NOT_DIRTY
   }
 
   // Used to check whether a given description corresponds to a
@@ -312,17 +315,18 @@ class ViewDesc {
     for (let offset = 0, i = 0; i < this.children.length; i++) {
       let child = this.children[i], end = offset + child.size
       if (from < end && to > offset) {
-        if (from > offset && to < end) {
-          let start = offset + child.border
-          child.markDirty(from - start, to - start)
+        let startInside = offset + child.border, endInside = end - child.border
+        if (from >= startInside && to <= endInside) {
+          this.dirty = from == offset || to == end ? CONTENT_DIRTY : CHILD_DIRTY
+          child.markDirty(from - startInside, to - startInside)
+          return
         } else {
-          child.destroy()
-          if (child.dom.parentNode) child.dom.parentNode.removeChild(child.dom)
-          this.children.splice(i--, 1)
+          child.dirty = NODE_DIRTY
         }
       }
       offset = end
     }
+    this.dirty = CONTENT_DIRTY
   }
 }
 
@@ -339,7 +343,7 @@ class WidgetViewDesc extends ViewDesc {
     this.widget = widget
   }
 
-  matchesWidget(widget) { return widget.type == this.widget.type }
+  matchesWidget(widget) { return this.dirty == NOT_DIRTY && widget.type == this.widget.type }
 
   parseRule() { return {ignore: true} }
 
@@ -370,7 +374,7 @@ class MarkViewDesc extends ViewDesc {
 
   parseRule() { return {mark: this.mark.type.name, attrs: this.mark.attrs, contentElement: this.contentDOM} }
 
-  matchesMark(mark) { return this.mark.eq(mark) }
+  matchesMark(mark) { return this.dirty != NODE_DIRTY && this.mark.eq(mark) }
 }
 
 // Node view descs are the main, most common type of view desc, and
@@ -421,7 +425,7 @@ class NodeViewDesc extends ViewDesc {
   parseRule() { return {node: this.node.type.name, attrs: this.node.attrs, contentElement: this.contentDOM} }
 
   matchesNode(node, outerDeco, innerDeco) {
-    return node.eq(this.node) && sameOuterDeco(outerDeco, this.outerDeco) && innerDeco.eq(this.innerDeco)
+    return this.dirty != NODE_DIRTY && node.eq(this.node) && sameOuterDeco(outerDeco, this.outerDeco) && innerDeco.eq(this.innerDeco)
   }
 
   get size() { return this.node.nodeSize }
@@ -455,7 +459,7 @@ class NodeViewDesc extends ViewDesc {
     updater.destroyRest()
 
     // Sync the DOM if anything changed
-    if (updater.changed) this.renderChildren()
+    if (updater.changed || this.dirty == CONTENT_DIRTY) this.renderChildren()
   }
 
   renderChildren() {
@@ -467,11 +471,13 @@ class NodeViewDesc extends ViewDesc {
   // If this desc be updated to match the given node decoration,
   // do so and return true.
   update(node, outerDeco, innerDeco, view) {
-    if (!node.sameMarkup(this.node) ||
+    if (this.dirty == NODE_DIRTY ||
+        !node.sameMarkup(this.node) ||
         !sameOuterDeco(outerDeco, this.outerDeco)) return false
     this.node = node
     this.innerDeco = innerDeco
     if (!node.isLeaf) this.updateChildren(view)
+    this.dirty = NOT_DIRTY
     return true
   }
 
@@ -500,12 +506,20 @@ class TextViewDesc extends NodeViewDesc {
   }
 
   update(node, outerDeco) {
-    if (!node.sameMarkup(this.node) ||
+    if (this.dirty == NODE_DIRTY || (this.dirty != NOT_DIRTY && !this.inParent) ||
+        !node.sameMarkup(this.node) ||
         !sameOuterDeco(outerDeco, this.outerDeco)) return false
     if (node.text != this.node.text && node.text != this.textDOM.nodeValue)
       this.textDOM.nodeValue = node.text
     this.node = node
+    this.dirty = NOT_DIRTY
     return true
+  }
+
+  inParent() {
+    let parentDOM = this.parent.contentDOM
+    for (let n = this.textDOM; n; n = n.parentNode) if (n == parentDOM) return true
+    return false
   }
 
   domFromPos(pos, searchDOM) {
@@ -530,7 +544,7 @@ class HackViewDesc extends ViewDesc {
     this.type = type
   }
   parseRule() { return {ignore: true} }
-  matchesHack(type) { return this.type == type }
+  matchesHack(type) { return this.dirty == NOT_DIRTY && this.type == type }
 }
 
 // A separate subclass is used for customized node views, so that the
@@ -679,6 +693,7 @@ class ViewTreeUpdater {
 
     while (keep < depth) {
       this.destroyRest()
+      this.top.dirty = NOT_DIRTY
       this.index = this.stack.pop()
       this.top = this.stack.pop()
       depth--
