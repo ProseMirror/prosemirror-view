@@ -175,4 +175,10 @@ describe("DOM change", () => {
     view.content.querySelector("p").textContent = "i"
     return flush(view, () => ist(view.state.doc, doc(p("i")), eq))
   })
+
+  it("doesn't treat a placeholder BR as real content", () => {
+    let view = tempEditor({doc: doc(p("i<a>"))})
+    view.content.querySelector("p").innerHTML = "<br>"
+    return flush(view, () => ist(view.state.doc, doc(p()), eq))
+  })
 })

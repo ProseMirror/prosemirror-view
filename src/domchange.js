@@ -112,7 +112,8 @@ function parseBetween(view, oldState, from, to) {
 
 function ruleFromNode(dom) {
   let desc = dom.pmViewDesc
-  return desc && desc.parseRule()
+  if (desc) return desc.parseRule()
+  else if (dom.nodeName == "BR" && dom.parentNode && dom.parentNode.lastChild == dom) return {ignore: true}
 }
 
 function isAtEnd($pos, depth) {
