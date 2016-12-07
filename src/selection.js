@@ -41,7 +41,7 @@ class SelectionReader {
   // When the DOM selection changes in a notable manner, modify the
   // current selection state to match.
   readFromDOM(origin) {
-    if (!this.view.hasFocus() || !this.domChanged()) return
+    if (!this.view.hasFocus() || this.view.inDOMChange || !this.domChanged()) return
 
     let domSel = this.view.root.getSelection(), doc = this.view.state.doc
     let domNode = domSel.focusNode, head = this.view.docView.posFromDOM(domNode, domSel.focusOffset)
