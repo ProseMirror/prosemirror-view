@@ -1,4 +1,4 @@
-const {Mark, DOMParser} = require("prosemirror-model")
+const {Fragment, DOMParser} = require("prosemirror-model")
 const {Selection} = require("prosemirror-state")
 
 const {TrackMappings} = require("./trackmappings")
@@ -187,7 +187,7 @@ function readDOMChange(domChange, oldState, range) {
 
   let $from = parsed.resolveNoCache(change.start - range.from)
   let $to = parsed.resolveNoCache(change.endB - range.from)
-  let nextSel, text, event
+  let nextSel, event
   // If this looks like the effect of pressing Enter, just dispatch an
   // Enter key instead.
   if (!$from.sameParent($to) && $from.pos < parsed.content.size &&
@@ -201,7 +201,7 @@ function readDOMChange(domChange, oldState, range) {
   // If there have been changes since this DOM update started, we must
   // map our start and end positions, as well as the new selection
   // positions, through them.
-  let mapping = domChange.mappings.getMapping(view.state)
+  let mapping = domChange.mappings.getMapping(view.state), $from1
   if (mapping) {
     from = mapping.map(from)
     to = mapping.map(to)
@@ -209,31 +209,56 @@ function readDOMChange(domChange, oldState, range) {
                                 head: mapping.map(parsedSel.head)}
   }
 
-  let tr = view.state.tr
-  if ($from.sameParent($to) && $from.parent.isTextblock &&
-      (text = uniformTextBetween(parsed, $from.pos, $to.pos)) != null) {
-    if (view.someProp("handleTextInput", f => f(view, from, to, text))) return
-    tr.insertText(text, from, to)
-  } else {
-    tr.replace(from, to, parsed.slice(change.start - range.from, change.endB - range.from))
+  let tr = view.state.tr, handled = false, markChange
+  if ($from.sameParent($to) && $from.parent.isTextblock && $from.pos != $to.pos) {
+    if (change.endA == change.endB &&
+        ($from1 = doc.resolve(change.start)) &&
+        (markChange = isMarkChange($from.parent.content.cut($from.parentOffset, $to.parentOffset),
+                                   $from1.parent.content.cut($from1.parentOffset, change.endA - $from1.start())))) {
+      // Adding or removing a mark
+      if (markChange.type == "add") tr.addMark(from, to, markChange.mark)
+      else tr.removeMark(from, to, markChange.mark)
+      handled = true
+    } else if ($from.parent.child($from.index()).isText && $from.index() == $to.index() - ($to.atNodeBoundary ? 1 : 0)) {
+      // Both positions in the same text node -- simply insert text
+      let text = $from.parent.textBetween($from.parentOffset, $to.parentOffset)
+      if (view.someProp("handleTextInput", f => f(view, from, to, text))) return
+      tr.insertText(text, from, to)
+      handled = true
+    }
   }
 
+  if (!handled)
+    tr.replace(from, to, parsed.slice(change.start - range.from, change.endB - range.from))
   if (parsedSel)
     tr.setSelection(Selection.between(tr.doc.resolve(parsedSel.anchor),
                                       tr.doc.resolve(parsedSel.head)))
   view.props.onAction(tr.scrollAction())
 }
 
-function uniformTextBetween(node, from, to) {
-  let result = "", valid = true, marks = null
-  node.nodesBetween(from, to, (node, pos) => {
-    if (!node.isInline && pos < from) return
-    if (!node.isText) return valid = false
-    if (!marks) marks = node.marks
-    else if (!Mark.sameSet(marks, node.marks)) valid = false
-    result += node.text.slice(Math.max(0, from - pos), to - pos)
-  })
-  return valid ? result : null
+// : (Fragment, Fragment) → ?{mark: Mark, type: string}
+// Given two same-length, non-empty fragments of inline content,
+// determine whether the first could be created from the second by
+// removing or adding a single mark type.
+function isMarkChange(cur, prev) {
+  let curMarks = cur.firstChild.marks, prevMarks = prev.firstChild.marks
+  let added = curMarks, removed = prevMarks, type, mark, update
+  for (let i = 0; i < prevMarks.length; i++) added = prevMarks[i].removeFromSet(added)
+  for (let i = 0; i < curMarks.length; i++) removed = curMarks[i].removeFromSet(removed)
+  if (added.length == 1 && removed.length == 0) {
+    mark = added[0]
+    type = "add"
+    update = node => node.mark(mark.addToSet(node.marks))
+  } else if (added.length == 0 && removed.length == 1) {
+    mark = removed[0]
+    type = "remove"
+    update = node => node.mark(mark.removeFromSet(node.marks))
+  } else {
+    return null
+  }
+  let updated = []
+  for (let i = 0; i < prev.childCount; i++) updated.push(update(prev.child(i)))
+  if (Fragment.from(updated).eq(cur)) return {mark, type}
 }
 
 function findDiff(a, b, pos, preferedStart) {

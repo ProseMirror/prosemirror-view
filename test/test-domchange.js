@@ -205,4 +205,12 @@ describe("DOM change", () => {
       ist(view.state.doc, doc(p("ONE AND A HALF two THREE")), eq)
     })
   })
+
+  it("recognizes a mark change as such", () => {
+    let view = tempEditor({doc: doc(p("one"))})
+    view.content.querySelector("p").innerHTML = "<b>one</b>"
+    view.dispatchEvent({type: "input"})
+    view.props.onAction(view.state.tr.insertText("X", 2, 2).action())
+    return flush(view, () => ist(view.state.doc, doc(p(strong("oXne"))), eq))
+  })
 })
