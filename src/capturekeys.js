@@ -1,8 +1,6 @@
 const {Selection, NodeSelection, TextSelection} = require("prosemirror-state")
 const browser = require("./browser")
 
-const {verticalMotionLeavesTextblock} = require("./selection")
-
 function moveSelectionBlock(state, dir) {
   let {$from, $to, node} = state.selection
   let $side = dir > 0 ? $to : $from
@@ -22,15 +20,13 @@ function selectHorizontally(view, dir) {
   if (node && node.isInline)
     return apply(view, new TextSelection(dir > 0 ? $to : $from))
 
-  if (!node) {
+  if (!node && !view.endOfTextblock(dir > 0 ? "right" : "left")) {
     let {node: nextNode, offset} = dir > 0
         ? $from.parent.childAfter($from.parentOffset)
         : $from.parent.childBefore($from.parentOffset)
-    if (nextNode) {
-      if (NodeSelection.isSelectable(nextNode) && offset == $from.parentOffset - (dir > 0 ? 0 : nextNode.nodeSize))
-        return apply(view, new NodeSelection(dir < 0 ? view.state.doc.resolve($from.pos - nextNode.nodeSize) : $from))
-      return false
-    }
+    if (nextNode && NodeSelection.isSelectable(nextNode) && offset == $from.parentOffset - (dir > 0 ? 0 : nextNode.nodeSize))
+      return apply(view, new NodeSelection(dir < 0 ? view.state.doc.resolve($from.pos - nextNode.nodeSize) : $from))
+    return false
   }
 
   let next = moveSelectionBlock(view.state, dir)
@@ -138,7 +134,7 @@ function selectVertically(view, dir) {
 
   let leavingTextblock = true, $start = dir < 0 ? $from : $to
   if (!node || node.isInline)
-    leavingTextblock = verticalMotionLeavesTextblock(view, dir)
+    leavingTextblock = view.endOfTextblock(dir < 0 ? "up" : "down")
 
   if (leavingTextblock) {
     let next = moveSelectionBlock(view.state, dir)
@@ -156,7 +152,7 @@ function stopNativeHorizontalDelete(view, dir) {
   let {$head, $anchor, empty} = view.state.selection
   if (!$head || !$head.sameParent($anchor) || !$head.parent.isTextblock) return true
   if (!empty) return false
-  return $head.parentOffset == (dir > 0 ? $head.parent.content.size : 0)
+  return view.endOfTextblock(dir > 0 ? "forward" : "backward")
 }
 
 // A backdrop keymap used to make sure we always suppress keys that

@@ -1,7 +1,6 @@
 const {Selection, NodeSelection} = require("prosemirror-state")
 
 const browser = require("./browser")
-const {coordsAtPos} = require("./domcoords")
 
 // Track the state of the current editor selection. Keeps the editor
 // selection in sync with the DOM selection by polling for changes,
@@ -175,24 +174,3 @@ function clearNodeSelection(view) {
     view.lastSelectedViewDesc = null
   }
 }
-
-// : (ProseMirror, number, number)
-// Whether vertical position motion in a given direction
-// from a position would leave a text block.
-function verticalMotionLeavesTextblock(view, dir) {
-  let $pos = dir < 0 ? view.state.selection.$from : view.state.selection.$to
-  if (!$pos.depth) return false
-  let dom = view.docView.domAfterPos($pos.before())
-  let coords = coordsAtPos(view, $pos.pos)
-  for (let child = dom.firstChild; child; child = child.nextSibling) {
-    if (child.nodeType != 1) continue
-    let boxes = child.getClientRects()
-    for (let i = 0; i < boxes.length; i++) {
-      let box = boxes[i]
-      if (dir < 0 ? box.bottom < coords.top : box.top > coords.bottom)
-        return false
-    }
-  }
-  return true
-}
-exports.verticalMotionLeavesTextblock = verticalMotionLeavesTextblock

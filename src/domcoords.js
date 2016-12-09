@@ -162,3 +162,68 @@ function coordsAtPos(view, pos) {
   return {top: rect.top, bottom: rect.bottom, left: x, right: x}
 }
 exports.coordsAtPos = coordsAtPos
+
+function withFlushedState(view, state, f) {
+  let viewState = view.state
+  if (viewState != state || !view.inDOMChange) view.updateState(state)
+  try { return f() }
+  finally { if (viewState != state) view.updateState(viewState) }
+}
+
+// : (ProseMirror, number, number)
+// Whether vertical position motion in a given direction
+// from a position would leave a text block.
+function endOfTextblockVertical(view, state, dir) {
+  let $pos = dir == "up" ? state.selection.$from : state.selection.$to
+  if (!$pos.depth) return false
+  return withFlushedState(view, state, () => {
+    let dom = view.docView.domAfterPos($pos.before())
+    let coords = coordsAtPos(view, $pos.pos)
+    for (let child = dom.firstChild; child; child = child.nextSibling) {
+      let boxes
+      if (child.nodeType == 1) boxes = child.getClientRects()
+      else if (child.nodeType == 3) boxes = textRange(child, 0, child.nodeValue.length).getClientRects()
+      else continue
+      for (let i = 0; i < boxes.length; i++) {
+        let box = boxes[i]
+        if (dir == "up" ? box.bottom < coords.top : box.top > coords.bottom)
+          return false
+      }
+    }
+    return true
+  })
+}
+
+const maybeRTL = /[\u0590-\u08ac]/
+
+function endOfTextblockHorizontal(view, state, dir) {
+  let {$head, empty} = state.selection
+  if (!empty || !$head.parent.isTextblock || !$head.depth) return false
+  let offset = $head.parentOffset, atStart = !offset, atEnd = offset == $head.parent.content.size
+  // If the textblock is all LTR and the cursor isn't at the sides, we don't need to touch the DOM
+  if (!atStart && !atEnd && !maybeRTL.test($head.parent.textContent)) return false
+  let sel = getSelection()
+  // Fall back to a primitive approach if the necessary selection method isn't supported (Edge)
+  if (!sel.modify) return dir == "left" || dir == "backward" ? atStart : atEnd
+
+  return withFlushedState(view, state, () => {
+    // This is a huge hack, but appears to be the best we can
+    // currently do: use `Selection.modify` to move the selection by
+    // one character, and see if that moves the cursor out of the
+    // textblock.
+    let oldRange = sel.getRangeAt(0)
+    sel.modify("move", dir, "character")
+    let parentDOM = view.docView.domAfterPos($head.before())
+    let result = !parentDOM.contains(sel.focusNode.nodeType == 1 ? sel.focusNode : sel.focusNode.parentNode)
+    // Restore the previous selection
+    sel.removeAllRanges()
+    sel.addRange(oldRange)
+    return result
+  })
+}
+
+function endOfTextblock(view, state, dir) {
+  if (dir == "up" || dir == "down") return endOfTextblockVertical(view, state, dir)
+  else return endOfTextblockHorizontal(view, state, dir)
+}
+exports.endOfTextblock = endOfTextblock
