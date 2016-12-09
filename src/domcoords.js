@@ -62,7 +62,8 @@ function findOffsetInNode(node, coords) {
           continue
         }
       }
-      if (!closest && (coords.left >= rect.right || coords.left >= rect.left && coords.top >= rect.bottom))
+      if (!closest && (coords.left >= rect.right && coords.top >= rect.top ||
+                       coords.left >= rect.left && coords.top >= rect.bottom))
         offset = childIndex + 1
     }
   }
