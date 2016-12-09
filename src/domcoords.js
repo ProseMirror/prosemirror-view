@@ -164,10 +164,15 @@ function coordsAtPos(view, pos) {
 exports.coordsAtPos = coordsAtPos
 
 function withFlushedState(view, state, f) {
-  let viewState = view.state
+  let viewState = view.state, active = view.root.activeElement
   if (viewState != state || !view.inDOMChange) view.updateState(state)
-  try { return f() }
-  finally { if (viewState != state) view.updateState(viewState) }
+  if (active != view.content) view.focus()
+  try {
+    return f()
+  } finally {
+    if (viewState != state) view.updateState(viewState)
+    if (active != view.content) active.focus()
+  }
 }
 
 // : (ProseMirror, number, number)
@@ -216,7 +221,7 @@ function endOfTextblockHorizontal(view, state, dir) {
     sel.modify("move", dir, "character")
     let parentDOM = view.docView.domAfterPos($head.before())
     let result = !parentDOM.contains(sel.focusNode.nodeType == 1 ? sel.focusNode : sel.focusNode.parentNode) ||
-        sel.focusNode == oldRange.startContainer && sel.focusOffset == oldRange.startOffset
+        view.docView.posFromDOM(sel.focusNode, sel.focusOffset) == $head.pos
     // Restore the previous selection
     sel.removeAllRanges()
     sel.addRange(oldRange)
