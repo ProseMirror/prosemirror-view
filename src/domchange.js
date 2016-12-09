@@ -205,12 +205,12 @@ function readDOMChange(domChange, oldState, range) {
   // map our start and end positions, as well as the new selection
   // positions, through them.
   let mapping = domChange.mappings.getMapping(view.state), $from1
-  if (mapping) {
-    from = mapping.map(from)
-    to = mapping.map(to)
-    if (parsedSel) parsedSel = {anchor: mapping.map(parsedSel.anchor),
-                                head: mapping.map(parsedSel.head)}
-  }
+  if (!mapping) return
+
+  from = mapping.map(from)
+  to = mapping.map(to)
+  if (parsedSel) parsedSel = {anchor: mapping.map(parsedSel.anchor),
+                              head: mapping.map(parsedSel.head)}
 
   let tr = view.state.tr, handled = false, markChange
   if ($from.sameParent($to) && $from.parent.isTextblock && $from.pos != $to.pos) {

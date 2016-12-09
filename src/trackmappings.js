@@ -21,7 +21,7 @@ class TrackMappings {
   }
 
   track(old, action, state) {
-    let found = this.find(old)
+    let found = this.seen.length < 200 ? this.find(old) : null
     if (found)
       this.seen.push(new TrackedRecord(found, action.type == "transform" ? action.transform.mapping : null, state))
   }

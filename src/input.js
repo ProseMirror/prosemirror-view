@@ -446,8 +446,7 @@ handlers.drop = (view, e) => {
   let tr = view.state.tr
   if (dragging && dragging.move) {
     let {from, to} = dragging.range, mapping = dragging.move.getMapping(view.state)
-    tr.deleteRange(mapping ? mapping.map(from, 1) : from,
-                   mapping ? mapping.map(to, -1) : to)
+    if (mapping) tr.deleteRange(mapping.map(from, 1), mapping.map(to, -1))
   }
   view.someProp("transformPasted", f => { slice = f(slice) })
   let pos = tr.mapping.map(insertPos)

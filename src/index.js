@@ -97,6 +97,7 @@ class EditorView {
     if (spellcheck != this.content.spellcheck) this.content.spellcheck = spellcheck
     let label = this.someProp("label", f => f(this.state)) || ""
     if (this.content.getAttribute("aria-label") != label) this.content.setAttribute("aria-label", label)
+
     let classes = ["ProseMirror", "ProseMirror-content"] // FIXME remove backwards-compat class
     if (this.focused) classes.push("ProseMirror-focused")
     this.someProp("class", f => {
