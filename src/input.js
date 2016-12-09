@@ -171,7 +171,7 @@ function defaultTripleClick(view, inside) {
 
 function forceDOMFlush(view) {
   if (!view.inDOMChange) return false
-  view.inDOMChange.finish()
+  view.inDOMChange.finish(true)
   return true
 }
 
@@ -295,7 +295,10 @@ handlers.contextmenu = (view, e) => {
 // plain wrong. Instead, when a composition ends, we parse the dom
 // around the original selection, and derive an update from that.
 
-handlers.compositionstart = handlers.compositionupdate = view => DOMChange.start(view, true)
+handlers.compositionstart = handlers.compositionupdate = view => {
+  DOMChange.start(view, true)
+  if (view.state.storedMarks) view.inDOMChange.finish(true)
+}
 
 handlers.compositionend = (view, e) => {
   if (!view.inDOMChange) {

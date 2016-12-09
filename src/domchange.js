@@ -35,9 +35,9 @@ class DOMChange {
     readDOMChange(this, this.state, range)
   }
 
-  finish() {
+  finish(force) {
     clearTimeout(this.timeout)
-    if (this.composing) return
+    if (this.composing && !force) return
     let range = this.changedRange()
     if (this.from == null) this.view.docView.markDirty(range.from, range.to)
     else this.view.docView.markDirty(this.from, this.to)
