@@ -7,5 +7,6 @@ require("./test-domchange")
 require("./test-decoration")
 require("./test-draw-decoration")
 require("./test-clipboard")
+require("./test-endOfTextblock")
 
 mocha.run()
