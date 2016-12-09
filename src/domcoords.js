@@ -222,8 +222,12 @@ function endOfTextblockHorizontal(view, state, dir) {
   })
 }
 
+let cachedState = null, cachedDir = null, cachedResult = false
 function endOfTextblock(view, state, dir) {
-  if (dir == "up" || dir == "down") return endOfTextblockVertical(view, state, dir)
-  else return endOfTextblockHorizontal(view, state, dir)
+  if (cachedState == state && cachedDir == dir) return cachedResult
+  cachedState = state; cachedDir = dir
+  return cachedResult = dir == "up" || dir == "down"
+    ? endOfTextblockVertical(view, state, dir)
+    : endOfTextblockHorizontal(view, state, dir)
 }
 exports.endOfTextblock = endOfTextblock
