@@ -10,7 +10,7 @@ class DOMChange {
     this.state = view.state
     this.composing = composing
     this.from = this.to = null
-    this.timeout = composing ? null : setTimeout(() => this.finish(), 50)
+    this.timeout = composing ? null : setTimeout(() => this.finish(), 20)
     this.mappings = new TrackMappings(view.state)
   }
 
@@ -162,11 +162,11 @@ function rangeAroundSelection(selection) {
   }
 }
 
-function enterEvent() {
+function keyEvent(keyCode, key) {
   let event = document.createEvent("Event")
   event.initEvent("keydown", true, true)
-  event.keyCode = 13
-  event.code = "Enter"
+  event.keyCode = keyCode
+  event.key = event.code = key
   return event
 }
 
@@ -187,14 +187,17 @@ function readDOMChange(domChange, oldState, range) {
 
   let $from = parsed.resolveNoCache(change.start - range.from)
   let $to = parsed.resolveNoCache(change.endB - range.from)
-  let nextSel, event
+  let nextSel
   // If this looks like the effect of pressing Enter, just dispatch an
   // Enter key instead.
   if (!$from.sameParent($to) && $from.pos < parsed.content.size &&
       (nextSel = Selection.findFrom(parsed.resolve($from.pos + 1), 1, true)) &&
       nextSel.head == $to.pos &&
-      (event = enterEvent()) &&
-      view.someProp("handleKeyDown", f => f(view, event)))
+      view.someProp("handleKeyDown", f => f(view, keyEvent(13, "Enter"))))
+    return
+  if (oldState.selection.anchor > change.start &&
+      looksLikeJoin(doc, change.start, change.endA, $from, $to) &&
+      view.someProp("handleKeyDown", f => f(view, keyEvent(8, "Backspace"))))
     return
 
   let from = change.start, to = change.endA
@@ -259,6 +262,45 @@ function isMarkChange(cur, prev) {
   let updated = []
   for (let i = 0; i < prev.childCount; i++) updated.push(update(prev.child(i)))
   if (Fragment.from(updated).eq(cur)) return {mark, type}
+}
+
+function looksLikeJoin(old, start, end, $newStart, $newEnd) {
+  if (!$newStart.parent.isTextblock ||
+      // The content must have shrunk
+      end - start <= $newEnd.pos - $newStart.pos ||
+      // newEnd must point directly at or after the end of the block that newStart points into
+      skipClosingAndOpening($newStart, true, false) < $newEnd.pos)
+    return false
+
+  let $start = old.resolve(start)
+  // Start must be at the end of a block
+  if ($start.parentOffset < $start.parent.content.size || !$start.parent.isTextblock)
+    return false
+  let $next = old.resolve(skipClosingAndOpening($start, true, true))
+  // The next textblock must start before end and end near it
+  if (!$next.parent.isTextblock || $next.pos > end ||
+      skipClosingAndOpening($next, true, false) < end)
+    return false
+
+  // The fragments after the join point must match
+  return $newStart.parent.content.cut($newStart.parentOffset).eq($next.parent.content)
+}
+
+function skipClosingAndOpening($pos, fromEnd, mayOpen) {
+  let depth = $pos.depth, end = fromEnd ? $pos.end() : $pos.pos
+  while (depth > 0 && (fromEnd || $pos.indexAfter(depth) == $pos.node(depth).childCount)) {
+    depth--
+    end++
+    fromEnd = false
+  }
+  if (mayOpen) {
+    let next = $pos.node(depth).maybeChild($pos.indexAfter(depth))
+    while (next && !next.isLeaf) {
+      next = next.firstChild
+      end++
+    }
+  }
+  return end
 }
 
 function findDiff(a, b, pos, preferedStart) {

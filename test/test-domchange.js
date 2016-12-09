@@ -88,6 +88,40 @@ describe("DOM change", () => {
     return flush(view, () => ist(enterPressed))
   })
 
+  it("detects a simple backspace press", () => {
+    let backspacePressed = false
+    let view = tempEditor({
+      doc: doc(p("foo"), p("<a>bar")),
+      handleKeyDown: (_view, event) => { if (event.keyCode == 8) return backspacePressed = true }
+    })
+    view.content.removeChild(view.content.lastChild)
+    view.content.firstChild.textContent = "foobar"
+    return flush(view, () => ist(backspacePressed))
+  })
+
+  it("detects a complex backspace press", () => {
+    let backspacePressed = false
+    let view = tempEditor({
+      doc: doc(blockquote(blockquote(p("foo")), p("<a>", br, "bar"))),
+      handleKeyDown: (_view, event) => { if (event.keyCode == 8) return backspacePressed = true }
+    })
+    let bq = view.content.firstChild
+    bq.removeChild(bq.lastChild)
+    bq.firstChild.firstChild.innerHTML = "foo<br>bar"
+    return flush(view, () => ist(backspacePressed))
+  })
+
+  it("doesn't confuse delete with backspace", () => {
+    let backspacePressed = false
+    let view = tempEditor({
+      doc: doc(p("foo<a>"), p("bar")),
+      handleKeyDown: (_view, event) => { if (event.keyCode == 8) return backspacePressed = true }
+    })
+    view.content.removeChild(view.content.lastChild)
+    view.content.firstChild.textContent = "foobar"
+    return flush(view, () => ist(!backspacePressed))
+  })
+
   it("correctly adjusts the selection", () => {
     let view = tempEditor({doc: doc(p("abc<a>"))})
     let textNode = findTextNode(view.content, "abc")
