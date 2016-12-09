@@ -222,7 +222,7 @@ function readDOMChange(domChange, oldState, range) {
       if (markChange.type == "add") tr.addMark(from, to, markChange.mark)
       else tr.removeMark(from, to, markChange.mark)
       handled = true
-    } else if ($from.parent.child($from.index()).isText && $from.index() == $to.index() - ($to.atNodeBoundary ? 1 : 0)) {
+    } else if ($from.parent.child($from.index()).isText && $from.index() == $to.index() - ($to.textOffset ? 0 : 1)) {
       // Both positions in the same text node -- simply insert text
       let text = $from.parent.textBetween($from.parentOffset, $to.parentOffset)
       if (view.someProp("handleTextInput", f => f(view, from, to, text))) return
