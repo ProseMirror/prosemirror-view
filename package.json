@@ -1,6 +1,6 @@
 {
   "name": "prosemirror-view",
-  "version": "0.15.1",
+  "version": "0.15.2",
   "description": "ProseMirror's view component",
   "main": "dist/index.js",
   "style": "style/prosemirror.css",
