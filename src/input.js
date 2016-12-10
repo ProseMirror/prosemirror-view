@@ -66,6 +66,14 @@ handlers.keypress = (view, event) => {
     event.preventDefault()
     return
   }
+
+  let {node, $from, $to} = view.state.selection
+  if (node || !$from.sameParent($to)) {
+    let text = String.fromCharCode(event.charCode)
+    if (!view.someProp("handleTextInput", f => f(view, $from.pos, $to.pos, text)))
+      view.props.onAction(view.state.tr.insertText(text).scrollAction())
+    event.preventDefault()
+  }
 }
 
 function eventCoords(event) { return {left: event.clientX, top: event.clientY} }
