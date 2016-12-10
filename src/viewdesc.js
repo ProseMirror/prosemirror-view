@@ -506,6 +506,10 @@ class TextViewDesc extends NodeViewDesc {
     this.textDOM = textDOM
   }
 
+  parseRule() {
+    return {skip: this.textDOM.parentNode}
+  }
+
   update(node, outerDeco) {
     if (this.dirty == NODE_DIRTY || (this.dirty != NOT_DIRTY && !this.inParent) ||
         !node.sameMarkup(this.node) ||
