@@ -155,10 +155,7 @@ function syncNodeSelection(view, sel) {
     let desc = view.docView.descAt(sel.from)
     if (desc != view.lastSelectedViewDesc) {
       clearNodeSelection(view)
-      if (desc) {
-        view.content.classList.add("ProseMirror-nodeselection")
-        desc.selectNode()
-      }
+      if (desc) desc.selectNode()
       view.lastSelectedViewDesc = desc
     }
   } else {
@@ -169,7 +166,6 @@ function syncNodeSelection(view, sel) {
 // Clear all DOM statefulness of the last node selection.
 function clearNodeSelection(view) {
   if (view.lastSelectedViewDesc) {
-    view.content.classList.remove("ProseMirror-nodeselection")
     view.lastSelectedViewDesc.deselectNode()
     view.lastSelectedViewDesc = null
   }

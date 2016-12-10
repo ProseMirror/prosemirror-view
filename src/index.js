@@ -100,6 +100,7 @@ class EditorView {
 
     let classes = ["ProseMirror", "ProseMirror-content"] // FIXME remove backwards-compat class
     if (this.focused) classes.push("ProseMirror-focused")
+    if (this.state.selection.node) classes.push("ProseMirror-nodeselection")
     this.someProp("class", f => {
       let cls = f(this.state)
       if (!cls) return
