@@ -247,13 +247,17 @@ class ViewDesc {
     let content = this.contentDOM
     if (searchDOM < 0) {
       for (let j = i - 1; j >= 0; j--) {
-        let found = Array.prototype.indexOf.call(content.childNodes, this.children[j].dom)
+        let child = this.children[j]
+        if (!child.size) continue
+        let found = Array.prototype.indexOf.call(content.childNodes, child.dom)
         if (found > -1) return found + 1
       }
       return 0
     } else {
       for (let j = i; j < this.children.length; j++) {
-        let found = Array.prototype.indexOf.call(content.childNodes, this.children[j].dom)
+        let child = this.children[j]
+        if (!child.size) continue
+        let found = Array.prototype.indexOf.call(content.childNodes, child.dom)
         if (found > -1) return found
       }
       return content.childNodes.length
@@ -548,8 +552,19 @@ class HackViewDesc extends ViewDesc {
     super(parent, nothing, dom, null)
     this.type = type
   }
-  parseRule() { return {ignore: true} }
+  parseRule() {
+    if (this.type == "span" && this.dom.childNodes) return {skip: this.dom}
+    if (this.type == "newline" && (this.dom.childNodes.length != 1 || this.dom.firstChild.nodeValue != "\n")) {
+      let value = this.dom.lastChild.nodeValue
+      // Strip off the newline before the DOM content is read, to
+      // avoid it ending up in the parsed document
+      if (/\n$/.test(value)) this.dom.lastChild.nodeValue = value.slice(0, value.length - 1)
+      return {skip: this.dom}
+    }
+    return {ignore: true}
+  }
   matchesHack(type) { return this.dirty == NOT_DIRTY && this.type == type }
+  ignoreMutation() { return this.type == "br" }
 }
 
 // A separate subclass is used for customized node views, so that the
