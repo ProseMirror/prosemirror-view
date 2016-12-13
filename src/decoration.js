@@ -121,8 +121,8 @@ class Decoration {
   //     that key will be compared instead, which can be useful when
   //     you generate decorations on the fly and don't want to store
   //     and reuse DOM nodes.
-  static widget(pos, widget, options) {
-    return new Decoration(pos, pos, new WidgetType(widget, options))
+  static widget(pos, dom, options) {
+    return new Decoration(pos, pos, new WidgetType(dom, options))
   }
 
   // :: (number, number, DecorationAttrs, ?Object) → Decoration
