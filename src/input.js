@@ -438,6 +438,8 @@ handlers.dragend = view => {
 
 handlers.dragover = handlers.dragenter = (_, e) => e.preventDefault()
 
+handlers.dragleave = () => null
+
 handlers.drop = (view, e) => {
   let dragging = view.dragging
   view.dragging = null
