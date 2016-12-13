@@ -183,7 +183,10 @@ function readDOMChange(domChange, oldState, range) {
 
   let compare = doc.slice(range.from, range.to)
   let change = findDiff(compare.content, parsed.content, range.from, oldState.selection.from)
-  if (!change) return false
+  if (!change) {
+    view.updateState(view.state)
+    return
+  }
 
   let $from = parsed.resolveNoCache(change.start - range.from)
   let $to = parsed.resolveNoCache(change.endB - range.from)

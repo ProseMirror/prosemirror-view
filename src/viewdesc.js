@@ -314,7 +314,7 @@ class ViewDesc {
   markDirty(from, to) {
     for (let offset = 0, i = 0; i < this.children.length; i++) {
       let child = this.children[i], end = offset + child.size
-      if (from < end && to > offset) {
+      if (offset == end ? from <= end && to >= offset : from < end && to > offset) {
         let startInside = offset + child.border, endInside = end - child.border
         if (from >= startInside && to <= endInside) {
           this.dirty = from == offset || to == end ? CONTENT_DIRTY : CHILD_DIRTY
