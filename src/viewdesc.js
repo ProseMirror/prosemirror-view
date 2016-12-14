@@ -413,10 +413,21 @@ class NodeViewDesc extends ViewDesc {
     })
 
     let dom = spec && spec.dom, contentDOM = spec && spec.contentDOM
-    if (!dom) ({dom, contentDOM} = DOMSerializer.renderSpec(document, node.type.spec.toDOM(node)))
+    if (!dom) {
+      ;({dom, contentDOM} = DOMSerializer.renderSpec(document, node.type.spec.toDOM(node)))
+      if (node.isLeaf && !node.isText) dom.contentEditable = false
+    }
     let startDOM = dom
     for (let i = 0; i < outerDeco.length; i++)
       dom = applyOuterDeco(dom, outerDeco[i].type.attrs, node)
+
+    // Block nodes must have an editable wrapper to allow selections
+    // around them (when they are node-selected)
+    if (!node.isInline && dom.contentEditable == false) {
+      let wrap = document.createElement("div")
+      wrap.appendChild(dom)
+      dom = wrap
+    }
 
     if (spec)
       return descObj = new CustomNodeViewDesc(parent, node, outerDeco, innerDeco, dom, contentDOM, spec, view)
