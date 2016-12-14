@@ -553,7 +553,7 @@ class HackViewDesc extends ViewDesc {
     this.type = type
   }
   parseRule() {
-    if (this.type == "span" && this.dom.childNodes) return {skip: this.dom}
+    if (this.type == "text" && this.dom.childNodes) return {skip: this.dom}
     if (this.type == "newline" && (this.dom.childNodes.length != 1 || this.dom.firstChild.nodeValue != "\n")) {
       let value = this.dom.lastChild.nodeValue
       // Strip off the newline before the DOM content is read, to
