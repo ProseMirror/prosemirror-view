@@ -559,24 +559,9 @@ class TextViewDesc extends NodeViewDesc {
 
 // A dummy desc used to tag trailing BR or span nodes created to work
 // around contentEditable terribleness.
-class HackViewDesc extends ViewDesc {
-  constructor(parent, type, dom) {
-    super(parent, nothing, dom, null)
-    this.type = type
-  }
-  parseRule() {
-    if (this.type == "text" && this.dom.childNodes) return {skip: this.dom}
-    if (this.type == "newline" && (this.dom.childNodes.length != 1 || this.dom.firstChild.nodeValue != "\n")) {
-      let value = this.dom.lastChild.nodeValue
-      // Strip off the newline before the DOM content is read, to
-      // avoid it ending up in the parsed document
-      if (/\n$/.test(value)) this.dom.lastChild.nodeValue = value.slice(0, value.length - 1)
-      return {skip: this.dom}
-    }
-    return {ignore: true}
-  }
-  matchesHack(type) { return this.dirty == NOT_DIRTY && this.type == type }
-  ignoreMutation() { return this.type == "br" }
+class BRHackViewDesc extends ViewDesc {
+  parseRule() { return {ignore: true} }
+  matchesHack() { return this.dirty == NOT_DIRTY }
 }
 
 // A separate subclass is used for customized node views, so that the
@@ -790,32 +775,19 @@ class ViewTreeUpdater {
   // Make sure a textblock looks and behaves correctly in
   // contentEditable.
   addTextblockHacks() {
-    let lastChild = this.top.children[this.index - 1], hack
+    let lastChild = this.top.children[this.index - 1]
     while (lastChild instanceof MarkViewDesc) lastChild = lastChild.children[lastChild.children.length - 1]
-    if (!lastChild || lastChild.dom.nodeName == "BR")
-      hack = "br"
-    else if (this.wrapsInPRE())
-      hack = "newline"
-    else if (!(lastChild instanceof TextViewDesc))
-      hack = "text"
 
-    if (hack) {
-      if (this.index < this.top.children.length && this.top.children[this.index].matchesHack(hack)) {
+    if (!lastChild || // Empty textblock
+        !(lastChild instanceof TextViewDesc) ||
+        /\n$/.test(lastChild.node.text)) {
+      if (this.index < this.top.children.length && this.top.children[this.index].matchesHack()) {
         this.index++
       } else {
-        let dom = document.createElement(hack == "br" ? "br" : "span")
-        if (hack == "newline") dom.textContent = "\n"
-        this.top.children.splice(this.index++, 0, new HackViewDesc(this.top, hack, dom))
+        let dom = document.createElement("br")
+        this.top.children.splice(this.index++, 0, new BRHackViewDesc(this.top, nothing, dom, null))
         this.changed = true
       }
-    }
-  }
-
-  wrapsInPRE() {
-    let top = this.top
-    for (let dom = top.contentDOM;; dom = dom.parentNode) {
-      if (dom.nodeName == "PRE") return true
-      if (dom == top.dom) return false
     }
   }
 }
