@@ -423,7 +423,7 @@ class NodeViewDesc extends ViewDesc {
 
     // Block nodes must have an editable wrapper to allow selections
     // around them (when they are node-selected)
-    if (dom.contentEditable == "false") {
+    if (dom.contentEditable == "false" && node.isBlock) {
       let wrap = document.createElement("div")
       wrap.pmIsWrapper = true
       wrap.appendChild(dom)
