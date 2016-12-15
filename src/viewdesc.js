@@ -193,6 +193,7 @@ class ViewDesc {
   // Scan up the dom finding the first desc that is a descendant of
   // this one.
   nearestDesc(dom) {
+    while (dom && dom.pmIsWrapper) dom = dom.parentNode
     for (; dom; dom = dom.parentNode) {
       let desc = this.getDesc(dom)
       if (desc) return desc
@@ -413,18 +414,18 @@ class NodeViewDesc extends ViewDesc {
     })
 
     let dom = spec && spec.dom, contentDOM = spec && spec.contentDOM
-    if (!dom) {
-      ;({dom, contentDOM} = DOMSerializer.renderSpec(document, node.type.spec.toDOM(node)))
-      if (node.isLeaf && !node.isText) dom.contentEditable = false
-    }
+    if (!dom) ({dom, contentDOM} = DOMSerializer.renderSpec(document, node.type.spec.toDOM(node)))
+    if (!contentDOM && !node.isText) dom.contentEditable = false
+
     let startDOM = dom
     for (let i = 0; i < outerDeco.length; i++)
       dom = applyOuterDeco(dom, outerDeco[i].type.attrs, node)
 
     // Block nodes must have an editable wrapper to allow selections
     // around them (when they are node-selected)
-    if (!node.isInline && dom.contentEditable == false) {
+    if (dom.contentEditable == "false") {
       let wrap = document.createElement("div")
+      wrap.pmIsWrapper = true
       wrap.appendChild(dom)
       dom = wrap
     }
