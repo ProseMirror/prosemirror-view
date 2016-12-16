@@ -14,8 +14,8 @@ class SelectionReader {
     this.lastSelection = view.state.selection
     this.poller = poller(this)
 
-    view.content.addEventListener("focus", () => this.poller.receivedFocus())
-    view.content.addEventListener("blur", () => this.poller.lostFocus())
+    view.content.addEventListener("focus", () => this.poller.start())
+    view.content.addEventListener("blur", () => this.poller.stop())
   }
 
   poll(origin) { this.poller.poll(origin) }
@@ -66,70 +66,69 @@ class SelectionReader {
 }
 exports.SelectionReader = SelectionReader
 
-function poller(reader) {
-  // There's two polling models. On browsers that support the
-  // selectionchange event (everything except Firefox, basically), we
-  // register a listener for that whenever the editor is focused.
-  if ("onselectionchange" in document) return new class {
-    constructor() {
+// There's two polling models. On browsers that support the
+// selectionchange event (everything except Firefox, basically), we
+// register a listener for that whenever the editor is focused.
+class SelectionChangePoller {
+  constructor(reader) {
+    this.listening = false
+    this.curOrigin = null
+    this.originTime = 0
+
+    this.readFunc = () => reader.readFromDOM(this.originTime > Date.now() - 50 ? this.curOrigin : null)
+  }
+
+  poll(origin) {
+    this.curOrigin = origin
+    this.originTime = Date.now()
+  }
+
+  start() {
+    if (!this.listening) {
+      document.addEventListener("selectionchange", this.readFunc)
+      this.listening = true
+    }
+  }
+
+  stop() {
+    if (this.listening) {
+      document.removeEventListener("selectionchange", this.readFunc)
       this.listening = false
-      this.curOrigin = null
-      this.originTime = 0
-
-      this.readFunc = () => reader.readFromDOM(this.originTime > Date.now() - 50 ? this.curOrigin : null)
-    }
-
-    poll(origin) {
-      this.curOrigin = origin
-      this.originTime = Date.now()
-    }
-
-    receivedFocus() {
-      if (!this.listening) {
-        document.addEventListener("selectionchange", this.readFunc)
-        this.listening = true
-      }
-    }
-
-    lostFocus() {
-      if (this.listening) {
-        document.removeEventListener("selectionchange", this.readFunc)
-        this.listening = false
-      }
     }
   }
-  // On Firefox, we use timeout-based polling.
-  return new class {
-    constructor() {
-      // The timeout ID for the poller when active.
-      this.polling = null
-      this.reader = reader
-      this.pollFunc = this.doPoll.bind(this, null)
-    }
+}
 
-    doPoll(origin) {
-      if (this.reader.view.hasFocus()) {
-        this.reader.readFromDOM(origin)
-        this.polling = setTimeout(this.pollFunc, 100)
-      } else {
-        this.polling = null
-      }
-    }
-
-    poll(origin) {
-      clearTimeout(this.polling)
-      this.polling = setTimeout(origin ? this.doPoll.bind(this, origin) : this.pollFunc, 0)
-    }
-
-    receivedFocus() {
-      if (this.polling == null) this.poll()
-    }
-
-    lostFocus() {
-      clearTimeout(this.polling)
-      this.polling = null
-    }
+// On Firefox, we use timeout-based polling.
+class TimeoutPoller {
+  constructor(reader) {
+    // The timeout ID for the poller when active.
+    this.polling = null
+    this.reader = reader
+    this.pollFunc = this.doPoll.bind(this, null)
   }
+
+  doPoll(origin) {
+    this.reader.readFromDOM(origin)
+    this.polling = setTimeout(this.pollFunc, 100)
+  }
+
+  poll(origin) {
+    clearTimeout(this.polling)
+    this.polling = setTimeout(origin ? this.doPoll.bind(this, origin) : this.pollFunc, 0)
+  }
+
+  start() {
+    if (this.polling == null) this.poll()
+  }
+
+  stop() {
+    clearTimeout(this.polling)
+    this.polling = null
+  }
+}
+
+function poller(reader) {
+  return new ("onselectionchange" in document ? SelectionChangePoller : TimeoutPoller)(reader)
 }
 
 function selectionToDOM(view, sel, takeFocus) {
