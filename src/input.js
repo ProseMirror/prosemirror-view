@@ -334,9 +334,8 @@ exports.stopObserving = stopObserving
 
 function registerMutations(view, mutations) {
   if (view.editable) for (let i = 0; i < mutations.length; i++) {
-    let mut = mutations[i]
-    if (mut.target == view.content && mut.type == "attributes") continue
-    let desc = view.docView.nearestDesc(mut.target)
+    let mut = mutations[i], desc = view.docView.nearestDesc(mut.target)
+    if (desc == view.docView && mut.type == "attributes") continue
     if (!desc || desc.ignoreMutation(mut)) continue
 
     let from, to
