@@ -22,7 +22,7 @@
     "prosemirror-transform": "^0.15.0"
   },
   "devDependencies": {
-    "buble": "~0.14.0",
+    "buble": "^0.15.1",
     "ist": "^1.0.0",
     "mocha": "^3.0.2",
     "moduleserve": "^0.7.0",
