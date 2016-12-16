@@ -171,6 +171,12 @@ function keyEvent(keyCode, key) {
 
 function readDOMChange(domChange, oldState, range) {
   let parseResult, doc = oldState.doc, view = domChange.view
+  // If there have been changes since this DOM update started, we must
+  // map our start and end positions, as well as the new selection
+  // positions, through them.
+  let mapping = domChange.mappings.getMapping(view.state)
+  if (!mapping) return
+
   for (;;) {
     parseResult = parseBetween(view, oldState, range.from, range.to)
     if (parseResult) break
@@ -182,7 +188,14 @@ function readDOMChange(domChange, oldState, range) {
 
   let compare = doc.slice(range.from, range.to)
   let change = findDiff(compare.content, parsed.content, range.from, oldState.selection.from)
-  if (!change) return
+
+  if (!change) {
+    if (parsedSel) {
+      let sel = resolveSelection(view.state.doc, mapping, parsedSel)
+      if (!sel.eq(view.state.selection)) view.props.onAction(sel.action())
+    }
+    return
+  }
 
   let $from = parsed.resolveNoCache(change.start - range.from)
   let $to = parsed.resolveNoCache(change.endB - range.from)
@@ -199,19 +212,9 @@ function readDOMChange(domChange, oldState, range) {
       view.someProp("handleKeyDown", f => f(view, keyEvent(8, "Backspace"))))
     return
 
-  let from = change.start, to = change.endA
-  // If there have been changes since this DOM update started, we must
-  // map our start and end positions, as well as the new selection
-  // positions, through them.
-  let mapping = domChange.mappings.getMapping(view.state), $from1
-  if (!mapping) return
+  let from = mapping.map(change.start), to = mapping.map(change.endA, -1)
 
-  from = mapping.map(from)
-  to = mapping.map(to)
-  if (parsedSel) parsedSel = {anchor: mapping.map(parsedSel.anchor),
-                              head: mapping.map(parsedSel.head)}
-
-  let tr = view.state.tr, handled = false, markChange
+  let tr = view.state.tr, handled = false, markChange, $from1
   if ($from.sameParent($to) && $from.parent.isTextblock && $from.pos != $to.pos) {
     if (change.endA == change.endB &&
         ($from1 = doc.resolve(change.start)) &&
@@ -232,10 +235,13 @@ function readDOMChange(domChange, oldState, range) {
 
   if (!handled)
     tr.replace(from, to, parsed.slice(change.start - range.from, change.endB - range.from))
-  if (parsedSel)
-    tr.setSelection(Selection.between(tr.doc.resolve(parsedSel.anchor),
-                                      tr.doc.resolve(parsedSel.head)))
+  if (parsedSel) tr.setSelection(resolveSelection(tr.doc, mapping, parsedSel))
   view.props.onAction(tr.scrollAction())
+}
+
+function resolveSelection(doc, mapping, parsedSel) {
+  return Selection.between(doc.resolve(mapping.map(parsedSel.anchor)),
+                           doc.resolve(mapping.map(parsedSel.head)))
 }
 
 // : (Fragment, Fragment) → ?{mark: Mark, type: string}
