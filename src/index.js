@@ -128,7 +128,7 @@ class EditorView {
   // directly).
   someProp(propName, f) {
     let prop = this.props && this.props[propName], value
-    if (prop && (value = f ? f(prop) : prop)) return value
+    if (prop != null && (value = f ? f(prop) : prop)) return value
     let plugins = this.state.plugins
     if (plugins) for (let i = 0; i < plugins.length; i++) {
       let prop = plugins[i].props[propName]
