@@ -31,10 +31,6 @@ class DOMChange {
     return {from: $from.before(shared + 1), to: $to.after(shared + 1)}
   }
 
-  read(range) {
-    readDOMChange(this, this.state, range)
-  }
-
   finish(force) {
     clearTimeout(this.timeout)
     if (this.composing && !force) return
@@ -42,7 +38,10 @@ class DOMChange {
     if (this.from == null) this.view.docView.markDirty(range.from, range.to)
     else this.view.docView.markDirty(this.from, this.to)
     this.view.inDOMChange = null
-    this.read(range)
+    readDOMChange(this, this.state, range)
+    // If the reading didn't result in a view update, force one by
+    // resetting the view to its current state.
+    if (this.view.docView.dirty) this.view.updateState(this.view.state)
   }
 
   compositionEnd() {
@@ -183,10 +182,7 @@ function readDOMChange(domChange, oldState, range) {
 
   let compare = doc.slice(range.from, range.to)
   let change = findDiff(compare.content, parsed.content, range.from, oldState.selection.from)
-  if (!change) {
-    view.updateState(view.state)
-    return
-  }
+  if (!change) return
 
   let $from = parsed.resolveNoCache(change.start - range.from)
   let $to = parsed.resolveNoCache(change.endB - range.from)
