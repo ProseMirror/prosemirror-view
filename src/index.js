@@ -45,8 +45,9 @@ class EditorView {
     else if (place) place(this.content)
 
     this.docView = docViewDesc(this.state.doc, viewDecorations(this), this.content, this)
-    this.editable = !this.someProp("editable", value => value === false)
-    this.updateDOMForProps()
+    this.editable = getEditable(this)
+    this.attrs = Object.create(null)
+    this.updateAttributes()
 
     this.lastSelectedViewDesc = null
     this.selectionReader = new SelectionReader(this)
@@ -84,9 +85,9 @@ class EditorView {
       selectionToDOM(this, state.selection)
 
     let prevEditable = this.editable
-    this.editable = !this.someProp("editable", value => value === false)
-    this.updateDOMForProps()
+    this.editable = getEditable(this)
     if (prevEditable != this.editable) this.selectionReader.editableChanged()
+    this.updateAttributes()
 
     // FIXME somehow schedule this relative to ui/update so that it
     // doesn't cause extra layout
@@ -94,26 +95,15 @@ class EditorView {
       scrollPosIntoView(this, state.selection.head == null ? state.selection.from : state.selection.from)
   }
 
-  updateDOMForProps() {
-    let spellcheck = !!this.someProp("spellcheck")
-    if (spellcheck != this.content.spellcheck) this.content.spellcheck = spellcheck
-    let label = this.someProp("label", f => f(this.state)) || ""
-    if (this.content.getAttribute("aria-label") != label) this.content.setAttribute("aria-label", label)
+  updateAttributes() {
+    let attrs = computeAttributes(this)
 
-    if (this.editable != (this.content.contentEditable == "true"))
-      this.content.contentEditable = this.editable
+    for (let attr in this.attrs) if (!attrs[attr])
+      this.content.removeAttribute(attr)
+    for (let attr in attrs) if (attrs[attr] != this.attrs[attr])
+      this.content.setAttribute(attr, attrs[attr])
 
-    let classes = ["ProseMirror", "ProseMirror-content"] // FIXME remove backwards-compat class
-    if (this.focused) classes.push("ProseMirror-focused")
-    if (this.state.selection.node) classes.push("ProseMirror-nodeselection")
-    this.someProp("class", f => {
-      let cls = f(this.state)
-      if (!cls) return
-      let array = cls.split(" ")
-      for (let i = 0; i < array.length; i++) classes.push(array[i])
-    })
-    let className = classes.sort().join(" ")
-    if (this.content.className != className) this.content.className = className
+    this.attrs = attrs
   }
 
   // :: () → bool
@@ -203,6 +193,29 @@ class EditorView {
   }
 }
 exports.EditorView = EditorView
+
+function computeAttributes(view) {
+  let attrs = Object.create(null)
+  attrs.class = "ProseMirror" + (view.focused ? " ProseMirror-focused" : "") +
+    (view.state.selection.node ? " ProseMirror-nodeselection" : "")
+  attrs.contenteditable = String(view.editable)
+
+  view.someProp("attributes", value => {
+    if (typeof value == "function") value = value(view.state)
+    if (value) for (let attr in value) {
+      if (attr == "class")
+        attrs.class += value[attr]
+      else if (!attrs[attr] && attr != "contenteditable")
+        attrs[attr] = String(value[attr])
+    }
+  })
+
+  return attrs
+}
+
+function getEditable(view) {
+  return !view.someProp("editable", value => value(view.state) === false)
+}
 
 // EditorProps:: interface
 //
@@ -320,22 +333,19 @@ exports.EditorView = EditorView
 //   A set of [document decorations](#view.Decoration) to add to the
 //   view.
 //
-//   editable:: ?bool
-//   When set to false, the content of the view is not directly
+//   editable:: ?(EditorState) → bool
+//   When this returns false, the content of the view is not directly
 //   editable.
 //
-//   spellcheck:: ?bool
-//   Controls whether the DOM spellcheck attribute is enabled on the
-//   editable content. Defaults to false.
-//
-//   class:: ?(state: EditorState) → ?string
-//   Controls the CSS class name of the editor DOM node. Any classes
-//   returned from this will be added to the default `ProseMirror`
-//   class.
-//
-//   label:: ?(state: EditorState) → ?string
-//   Can be used to set an `aria-label` attribute on the editable
-//   content node.
+//   attributes:: ?union<Object<string>, (EditorState) → ?Object<string>>
+//   Control the DOM attributes of the editable element. May be either
+//   an object or a function going from an editor state to an object.
+//   By default, the element will get a class `"ProseMirror"`, and
+//   will have its `contentEditable` attribute determined by the
+//   [`editable` prop](#view.EditorProps.editable). Additional classes
+//   provided here will be added to the class. For other attributes,
+//   the value provided first (as in
+//   [`someProp`](#view.EditorView.someProp)) will be used.
 //
 //   scrollThreshold:: ?number
 //   Determines the distance (in pixels) between the cursor and the

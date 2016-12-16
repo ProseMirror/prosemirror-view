@@ -22,7 +22,7 @@ function initInput(view) {
   for (let event in handlers) {
     let handler = handlers[event]
     view.content.addEventListener(event, event => {
-      if ((view.editable || (event.type in editHandlers)) &&
+      if ((view.editable || !(event.type in editHandlers)) &&
           eventBelongsToView(view, event) && !view.someProp("handleDOMEvent", f => f(view, event)))
         handler(view, event)
     })
