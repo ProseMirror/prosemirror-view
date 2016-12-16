@@ -53,4 +53,35 @@ describe("EditorView edraw", () => {
     ist(view.content.querySelector("p"), oldP)
     ist(view.content.querySelector("pre"), oldPre)
   })
+
+  it("adds classes from the attributes prop", () => {
+    let view = tempEditor({doc: doc(p()), attributes: {class: "foo bar"}})
+    ist(view.content.classList.contains("foo"))
+    ist(view.content.classList.contains("bar"))
+    ist(view.content.classList.contains("ProseMirror"))
+    view.update({state: view.state, attributes: {class: "baz"}})
+    ist(!view.content.classList.contains("foo"))
+    ist(view.content.classList.contains("baz"))
+  })
+
+  it("can set other attributes", () => {
+    let view = tempEditor({doc: doc(p()), attributes: {spellcheck: "false", "aria-label": "hello"}})
+    ist(view.content.spellcheck, false)
+    ist(view.content.getAttribute("aria-label"), "hello")
+    view.update({state: view.state, attributes: {style: "background: yellow"}})
+    ist(view.content.hasAttribute("aria-label"), false)
+    ist(view.content.style.background, "yellow")
+  })
+
+  it("can't set the contenteditable attribute", () => {
+    let view = tempEditor({doc: doc(p()), attributes: {contenteditable: "false"}})
+    ist(view.content.contentEditable, "true")
+  })
+
+  it("understands the editable prop", () => {
+    let view = tempEditor({doc: doc(p()), editable: () => false})
+    ist(view.content.contentEditable, "false")
+    view.update({state: view.state})
+    ist(view.content.contentEditable, "true")
+  })
 })

@@ -204,7 +204,7 @@ function computeAttributes(view) {
     if (typeof value == "function") value = value(view.state)
     if (value) for (let attr in value) {
       if (attr == "class")
-        attrs.class += value[attr]
+        attrs.class += " " + value[attr]
       else if (!attrs[attr] && attr != "contenteditable")
         attrs[attr] = String(value[attr])
     }
