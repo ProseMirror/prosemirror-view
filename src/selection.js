@@ -16,9 +16,18 @@ class SelectionReader {
 
     view.content.addEventListener("focus", () => this.poller.start())
     view.content.addEventListener("blur", () => this.poller.stop())
+
+    if (!view.editable) this.poller.start()
   }
 
+  destroy() { this.poller.stop() }
+
   poll(origin) { this.poller.poll(origin) }
+
+  editableChanged() {
+    if (!this.view.editable) this.poller.start()
+    else if (!this.view.hasFocus()) this.poller.stop()
+  }
 
   // : () → bool
   // Whether the DOM selection has changed from the last known state.
@@ -108,8 +117,13 @@ class TimeoutPoller {
   }
 
   doPoll(origin) {
-    this.reader.readFromDOM(origin)
-    this.polling = setTimeout(this.pollFunc, 100)
+    let view = this.reader.view
+    if (view.focused || !view.editable) {
+      this.reader.readFromDOM(origin)
+      this.polling = setTimeout(this.pollFunc, 100)
+    } else {
+      this.polling = null
+    }
   }
 
   poll(origin) {
@@ -137,7 +151,7 @@ function selectionToDOM(view, sel, takeFocus) {
   if (!view.hasFocus()) {
     if (!takeFocus) return
     // See https://bugzilla.mozilla.org/show_bug.cgi?id=921444
-    else if (browser.gecko) view.content.focus()
+    else if (browser.gecko && view.editable) view.content.focus()
   }
 
   let reader = view.selectionReader

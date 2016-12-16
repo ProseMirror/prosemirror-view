@@ -8,7 +8,7 @@ const {TrackMappings} = require("./trackmappings")
 
 // A collection of DOM events that occur within the editor, and callback functions
 // to invoke when the event fires.
-const handlers = {}
+const handlers = {}, editHandlers = {}
 
 function initInput(view) {
   view.shiftKey = false
@@ -22,7 +22,8 @@ function initInput(view) {
   for (let event in handlers) {
     let handler = handlers[event]
     view.content.addEventListener(event, event => {
-      if (eventBelongsToView(view, event) && !view.someProp("handleDOMEvent", f => f(view, event)))
+      if ((view.editable || (event.type in editHandlers)) &&
+          eventBelongsToView(view, event) && !view.someProp("handleDOMEvent", f => f(view, event)))
         handler(view, event)
     })
   }
@@ -45,7 +46,7 @@ function dispatchEvent(view, event) {
 }
 exports.dispatchEvent = dispatchEvent
 
-handlers.keydown = (view, event) => {
+editHandlers.keydown = (view, event) => {
   if (event.keyCode == 16) view.shiftKey = true
   if (view.inDOMChange) return
   if (view.someProp("handleKeyDown", f => f(view, event)) || captureKeyDown(view, event))
@@ -54,11 +55,11 @@ handlers.keydown = (view, event) => {
     view.selectionReader.poll()
 }
 
-handlers.keyup = (view, e) => {
+editHandlers.keyup = (view, e) => {
   if (e.keyCode == 16) view.shiftKey = false
 }
 
-handlers.keypress = (view, event) => {
+editHandlers.keypress = (view, event) => {
   if (view.inDOMChange || !event.charCode ||
       event.ctrlKey && !event.altKey || browser.mac && event.metaKey) return
 
@@ -261,8 +262,7 @@ class MouseDown {
                : handleSingleClick(this.view, this.pos.pos, this.pos.inside, event)) {
       event.preventDefault()
     } else if (this.flushed) {
-      this.view.focus()
-      this.view.props.onAction(Selection.near(this.view.state.doc.resolve(this.pos.pos)).action({origin: "mouse"}))
+      updateSelection(this.view, Selection.near(this.view.state.doc.resolve(this.pos.pos)), "mouse")
       event.preventDefault()
     } else {
       this.view.selectionReader.poll("mouse")
@@ -303,12 +303,12 @@ handlers.contextmenu = (view, e) => {
 // plain wrong. Instead, when a composition ends, we parse the dom
 // around the original selection, and derive an update from that.
 
-handlers.compositionstart = handlers.compositionupdate = view => {
+editHandlers.compositionstart = editHandlers.compositionupdate = view => {
   DOMChange.start(view, true)
   if (view.state.storedMarks) view.inDOMChange.finish(true)
 }
 
-handlers.compositionend = (view, e) => {
+editHandlers.compositionend = (view, e) => {
   if (!view.inDOMChange) {
     // We received a compositionend without having seen any previous
     // events for the composition. If there's data in the event
@@ -333,7 +333,7 @@ function stopObserving(view) {
 exports.stopObserving = stopObserving
 
 function registerMutations(view, mutations) {
-  for (let i = 0; i < mutations.length; i++) {
+  if (view.editable) for (let i = 0; i < mutations.length; i++) {
     let mut = mutations[i]
     if (mut.target == view.content && mut.type == "attributes") continue
     let desc = view.docView.nearestDesc(mut.target)
@@ -360,9 +360,9 @@ function registerMutations(view, mutations) {
   }
 }
 
-handlers.input = view => DOMChange.start(view)
+editHandlers.input = view => DOMChange.start(view)
 
-handlers.copy = handlers.cut = (view, e) => {
+handlers.copy = editHandlers.cut = (view, e) => {
   let sel = view.state.selection, cut = e.type == "cut"
   if (sel.empty) return
   if (!e.clipboardData || !canUpdateClipboard(e.clipboardData)) {
@@ -378,7 +378,7 @@ function sliceSingleNode(slice) {
   return slice.openLeft == 0 && slice.openRight == 0 && slice.content.childCount == 1 ? slice.content.firstChild : null
 }
 
-handlers.paste = (view, e) => {
+editHandlers.paste = (view, e) => {
   if (!e.clipboardData) {
     if (browser.ie && browser.ie_version <= 11) DOMChange.start(view)
     return
@@ -436,11 +436,11 @@ handlers.dragend = view => {
   window.setTimeout(() => view.dragging = null, 50)
 }
 
-handlers.dragover = handlers.dragenter = (_, e) => e.preventDefault()
+editHandlers.dragover = editHandlers.dragenter = (_, e) => e.preventDefault()
 
-handlers.dragleave = () => null
+editHandlers.dragleave = () => null
 
-handlers.drop = (view, e) => {
+editHandlers.drop = (view, e) => {
   let dragging = view.dragging
   view.dragging = null
 
@@ -484,3 +484,6 @@ handlers.blur = (view, event) => {
   }
   view.someProp("onBlur", f => { f(view, event) })
 }
+
+// Make sure all handlers get registered
+for (let prop in editHandlers) handlers[prop] = editHandlers[prop]

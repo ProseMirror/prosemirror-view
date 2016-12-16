@@ -41,13 +41,12 @@ class EditorView {
     // should not be directly interfering with its child nodes.)
     this.content = document.createElement("div")
 
-    this.updateDOMForProps()
-
     if (place && place.appendChild) place.appendChild(this.content)
     else if (place) place(this.content)
 
     this.docView = docViewDesc(this.state.doc, viewDecorations(this), this.content, this)
-    this.content.contentEditable = true
+    this.editable = !this.someProp("editable", value => value === false)
+    this.updateDOMForProps()
 
     this.lastSelectedViewDesc = null
     this.selectionReader = new SelectionReader(this)
@@ -84,7 +83,10 @@ class EditorView {
     if (redrawn || !state.selection.eq(prev.selection))
       selectionToDOM(this, state.selection)
 
+    let prevEditable = this.editable
+    this.editable = !this.someProp("editable", value => value === false)
     this.updateDOMForProps()
+    if (prevEditable != this.editable) this.selectionReader.editableChanged()
 
     // FIXME somehow schedule this relative to ui/update so that it
     // doesn't cause extra layout
@@ -97,6 +99,9 @@ class EditorView {
     if (spellcheck != this.content.spellcheck) this.content.spellcheck = spellcheck
     let label = this.someProp("label", f => f(this.state)) || ""
     if (this.content.getAttribute("aria-label") != label) this.content.setAttribute("aria-label", label)
+
+    if (this.editable != (this.content.contentEditable == "true"))
+      this.content.contentEditable = this.editable
 
     let classes = ["ProseMirror", "ProseMirror-content"] // FIXME remove backwards-compat class
     if (this.focused) classes.push("ProseMirror-focused")
@@ -114,7 +119,7 @@ class EditorView {
   // :: () → bool
   // Query whether the view has focus.
   hasFocus() {
-    if (this.content.ownerDocument.activeElement != this.content) return false
+    if (this.editable && this.content.ownerDocument.activeElement != this.content) return false
     let sel = this.root.getSelection()
     return sel.rangeCount && this.content.contains(sel.anchorNode.nodeType == 3 ? sel.anchorNode.parentNode : sel.anchorNode)
   }
@@ -140,7 +145,7 @@ class EditorView {
   // Focus the editor.
   focus() {
     selectionToDOM(this, this.state.selection, true)
-    this.content.focus()
+    if (this.editable) this.content.focus()
   }
 
   // :: union<dom.Document, dom.DocumentFragment>
@@ -314,6 +319,10 @@ exports.EditorView = EditorView
 //   decorations:: (EditorState) → ?DecorationSet
 //   A set of [document decorations](#view.Decoration) to add to the
 //   view.
+//
+//   editable:: ?bool
+//   When set to false, the content of the view is not directly
+//   editable.
 //
 //   spellcheck:: ?bool
 //   Controls whether the DOM spellcheck attribute is enabled on the
