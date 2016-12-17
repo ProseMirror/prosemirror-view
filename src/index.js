@@ -183,6 +183,7 @@ class EditorView {
   // views](#view.NodeView).
   destroy() {
     this.docView.destroy()
+    this.selectionReader.destroy()
     EditorState.removeApplyListener(this.trackState)
     if (this.content.parentNode) this.content.parentNode.removeChild(this.content)
   }
