@@ -31,7 +31,7 @@
   "scripts": {
     "test": "FIXME autorun browser tests",
     "test-server": "moduleserve test --port 8090",
-    "build": "rimraf dist && buble -i src -o dist",
+    "build": "rimraf dist && buble -i src -o dist --no-named-function-expr",
     "prepublish": "npm run build"
   }
 }
