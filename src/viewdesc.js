@@ -415,7 +415,10 @@ class NodeViewDesc extends ViewDesc {
 
     let dom = spec && spec.dom, contentDOM = spec && spec.contentDOM
     if (!dom) ({dom, contentDOM} = DOMSerializer.renderSpec(document, node.type.spec.toDOM(node)))
-    if (!contentDOM && !node.isText) dom.contentEditable = false
+    if (!contentDOM && !node.isText) {
+      dom.contentEditable = false
+      if (node.isInline && dom.firstChild) dom.style.display = "inline-block"
+    }
 
     let startDOM = dom
     for (let i = 0; i < outerDeco.length; i++)
