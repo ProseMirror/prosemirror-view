@@ -6,6 +6,7 @@ require("./test-selection")
 require("./test-domchange")
 require("./test-decoration")
 require("./test-draw-decoration")
+require("./test-nodeview")
 require("./test-clipboard")
 require("./test-endOfTextblock")
 

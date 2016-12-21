@@ -23,14 +23,15 @@ const browser = require("./browser")
 //   is not present, the node view itself is responsible for rendering
 //   (or deciding not to render) its child nodes.
 //
-//   update:: ?(node: Node, deco: DecorationSet) → bool
+//   update:: ?(node: Node, decorations: [Decoration]) → bool
 //   When given, this will be called when the view is updating itself.
-//   It will be given a node (possibly of a different type), and a
-//   decoration set (which it may ignore, if it chooses not to support
-//   decorations), and should return true if it was able to update to
-//   that node, and false otherwise. If the node view has a
-//   `contentDOM` property (or no `dom` property), updating its child
-//   nodes will be handled by ProseMirror.
+//   It will be given a node (possibly of a different type), and an
+//   array of active decorations (which are automatically drawn, and
+//   the node view may ignore if it isn't interested in them), and
+//   should return true if it was able to update to that node, and
+//   false otherwise. If the node view has a `contentDOM` property (or
+//   no `dom` property), updating its child nodes will be handled by
+//   ProseMirror.
 //
 //   selectNode:: ?()
 //   Can be used to override the way the node's selected status (as a
@@ -412,9 +413,8 @@ class NodeViewDesc extends ViewDesc {
     let spec = custom && custom(node, view, () => {
       // (This is a function that allows the custom view to find its
       // own position)
-      if (!descObj) return parent.posAtStart + parent.size
-      if (descObj.parent) return descObj.parent.posBeforeChild(descObj)
-    })
+      if (descObj && descObj.parent) return descObj.parent.posBeforeChild(descObj)
+    }, outerDeco)
 
     let dom = spec && spec.dom, contentDOM = spec && spec.contentDOM
     if (!dom) ({dom, contentDOM} = DOMSerializer.renderSpec(document, node.type.spec.toDOM(node)))
@@ -580,14 +580,16 @@ class CustomNodeViewDesc extends NodeViewDesc {
   // updates the children.
   update(node, outerDeco, innerDeco, view) {
     if (this.spec.update) {
-      let result = this.spec.update(node, innerDeco)
+      let result = this.spec.update(node, outerDeco)
       if (result) {
         this.node = node
         if (this.contentDOM) this.updateChildren(view)
       }
       return result
+    } else if (!this.contentDOM && !node.isLeaf) {
+      return false
     } else {
-      return super.update(node, outerDeco, innerDeco, view)
+      return super.update(node, outerDeco, this.contentDOM ? this.innerDeco : innerDeco, view)
     }
   }
 
@@ -654,6 +656,7 @@ function computeOuterDeco(outerDeco, node, hasContent, needsWrap) {
   if (outerDeco.length) {
     for (let i = 0; i < outerDeco.length; i++) {
       let attrs = outerDeco[i].type.attrs, cur = top
+      if (!attrs) continue
       if (attrs.nodeName)
         result.push(cur = new OuterDecoLevel(attrs.nodeName))
 

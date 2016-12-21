@@ -314,13 +314,19 @@ function getEditable(view) {
 //   transformPastedText:: ?(string) → string
 //   Transform pasted plain text.
 //
-//   nodeViews:: ?Object<(node: Node, view: EditorView, getPos: () → number) → NodeView>
+//   nodeViews:: ?Object<(node: Node, view: EditorView, getPos: () → number, decorations: [Decoration]) → NodeView>
 //   Allows you to pass custom rendering and behavior logic for nodes
 //   and marks. Should map node and mark names to constructor function
 //   that produce a [`NodeView`](#view.NodeView) object implementing
 //   the node's display behavior. `getPos` is a function that can be
 //   called to get the node's current position, which can be useful
 //   when creating actions that update it.
+//
+//   `decorations` is an array of node or inline decorations that are
+//   active around the node. They are automatically drawn in the
+//   normal way, and you will usually just want to ignore this, but
+//   they can also be used as a way to provide context information to
+//   the node view without adding it to the document itself.
 //
 //   clipboardSerializer:: ?DOMSerializer
 //   The DOM serializer to use when putting content onto the
