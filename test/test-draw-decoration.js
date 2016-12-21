@@ -23,8 +23,8 @@ function decoPlugin(decos) {
         if (action.type == "transform")
           return set.map(action.transform.mapping, action.transform.doc)
         if (action.type == "changeDecorations") {
-          if (action.add) set = set.add(state.doc, action.add)
           if (action.remove) set = set.remove(action.remove)
+          if (action.add) set = set.add(state.doc, action.add)
         }
         return set
       }
@@ -253,5 +253,16 @@ describe("Decoration drawing", () => {
                            plugins: [decoPlugin([deco])]})
     view.props.onAction({type: "changeDecorations", remove: [deco]})
     ist(!view.content.querySelector(".cls"))
+  })
+
+  it("can update a node's attributes without replacing the node", () => {
+    let deco = Decoration.node(0, 5, {title: "title", class: "foo"})
+    let view = tempEditor({doc: doc(p("foo")),
+                           plugins: [decoPlugin([deco])]})
+    let para = view.content.querySelector("p")
+    view.props.onAction({type: "changeDecorations", remove: [deco], add: [Decoration.node(0, 5, {class: "foo bar"})]})
+    ist(view.content.querySelector("p"), para)
+    ist(para.className, "foo bar")
+    ist(!para.title)
   })
 })

@@ -418,29 +418,17 @@ class NodeViewDesc extends ViewDesc {
 
     let dom = spec && spec.dom, contentDOM = spec && spec.contentDOM
     if (!dom) ({dom, contentDOM} = DOMSerializer.renderSpec(document, node.type.spec.toDOM(node)))
-    if (!contentDOM && !node.isText) {
-      dom.contentEditable = false
-      if (node.isInline && dom.firstChild) dom.style.display = "inline-block"
-    }
+    if (!contentDOM && !node.isText) dom.contentEditable = false
 
-    let startDOM = dom
-    for (let i = 0; i < outerDeco.length; i++)
-      dom = applyOuterDeco(dom, outerDeco[i].type.attrs, node)
-
-    // Block nodes must have an editable wrapper to allow selections
-    // around them (when they are node-selected)
-    if (dom.contentEditable == "false" && node.isBlock) {
-      let wrap = document.createElement("div")
-      wrap.appendChild(dom)
-      dom = wrap
-    }
+    let nodeDOM = dom
+    dom = applyOuterDeco(dom, outerDeco, node, !!contentDOM)
 
     if (spec)
-      return descObj = new CustomNodeViewDesc(parent, node, outerDeco, innerDeco, dom, contentDOM, startDOM, spec, view)
+      return descObj = new CustomNodeViewDesc(parent, node, outerDeco, innerDeco, dom, contentDOM, nodeDOM, spec, view)
     else if (node.isText)
-      return new TextViewDesc(parent, node, outerDeco, innerDeco, dom, startDOM, view)
+      return new TextViewDesc(parent, node, outerDeco, innerDeco, dom, nodeDOM, view)
     else
-      return new NodeViewDesc(parent, node, outerDeco, innerDeco, dom, contentDOM, startDOM, view)
+      return new NodeViewDesc(parent, node, outerDeco, innerDeco, dom, contentDOM, nodeDOM, view)
   }
 
   parseRule() { return {node: this.node.type.name, attrs: this.node.attrs, contentElement: this.contentDOM} }
@@ -494,13 +482,22 @@ class NodeViewDesc extends ViewDesc {
   // do so and return true.
   update(node, outerDeco, innerDeco, view) {
     if (this.dirty == NODE_DIRTY ||
-        !node.sameMarkup(this.node) ||
-        !sameOuterDeco(outerDeco, this.outerDeco)) return false
+        !node.sameMarkup(this.node)) return false
+    this.updateOuterDeco(outerDeco)
     this.node = node
     this.innerDeco = innerDeco
     if (!node.isLeaf) this.updateChildren(view)
     this.dirty = NOT_DIRTY
     return true
+  }
+
+  updateOuterDeco(outerDeco) {
+    if (sameOuterDeco(outerDeco, this.outerDeco)) return
+    let content = !!this.contentDOM, needsWrap = this.nodeDOM.nodeType != 1
+    this.dom = patchOuterDeco(this.dom, this.nodeDOM,
+                              computeOuterDeco(this.outerDeco, this.node, content, needsWrap),
+                              computeOuterDeco(outerDeco, this.node, content, needsWrap))
+    this.outerDeco = outerDeco
   }
 
   // Mark this node as being the selected node.
@@ -532,8 +529,8 @@ class TextViewDesc extends NodeViewDesc {
 
   update(node, outerDeco) {
     if (this.dirty == NODE_DIRTY || (this.dirty != NOT_DIRTY && !this.inParent) ||
-        !node.sameMarkup(this.node) ||
-        !sameOuterDeco(outerDeco, this.outerDeco)) return false
+        !node.sameMarkup(this.node)) return false
+    this.updateOuterDeco(outerDeco)
     if ((this.dirty != NOT_DIRTY || node.text != this.node.text) && node.text != this.nodeDOM.nodeValue)
       this.nodeDOM.nodeValue = node.text
     this.node = node
@@ -640,22 +637,96 @@ function renderDescs(parentDOM, descs) {
   while (dom) dom = rm(dom)
 }
 
-// : (dom.Node, Object, Node) → dom.Node
-// Apply the extra attributes and potentially add a wrapper for a
-// decoration.
-function applyOuterDeco(dom, attrs, node) {
-  if (attrs.nodeName || dom.nodeType != 1) {
-    let wrap = document.createElement(attrs.nodeName || (node.isInline ? "span" : "div"))
-    wrap.appendChild(dom)
-    dom = wrap
+class OuterDecoLevel {
+  constructor(nodeName, attrs) {
+    this.nodeName = nodeName
+    this.attrs = attrs
   }
-  for (let name in attrs) {
-    let val = attrs[name]
-    if (name == "class") dom.classList.add(...val.split(" "))
-    else if (name == "style") dom.style.cssText += ";" + val
-    else if (name != "nodeName") dom.setAttribute(name, val)
+}
+
+function computeOuterDeco(outerDeco, node, hasContent, needsWrap) {
+  if (hasContent && !needsWrap && outerDeco.length == 0) return nothing
+
+  let result = [], top
+
+  if (outerDeco.length) {
+    for (let i = 0; i < outerDeco.length; i++) {
+      let attrs = outerDeco[i].type.attrs, cur
+      if (attrs.nodeName) {
+        result.push(cur = new OuterDecoLevel(attrs.nodeName, {}))
+      } else {
+        if (!top) {
+          top = new OuterDecoLevel(!needsWrap ? null : node.isInline ? "span" : "div", {})
+          result.push(top)
+        }
+        cur = top
+      }
+
+      for (let name in attrs) {
+        let val = attrs[name], old = cur.attrs[name]
+        if (val == null) continue
+        if (name == "class") cur.attrs.class = (old ? old + " " : "") + val
+        else if (name == "style") cur.attrs.style = (old ? old + ";" : "") + val
+        else if (name != "nodeName") cur.attrs[name] = val
+      }
+    }
   }
-  return dom
+
+  if (!result.length && !hasContent && node.isBlock)
+    result.push(new OuterDecoLevel("div", {}))
+
+  return result
+}
+
+const noAttrs = {}
+
+function patchOuterDeco(outerDOM, nodeDOM, prevComputed, curComputed) {
+  let curDOM = nodeDOM
+  for (let i = 0; i < curComputed.length; i++) {
+    let deco = curComputed[i], prev = prevComputed[i]
+    if (deco.nodeName) {
+      let parent
+      if (prev && prev.nodeName == deco.nodeName && curDOM != outerDOM &&
+          (parent = nodeDOM.parentNode) && parent.tagName.toLowerCase() == deco.nodeName) {
+        curDOM = parent
+      } else {
+        parent = document.createElement(deco.nodeName)
+        parent.appendChild(curDOM)
+        curDOM = parent
+      }
+    }
+    patchAttributes(curDOM, prev ? prev.attrs : noAttrs, deco.attrs)
+  }
+  if (!curComputed.length && prevComputed.length && !prevComputed[0].nodeName)
+    patchAttributes(curDOM, prevComputed[0].attrs, noAttrs)
+  return curDOM
+}
+
+function patchAttributes(dom, prev, cur) {
+  for (let name in prev)
+    if (name != "class" && name != "style" && !Object.prototype.hasOwnProperty.call(cur, name))
+      dom.removeAttribute(name)
+  for (let name in cur)
+    if (name != "class" && name != "style" && cur[name] != prev[name])
+      dom.setAttribute(name, cur[name])
+  if (prev.class != cur.class) {
+    let prevList = prev.class ? prev.class.split(" ") : nothing
+    let curList = cur.class ? cur.class.split(" ") : nothing
+    for (let i = 0; i < prevList.length; i++) if (curList.indexOf(prevList[i]) == -1)
+      dom.classList.remove(prevList[i])
+    for (let i = 0; i < curList.length; i++) if (prevList.indexOf(curList[i]) == -1)
+      dom.classList.add(curList[i])
+  }
+  if (prev.style != cur.style) {
+    let text = dom.style.cssText, found
+    if (prev.style && (found = text.index(prev.style)) > -1)
+      text = text.slice(0, found) + text.slice(found + prev.style.length)
+    dom.style.cssText = text + (cur.style || "")
+  }
+}
+
+function applyOuterDeco(dom, deco, node, hasContent) {
+  return patchOuterDeco(dom, dom, nothing, computeOuterDeco(deco, node, hasContent, dom.nodeType != 1))
 }
 
 // : ([Decoration], [Decoration]) → bool
@@ -755,9 +826,15 @@ class ViewTreeUpdater {
   updateNode(node, outerDeco, innerDeco, view) {
     if (this.index == this.top.children.length) return false
     let next = this.top.children[this.index]
-    if (!(next instanceof NodeViewDesc && next.update(node, outerDeco, innerDeco, view))) return false
-    this.index++
-    return true
+    if (next instanceof NodeViewDesc) {
+      let nextDOM = next.dom
+      if (next.update(node, outerDeco, innerDeco, view)) {
+        if (next.dom != nextDOM) this.changed = true
+        this.index++
+        return true
+      }
+    }
+    return false
   }
 
   // : (Node, [Decoration], DecorationSet, EditorView)
