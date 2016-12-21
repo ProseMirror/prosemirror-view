@@ -71,17 +71,15 @@ class EditorView {
 
     if (this.inDOMChange) return
 
-    let redrawn = false
     let decorations = viewDecorations(this)
 
     if (!this.docView.matchesNode(state.doc, [], decorations)) {
       stopObserving(this)
       this.docView.update(state.doc, [], decorations, this)
       startObserving(this)
-      redrawn = true
     }
 
-    if (redrawn || !state.selection.eq(prev.selection))
+    if (!state.selection.eq(prev.selection) || this.selectionReader.domChanged())
       selectionToDOM(this, state.selection)
 
     let prevEditable = this.editable
