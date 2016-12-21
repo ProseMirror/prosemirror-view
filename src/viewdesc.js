@@ -638,53 +638,51 @@ function renderDescs(parentDOM, descs) {
 }
 
 class OuterDecoLevel {
-  constructor(nodeName, attrs) {
-    this.nodeName = nodeName
-    this.attrs = attrs
+  constructor(nodeName) {
+    if (nodeName) this.nodeName = nodeName
   }
 }
+OuterDecoLevel.prototype = Object.create(null)
+
+const noDeco = [new OuterDecoLevel]
 
 function computeOuterDeco(outerDeco, node, hasContent, needsWrap) {
-  if (hasContent && !needsWrap && outerDeco.length == 0) return nothing
+  if (hasContent && outerDeco.length == 0) return noDeco
 
-  let result = [], top
+  let top = needsWrap ? noDeco[0] : new OuterDecoLevel, result = [top]
 
   if (outerDeco.length) {
     for (let i = 0; i < outerDeco.length; i++) {
-      let attrs = outerDeco[i].type.attrs, cur
-      if (attrs.nodeName) {
-        result.push(cur = new OuterDecoLevel(attrs.nodeName, {}))
-      } else {
-        if (!top) {
-          top = new OuterDecoLevel(!needsWrap ? null : node.isInline ? "span" : "div", {})
-          result.push(top)
-        }
-        cur = top
-      }
+      let attrs = outerDeco[i].type.attrs, cur = top
+      if (attrs.nodeName)
+        result.push(cur = new OuterDecoLevel(attrs.nodeName))
 
       for (let name in attrs) {
-        let val = attrs[name], old = cur.attrs[name]
+        let val = attrs[name]
         if (val == null) continue
-        if (name == "class") cur.attrs.class = (old ? old + " " : "") + val
-        else if (name == "style") cur.attrs.style = (old ? old + ";" : "") + val
-        else if (name != "nodeName") cur.attrs[name] = val
+        if (needsWrap && result.length == 1)
+          result.push(cur = top = new OuterDecoLevel(node.isInline ? "span" : "div"))
+        if (name == "class") cur.class = (cur.class ? cur.class + " " : "") + val
+        else if (name == "style") cur.style = (cur.style ? cur.style + ";" : "") + val
+        else if (name != "nodeName") cur[name] = val
       }
     }
   }
 
-  if (!result.length && !hasContent && node.isBlock)
-    result.push(new OuterDecoLevel("div", {}))
+  if (!hasContent && node.isBlock && result.length == 1 && !result[0].nodeName)
+    result.push(new OuterDecoLevel("div"))
 
   return result
 }
 
-const noAttrs = {}
-
 function patchOuterDeco(outerDOM, nodeDOM, prevComputed, curComputed) {
+  // Shortcut for trivial case
+  if (prevComputed == noDeco && curComputed == noDeco) return nodeDOM
+
   let curDOM = nodeDOM
   for (let i = 0; i < curComputed.length; i++) {
     let deco = curComputed[i], prev = prevComputed[i]
-    if (deco.nodeName) {
+    if (i) {
       let parent
       if (prev && prev.nodeName == deco.nodeName && curDOM != outerDOM &&
           (parent = nodeDOM.parentNode) && parent.tagName.toLowerCase() == deco.nodeName) {
@@ -695,19 +693,17 @@ function patchOuterDeco(outerDOM, nodeDOM, prevComputed, curComputed) {
         curDOM = parent
       }
     }
-    patchAttributes(curDOM, prev ? prev.attrs : noAttrs, deco.attrs)
+    patchAttributes(curDOM, prev || noDeco[0], deco)
   }
-  if (!curComputed.length && prevComputed.length && !prevComputed[0].nodeName)
-    patchAttributes(curDOM, prevComputed[0].attrs, noAttrs)
   return curDOM
 }
 
 function patchAttributes(dom, prev, cur) {
   for (let name in prev)
-    if (name != "class" && name != "style" && !Object.prototype.hasOwnProperty.call(cur, name))
+    if (name != "class" && name != "style" && name != "nodeName" && !(name in cur))
       dom.removeAttribute(name)
   for (let name in cur)
-    if (name != "class" && name != "style" && cur[name] != prev[name])
+    if (name != "class" && name != "style" && name != "nodeName" && cur[name] != prev[name])
       dom.setAttribute(name, cur[name])
   if (prev.class != cur.class) {
     let prevList = prev.class ? prev.class.split(" ") : nothing
@@ -726,7 +722,7 @@ function patchAttributes(dom, prev, cur) {
 }
 
 function applyOuterDeco(dom, deco, node, hasContent) {
-  return patchOuterDeco(dom, dom, nothing, computeOuterDeco(deco, node, hasContent, dom.nodeType != 1))
+  return patchOuterDeco(dom, dom, noDeco, computeOuterDeco(deco, node, hasContent, dom.nodeType != 1))
 }
 
 // : ([Decoration], [Decoration]) → bool
