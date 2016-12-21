@@ -193,10 +193,12 @@ class ViewDesc {
   // Scan up the dom finding the first desc that is a descendant of
   // this one.
   nearestDesc(dom) {
-    while (dom && dom.pmIsWrapper) dom = dom.parentNode
-    for (; dom; dom = dom.parentNode) {
-      let desc = this.getDesc(dom)
-      if (desc) return desc
+    for (let first = true, cur = dom; cur; cur = cur.parentNode) {
+      let desc = this.getDesc(cur)
+      if (desc) {
+        if (first && desc.nodeDOM && !desc.nodeDOM.contains(dom)) first = false
+        else return desc
+      }
     }
   }
 
@@ -387,8 +389,9 @@ class MarkViewDesc extends ViewDesc {
 // they populate their child array themselves.
 class NodeViewDesc extends ViewDesc {
   // : (?ViewDesc, Node, [Decoration], DecorationSet, dom.Node, ?dom.Node, EditorView)
-  constructor(parent, node, outerDeco, innerDeco, dom, contentDOM, view) {
+  constructor(parent, node, outerDeco, innerDeco, dom, contentDOM, nodeDOM, view) {
     super(parent, node.isLeaf ? nothing : [], dom, contentDOM)
+    this.nodeDOM = nodeDOM
     this.node = node
     this.outerDeco = outerDeco
     this.innerDeco = innerDeco
@@ -428,17 +431,16 @@ class NodeViewDesc extends ViewDesc {
     // around them (when they are node-selected)
     if (dom.contentEditable == "false" && node.isBlock) {
       let wrap = document.createElement("div")
-      wrap.pmIsWrapper = true
       wrap.appendChild(dom)
       dom = wrap
     }
 
     if (spec)
-      return descObj = new CustomNodeViewDesc(parent, node, outerDeco, innerDeco, dom, contentDOM, spec, view)
+      return descObj = new CustomNodeViewDesc(parent, node, outerDeco, innerDeco, dom, contentDOM, startDOM, spec, view)
     else if (node.isText)
       return new TextViewDesc(parent, node, outerDeco, innerDeco, dom, startDOM, view)
     else
-      return new NodeViewDesc(parent, node, outerDeco, innerDeco, dom, contentDOM, view)
+      return new NodeViewDesc(parent, node, outerDeco, innerDeco, dom, contentDOM, startDOM, view)
   }
 
   parseRule() { return {node: this.node.type.name, attrs: this.node.attrs, contentElement: this.contentDOM} }
@@ -503,38 +505,37 @@ class NodeViewDesc extends ViewDesc {
 
   // Mark this node as being the selected node.
   selectNode() {
-    ;(this.dom.pmIsWrapper ? this.dom.firstChild : this.dom).classList.add("ProseMirror-selectednode")
+    this.nodeDOM.classList.add("ProseMirror-selectednode")
   }
 
   // Remove selected node marking from this node.
   deselectNode() {
-    ;(this.dom.pmIsWrapper ? this.dom.firstChild : this.dom).classList.remove("ProseMirror-selectednode")
+    this.nodeDOM.classList.remove("ProseMirror-selectednode")
   }
 }
 
 // Create a view desc for the top-level document node, to be exported
 // and used by the view class.
 function docViewDesc(doc, deco, dom, view) {
-  return new NodeViewDesc(null, doc, nothing, deco, dom, dom, view)
+  return new NodeViewDesc(null, doc, nothing, deco, dom, dom, dom, view)
 }
 exports.docViewDesc = docViewDesc
 
 class TextViewDesc extends NodeViewDesc {
-  constructor(parent, node, outerDeco, innerDeco, dom, textDOM, view) {
-    super(parent, node, outerDeco, innerDeco, dom, null, view)
-    this.textDOM = textDOM
+  constructor(parent, node, outerDeco, innerDeco, dom, nodeDOM, view) {
+    super(parent, node, outerDeco, innerDeco, dom, null, nodeDOM, view)
   }
 
   parseRule() {
-    return {skip: this.textDOM.parentNode}
+    return {skip: this.nodeDOM.parentNode}
   }
 
   update(node, outerDeco) {
     if (this.dirty == NODE_DIRTY || (this.dirty != NOT_DIRTY && !this.inParent) ||
         !node.sameMarkup(this.node) ||
         !sameOuterDeco(outerDeco, this.outerDeco)) return false
-    if ((this.dirty != NOT_DIRTY || node.text != this.node.text) && node.text != this.textDOM.nodeValue)
-      this.textDOM.nodeValue = node.text
+    if ((this.dirty != NOT_DIRTY || node.text != this.node.text) && node.text != this.nodeDOM.nodeValue)
+      this.nodeDOM.nodeValue = node.text
     this.node = node
     this.dirty = NOT_DIRTY
     return true
@@ -542,16 +543,16 @@ class TextViewDesc extends NodeViewDesc {
 
   inParent() {
     let parentDOM = this.parent.contentDOM
-    for (let n = this.textDOM; n; n = n.parentNode) if (n == parentDOM) return true
+    for (let n = this.nodeDOM; n; n = n.parentNode) if (n == parentDOM) return true
     return false
   }
 
   domFromPos(pos, searchDOM) {
-    return {node: this.textDOM, offset: searchDOM ? Math.max(pos, this.textDOM.nodeValue.length) : pos}
+    return {node: this.nodeDOM, offset: searchDOM ? Math.max(pos, this.nodeDOM.nodeValue.length) : pos}
   }
 
   localPosFromDOM(dom, offset, bias) {
-    if (dom == this.textDOM) return this.posAtStart + Math.min(offset, this.node.text.length)
+    if (dom == this.nodeDOM) return this.posAtStart + Math.min(offset, this.node.text.length)
     return super.localPosFromDOM(dom, offset, bias)
   }
 
@@ -572,8 +573,8 @@ class BRHackViewDesc extends ViewDesc {
 // customized.
 class CustomNodeViewDesc extends NodeViewDesc {
   // : (?ViewDesc, Node, [Decoration], DecorationSet, dom.Node, ?dom.Node, NodeView, EditorView)
-  constructor(parent, node, outerDeco, innerDeco, dom, contentDOM, spec, view) {
-    super(parent, node, outerDeco, innerDeco, dom, contentDOM, view)
+  constructor(parent, node, outerDeco, innerDeco, dom, contentDOM, nodeDOM, spec, view) {
+    super(parent, node, outerDeco, innerDeco, dom, contentDOM, nodeDOM, view)
     this.spec = spec
   }
 
