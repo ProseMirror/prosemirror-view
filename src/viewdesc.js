@@ -503,12 +503,12 @@ class NodeViewDesc extends ViewDesc {
 
   // Mark this node as being the selected node.
   selectNode() {
-    this.dom.classList.add("ProseMirror-selectednode")
+    ;(this.dom.pmIsWrapper ? this.dom.firstChild : this.dom).classList.add("ProseMirror-selectednode")
   }
 
   // Remove selected node marking from this node.
   deselectNode() {
-    this.dom.classList.remove("ProseMirror-selectednode")
+    ;(this.dom.pmIsWrapper ? this.dom.firstChild : this.dom).classList.remove("ProseMirror-selectednode")
   }
 }
 
