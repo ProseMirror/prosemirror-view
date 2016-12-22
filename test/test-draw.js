@@ -84,4 +84,11 @@ describe("EditorView edraw", () => {
     view.update({state: view.state})
     ist(view.content.contentEditable, "true")
   })
+
+  it("doesn't redraw following paragraphs when a paragraph is split", () => {
+    let view = tempEditor({doc: doc(p("abcde"), p("fg"))})
+    let lastPara = view.content.lastChild
+    view.props.onAction(view.state.tr.split(3).action())
+    ist(view.content.lastChild, lastPara)
+  })
 })

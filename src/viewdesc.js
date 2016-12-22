@@ -452,14 +452,14 @@ class NodeViewDesc extends ViewDesc {
       // If the next node is a desc matching this widget, reuse it,
       // otherwise insert the widget as a new view desc.
       updater.placeWidget(widget)
-    }, (child, outerDeco, innerDeco) => {
+    }, (child, outerDeco, innerDeco, i) => {
       // Make sure the wrapping mark descs match the node's marks.
       updater.syncToMarks(child.marks, view)
       // Either find an existing desc that exactly matches this node,
       // and drop the descs before it.
       updater.findNodeMatch(child, outerDeco, innerDeco) ||
         // Or try updating the next desc to reflect this node.
-        updater.updateNode(child, outerDeco, innerDeco, view) ||
+        updater.updateNextNode(child, outerDeco, innerDeco, view, this.node.content, i) ||
         // Or just add it as a new desc.
         updater.addNode(child, outerDeco, innerDeco, view)
     })
@@ -809,7 +809,6 @@ class ViewTreeUpdater {
   // Try to find a node desc matching the given data. Skip over it and
   // return true when successful.
   findNodeMatch(node, outerDeco, innerDeco) {
-    // FIXME think about failure cases where updates will redraw too much
     for (let i = this.index, children = this.top.children, e = Math.min(children.length, i + 5); i < e; i++) {
       if (children[i].matchesNode(node, outerDeco, innerDeco)) {
         this.destroyBetween(this.index, i)
@@ -820,12 +819,17 @@ class ViewTreeUpdater {
     return false
   }
 
-  // : (Node, [Decoration], DecorationSet, EditorView) → bool
-  // Try to update the next node, if any, to the given data.
-  updateNode(node, outerDeco, innerDeco, view) {
+  // : (Node, [Decoration], DecorationSet, EditorView, Fragment, number) → bool
+  // Try to update the next node, if any, to the given data. First
+  // tries scanning ahead in the siblings fragment to see if the next
+  // node matches any of those, and if so, doesn't touch it, to avoid
+  // overwriting nodes that could still be used.
+  updateNextNode(node, outerDeco, innerDeco, view, siblings, index) {
     if (this.index == this.top.children.length) return false
     let next = this.top.children[this.index]
     if (next instanceof NodeViewDesc) {
+      for (let i = index + 1, e = Math.min(siblings.childCount, i + 5); i < e; i++)
+        if (next.node == siblings.child(i)) return false
       let nextDOM = next.dom
       if (next.update(node, outerDeco, innerDeco, view)) {
         if (next.dom != nextDOM) this.changed = true
@@ -883,7 +887,7 @@ function iterDeco(parent, deco, onWidget, onNode) {
   if (locals.length == 0) {
     for (let i = 0; i < parent.childCount; i++) {
       let child = parent.child(i)
-      onNode(child, locals, deco.forChild(offset, child))
+      onNode(child, locals, deco.forChild(offset, child), i)
       offset += child.nodeSize
     }
     return
@@ -919,7 +923,7 @@ function iterDeco(parent, deco, onWidget, onNode) {
       }
     }
 
-    onNode(child, active.length ? active.slice() : nothing, deco.forChild(offset, child))
+    onNode(child, active.length ? active.slice() : nothing, deco.forChild(offset, child), parentIndex - 1)
     offset = end
   }
 }
