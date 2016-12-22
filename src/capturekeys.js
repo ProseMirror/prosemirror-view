@@ -60,6 +60,8 @@ function skipIgnoredNodesLeft(view) {
         moveOffset = --offset
       }
       else break
+    } else if (isBlockNode(node)) {
+      break
     } else {
       let prev = node.previousSibling
       while (prev && isIgnorable(prev)) {
@@ -95,12 +97,14 @@ function skipIgnoredNodesRight(view) {
         moveOffset = ++offset
       }
       else break
+    } else if (isBlockNode(node)) {
+      break
     } else {
       let next = node.nextSibling
       while (next && isIgnorable(next)) {
         moveNode = next.parentNode
         moveOffset = Array.prototype.indexOf.call(moveNode.childNodes, next) + 1
-        next = next.previousSibling
+        next = next.nextSibling
       }
       if (!next) {
         node = node.parentNode
@@ -114,6 +118,11 @@ function skipIgnoredNodesRight(view) {
     }
   }
   if (moveNode) setSel(sel, moveNode, moveOffset)
+}
+
+function isBlockNode(dom) {
+  let desc = dom.pmViewDesc
+  return desc && desc.node && desc.node.isBlock
 }
 
 function setSel(sel, node, offset) {
