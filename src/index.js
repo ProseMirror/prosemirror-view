@@ -79,11 +79,13 @@ class EditorView {
     if (!this.docView.matchesNode(state.doc, outerDeco, innerDeco)) {
       stopObserving(this)
       this.docView.update(state.doc, outerDeco, innerDeco, this)
+      selectionToDOM(this, state.selection)
+      startObserving(this)
+    } else if (!state.selection.eq(prev.selection) || this.selectionReader.domChanged()) {
+      stopObserving(this)
+      selectionToDOM(this, state.selection)
       startObserving(this)
     }
-
-    if (!state.selection.eq(prev.selection) || this.selectionReader.domChanged())
-      selectionToDOM(this, state.selection)
 
     if (prevEditable != this.editable) this.selectionReader.editableChanged()
     this.updatePluginViews(prev)
