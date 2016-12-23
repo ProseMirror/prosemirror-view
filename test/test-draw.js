@@ -6,7 +6,7 @@ function apply(view, tr) {
   view.props.onAction(tr.action())
 }
 
-describe("EditorView edraw", () => {
+describe("EditorView draw", () => {
   it("updates the DOM", () => {
     let view = tempEditor({doc: doc(p("foo"))})
     apply(view, view.state.tr.insertText("bar"))

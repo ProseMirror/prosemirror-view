@@ -4,7 +4,7 @@ const {scrollPosIntoView, posAtCoords, coordsAtPos, endOfTextblock} = require(".
 const {docViewDesc} = require("./viewdesc")
 const {initInput, dispatchEvent, startObserving, stopObserving} = require("./input")
 const {SelectionReader, selectionToDOM} = require("./selection")
-const {viewDecorations} = require("./decoration")
+const {viewDecorations, Decoration} = require("./decoration")
 
 ;({Decoration: exports.Decoration, DecorationSet: exports.DecorationSet} = require("./decoration"))
 
@@ -44,10 +44,8 @@ class EditorView {
     if (place && place.appendChild) place.appendChild(this.content)
     else if (place) place(this.content)
 
-    this.docView = docViewDesc(this.state.doc, viewDecorations(this), this.content, this)
     this.editable = getEditable(this)
-    this.attrs = Object.create(null)
-    this.updateAttributes()
+    this.docView = docViewDesc(this.state.doc, computeDocDeco(this), viewDecorations(this), this.content, this)
 
     this.lastSelectedViewDesc = null
     this.selectionReader = new SelectionReader(this)
@@ -71,37 +69,23 @@ class EditorView {
 
     if (this.inDOMChange) return
 
-    let decorations = viewDecorations(this)
+    let prevEditable = this.editable
+    this.editable = getEditable(this)
+    let innerDeco = viewDecorations(this), outerDeco = computeDocDeco(this)
 
-    if (!this.docView.matchesNode(state.doc, [], decorations)) {
+    if (!this.docView.matchesNode(state.doc, outerDeco, innerDeco)) {
       stopObserving(this)
-      this.docView.update(state.doc, [], decorations, this)
+      this.docView.update(state.doc, outerDeco, innerDeco, this)
       startObserving(this)
     }
 
     if (!state.selection.eq(prev.selection) || this.selectionReader.domChanged())
       selectionToDOM(this, state.selection)
 
-    let prevEditable = this.editable
-    this.editable = getEditable(this)
     if (prevEditable != this.editable) this.selectionReader.editableChanged()
-    this.updateAttributes()
 
-    // FIXME somehow schedule this relative to ui/update so that it
-    // doesn't cause extra layout
     if (state.scrollToSelection > prev.scrollToSelection || prev.config != state.config)
       scrollPosIntoView(this, state.selection.head == null ? state.selection.from : state.selection.from)
-  }
-
-  updateAttributes() {
-    let attrs = computeAttributes(this)
-
-    for (let attr in this.attrs) if (!attrs[attr])
-      this.content.removeAttribute(attr)
-    for (let attr in attrs) if (attrs[attr] != this.attrs[attr])
-      this.content.setAttribute(attr, attrs[attr])
-
-    this.attrs = attrs
   }
 
   // :: () → bool
@@ -193,7 +177,7 @@ class EditorView {
 }
 exports.EditorView = EditorView
 
-function computeAttributes(view) {
+function computeDocDeco(view) {
   let attrs = Object.create(null)
   attrs.class = "ProseMirror" + (view.focused ? " ProseMirror-focused" : "") +
     (view.state.selection.node ? " ProseMirror-nodeselection" : "")
@@ -204,12 +188,12 @@ function computeAttributes(view) {
     if (value) for (let attr in value) {
       if (attr == "class")
         attrs.class += " " + value[attr]
-      else if (!attrs[attr] && attr != "contenteditable")
+      else if (!attrs[attr] && attr != "contenteditable" && attr != "nodeName")
         attrs[attr] = String(value[attr])
     }
   })
 
-  return attrs
+  return [Decoration.node(0, view.state.doc.content.size, attrs)]
 }
 
 function getEditable(view) {

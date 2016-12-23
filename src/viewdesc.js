@@ -513,8 +513,9 @@ class NodeViewDesc extends ViewDesc {
 
 // Create a view desc for the top-level document node, to be exported
 // and used by the view class.
-function docViewDesc(doc, deco, dom, view) {
-  return new NodeViewDesc(null, doc, nothing, deco, dom, dom, dom, view)
+function docViewDesc(doc, outerDeco, innerDeco, dom, view) {
+  applyOuterDeco(dom, outerDeco, doc, true)
+  return new NodeViewDesc(null, doc, outerDeco, innerDeco, dom, dom, dom, view)
 }
 exports.docViewDesc = docViewDesc
 
