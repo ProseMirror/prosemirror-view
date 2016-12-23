@@ -36,7 +36,7 @@ class EditorView {
     this._root = null
     this.focused = false
 
-    // :: dom.Node
+    // :: dom.Element
     // The editable DOM node containing the document. (You probably
     // should not be directly interfering with its child nodes.)
     this.content = document.createElement("div")
@@ -50,6 +50,9 @@ class EditorView {
     this.lastSelectedViewDesc = null
     this.selectionReader = new SelectionReader(this)
     initInput(this)
+
+    this.pluginViews = []
+    this.updatePluginViews()
   }
 
   // :: (EditorProps)
@@ -83,9 +86,31 @@ class EditorView {
       selectionToDOM(this, state.selection)
 
     if (prevEditable != this.editable) this.selectionReader.editableChanged()
+    this.updatePluginViews(prev)
 
     if (state.scrollToSelection > prev.scrollToSelection || prev.config != state.config)
       scrollPosIntoView(this, state.selection.head == null ? state.selection.from : state.selection.from)
+  }
+
+  destroyPluginViews() {
+    let view
+    while (view = this.pluginViews.pop()) if (view.destroy) view.destroy()
+  }
+
+  updatePluginViews(prevState) {
+    let plugins = this.state.plugins
+    if (!prevState || prevState.plugins != plugins) {
+      this.destroyPluginViews()
+      for (let i = 0; i < plugins.length; i++) {
+        let plugin = plugins[i]
+        if (plugin.options.view) this.pluginViews.push(plugin.options.view(this))
+      }
+    } else {
+      for (let i = 0; i < this.pluginViews.length; i++) {
+        let pluginView = this.pluginViews[i]
+        if (pluginView.update) pluginView.update(this)
+      }
+    }
   }
 
   // :: () → bool
@@ -164,6 +189,7 @@ class EditorView {
   // Removes the editor from the DOM and destroys all [node
   // views](#view.NodeView).
   destroy() {
+    this.destroyPluginViews()
     this.docView.destroy()
     this.selectionReader.destroy()
     EditorState.removeApplyListener(this.trackState)

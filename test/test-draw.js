@@ -1,4 +1,5 @@
 const {doc, pre, h1, p} = require("prosemirror-model/test/build")
+const {Plugin} = require("prosemirror-state")
 const {tempEditor} = require("./view")
 const ist = require("ist")
 
@@ -90,5 +91,20 @@ describe("EditorView draw", () => {
     let lastPara = view.content.lastChild
     view.props.onAction(view.state.tr.split(3).action())
     ist(view.content.lastChild, lastPara)
+  })
+
+  it("creates and destroys plugin views", () => {
+    let events = []
+    class PluginView {
+      update() { events.push("update") }
+      destroy() { events.push("destroy") }
+    }
+    let plugin = new Plugin({
+      view() { events.push("create"); return new PluginView }
+    })
+    let view = tempEditor({plugins: [plugin]})
+    view.props.onAction(view.state.tr.insertText("u").action())
+    view.destroy()
+    ist(events.join(" "), "create update destroy")
   })
 })
