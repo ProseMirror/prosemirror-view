@@ -421,7 +421,7 @@ class NodeViewDesc extends ViewDesc {
     if (!contentDOM && !node.isText) dom.contentEditable = false
 
     let nodeDOM = dom
-    dom = applyOuterDeco(dom, outerDeco, node, !!contentDOM)
+    dom = applyOuterDeco(dom, outerDeco, node)
 
     if (spec)
       return descObj = new CustomNodeViewDesc(parent, node, outerDeco, innerDeco, dom, contentDOM, nodeDOM, spec, view)
@@ -493,10 +493,10 @@ class NodeViewDesc extends ViewDesc {
 
   updateOuterDeco(outerDeco) {
     if (sameOuterDeco(outerDeco, this.outerDeco)) return
-    let content = !!this.contentDOM, needsWrap = this.nodeDOM.nodeType != 1
+    let needsWrap = this.nodeDOM.nodeType != 1
     this.dom = patchOuterDeco(this.dom, this.nodeDOM,
-                              computeOuterDeco(this.outerDeco, this.node, content, needsWrap),
-                              computeOuterDeco(outerDeco, this.node, content, needsWrap))
+                              computeOuterDeco(this.outerDeco, this.node, needsWrap),
+                              computeOuterDeco(outerDeco, this.node, needsWrap))
     this.outerDeco = outerDeco
   }
 
@@ -649,27 +649,25 @@ OuterDecoLevel.prototype = Object.create(null)
 
 const noDeco = [new OuterDecoLevel]
 
-function computeOuterDeco(outerDeco, node, hasContent, needsWrap) {
-  if (hasContent && outerDeco.length == 0) return noDeco
+function computeOuterDeco(outerDeco, node, needsWrap) {
+  if (outerDeco.length == 0) return noDeco
 
   let top = needsWrap ? noDeco[0] : new OuterDecoLevel, result = [top]
 
-  if (outerDeco.length) {
-    for (let i = 0; i < outerDeco.length; i++) {
-      let attrs = outerDeco[i].type.attrs, cur = top
-      if (!attrs) continue
-      if (attrs.nodeName)
-        result.push(cur = new OuterDecoLevel(attrs.nodeName))
+  for (let i = 0; i < outerDeco.length; i++) {
+    let attrs = outerDeco[i].type.attrs, cur = top
+    if (!attrs) continue
+    if (attrs.nodeName)
+      result.push(cur = new OuterDecoLevel(attrs.nodeName))
 
-      for (let name in attrs) {
-        let val = attrs[name]
-        if (val == null) continue
-        if (needsWrap && result.length == 1)
-          result.push(cur = top = new OuterDecoLevel(node.isInline ? "span" : "div"))
-        if (name == "class") cur.class = (cur.class ? cur.class + " " : "") + val
-        else if (name == "style") cur.style = (cur.style ? cur.style + ";" : "") + val
-        else if (name != "nodeName") cur[name] = val
-      }
+    for (let name in attrs) {
+      let val = attrs[name]
+      if (val == null) continue
+      if (needsWrap && result.length == 1)
+        result.push(cur = top = new OuterDecoLevel(node.isInline ? "span" : "div"))
+      if (name == "class") cur.class = (cur.class ? cur.class + " " : "") + val
+      else if (name == "style") cur.style = (cur.style ? cur.style + ";" : "") + val
+      else if (name != "nodeName") cur[name] = val
     }
   }
 
@@ -722,8 +720,8 @@ function patchAttributes(dom, prev, cur) {
   }
 }
 
-function applyOuterDeco(dom, deco, node, hasContent) {
-  return patchOuterDeco(dom, dom, noDeco, computeOuterDeco(deco, node, hasContent, dom.nodeType != 1))
+function applyOuterDeco(dom, deco, node) {
+  return patchOuterDeco(dom, dom, noDeco, computeOuterDeco(deco, node, dom.nodeType != 1))
 }
 
 // : ([Decoration], [Decoration]) → bool
