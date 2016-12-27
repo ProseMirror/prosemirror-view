@@ -243,9 +243,11 @@ class MouseDown {
     this.view.root.removeEventListener("mouseup", this.up)
     this.view.root.removeEventListener("mousemove", this.move)
     if (this.mightDrag && this.target) {
+      stopObserving(this.view)
       this.target.draggable = false
       if (browser.gecko && this.setContentEditable)
         this.target.removeAttribute("contentEditable")
+      startObserving(this.view)
     }
   }
 

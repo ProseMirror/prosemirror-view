@@ -143,7 +143,9 @@ class EditorView {
   // :: ()
   // Focus the editor.
   focus() {
+    stopObserving(this)
     selectionToDOM(this, this.state.selection, true)
+    startObserving(this)
     if (this.editable) this.content.focus()
   }
 
