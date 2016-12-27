@@ -1,6 +1,6 @@
 const {EditorState} = require("prosemirror-state")
 
-const {scrollPosIntoView, posAtCoords, coordsAtPos, endOfTextblock} = require("./domcoords")
+const {scrollRectIntoView, posAtCoords, coordsAtPos, endOfTextblock} = require("./domcoords")
 const {docViewDesc} = require("./viewdesc")
 const {initInput, dispatchEvent, startObserving, stopObserving} = require("./input")
 const {SelectionReader, selectionToDOM} = require("./selection")
@@ -90,8 +90,12 @@ class EditorView {
     if (prevEditable != this.editable) this.selectionReader.editableChanged()
     this.updatePluginViews(prev)
 
-    if (state.scrollToSelection > prev.scrollToSelection || prev.config != state.config)
-      scrollPosIntoView(this, state.selection.head == null ? state.selection.from : state.selection.from)
+    if (state.scrollToSelection > prev.scrollToSelection || prev.config != state.config) {
+      if (state.selection.node)
+        scrollRectIntoView(this, this.docView.domAfterPos(state.selection.from).getBoundingClientRect())
+      else
+        scrollRectIntoView(this, this.coordsAtPos(state.selection.head))
+    }
   }
 
   destroyPluginViews() {
@@ -120,7 +124,7 @@ class EditorView {
   hasFocus() {
     if (this.editable && this.content.ownerDocument.activeElement != this.content) return false
     let sel = this.root.getSelection()
-    return sel.rangeCount && this.content.contains(sel.anchorNode.nodeType == 3 ? sel.anchorNode.parentNode : sel.anchorNode)
+    return !sel.rangeCount || this.content.contains(sel.anchorNode.nodeType == 3 ? sel.anchorNode.parentNode : sel.anchorNode)
   }
 
   // :: (string, (prop: *) → *) → *
@@ -209,8 +213,7 @@ exports.EditorView = EditorView
 
 function computeDocDeco(view) {
   let attrs = Object.create(null)
-  attrs.class = "ProseMirror" + (view.focused ? " ProseMirror-focused" : "") +
-    (view.state.selection.node ? " ProseMirror-nodeselection" : "")
+  attrs.class = "ProseMirror" + (view.focused ? " ProseMirror-focused" : "")
   attrs.contenteditable = String(view.editable)
 
   view.someProp("attributes", value => {

@@ -673,9 +673,6 @@ function computeOuterDeco(outerDeco, node, hasContent, needsWrap) {
     }
   }
 
-  if (!hasContent && node.isBlock && result.length == 1 && !result[0].nodeName)
-    result.push(new OuterDecoLevel("div"))
-
   return result
 }
 

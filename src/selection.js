@@ -156,9 +156,10 @@ function selectionToDOM(view, sel, takeFocus) {
 
   let reader = view.selectionReader
   if (sel.eq(reader.lastSelection) && !reader.domChanged()) return
-  let anchor = sel.anchor, head = sel.head
-  if (anchor == null) { anchor = sel.from; head = sel.to }
-  view.docView.setSelection(anchor, head, view.root)
+  if (sel.node)
+    view.root.getSelection().removeAllRanges()
+  else
+    view.docView.setSelection(sel.anchor, sel.head, view.root)
   reader.storeDOMState(sel)
 }
 exports.selectionToDOM = selectionToDOM

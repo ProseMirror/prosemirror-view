@@ -8,22 +8,21 @@ function parentNode(node) {
   return parent.nodeType == 11 ? parent.host : parent
 }
 
-function scrollPosIntoView(view, pos) {
-  let coords = coordsAtPos(view, pos)
+function scrollRectIntoView(view, rect) {
   let scrollThreshold = view.someProp("scrollThreshold") || 0, scrollMargin = view.someProp("scrollMargin")
   if (scrollMargin == null) scrollMargin = 5
   for (let parent = view.content;; parent = parentNode(parent)) {
     let atBody = parent == document.body
-    let rect = atBody ? windowRect() : parent.getBoundingClientRect()
+    let bounding = atBody ? windowRect() : parent.getBoundingClientRect()
     let moveX = 0, moveY = 0
-    if (coords.top < rect.top + scrollThreshold)
-      moveY = -(rect.top - coords.top + scrollMargin)
-    else if (coords.bottom > rect.bottom - scrollThreshold)
-      moveY = coords.bottom - rect.bottom + scrollMargin
-    if (coords.left < rect.left + scrollThreshold)
-      moveX = -(rect.left - coords.left + scrollMargin)
-    else if (coords.right > rect.right - scrollThreshold)
-      moveX = coords.right - rect.right + scrollMargin
+    if (rect.top < bounding.top + scrollThreshold)
+      moveY = -(bounding.top - rect.top + scrollMargin)
+    else if (rect.bottom > bounding.bottom - scrollThreshold)
+      moveY = rect.bottom - bounding.bottom + scrollMargin
+    if (rect.left < bounding.left + scrollThreshold)
+      moveX = -(bounding.left - rect.left + scrollMargin)
+    else if (rect.right > bounding.right - scrollThreshold)
+      moveX = rect.right - bounding.right + scrollMargin
     if (moveX || moveY) {
       if (atBody) {
         window.scrollBy(moveX, moveY)
@@ -35,7 +34,7 @@ function scrollPosIntoView(view, pos) {
     if (atBody) break
   }
 }
-exports.scrollPosIntoView = scrollPosIntoView
+exports.scrollRectIntoView = scrollRectIntoView
 
 function findOffsetInNode(node, coords) {
   let closest, dxClosest = 2e8, coordsClosest, offset = 0
