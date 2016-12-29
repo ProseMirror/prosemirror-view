@@ -1,8 +1,6 @@
-const {EditorState} = require("prosemirror-state")
-
 const {scrollRectIntoView, posAtCoords, coordsAtPos, endOfTextblock} = require("./domcoords")
 const {docViewDesc} = require("./viewdesc")
-const {initInput, dispatchEvent, startObserving, stopObserving} = require("./input")
+const {initInput, destroyInput, dispatchEvent, startObserving, stopObserving} = require("./input")
 const {SelectionReader, selectionToDOM} = require("./selection")
 const {viewDecorations, Decoration} = require("./decoration")
 
@@ -24,14 +22,6 @@ class EditorView {
     // :: EditorState
     // The view's current [state](#state.EditorState).
     this.state = props.state
-
-    // Kludge to listen to state changes globally in order to be able
-    // to find mappings from a given state to another when necessary
-    // (during a drag or a DOM change).
-    EditorState.addApplyListener(this.trackState = (old, action, state) => {
-      if (this.inDOMChange) this.inDOMChange.mappings.track(old, action, state)
-      if (this.dragging && this.dragging.move) this.dragging.move.track(old, action, state)
-    })
 
     this._root = null
     this.focused = false
@@ -197,10 +187,10 @@ class EditorView {
   // Removes the editor from the DOM and destroys all [node
   // views](#view.NodeView).
   destroy() {
+    destroyInput(this)
     this.destroyPluginViews()
     this.docView.destroy()
     this.selectionReader.destroy()
-    EditorState.removeApplyListener(this.trackState)
     if (this.content.parentNode) this.content.parentNode.removeChild(this.content)
   }
 

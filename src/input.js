@@ -30,6 +30,13 @@ function initInput(view) {
 }
 exports.initInput = initInput
 
+function destroyInput(view) {
+  stopObserving(view)
+  if (view.inDOMChange) view.inDOMChange.destroy()
+  if (view.dragging) view.dragging.destroy()
+}
+exports.destroyInput = destroyInput
+
 function eventBelongsToView(view, event) {
   if (!event.bubbles) return true
   if (event.defaultPrevented) return false
@@ -400,6 +407,17 @@ class Dragging {
     this.range = range
     this.move = move && new TrackMappings(state)
   }
+
+  destroy() {
+    if (this.move) this.move.destroy()
+  }
+}
+
+function clearDragging(view) {
+  if (view.dragging) {
+    view.dragging.destroy()
+    view.dragging = null
+  }
 }
 
 function dropPos(slice, $pos) {
@@ -434,7 +452,7 @@ handlers.dragstart = (view, e) => {
 }
 
 handlers.dragend = view => {
-  window.setTimeout(() => view.dragging = null, 50)
+  window.setTimeout(() => clearDragging(view), 50)
 }
 
 editHandlers.dragover = editHandlers.dragenter = (_, e) => e.preventDefault()
@@ -443,7 +461,7 @@ editHandlers.dragleave = () => null
 
 editHandlers.drop = (view, e) => {
   let dragging = view.dragging
-  view.dragging = null
+  clearDragging(view)
 
   if (!e.dataTransfer) return
 

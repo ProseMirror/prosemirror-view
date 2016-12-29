@@ -37,11 +37,22 @@ class DOMChange {
     let range = this.changedRange()
     if (this.from == null) this.view.docView.markDirty(range.from, range.to)
     else this.view.docView.markDirty(this.from, this.to)
-    this.view.inDOMChange = null
-    readDOMChange(this, this.state, range)
+
+    // If there have been changes since this DOM update started, we must
+    // map our start and end positions, as well as the new selection
+    // positions, through them.
+    let mapping = this.mappings.getMapping(this.view.state)
+    this.destroy()
+    if (mapping) readDOMChange(this.view, mapping, this.state, range)
+
     // If the reading didn't result in a view update, force one by
     // resetting the view to its current state.
     if (this.view.docView.dirty) this.view.updateState(this.view.state)
+  }
+
+  destroy() {
+    this.mappings.destroy()
+    this.view.inDOMChange = null
   }
 
   compositionEnd() {
@@ -169,13 +180,8 @@ function keyEvent(keyCode, key) {
   return event
 }
 
-function readDOMChange(domChange, oldState, range) {
-  let parseResult, doc = oldState.doc, view = domChange.view
-  // If there have been changes since this DOM update started, we must
-  // map our start and end positions, as well as the new selection
-  // positions, through them.
-  let mapping = domChange.mappings.getMapping(view.state)
-  if (!mapping) return
+function readDOMChange(view, mapping, oldState, range) {
+  let parseResult, doc = oldState.doc
 
   for (;;) {
     parseResult = parseBetween(view, oldState, range.from, range.to)

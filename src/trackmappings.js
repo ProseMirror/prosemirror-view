@@ -1,3 +1,4 @@
+const {EditorState} = require("prosemirror-state")
 const {Mapping} = require("prosemirror-transform")
 
 class TrackedRecord {
@@ -11,6 +12,13 @@ class TrackedRecord {
 class TrackMappings {
   constructor(state) {
     this.seen = [new TrackedRecord(null, null, state)]
+    // Kludge to listen to state changes globally in order to be able
+    // to find mappings from a given state to another.
+    EditorState.addApplyListener(this.track = this.track.bind(this))
+  }
+
+  destroy() {
+    EditorState.removeApplyListener(this.track)
   }
 
   find(state) {
