@@ -714,7 +714,7 @@ function patchAttributes(dom, prev, cur) {
   }
   if (prev.style != cur.style) {
     let text = dom.style.cssText, found
-    if (prev.style && (found = text.index(prev.style)) > -1)
+    if (prev.style && (found = text.indexOf(prev.style)) > -1)
       text = text.slice(0, found) + text.slice(found + prev.style.length)
     dom.style.cssText = text + (cur.style || "")
   }
