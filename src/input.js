@@ -22,11 +22,13 @@ function initInput(view) {
   for (let event in handlers) {
     let handler = handlers[event]
     view.content.addEventListener(event, event => {
-      if ((view.editable || !(event.type in editHandlers)) &&
-          eventBelongsToView(view, event) && !view.someProp("handleDOMEvent", f => f(view, event)))
+      if (eventBelongsToView(view, event) && !runCustomHandler(view, event) &&
+          (view.editable || !(event.type in editHandlers)))
         handler(view, event)
     })
   }
+  view.extraHandlers = Object.create(null)
+  ensureListeners(view)
 }
 exports.initInput = initInput
 
@@ -36,6 +38,23 @@ function destroyInput(view) {
   if (view.dragging) view.dragging.destroy()
 }
 exports.destroyInput = destroyInput
+
+function ensureListeners(view) {
+  view.someProp("handleDOMEvents", handlers => {
+    for (let type in handlers) if (!view.extraHandlers[type]) {
+      view.extraHandlers[type] = true
+      view.content.addEventListener(type, event => runCustomHandler(view, event))
+    }
+  })
+}
+exports.ensureListeners = ensureListeners
+
+function runCustomHandler(view, event) {
+  return view.someProp("handleDOMEvents", handlers => {
+    let handler = handlers[event.type]
+    return handler ? handler(view, event) : false
+  })
+}
 
 function eventBelongsToView(view, event) {
   if (!event.bubbles) return true
@@ -48,8 +67,9 @@ function eventBelongsToView(view, event) {
 }
 
 function dispatchEvent(view, event) {
-  let handler = handlers[event.type]
-  if (handler && !view.someProp("handleDOMEvent", f => f(view, event))) handler(view, event)
+  if (!runCustomHandler(view, event) && handlers[event.type] &&
+      (view.editable || !(event.type in editHandlers)))
+    handlers[event.type](view, event)
 }
 exports.dispatchEvent = dispatchEvent
 
@@ -456,8 +476,6 @@ handlers.dragend = view => {
 }
 
 editHandlers.dragover = editHandlers.dragenter = (_, e) => e.preventDefault()
-
-editHandlers.dragleave = () => null
 
 editHandlers.drop = (view, e) => {
   let dragging = view.dragging

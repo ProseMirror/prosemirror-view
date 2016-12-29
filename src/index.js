@@ -1,6 +1,6 @@
 const {scrollRectIntoView, posAtCoords, coordsAtPos, endOfTextblock} = require("./domcoords")
 const {docViewDesc} = require("./viewdesc")
-const {initInput, destroyInput, dispatchEvent, startObserving, stopObserving} = require("./input")
+const {initInput, destroyInput, dispatchEvent, startObserving, stopObserving, ensureListeners} = require("./input")
 const {SelectionReader, selectionToDOM} = require("./selection")
 const {viewDecorations, Decoration} = require("./decoration")
 
@@ -49,6 +49,7 @@ class EditorView {
   // Update the view's props. Will immediately cause an update to
   // the view's DOM.
   update(props) {
+    if (props.handleDOMEvents != this.props.handleDOMEvents) ensureListeners(this)
     this.props = props
     this.updateState(props.state)
   }
@@ -59,6 +60,7 @@ class EditorView {
   updateState(state) {
     let prev = this.state
     this.state = state
+    if (prev.plugins != state.plugins) ensureListeners(this)
 
     if (this.inDOMChange) return
 
@@ -232,7 +234,7 @@ function getEditable(view) {
 // The various event-handling functions may all return `true` to
 // indicate that they handled the given event. The view will then take
 // care to call `preventDefault` on the event, except with
-// `handleDOMEvent`, where the handler itself is responsible for that.
+// `handleDOMEvents`, where the handler itself is responsible for that.
 //
 // Except for `state` and `onAction`, these may also be present on the
 // `props` property of plugins. How a prop is resolved depends on the
@@ -252,12 +254,14 @@ function getEditable(view) {
 //   with a new state that has the action
 //   [applied](#state.EditorState.applyAction).
 //
-//   handleDOMEvent:: ?(view: EditorView, event: dom.Event) → bool
-//   Called before the view handles a DOM event. This is a kind of
-//   catch-all override hook. Contrary to the other event handling
-//   props, when returning true from this one, you are responsible for
-//   calling `preventDefault` yourself (or not, if you want to allow
-//   the default behavior).
+//   handleDOMEvents:: ?Object<(view: EditorView, event: dom.Event) → bool>
+//   Can be an object mapping DOM event type names to functions that
+//   handle them. Such functions will be called before any handling
+//   ProseMirror does of events fired on the editable DOM element.
+//   Contrary to the other event handling props, when returning true
+//   from such a function, you are responsible for calling
+//   `preventDefault` yourself (or not, if you want to allow the
+//   default behavior).
 //
 //   handleKeyDown:: ?(view: EditorView, event: dom.KeyboardEvent) → bool
 //   Called when the editor receives a `keydown` event.
