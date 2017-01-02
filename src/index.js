@@ -139,10 +139,10 @@ class EditorView {
   // :: ()
   // Focus the editor.
   focus() {
+    if (this.editable) this.content.focus()
     stopObserving(this)
     selectionToDOM(this, this.state.selection, true)
     startObserving(this)
-    if (this.editable) this.content.focus()
   }
 
   // :: union<dom.Document, dom.DocumentFragment>
