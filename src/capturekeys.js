@@ -9,7 +9,7 @@ function moveSelectionBlock(state, dir) {
 }
 
 function apply(view, sel) {
-  view.props.onAction(sel.action({scrollIntoView: true}))
+  view.dispatch(view.state.tr.setSelection(sel).scrollIntoView())
   return true
 }
 

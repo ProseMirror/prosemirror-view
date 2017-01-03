@@ -99,7 +99,7 @@ editHandlers.keypress = (view, event) => {
   if (node || !$from.sameParent($to)) {
     let text = String.fromCharCode(event.charCode)
     if (!view.someProp("handleTextInput", f => f(view, $from.pos, $to.pos, text)))
-      view.props.onAction(view.state.tr.insertText(text).scrollAction())
+      view.dispatch(view.state.tr.insertText(text).scrollIntoView())
     event.preventDefault()
   }
 }
@@ -126,7 +126,9 @@ function runHandlerOnContext(view, propName, pos, inside, event) {
 
 function updateSelection(view, selection, origin) {
   view.focus()
-  view.props.onAction(selection.action({origin}))
+  let tr = view.state.tr.setSelection(selection)
+  if (origin) tr.set("origin", origin)
+  view.dispatch(tr)
 }
 
 function selectClickedLeaf(view, inside) {
@@ -399,7 +401,7 @@ handlers.copy = editHandlers.cut = (view, e) => {
   }
   toClipboard(view, sel, e.clipboardData)
   e.preventDefault()
-  if (cut) view.props.onAction(view.state.tr.deleteRange(sel.from, sel.to).scrollAction())
+  if (cut) view.dispatch(view.state.tr.deleteRange(sel.from, sel.to).scrollIntoView())
 }
 
 function sliceSingleNode(slice) {
@@ -417,7 +419,7 @@ editHandlers.paste = (view, e) => {
     view.someProp("transformPasted", f => { slice = f(slice) })
     let singleNode = sliceSingleNode(slice)
     let tr = singleNode ? view.state.tr.replaceSelectionWith(singleNode) : view.state.tr.replaceSelection(slice)
-    view.props.onAction(tr.scrollAction())
+    view.dispatch(tr.scrollIntoView())
   }
 }
 
@@ -503,7 +505,7 @@ editHandlers.drop = (view, e) => {
     tr.replaceRange(pos, pos, slice)
   tr.setSelection(Selection.between(tr.doc.resolve(pos), tr.doc.resolve(tr.mapping.map(insertPos))))
   view.focus()
-  view.props.onAction(tr.action())
+  view.dispatch(tr)
 }
 
 handlers.focus = (view, event) => {

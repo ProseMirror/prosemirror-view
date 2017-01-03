@@ -28,10 +28,10 @@ class TrackMappings {
     }
   }
 
-  track(old, action, state) {
+  track(old, tr, state) {
     let found = this.seen.length < 200 ? this.find(old) : null
     if (found)
-      this.seen.push(new TrackedRecord(found, action.type == "transform" ? action.transform.mapping : null, state))
+      this.seen.push(new TrackedRecord(found, tr.steps.length ? tr.mapping : null, state))
   }
 
   getMapping(state) {

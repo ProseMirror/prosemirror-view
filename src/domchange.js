@@ -198,7 +198,7 @@ function readDOMChange(view, mapping, oldState, range) {
   if (!change) {
     if (parsedSel) {
       let sel = resolveSelection(view.state.doc, mapping, parsedSel)
-      if (!sel.eq(view.state.selection)) view.props.onAction(sel.action())
+      if (!sel.eq(view.state.selection)) view.dispatch(view.state.tr.setSelection(sel))
     }
     return
   }
@@ -242,7 +242,7 @@ function readDOMChange(view, mapping, oldState, range) {
   if (!handled)
     tr.replace(from, to, parsed.slice(change.start - range.from, change.endB - range.from))
   if (parsedSel) tr.setSelection(resolveSelection(tr.doc, mapping, parsedSel))
-  view.props.onAction(tr.scrollAction())
+  view.dispatch(tr.scrollIntoView())
 }
 
 function resolveSelection(doc, mapping, parsedSel) {

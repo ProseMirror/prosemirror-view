@@ -70,7 +70,9 @@ class SelectionReader {
     }
     if ($head.pos == selection.head && $anchor.pos == selection.anchor)
       this.storeDOMState(selection)
-    this.view.props.onAction(selection.action(origin && {origin}))
+    let tr = this.view.state.tr.setSelection(selection)
+    if (origin) tr.set("origin", origin)
+    this.view.dispatch(tr)
   }
 }
 exports.SelectionReader = SelectionReader

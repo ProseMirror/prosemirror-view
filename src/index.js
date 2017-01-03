@@ -23,6 +23,8 @@ class EditorView {
     // The view's current [state](#state.EditorState).
     this.state = props.state
 
+    this.dispatch = this.dispatch.bind(this)
+
     this._root = null
     this.focused = false
 
@@ -200,6 +202,19 @@ class EditorView {
   dispatchEvent(event) {
     return dispatchEvent(this, event)
   }
+
+  // :: (Transaction)
+  // Dispatch a transaction. Will call the
+  // [`dispatchTransaction`](#view.EditorProps.dispatchTransaction) when given,
+  // and defaults to applying the transaction to the current state and
+  // calling [`updateState`](#view.EditorView.updateState) otherwise.
+  // This method is bound to the view instance, so that it can be
+  // easily passed around.
+  dispatch(tr) {
+    let dispatchTransaction = this.props.dispatchTransaction
+    if (dispatchTransaction) dispatchTransaction(tr)
+    else this.updateState(this.state.apply(tr))
+  }
 }
 exports.EditorView = EditorView
 
@@ -228,31 +243,31 @@ function getEditable(view) {
 // EditorProps:: interface
 //
 // The configuration object that can be passed to an editor view. It
-// supports the following properties (only `state` and `onAction` are
-// required).
+// supports the following properties (only `state` is required).
 //
 // The various event-handling functions may all return `true` to
 // indicate that they handled the given event. The view will then take
 // care to call `preventDefault` on the event, except with
 // `handleDOMEvents`, where the handler itself is responsible for that.
 //
-// Except for `state` and `onAction`, these may also be present on the
-// `props` property of plugins. How a prop is resolved depends on the
-// prop. Handler functions are called one at a time, starting with the
-// plugins (in order of appearance), and finally looking at the base
-// props, until one of them returns true. For some props, the first
-// plugin that yields a value gets precedence. For `class`, all the
-// classes returned are combined.
+// Except for `state` and `dispatchTransaction`, these may also be
+// present on the `props` property of plugins. How a prop is resolved
+// depends on the prop. Handler functions are called one at a time,
+// starting with the plugins (in order of appearance), and finally
+// looking at the base props, until one of them returns true. For some
+// props, the first plugin that yields a value gets precedence. For
+// `class`, all the classes returned are combined.
 //
 //   state:: EditorState
 //   The state of the editor.
 //
-//   onAction:: (action: Action)
-//   The callback over which to send actions (state updates) produced
-//   by the view. You'll usually want to make sure this ends up
-//   calling the view's [`update`](#view.EditorView.update) method
-//   with a new state that has the action
-//   [applied](#state.EditorState.applyAction).
+//   dispatchTransaction:: ?(tr: Transaction)
+//   The callback over which to send transactions (state updates)
+//   produced by the view. You'll usually want to make sure this ends
+//   up calling the view's
+//   [`updateState`](#view.EditorView.updateState) method with a new
+//   state that has the transaction
+//   [applied](#state.EditorState.apply).
 //
 //   handleDOMEvents:: ?Object<(view: EditorView, event: dom.Event) → bool>
 //   Can be an object mapping DOM event type names to functions that
@@ -331,7 +346,7 @@ function getEditable(view) {
 //   that produce a [`NodeView`](#view.NodeView) object implementing
 //   the node's display behavior. `getPos` is a function that can be
 //   called to get the node's current position, which can be useful
-//   when creating actions that update it.
+//   when creating transactions that update it.
 //
 //   `decorations` is an array of node or inline decorations that are
 //   active around the node. They are automatically drawn in the
