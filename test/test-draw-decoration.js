@@ -19,12 +19,12 @@ function decoPlugin(decos) {
   return new Plugin({
     state: {
       init(config) { return DecorationSet.create(config.doc, decos.map(make)) },
-      applyAction(action, set, state) {
-        if (action.type == "transform")
-          return set.map(action.transform.mapping, action.transform.doc)
-        if (action.type == "changeDecorations") {
-          if (action.remove) set = set.remove(action.remove)
-          if (action.add) set = set.add(state.doc, action.add)
+      apply(tr, set, state) {
+        if (tr.steps.length) set = set.map(tr.mapping, tr.doc)
+        let change = tr.get("updateDecorations")
+        if (change) {
+          if (change.remove) set = set.remove(change.remove)
+          if (change.add) set = set.add(state.doc, change.add)
         }
         return set
       }
@@ -33,6 +33,10 @@ function decoPlugin(decos) {
       decorations(state) { return this.getState(state) }
     }
   })
+}
+
+function updateDeco(view, add, remove) {
+  view.dispatch(view.state.tr.set("updateDecorations", {add, remove}))
 }
 
 describe("Decoration drawing", () => {
@@ -150,7 +154,7 @@ describe("Decoration drawing", () => {
     let view = tempEditor({doc: doc(p("foo"), p("baz")),
                            plugins: [decoPlugin(["7-8-foo"])]})
     let para2 = view.content.lastChild
-    view.props.onAction({type: "changeDecorations", add: [make("2-3-bar")]})
+    updateDeco(view, [make("2-3-bar")])
     ist(view.content.lastChild, para2)
     ist(view.content.querySelector(".bar"))
   })
@@ -159,15 +163,15 @@ describe("Decoration drawing", () => {
     let view = tempEditor({doc: doc(p("foo"), p("baz")),
                            plugins: [decoPlugin(["7-8-foo"])]})
     let para2 = view.content.lastChild
-    view.props.onAction(view.state.tr.delete(2, 3).action())
-    view.props.onAction(view.state.tr.delete(2, 3).action())
+    view.dispatch(view.state.tr.delete(2, 3))
+    view.dispatch(view.state.tr.delete(2, 3))
     ist(view.content.lastChild, para2)
   })
 
   it("can add a widget on a node boundary", () => {
     let view = tempEditor({doc: doc(p("foo", em("bar"))),
                            plugins: [decoPlugin([])]})
-    view.props.onAction({type: "changeDecorations", add: [make("4-widget")]})
+    updateDeco(view, [make("4-widget")])
     ist(view.content.querySelectorAll("button").length, 1)
   })
 
@@ -175,7 +179,7 @@ describe("Decoration drawing", () => {
     let dec = make("4-widget")
     let view = tempEditor({doc: doc(p("foo", em("bar"))),
                            plugins: [decoPlugin([dec])]})
-    view.props.onAction({type: "changeDecorations", remove: [dec]})
+    updateDeco(view, null, [dec])
     ist(view.content.querySelector("button"), null)
   })
 
@@ -184,7 +188,7 @@ describe("Decoration drawing", () => {
     let view = tempEditor({doc: doc(p("abc")),
                            plugins: [decoPlugin([dec])]})
     ist(view.content.querySelector(".foo"))
-    view.props.onAction({type: "changeDecorations", remove: [dec]})
+    updateDeco(view, null, [dec])
     ist(view.content.querySelector(".foo"), null)
   })
 
@@ -193,7 +197,7 @@ describe("Decoration drawing", () => {
     let view = tempEditor({doc: doc(p("abcd")),
                            plugins: [decoPlugin([dec])]})
     ist(view.content.querySelector(".foo"))
-    view.props.onAction({type: "changeDecorations", remove: [dec]})
+    updateDeco(view, null, [dec])
     ist(view.content.querySelector(".foo"), null)
     ist(view.content.firstChild.innerHTML, "abcd")
   })
@@ -203,27 +207,27 @@ describe("Decoration drawing", () => {
     let view = tempEditor({doc: doc(p("abcd")),
                            plugins: [decoPlugin([dec])]})
     ist(view.content.querySelector(".foo"))
-    view.props.onAction({type: "changeDecorations", remove: [dec], add: [make("2-4-bar")]})
+    updateDeco(view, [make("2-4-bar")], [dec])
     ist(view.content.querySelector(".foo"), null)
     ist(view.content.querySelector(".bar"))
   })
 
   it("draws a widget added in the middle of a text node", () => {
     let view = tempEditor({doc: doc(p("foo")), plugins: [decoPlugin([])]})
-    view.props.onAction({type: "changeDecorations", add: [make("3-widget")]})
+    updateDeco(view, [make("3-widget")])
     ist(view.content.firstChild.textContent, "foωo")
   })
 
   it("can update a text node around a widget", () => {
     let view = tempEditor({doc: doc(p("bar")), plugins: [decoPlugin(["3-widget"])]})
-    view.props.onAction(view.state.tr.delete(1, 2).action())
+    view.dispatch(view.state.tr.delete(1, 2))
     ist(view.content.querySelectorAll("button").length, 1)
     ist(view.content.firstChild.textContent, "aωr")
   })
 
   it("can update a text node with an inline decoration", () => {
     let view = tempEditor({doc: doc(p("bar")), plugins: [decoPlugin(["1-3-foo"])]})
-    view.props.onAction(view.state.tr.delete(1, 2).action())
+    view.dispatch(view.state.tr.delete(1, 2))
     let foo = view.content.querySelector(".foo")
     ist(foo)
     ist(foo.textContent, "a")
@@ -233,7 +237,7 @@ describe("Decoration drawing", () => {
   it("correctly redraws a partially decorated node when a widget is added", () => {
     let view = tempEditor({doc: doc(p("one", em("two"))),
                            plugins: [decoPlugin(["1-6-foo"])]})
-    view.props.onAction({type: "changeDecorations", add: [make("6-widget")]})
+    updateDeco(view, [make("6-widget")])
     let foos = view.content.querySelectorAll(".foo")
     ist(foos.length, 2)
     ist(foos[0].textContent, "one")
@@ -243,7 +247,7 @@ describe("Decoration drawing", () => {
   it("correctly redraws when skipping split text node", () => {
     let view = tempEditor({doc: doc(p("foo")),
                            plugins: [decoPlugin(["3-widget", "3-4-foo"])]})
-    view.props.onAction({type: "changeDecorations", add: [make("4-widget")]})
+    updateDeco(view, [make("4-widget")])
     ist(view.content.querySelectorAll("button").length, 2)
   })
 
@@ -251,7 +255,7 @@ describe("Decoration drawing", () => {
     let deco = Decoration.node(1, 6, {class: "cls"})
     let view = tempEditor({doc: doc(blockquote(p("foo"), p("bar"))),
                            plugins: [decoPlugin([deco])]})
-    view.props.onAction({type: "changeDecorations", remove: [deco]})
+    updateDeco(view, null, [deco])
     ist(!view.content.querySelector(".cls"))
   })
 
@@ -260,7 +264,7 @@ describe("Decoration drawing", () => {
     let view = tempEditor({doc: doc(p("foo")),
                            plugins: [decoPlugin([deco])]})
     let para = view.content.querySelector("p")
-    view.props.onAction({type: "changeDecorations", remove: [deco], add: [Decoration.node(0, 5, {class: "foo bar"})]})
+    updateDeco(view, [Decoration.node(0, 5, {class: "foo bar"})], [deco])
     ist(view.content.querySelector("p"), para)
     ist(para.className, "foo bar")
     ist(!para.title)

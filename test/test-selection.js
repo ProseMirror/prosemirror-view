@@ -40,7 +40,7 @@ function getSel() {
 
 function setSel(view, sel) {
   if (typeof sel == "number") sel = Selection.near(view.state.doc.resolve(sel))
-  view.props.onAction(sel.action())
+  view.dispatch(view.state.tr.setSelection(sel))
 }
 
 function event(code) {
@@ -148,7 +148,7 @@ describe("EditorView", () => {
     let view = tempEditor({})
     let top = view.coordsAtPos(1), pos = 1, end
     for (let i = 0; i < 100; i++) {
-      view.props.onAction(view.state.tr.insertText("abc def ghi ").action())
+      view.dispatch(view.state.tr.insertText("abc def ghi "))
       pos += 12
       end = view.coordsAtPos(pos)
       if (end.bottom > top.bottom + 4) break

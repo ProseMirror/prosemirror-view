@@ -22,7 +22,7 @@ describe("nodeViews prop", () => {
       }}
     })
     ist(view.content.querySelector("p").textContent, "FOO")
-    view.props.onAction(view.state.tr.insertText("a").action())
+    view.dispatch(view.state.tr.insertText("a"))
     ist(view.content.querySelector("p").textContent, "AFOO")
   })
 
@@ -36,7 +36,7 @@ describe("nodeViews prop", () => {
       }}
     })
     let para = view.content.querySelector("p")
-    view.props.onAction(view.state.tr.insertText("a").action())
+    view.dispatch(view.state.tr.insertText("a"))
     ist(view.content.querySelector("p"), para)
     ist(para.textContent, "AFOO")
   })
@@ -50,7 +50,7 @@ describe("nodeViews prop", () => {
       }}
     })
     let para = view.content.querySelector("p")
-    view.props.onAction(view.state.tr.insertText("a").action())
+    view.dispatch(view.state.tr.insertText("a"))
     ist(view.content.querySelector("p"), para)
     ist(para.textContent, "afoo")
   })
@@ -61,7 +61,7 @@ describe("nodeViews prop", () => {
       nodeViews: {image() { return {destroy: () => destroyed = true}}}
     })
     ist(!destroyed)
-    view.props.onAction(view.state.tr.delete(3, 5).action())
+    view.dispatch(view.state.tr.delete(3, 5))
     ist(destroyed)
   })
 
@@ -71,7 +71,7 @@ describe("nodeViews prop", () => {
       nodeViews: {image(_n, _v, getPos) { get = getPos; return {}}}
     })
     ist(get(), 4)
-    view.props.onAction(view.state.tr.insertText("a").action())
+    view.dispatch(view.state.tr.insertText("a"))
     ist(get(), 5)
   })
 
@@ -79,7 +79,7 @@ describe("nodeViews prop", () => {
     let plugin = new Plugin({
       state: {
         init() { return null },
-        applyAction(action, prev) { return action.type == "setDeco" ? action.name : prev }
+        apply(tr, prev) { return tr.get("setDeco") || prev }
       },
       props: {
         decorations(state) {
@@ -101,9 +101,9 @@ describe("nodeViews prop", () => {
       }}
     })
     ist(view.content.querySelector("var").textContent, "[]")
-    view.props.onAction({type: "setDeco", name: "foo"})
+    view.dispatch(view.state.tr.set("setDeco", "foo"))
     ist(view.content.querySelector("var").textContent, "foo")
-    view.props.onAction({type: "setDeco", name: "bar"})
+    view.dispatch(view.state.tr.set("setDeco", "bar"))
     ist(view.content.querySelector("var").textContent, "bar")
   })
 })

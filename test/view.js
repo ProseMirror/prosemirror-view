@@ -12,14 +12,13 @@ function tempEditor(inProps) {
     tempView = null
   }
 
-  let view, props = {}
+  let props = {}
   for (let n in inProps) props[n] = inProps[n]
-  if (!props.onAction) props.onAction = action => view.updateState(view.state.applyAction(action))
   props.state = EditorState.create({doc: props.doc,
                                     schema,
                                     selection: props.doc && selFor(props.doc),
                                     plugins: props.plugins})
-  return view = tempView = new EditorView(space, props)
+  return tempView = new EditorView(space, props)
 }
 exports.tempEditor = tempEditor
 

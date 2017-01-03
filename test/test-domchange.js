@@ -38,7 +38,7 @@ describe("DOM change", () => {
 
   it("respects stored marks", () => {
     let view = tempEditor({doc: doc(p("hello"))})
-    view.props.onAction({type: "addStoredMark", mark: view.state.schema.marks.em.create()})
+    view.dispatch(view.state.tr.addStoredMark(view.state.schema.marks.em.create()))
     findTextNode(view.content, "hello").nodeValue = "helloo"
     return flush(view, () => ist(view.state.doc, doc(p("hello", em("o"))), eq))
   })
@@ -187,7 +187,7 @@ describe("DOM change", () => {
 
   it("resolves ambiguous text input", () => {
     let view = tempEditor({doc: doc(p("fo<a>o"))})
-    view.props.onAction({type: "addStoredMark", mark: view.state.schema.marks.strong.create()})
+    view.dispatch(view.state.tr.addStoredMark(view.state.schema.marks.strong.create()))
     findTextNode(view.content, "foo").nodeValue = "fooo"
     return flush(view, () => ist(view.state.doc, doc(p("fo", strong("o"), "o")), eq))
   })
@@ -217,13 +217,13 @@ describe("DOM change", () => {
   })
 
   it("fixes text changes when input is ignored", () => {
-    let view = tempEditor({doc: doc(p("foo")), onAction: () => view.updateState(view.state)})
+    let view = tempEditor({doc: doc(p("foo")), dispatchTransaction: () => null})
     findTextNode(view.content, "foo").nodeValue = "food"
     return flush(view, () => ist(view.content.textContent, "foo"))
   })
 
   it("fixes structure changes when input is ignored", () => {
-    let view = tempEditor({doc: doc(p("foo", br, "bar")), onAction: () => view.updateState(view.state)})
+    let view = tempEditor({doc: doc(p("foo", br, "bar")), dispatchTransaction: () => null})
     let para = view.content.querySelector("p")
     para.replaceChild(document.createElement("img"), para.lastChild)
     return flush(view, () => ist(view.content.textContent, "foobar"))
@@ -233,7 +233,7 @@ describe("DOM change", () => {
     let view = tempEditor({doc: doc(p("one two three"))})
     findTextNode(view.content, "one two three").nodeValue = "one two THREE"
     view.dispatchEvent({type: "input"})
-    view.props.onAction(view.state.tr.insertText("ONE AND A HALF", 1, 4).action())
+    view.dispatch(view.state.tr.insertText("ONE AND A HALF", 1, 4))
     return flush(view, () => {
       ist(view.content.textContent, "ONE AND A HALF two THREE")
       ist(view.state.doc, doc(p("ONE AND A HALF two THREE")), eq)
@@ -244,7 +244,7 @@ describe("DOM change", () => {
     let view = tempEditor({doc: doc(p("one"))})
     view.content.querySelector("p").innerHTML = "<b>one</b>"
     view.dispatchEvent({type: "input"})
-    view.props.onAction(view.state.tr.insertText("X", 2, 2).action())
+    view.dispatch(view.state.tr.insertText("X", 2, 2))
     return flush(view, () => ist(view.state.doc, doc(p(strong("oXne"))), eq))
   })
 })

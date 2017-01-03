@@ -3,28 +3,24 @@ const {Plugin} = require("prosemirror-state")
 const {tempEditor} = require("./view")
 const ist = require("ist")
 
-function apply(view, tr) {
-  view.props.onAction(tr.action())
-}
-
 describe("EditorView draw", () => {
   it("updates the DOM", () => {
     let view = tempEditor({doc: doc(p("foo"))})
-    apply(view, view.state.tr.insertText("bar"))
+    view.dispatch(view.state.tr.insertText("bar"))
     ist(view.content.textContent, "barfoo")
   })
 
   it("doesn't redraw nodes after changes", () => {
     let view = tempEditor({doc: doc(h1("foo<a>"), p("bar"))})
     let oldP = view.content.querySelector("p")
-    apply(view, view.state.tr.insertText("!"))
+    view.dispatch(view.state.tr.insertText("!"))
     ist(view.content.querySelector("p"), oldP)
   })
 
   it("doesn't redraw nodes before changes", () => {
     let view = tempEditor({doc: doc(p("foo"), h1("bar"))})
     let oldP = view.content.querySelector("p")
-    apply(view, view.state.tr.insertText("!", 2))
+    view.dispatch(view.state.tr.insertText("!", 2))
     ist(view.content.querySelector("p"), oldP)
   })
 
@@ -32,7 +28,7 @@ describe("EditorView draw", () => {
     let view = tempEditor({doc: doc(p("foo"), h1("bar"), pre("baz"))})
     let oldP = view.content.querySelector("p")
     let oldPre = view.content.querySelector("pre")
-    apply(view, view.state.tr.insertText("!", 2))
+    view.dispatch(view.state.tr.insertText("!", 2))
     ist(view.content.querySelector("p"), oldP)
     ist(view.content.querySelector("pre"), oldPre)
   })
@@ -41,7 +37,7 @@ describe("EditorView draw", () => {
     let view = tempEditor({doc: doc(p("foo"), h1("bar"), pre("baz"))})
     let oldP = view.content.querySelector("p")
     let oldPre = view.content.querySelector("pre")
-    apply(view, view.state.tr.split(8))
+    view.dispatch(view.state.tr.split(8))
     ist(view.content.querySelector("p"), oldP)
     ist(view.content.querySelector("pre"), oldPre)
   })
@@ -50,7 +46,7 @@ describe("EditorView draw", () => {
     let view = tempEditor({doc: doc(p("foo"), h1("bar"), h1("x"), pre("baz"))})
     let oldP = view.content.querySelector("p")
     let oldPre = view.content.querySelector("pre")
-    apply(view, view.state.tr.join(10))
+    view.dispatch(view.state.tr.join(10))
     ist(view.content.querySelector("p"), oldP)
     ist(view.content.querySelector("pre"), oldPre)
   })
@@ -89,7 +85,7 @@ describe("EditorView draw", () => {
   it("doesn't redraw following paragraphs when a paragraph is split", () => {
     let view = tempEditor({doc: doc(p("abcde"), p("fg"))})
     let lastPara = view.content.lastChild
-    view.props.onAction(view.state.tr.split(3).action())
+    view.dispatch(view.state.tr.split(3))
     ist(view.content.lastChild, lastPara)
   })
 
@@ -103,7 +99,7 @@ describe("EditorView draw", () => {
       view() { events.push("create"); return new PluginView }
     })
     let view = tempEditor({plugins: [plugin]})
-    view.props.onAction(view.state.tr.insertText("u").action())
+    view.dispatch(view.state.tr.insertText("u"))
     view.destroy()
     ist(events.join(" "), "create update destroy")
   })
