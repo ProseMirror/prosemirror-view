@@ -161,7 +161,16 @@ function stopNativeHorizontalDelete(view, dir) {
   let {$head, $anchor, empty} = view.state.selection
   if (!$head || !$head.sameParent($anchor) || !$head.parent.isTextblock) return true
   if (!empty) return false
-  return view.endOfTextblock(dir > 0 ? "forward" : "backward")
+  if (view.endOfTextblock(dir > 0 ? "forward" : "backward")) return true
+  let nextNode = !$head.textOffset && (dir < 0 ? $head.nodeBefore : $head.nodeAfter)
+  if (nextNode && !nextNode.isText) {
+    let tr = view.state.tr
+    if (dir < 0) tr.delete($head.pos - nextNode.nodeSize, $head.pos)
+    else tr.delete($head.pos, $head.pos + nextNode.nodeSize)
+    view.dispatch(tr)
+    return true
+  }
+  return false
 }
 
 // A backdrop keymap used to make sure we always suppress keys that
