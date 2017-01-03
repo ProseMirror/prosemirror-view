@@ -52,11 +52,16 @@ class SelectionReader {
     if (!this.view.hasFocus() || this.view.inDOMChange || !this.domChanged()) return
 
     let domSel = this.view.root.getSelection(), doc = this.view.state.doc
-    let domNode = domSel.focusNode, head = this.view.docView.posFromDOM(domNode, domSel.focusOffset)
+    let nearestDesc = this.view.docView.nearestDesc(domSel.focusNode)
+    // If the selection is in a non-document part of the view, ignore it
+    if (!nearestDesc.size) {
+      this.storeDOMState()
+      return
+    }
+    let head = this.view.docView.posFromDOM(domSel.focusNode, domSel.focusOffset)
     let $head = doc.resolve(head), $anchor, selection
     if (domSel.isCollapsed) {
       $anchor = $head
-      let nearestDesc = this.view.docView.nearestDesc(domNode)
       while (nearestDesc && !nearestDesc.node) nearestDesc = nearestDesc.parent
       if (nearestDesc && nearestDesc.node.isLeaf && NodeSelection.isSelectable(nearestDesc.node))
         selection = new NodeSelection($head)
