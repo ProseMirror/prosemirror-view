@@ -190,7 +190,7 @@ function endOfTextblockVertical(view, state, dir) {
       else continue
       for (let i = 0; i < boxes.length; i++) {
         let box = boxes[i]
-        if (dir == "up" ? box.bottom < coords.top : box.top > coords.bottom)
+        if (dir == "up" ? box.bottom < coords.top + 1 : box.top > coords.bottom - 1)
           return false
       }
     }
