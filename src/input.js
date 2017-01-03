@@ -499,11 +499,17 @@ editHandlers.drop = (view, e) => {
   }
   view.someProp("transformPasted", f => { slice = f(slice) })
   let pos = tr.mapping.map(insertPos)
-  if (slice.openLeft == 0 && slice.openRight == 0 && slice.content.childCount == 1)
+  let isNode = slice.openLeft == 0 && slice.openRight == 0 && slice.content.childCount == 1
+  if (isNode)
     tr.replaceRangeWith(pos, pos, slice.content.firstChild)
   else
     tr.replaceRange(pos, pos, slice)
-  tr.setSelection(Selection.between(tr.doc.resolve(pos), tr.doc.resolve(tr.mapping.map(insertPos))))
+  let $pos = tr.doc.resolve(pos)
+  if (isNode && NodeSelection.isSelectable(slice.content.firstChild) &&
+      $pos.nodeAfter && $pos.nodeAfter.sameMarkup(slice.content.firstChild))
+    tr.setSelection(new NodeSelection($pos))
+  else
+    tr.setSelection(Selection.between($pos, tr.doc.resolve(tr.mapping.map(insertPos))))
   view.focus()
   view.dispatch(tr)
 }
