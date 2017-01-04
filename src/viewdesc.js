@@ -193,10 +193,10 @@ class ViewDesc {
 
   // Scan up the dom finding the first desc that is a descendant of
   // this one.
-  nearestDesc(dom) {
+  nearestDesc(dom, onlyNodes) {
     for (let first = true, cur = dom; cur; cur = cur.parentNode) {
       let desc = this.getDesc(cur)
-      if (desc) {
+      if (desc && (!onlyNodes || desc.node)) {
         if (first && desc.nodeDOM && !desc.nodeDOM.contains(dom)) first = false
         else return desc
       }

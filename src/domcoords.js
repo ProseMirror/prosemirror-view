@@ -109,9 +109,9 @@ function posAtCoords(view, coords) {
     bias = rect.left != rect.right && coords.left > (rect.left + rect.right) / 2 ? 1 : -1
   }
 
-  let nodeView = view.docView.nearestDesc(elt)
+  let desc = view.docView.nearestDesc(elt, true)
   return {pos: view.docView.posFromDOM(node, offset, bias),
-          inside: nodeView && (nodeView.posAtStart - nodeView.border)}
+          inside: desc && (desc.posAtStart - desc.border)}
 }
 exports.posAtCoords = posAtCoords
 
