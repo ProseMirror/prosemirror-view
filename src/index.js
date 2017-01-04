@@ -118,7 +118,7 @@ class EditorView {
   hasFocus() {
     if (this.editable && this.content.ownerDocument.activeElement != this.content) return false
     let sel = this.root.getSelection()
-    return !sel.rangeCount || this.content.contains(sel.anchorNode.nodeType == 3 ? sel.anchorNode.parentNode : sel.anchorNode)
+    return sel.rangeCount && this.content.contains(sel.anchorNode.nodeType == 3 ? sel.anchorNode.parentNode : sel.anchorNode)
   }
 
   // :: (string, (prop: *) → *) → *
@@ -220,7 +220,8 @@ exports.EditorView = EditorView
 
 function computeDocDeco(view) {
   let attrs = Object.create(null)
-  attrs.class = "ProseMirror" + (view.focused ? " ProseMirror-focused" : "")
+  attrs.class = "ProseMirror" + (view.focused ? " ProseMirror-focused" : "") +
+    (view.state.selection.node ? " ProseMirror-nodeselection" : "")
   attrs.contenteditable = String(view.editable)
 
   view.someProp("attributes", value => {

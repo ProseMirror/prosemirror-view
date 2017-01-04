@@ -165,10 +165,20 @@ function selectionToDOM(view, sel, takeFocus) {
 
   let reader = view.selectionReader
   if (sel.eq(reader.lastSelection) && !reader.domChanged()) return
-  if (sel.node)
-    view.root.getSelection().removeAllRanges()
-  else
-    view.docView.setSelection(sel.anchor, sel.head, view.root)
+  let {anchor, head} = sel, resetEditable
+  if (anchor == null) {
+    anchor = sel.from
+    head = sel.to
+    if (browser.webkit && sel.node.isBlock) {
+      let desc = view.docView.descAt(sel.from)
+      if (!desc.contentDOM && desc.dom.contentEditable == "false") {
+        resetEditable = desc.dom
+        desc.dom.contentEditable = "true"
+      }
+    }
+  }
+  view.docView.setSelection(anchor, head, view.root)
+  if (resetEditable) resetEditable.contentEditable = "false"
   reader.storeDOMState(sel)
 }
 exports.selectionToDOM = selectionToDOM

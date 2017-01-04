@@ -9,4 +9,5 @@ if (typeof navigator != "undefined") {
   result.ie_version = ie_upto10 ? document.documentMode || 6 : ie_11up && +ie_11up[1]
   result.gecko = /gecko\/\d/i.test(navigator.userAgent)
   result.ios = /AppleWebKit/.test(navigator.userAgent) && /Mobile\/\w+/.test(navigator.userAgent)
+  result.webkit = 'WebkitAppearance' in document.documentElement.style
 }
