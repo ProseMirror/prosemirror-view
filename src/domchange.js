@@ -220,28 +220,31 @@ function readDOMChange(view, mapping, oldState, range) {
 
   let from = mapping.map(change.start), to = mapping.map(change.endA, -1)
 
-  let tr = view.state.tr, handled = false, markChange, $from1
-  if ($from.sameParent($to) && $from.parent.isTextblock && $from.pos != $to.pos) {
-    if (change.endA == change.endB &&
-        ($from1 = doc.resolve(change.start)) &&
-        (markChange = isMarkChange($from.parent.content.cut($from.parentOffset, $to.parentOffset),
-                                   $from1.parent.content.cut($from1.parentOffset, change.endA - $from1.start())))) {
-      // Adding or removing a mark
+  let tr, storedMarks, markChange, $from1
+  if ($from.sameParent($to) && $from.parent.isTextblock) {
+    if ($from.pos == $to.pos) { // Deletion
+      tr = view.state.tr.delete(from, to)
+      storedMarks = doc.marksAt(change.start, true)
+    } else if ( // Adding or removing a mark
+      change.endA == change.endB && ($from1 = doc.resolve(change.start)) &&
+      (markChange = isMarkChange($from.parent.content.cut($from.parentOffset, $to.parentOffset),
+                                 $from1.parent.content.cut($from1.parentOffset, change.endA - $from1.start())))
+    ) {
+      tr = view.state.tr
       if (markChange.type == "add") tr.addMark(from, to, markChange.mark)
       else tr.removeMark(from, to, markChange.mark)
-      handled = true
     } else if ($from.parent.child($from.index()).isText && $from.index() == $to.index() - ($to.textOffset ? 0 : 1)) {
       // Both positions in the same text node -- simply insert text
       let text = $from.parent.textBetween($from.parentOffset, $to.parentOffset)
       if (view.someProp("handleTextInput", f => f(view, from, to, text))) return
-      tr.insertText(text, from, to)
-      handled = true
+      tr = view.state.tr.insertText(text, from, to)
     }
   }
 
-  if (!handled)
-    tr.replace(from, to, parsed.slice(change.start - range.from, change.endB - range.from))
+  if (!tr)
+    tr = view.state.tr.replace(from, to, parsed.slice(change.start - range.from, change.endB - range.from))
   if (parsedSel) tr.setSelection(resolveSelection(tr.doc, mapping, parsedSel))
+  if (storedMarks) tr.setStoredMarks(storedMarks)
   view.dispatch(tr.scrollIntoView())
 }
 

@@ -247,4 +247,14 @@ describe("DOM change", () => {
     view.dispatch(view.state.tr.insertText("X", 2, 2))
     return flush(view, () => ist(view.state.doc, doc(p(strong("oXne"))), eq))
   })
+
+  it("preserves marks on deletion", () => {
+    let view = tempEditor({doc: doc(p("one", em("x<a>")))})
+    view.content.querySelector("em").innerText = ""
+    view.dispatchEvent({type: "input"})
+    return flush(view, () => {
+      view.dispatch(view.state.tr.insertText("y"))
+      ist(view.state.doc, doc(p("one", em("y"))), eq)
+    })
+  })
 })
