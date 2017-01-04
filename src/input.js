@@ -259,7 +259,7 @@ class MouseDown {
       stopObserving(this.view)
       this.target.draggable = true
       if (browser.gecko && (this.setContentEditable = !this.target.hasAttribute("contentEditable")))
-        this.target.setAttribute("contentEditable", "false")
+        setTimeout(() => this.target.setAttribute("contentEditable", "false"), 20)
       startObserving(this.view)
     }
 
@@ -366,7 +366,8 @@ exports.stopObserving = stopObserving
 function registerMutations(view, mutations) {
   if (view.editable) for (let i = 0; i < mutations.length; i++) {
     let mut = mutations[i], desc = view.docView.nearestDesc(mut.target)
-    if (desc == view.docView && mut.type == "attributes") continue
+    if (mut.type == "attributes" &&
+        (desc == view.docView || mut.attributeName == "contenteditable")) continue
     if (!desc || desc.ignoreMutation(mut)) continue
 
     let from, to
