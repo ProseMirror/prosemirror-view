@@ -19,7 +19,7 @@ class WidgetType {
   }
 
   map(mapping, span, offset, oldOffset) {
-    let {pos, deleted} = mapping.mapResult(span.from + oldOffset)
+    let {pos, deleted} = mapping.mapResult(span.from + oldOffset, this.options.associative == "left" ? -1 : 1)
     return deleted ? null : new Decoration(pos - offset, pos - offset, this)
   }
 
@@ -109,6 +109,12 @@ class Decoration {
   // the document at the given position.
   //
   //   options::- These options are supported:
+  //
+  //     associative:: ?string
+  //     By default, widgets are right-associative, meaning they end
+  //     up to the right of content inserted at their position. You
+  //     can set this to `"left"` to make it left-associative, so that
+  //     the inserted content will end up after the widget.
   //
   //     stopEvent:: ?(event: dom.Event) → bool
   //     Can be used to control which DOM events, when they bubble out
