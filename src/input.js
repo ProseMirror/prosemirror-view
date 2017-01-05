@@ -127,7 +127,7 @@ function runHandlerOnContext(view, propName, pos, inside, event) {
 function updateSelection(view, selection, origin) {
   view.focus()
   let tr = view.state.tr.setSelection(selection)
-  if (origin) tr.set("origin", origin)
+  if (origin == "pointer") tr.setMeta("pointer", true)
   view.dispatch(tr)
 }
 
@@ -135,7 +135,7 @@ function selectClickedLeaf(view, inside) {
   if (inside == -1) return false
   let $pos = view.state.doc.resolve(inside), node = $pos.nodeAfter
   if (node && node.isLeaf && NodeSelection.isSelectable(node)) {
-    updateSelection(view, new NodeSelection($pos), "mouse")
+    updateSelection(view, new NodeSelection($pos), "pointer")
     return true
   }
   return false
@@ -159,7 +159,7 @@ function selectClickedNode(view, inside) {
   }
 
   if (selectAt != null) {
-    updateSelection(view, NodeSelection.create(view.state.doc, selectAt), "mouse")
+    updateSelection(view, NodeSelection.create(view.state.doc, selectAt), "pointer")
     return true
   } else {
     return false
@@ -187,7 +187,7 @@ function defaultTripleClick(view, inside) {
   let doc = view.state.doc
   if (inside == -1) {
     if (doc.isTextblock) {
-      updateSelection(view, TextSelection.create(doc, 0, doc.content.size), "mouse")
+      updateSelection(view, TextSelection.create(doc, 0, doc.content.size), "pointer")
       return true
     }
     return false
@@ -198,9 +198,9 @@ function defaultTripleClick(view, inside) {
     let node = i > $pos.depth ? $pos.nodeAfter : $pos.node(i)
     let nodePos = $pos.before(i)
     if (node.isTextblock)
-      updateSelection(view, TextSelection.create(doc, nodePos + 1, nodePos + 1 + node.content.size), "mouse")
+      updateSelection(view, TextSelection.create(doc, nodePos + 1, nodePos + 1 + node.content.size), "pointer")
     else if (NodeSelection.isSelectable(node))
-      updateSelection(view, NodeSelection.create(doc, nodePos), "mouse")
+      updateSelection(view, NodeSelection.create(doc, nodePos), "pointer")
     else
       continue
     return true
@@ -232,7 +232,7 @@ handlers.mousedown = (view, event) => {
   else if ((type == "doubleClick" ? handleDoubleClick : handleTripleClick)(view, pos.pos, pos.inside, event))
     event.preventDefault()
   else
-    view.selectionReader.poll("mouse")
+    view.selectionReader.poll("pointer")
 }
 
 class MouseDown {
@@ -265,7 +265,7 @@ class MouseDown {
 
     view.root.addEventListener("mouseup", this.up = this.up.bind(this))
     view.root.addEventListener("mousemove", this.move = this.move.bind(this))
-    view.selectionReader.poll("mouse")
+    view.selectionReader.poll("pointer")
   }
 
   done() {
@@ -287,16 +287,16 @@ class MouseDown {
       return
 
     if (this.allowDefault) {
-      this.view.selectionReader.poll("mouse")
+      this.view.selectionReader.poll("pointer")
     } else if (this.selectNode
                ? selectClickedNode(this.view, this.pos.inside)
                : handleSingleClick(this.view, this.pos.pos, this.pos.inside, event)) {
       event.preventDefault()
     } else if (this.flushed) {
-      updateSelection(this.view, Selection.near(this.view.state.doc.resolve(this.pos.pos)), "mouse")
+      updateSelection(this.view, Selection.near(this.view.state.doc.resolve(this.pos.pos)), "pointer")
       event.preventDefault()
     } else {
-      this.view.selectionReader.poll("mouse")
+      this.view.selectionReader.poll("pointer")
     }
   }
 
@@ -304,13 +304,13 @@ class MouseDown {
     if (!this.allowDefault && (Math.abs(this.x - event.clientX) > 4 ||
                                Math.abs(this.y - event.clientY) > 4))
       this.allowDefault = true
-    this.view.selectionReader.poll("mouse")
+    this.view.selectionReader.poll("pointer")
   }
 }
 
 handlers.touchdown = view => {
   forceDOMFlush(view)
-  view.selectionReader.poll("mouse")
+  view.selectionReader.poll("pointer")
 }
 
 handlers.contextmenu = (view, e) => {

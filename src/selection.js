@@ -80,7 +80,7 @@ class SelectionReader {
     if ($head.pos == selection.head && $anchor.pos == selection.anchor)
       this.storeDOMState(selection)
     let tr = this.view.state.tr.setSelection(selection)
-    if (origin) tr.set("origin", origin)
+    if (origin == "pointer") tr.setMeta("pointer", true)
     this.view.dispatch(tr)
   }
 }

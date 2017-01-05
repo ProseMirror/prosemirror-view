@@ -21,7 +21,7 @@ function decoPlugin(decos) {
       init(config) { return DecorationSet.create(config.doc, decos.map(make)) },
       apply(tr, set, state) {
         if (tr.docChanged) set = set.map(tr.mapping, tr.doc)
-        let change = tr.get("updateDecorations")
+        let change = tr.getMeta("updateDecorations")
         if (change) {
           if (change.remove) set = set.remove(change.remove)
           if (change.add) set = set.add(state.doc, change.add)
@@ -36,7 +36,7 @@ function decoPlugin(decos) {
 }
 
 function updateDeco(view, add, remove) {
-  view.dispatch(view.state.tr.set("updateDecorations", {add, remove}))
+  view.dispatch(view.state.tr.setMeta("updateDecorations", {add, remove}))
 }
 
 describe("Decoration drawing", () => {

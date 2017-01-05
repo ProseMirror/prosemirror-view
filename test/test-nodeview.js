@@ -79,7 +79,7 @@ describe("nodeViews prop", () => {
     let plugin = new Plugin({
       state: {
         init() { return null },
-        apply(tr, prev) { return tr.get("setDeco") || prev }
+        apply(tr, prev) { return tr.getMeta("setDeco") || prev }
       },
       props: {
         decorations(state) {
@@ -101,9 +101,9 @@ describe("nodeViews prop", () => {
       }}
     })
     ist(view.content.querySelector("var").textContent, "[]")
-    view.dispatch(view.state.tr.set("setDeco", "foo"))
+    view.dispatch(view.state.tr.setMeta("setDeco", "foo"))
     ist(view.content.querySelector("var").textContent, "foo")
-    view.dispatch(view.state.tr.set("setDeco", "bar"))
+    view.dispatch(view.state.tr.setMeta("setDeco", "bar"))
     ist(view.content.querySelector("var").textContent, "bar")
   })
 })
