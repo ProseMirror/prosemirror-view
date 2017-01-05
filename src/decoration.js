@@ -238,7 +238,7 @@ class DecorationSet {
   //     that gets dropped as a result of the mapping, passing the
   //     options of that decoration.
   map(mapping, doc, options) {
-    if (this == empty) return this
+    if (this == empty || mapping.maps.length == 0) return this
     return this.mapInner(mapping, doc, 0, 0, options || noOptions)
   }
 

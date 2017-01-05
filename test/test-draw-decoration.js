@@ -20,7 +20,7 @@ function decoPlugin(decos) {
     state: {
       init(config) { return DecorationSet.create(config.doc, decos.map(make)) },
       apply(tr, set, state) {
-        if (tr.steps.length) set = set.map(tr.mapping, tr.doc)
+        if (tr.docChanged) set = set.map(tr.mapping, tr.doc)
         let change = tr.get("updateDecorations")
         if (change) {
           if (change.remove) set = set.remove(change.remove)

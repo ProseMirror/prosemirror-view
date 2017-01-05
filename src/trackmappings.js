@@ -31,7 +31,7 @@ class TrackMappings {
   track(old, tr, state) {
     let found = this.seen.length < 200 ? this.find(old) : null
     if (found)
-      this.seen.push(new TrackedRecord(found, tr.steps.length ? tr.mapping : null, state))
+      this.seen.push(new TrackedRecord(found, tr.docChanged ? tr.mapping : null, state))
   }
 
   getMapping(state) {
