@@ -166,10 +166,10 @@ function selectClickedNode(view, inside) {
   }
 }
 
-function handleSingleClick(view, pos, inside, event) {
+function handleSingleClick(view, pos, inside, event, selectNode) {
   return runHandlerOnContext(view, "handleClickOn", pos, inside, event) ||
     view.someProp("handleClick", f => f(view, pos, event)) ||
-    selectClickedLeaf(view, inside)
+    (selectNode ? selectClickedNode(view, inside) : selectClickedLeaf(view, inside))
 }
 
 function handleDoubleClick(view, pos, inside, event) {
@@ -288,9 +288,7 @@ class MouseDown {
 
     if (this.allowDefault) {
       this.view.selectionReader.poll("pointer")
-    } else if (this.selectNode
-               ? selectClickedNode(this.view, this.pos.inside)
-               : handleSingleClick(this.view, this.pos.pos, this.pos.inside, event)) {
+    } else if (handleSingleClick(this.view, this.pos.pos, this.pos.inside, event, this.selectNode)) {
       event.preventDefault()
     } else if (this.flushed) {
       updateSelection(this.view, Selection.near(this.view.state.doc.resolve(this.pos.pos)), "pointer")
