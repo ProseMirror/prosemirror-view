@@ -166,7 +166,7 @@ function selectionToDOM(view, sel, takeFocus) {
   }
 
   let reader = view.selectionReader
-  if (sel.eq(reader.lastSelection) && !reader.domChanged()) return
+  if (sel == reader.lastSelection && !reader.domChanged()) return
   let {anchor, head} = sel, resetEditable
   if (anchor == null) {
     anchor = sel.from
