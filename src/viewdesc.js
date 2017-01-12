@@ -529,7 +529,7 @@ class TextViewDesc extends NodeViewDesc {
   }
 
   update(node, outerDeco) {
-    if (this.dirty == NODE_DIRTY || (this.dirty != NOT_DIRTY && !this.inParent) ||
+    if (this.dirty == NODE_DIRTY || (this.dirty != NOT_DIRTY && !this.inParent()) ||
         !node.sameMarkup(this.node)) return false
     this.updateOuterDeco(outerDeco)
     if ((this.dirty != NOT_DIRTY || node.text != this.node.text) && node.text != this.nodeDOM.nodeValue)
@@ -580,6 +580,7 @@ class CustomNodeViewDesc extends NodeViewDesc {
   // through. If it does, and there's a `contentDOM` node, our logic
   // updates the children.
   update(node, outerDeco, innerDeco, view) {
+    if (this.dirty == NODE_DIRTY) return false
     if (this.spec.update) {
       let result = this.spec.update(node, outerDeco)
       if (result) {
