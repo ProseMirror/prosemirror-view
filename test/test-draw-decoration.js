@@ -1,4 +1,4 @@
-const {doc, p, em, blockquote} = require("prosemirror-model/test/build")
+const {doc, p, hr, em, blockquote} = require("prosemirror-model/test/build")
 const {Plugin} = require("prosemirror-state")
 const {tempEditor} = require("./view")
 const {DecorationSet, Decoration} = require("../dist")
@@ -268,5 +268,24 @@ describe("Decoration drawing", () => {
     ist(view.content.querySelector("p"), para)
     ist(para.className, "foo bar")
     ist(!para.title)
+  })
+
+  it("passes decorations to a node view", () => {
+    let current = ""
+    let view = tempEditor({
+      doc: doc(p("foo"), hr),
+      plugins: [decoPlugin([])],
+      nodeViews: {horizontal_rule: () => ({
+        update(_, decos) {
+          current = decos.map(d => d.options.name).join()
+        }
+      })}
+    })
+    let a = Decoration.node(5, 6, {}, {name: "a"})
+    updateDeco(view, [a], [])
+    ist(current, "a")
+    updateDeco(view, [Decoration.node(5, 6, {}, {name: "b"}),
+                      Decoration.node(5, 6, {}, {name: "c"})], [a])
+    ist(current, "b,c")
   })
 })
