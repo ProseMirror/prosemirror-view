@@ -371,10 +371,12 @@ function registerMutations(view, mutations) {
     let from, to
     if (mut.type == "childList") {
       let fromOffset = mut.previousSibling && mut.previousSibling.parentNode == mut.target
-          ? Array.prototype.indexOf.call(mut.target.childNodes, desc.previousSibling) + 1 : 0
+          ? Array.prototype.indexOf.call(mut.target.childNodes, mut.previousSibling) + 1 : 0
+      if (fromOffset == -1) continue
       from = desc.localPosFromDOM(mut.target, fromOffset, -1)
       let toOffset = mut.nextSibling && mut.nextSibling.parentNode == mut.target
-          ? Array.prototype.indexOf.call(mut.target.childNodes, desc.nextSibling) : mut.target.childNodes.length
+          ? Array.prototype.indexOf.call(mut.target.childNodes, mut.nextSibling) : mut.target.childNodes.length
+      if (toOffset == -1) continue
       to = desc.localPosFromDOM(mut.target, toOffset, 1)
     } else if (mut.type == "attributes") {
       from = desc.posAtStart - desc.border
