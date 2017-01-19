@@ -176,7 +176,7 @@ class ViewDesc {
     // parameter, to determine whether to return the position at the
     // start or at the end of this view desc.
     let atEnd
-    if (this.contentDOM) {
+    if (this.contentDOM && this.contentDOM != this.dom && this.dom.contains(this.contentDOM)) {
       atEnd = dom.compareDocumentPosition(this.contentDOM) & 2
     } else if (this.dom.firstChild) {
       if (offset == 0) for (let search = dom;; search = search.parentNode) {
@@ -317,6 +317,10 @@ class ViewDesc {
     return !this.contentDOM
   }
 
+  get contentLost() {
+    return this.contentDOM && this.contentDOM != this.dom && !this.dom.contains(this.contentDOM)
+  }
+
   // Remove a subtree of the element tree that has been touched
   // by a DOM change, so that the next update will redraw it.
   markDirty(from, to) {
@@ -326,7 +330,8 @@ class ViewDesc {
         let startInside = offset + child.border, endInside = end - child.border
         if (from >= startInside && to <= endInside) {
           this.dirty = from == offset || to == end ? CONTENT_DIRTY : CHILD_DIRTY
-          child.markDirty(from - startInside, to - startInside)
+          if (from == startInside && to == endInside && child.contentLost) child.dirty = NODE_DIRTY
+          else child.markDirty(from - startInside, to - startInside)
           return
         } else {
           child.dirty = NODE_DIRTY
@@ -431,7 +436,9 @@ class NodeViewDesc extends ViewDesc {
       return new NodeViewDesc(parent, node, outerDeco, innerDeco, dom, contentDOM, nodeDOM, view)
   }
 
-  parseRule() { return {node: this.node.type.name, attrs: this.node.attrs, contentElement: this.contentDOM} }
+  parseRule() {
+    return {node: this.node.type.name, attrs: this.node.attrs, contentElement: this.contentLost ? null : this.contentDOM}
+  }
 
   matchesNode(node, outerDeco, innerDeco) {
     return this.dirty == NOT_DIRTY && node.eq(this.node) &&

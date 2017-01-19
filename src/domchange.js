@@ -26,7 +26,7 @@ class DOMChange {
 
   changedRange() {
     if (this.from == null) return rangeAroundSelection(this.state.selection)
-    let $from = this.state.doc.resolve(this.from), $to = this.state.doc.resolve(this.to)
+    let $from = this.state.doc.resolve(Math.min(this.from, this.state.selection.from)), $to = this.state.doc.resolve(this.to)
     let shared = $from.sharedDepth(this.to)
     return {from: $from.before(shared + 1), to: $to.after(shared + 1)}
   }
@@ -89,6 +89,7 @@ function parseBetween(view, oldState, from, to) {
   // If there's non-view nodes directly after the end of this region,
   // fail and let the caller try again with a wider range.
   if (endOff == parent.childNodes.length) for (let scan = parent; scan != view.content;) {
+    if (!scan) return null
     if (scan.nextSibling) {
       if (!scan.nextSibling.pmViewDesc) return null
       break
@@ -213,6 +214,7 @@ function readDOMChange(view, mapping, oldState, range) {
       nextSel.head == $to.pos &&
       view.someProp("handleKeyDown", f => f(view, keyEvent(13, "Enter"))))
     return
+  // Same for backspace
   if (oldState.selection.anchor > change.start &&
       looksLikeJoin(doc, change.start, change.endA, $from, $to) &&
       view.someProp("handleKeyDown", f => f(view, keyEvent(8, "Backspace"))))

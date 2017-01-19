@@ -1,5 +1,5 @@
 const ist = require("ist")
-const {eq, doc, p, h1, em, img, br, strong, blockquote} = require("prosemirror-model/test/build")
+const {eq, doc, p, pre, h1, em, img, br, strong, blockquote} = require("prosemirror-model/test/build")
 const {tempEditor, findTextNode} = require("./view")
 
 function setSel(aNode, aOff, fNode, fOff) {
@@ -255,6 +255,16 @@ describe("DOM change", () => {
     return flush(view, () => {
       view.dispatch(view.state.tr.insertText("y"))
       ist(view.state.doc, doc(p("one", em("y"))), eq)
+    })
+  })
+
+  it("works when a node's contentDOM is deleted", () => {
+    let view = tempEditor({doc: doc(p("one"), pre("two<a>"))})
+    view.content.querySelector("pre").innerText = ""
+    view.dispatchEvent({type: "input"})
+    return flush(view, () => {
+      ist(view.state.doc, doc(p("one"), pre()), eq)
+      ist(view.state.selection.head, 6)
     })
   })
 })
