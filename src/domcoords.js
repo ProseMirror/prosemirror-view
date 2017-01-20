@@ -127,7 +127,7 @@ function singleRect(object, bias) {
   return !rects.length ? object.getBoundingClientRect() : rects[bias < 0 ? 0 : rects.length - 1]
 }
 
-// : (ProseMirror, number) → {left: number, top: number, right: number, bottom: number}
+// : (EditorView, number) → {left: number, top: number, right: number, bottom: number}
 // Given a position in the document model, get a bounding box of the
 // character at that position, relative to the window.
 function coordsAtPos(view, pos) {
@@ -174,7 +174,7 @@ function withFlushedState(view, state, f) {
   }
 }
 
-// : (ProseMirror, number, number)
+// : (EditorView, number, number)
 // Whether vertical position motion in a given direction
 // from a position would leave a text block.
 function endOfTextblockVertical(view, state, dir) {
