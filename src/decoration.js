@@ -582,7 +582,7 @@ function byPos(a, b) {
   return a.from - b.from || a.to - b.to
 }
 
-// : ([Decoration]) → [Decorations]
+// : ([Decoration]) → [Decoration]
 // Scan a sorted array of decorations for partially overlapping spans,
 // and split those so that only fully overlapping spans are left (to
 // make subsequent rendering easier). Will return the input array if
