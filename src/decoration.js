@@ -385,6 +385,9 @@ const empty = new DecorationSet()
 // The empty set of decorations.
 DecorationSet.empty = empty
 
+// :- An abstraction that allows the code dealing with decorations to
+// treat multiple DecorationSet objects as if it were a single object
+// with (a subset of) the same interface.
 class DecorationGroup {
   constructor(members) {
     this.members = members
@@ -428,6 +431,9 @@ class DecorationGroup {
     return result ? removeOverlap(sorted ? result : result.sort(byPos)) : none
   }
 
+  // : ([DecorationSet]) → union<DecorationSet, DecorationGroup>
+  // Create a group for the given array of decoration sets, or return
+  // a single set when possible.
   static from(members) {
     switch (members.length) {
       case 0: return empty
@@ -436,7 +442,6 @@ class DecorationGroup {
     }
   }
 }
-exports.DecorationGroup = DecorationGroup
 
 function mapChildren(oldChildren, newLocal, mapping, node, offset, oldOffset, options) {
   let children = oldChildren.slice()
