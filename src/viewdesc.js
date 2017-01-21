@@ -124,7 +124,8 @@ class ViewDesc {
   get border() { return 0 }
 
   destroy() {
-    this.parent = this.dom.pmViewDesc = null
+    this.parent = null
+    if (this.dom.pmViewDesc == this) this.dom.pmViewDesc = null
     for (let i = 0; i < this.children.length; i++)
       this.children[i].destroy()
   }
@@ -356,7 +357,9 @@ class WidgetViewDesc extends ViewDesc {
     this.widget = widget
   }
 
-  matchesWidget(widget) { return this.dirty == NOT_DIRTY && widget.type == this.widget.type }
+  matchesWidget(widget) {
+    return this.dirty == NOT_DIRTY && widget.type.eq(this.widget.type)
+  }
 
   parseRule() { return {ignore: true} }
 
