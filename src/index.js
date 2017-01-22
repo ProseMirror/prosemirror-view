@@ -361,7 +361,7 @@ function getEditable(view) {
 //   [`DOMSerializer.fromSchema`](#model.DOMSerializer^fromSchema)
 //   will be used.
 //
-//   decorations:: (EditorState) → ?DecorationSet
+//   decorations:: ?(EditorState) → ?DecorationSet
 //   A set of [document decorations](#view.Decoration) to add to the
 //   view.
 //
