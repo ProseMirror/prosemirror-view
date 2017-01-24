@@ -173,15 +173,24 @@ function stopNativeHorizontalDelete(view, dir) {
   return false
 }
 
-// A backdrop keymap used to make sure we always suppress keys that
-// have a dangerous default effect, even if the commands they are
+// A backdrop key mapping used to make sure we always suppress keys
+// that have a dangerous default effect, even if the commands they are
 // bound to return false, and to make sure that cursor-motion keys
 // find a cursor (as opposed to a node selection) when pressed. For
 // cursor-motion keys, the code in the handlers also takes care of
 // block selections.
 
+function getMods(event) {
+  let result = ""
+  if (event.ctrlKey) result += "c"
+  if (event.metaKey) result += "m"
+  if (event.altKey) result += "a"
+  if (event.shiftKey) result += "s"
+  return result
+}
+
 function captureKeyDown(view, event) {
-  let code = event.keyCode, mod = browser.mac ? event.metaKey : event.ctrlKey
+  let code = event.keyCode, mods = getMods(event)
   if (code == 8) { // Backspace
     return stopNativeHorizontalDelete(view, -1) || skipIgnoredNodesLeft(view)
   } else if (code == 46) { // Delete
@@ -196,15 +205,13 @@ function captureKeyDown(view, event) {
     return selectVertically(view, -1)
   } else if (code == 40) { // Down arrow
     return selectVertically(view, 1)
-  } else if (mod && !event.altKey && !event.shiftKey) { // Mod-
-    if (code == 66 || code == 73 || code == 89 || code == 90) // Mod-[biyz]
-      return true
-    if (browser.mac && code == 68) // Mod-d
-      return stopNativeHorizontalDelete(view, 1) || skipIgnoredNodesRight(view)
-    if (browser.mac && code == 72) // Mod-h
-      return stopNativeHorizontalDelete(view, -1) || skipIgnoredNodesLeft(view)
-  } else if (browser.mac && code == 68 && event.altKey && !mod && !event.shiftKey) { // Alt-d
-    return stopNativeHorizontalDelete(view, 1) || skipIgnoredNodesRight(view)
+  } else if (mods == (browser.mac ? "m" : "c") &&
+             (code == 66 || code == 73 || code == 89 || code == 90)) { // Mod-[biyz]
+    return true
+  } else if (browser.mac && // Ctrl-[dh] and Alt-d on Mac
+             ((code == 68 || code == 72) && mods == "c") ||
+              (code == 68 && mods == "a")) {
+    return stopNativeHorizontalDelete(view, code == 68 ? 1 : -1) || skipIgnoredNodesRight(view)
   }
   return false
 }
