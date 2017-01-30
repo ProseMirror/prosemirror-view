@@ -97,9 +97,9 @@ function parseBetween(view, oldState, from, to) {
     scan = scan.parentNode
   }
 
-  let domSel = view.root.getSelection(), find = null
-  if (domSel.anchorNode && view.content.contains(domSel.anchorNode)) {
-    find = [{node: domSel.anchorNode, offset: domSel.anchorOffset}]
+  let domSel = view.root.getSelection(), find = null, anchor = domSel.anchorNode
+  if (anchor && view.content.contains(anchor.nodeType == 1 ? anchor : anchor.parentNode)) {
+    find = [{node: anchor, offset: domSel.anchorOffset}]
     if (!domSel.isCollapsed)
       find.push({node: domSel.focusNode, offset: domSel.focusOffset})
   }
