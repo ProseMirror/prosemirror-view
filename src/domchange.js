@@ -72,6 +72,7 @@ class DOMChange {
       let id = Math.floor(Math.random() * 0xffffffff)
       view.inDOMChange = new DOMChange(view, id, composing)
     }
+    return view.inDOMChange
   }
 }
 exports.DOMChange = DOMChange

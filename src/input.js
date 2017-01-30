@@ -76,10 +76,13 @@ exports.dispatchEvent = dispatchEvent
 editHandlers.keydown = (view, event) => {
   if (event.keyCode == 16) view.shiftKey = true
   if (view.inDOMChange) return
-  if (view.someProp("handleKeyDown", f => f(view, event)) || captureKeyDown(view, event))
+  if (view.someProp("handleKeyDown", f => f(view, event)) || captureKeyDown(view, event)) {
     event.preventDefault()
-  else
+  } else {
     view.selectionReader.poll()
+    if (browser.ie && browser.ie_version <= 11)
+      DOMChange.start(view).addRange(view.state.selection.from, view.state.selection.to)
+  }
 }
 
 editHandlers.keyup = (view, e) => {
@@ -386,8 +389,7 @@ function registerMutations(view, mutations) {
       to = desc.posAtEnd
     }
 
-    DOMChange.start(view)
-    view.inDOMChange.addRange(from, to)
+    DOMChange.start(view).addRange(from, to)
   }
 }
 
