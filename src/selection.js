@@ -94,6 +94,7 @@ class SelectionChangePoller {
     this.listening = false
     this.curOrigin = null
     this.originTime = 0
+    this.reader = reader
 
     this.readFunc = () => reader.readFromDOM(this.originTime > Date.now() - 50 ? this.curOrigin : null)
   }
@@ -107,6 +108,7 @@ class SelectionChangePoller {
     if (!this.listening) {
       document.addEventListener("selectionchange", this.readFunc)
       this.listening = true
+      if (this.reader.view.hasFocus()) this.readFunc()
     }
   }
 
