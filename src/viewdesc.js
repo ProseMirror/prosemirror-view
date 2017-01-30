@@ -198,7 +198,7 @@ class ViewDesc {
     for (let first = true, cur = dom; cur; cur = cur.parentNode) {
       let desc = this.getDesc(cur)
       if (desc && (!onlyNodes || desc.node)) {
-        if (first && desc.nodeDOM && !desc.nodeDOM.contains(dom)) first = false
+        if (first && desc.nodeDOM && !(desc.nodeDOM.nodeType == 1 && desc.nodeDOM.contains(dom))) first = false
         else return desc
       }
     }
