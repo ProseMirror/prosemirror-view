@@ -76,13 +76,10 @@ exports.dispatchEvent = dispatchEvent
 editHandlers.keydown = (view, event) => {
   if (event.keyCode == 16) view.shiftKey = true
   if (view.inDOMChange) return
-  if (view.someProp("handleKeyDown", f => f(view, event)) || captureKeyDown(view, event)) {
+  if (view.someProp("handleKeyDown", f => f(view, event)) || captureKeyDown(view, event))
     event.preventDefault()
-  } else {
+  else
     view.selectionReader.poll()
-    if (browser.ie && browser.ie_version <= 11)
-      DOMChange.start(view).addRange(view.state.selection.from, view.state.selection.to)
-  }
 }
 
 editHandlers.keyup = (view, e) => {
@@ -354,43 +351,56 @@ editHandlers.compositionend = (view, e) => {
 }
 
 const observeOptions = {childList: true, characterData: true, attributes: true, subtree: true}
+
 function startObserving(view) {
-  if (view.mutationObserver) view.mutationObserver.observe(view.content, observeOptions)
+  if (view.mutationObserver)
+    view.mutationObserver.observe(view.content, observeOptions)
+  // IE11 has very broken mutation observers, so we also listen to DOMCharacterDataModified
+  if (browser.ie && browser.ie_version <= 11)
+    view.content.addEventListener("DOMCharacterDataModified", view.onCharData || (view.onCharData = e => {
+      registerMutation(view, {target: e.target, type: "characterData"})
+    }))
 }
 exports.startObserving = startObserving
 
 function stopObserving(view) {
-  if (view.mutationObserver) view.mutationObserver.disconnect()
+  if (view.mutationObserver)
+    view.mutationObserver.disconnect()
+  if (browser.ie && browser.ie_version <= 11)
+    view.content.removeEventListener("DOMCharacterDataModified", view.onCharData)
 }
 exports.stopObserving = stopObserving
 
 function registerMutations(view, mutations) {
-  if (view.editable) for (let i = 0; i < mutations.length; i++) {
-    let mut = mutations[i], desc = view.docView.nearestDesc(mut.target)
-    if (mut.type == "attributes" &&
-        (desc == view.docView || mut.attributeName == "contenteditable")) continue
-    if (!desc || desc.ignoreMutation(mut)) continue
+  if (view.editable) for (let i = 0; i < mutations.length; i++)
+    registerMutation(view, mutations[i])
+}
 
-    let from, to
-    if (mut.type == "childList") {
-      let fromOffset = mut.previousSibling && mut.previousSibling.parentNode == mut.target
-          ? Array.prototype.indexOf.call(mut.target.childNodes, mut.previousSibling) + 1 : 0
-      if (fromOffset == -1) continue
-      from = desc.localPosFromDOM(mut.target, fromOffset, -1)
-      let toOffset = mut.nextSibling && mut.nextSibling.parentNode == mut.target
-          ? Array.prototype.indexOf.call(mut.target.childNodes, mut.nextSibling) : mut.target.childNodes.length
-      if (toOffset == -1) continue
-      to = desc.localPosFromDOM(mut.target, toOffset, 1)
-    } else if (mut.type == "attributes") {
-      from = desc.posAtStart - desc.border
-      to = desc.posAtEnd + desc.border
-    } else { // "characterData"
-      from = desc.posAtStart
-      to = desc.posAtEnd
-    }
+function registerMutation(view, mut) {
+  let desc = view.docView.nearestDesc(mut.target)
+  if (mut.type == "attributes" &&
+      (desc == view.docView || mut.attributeName == "contenteditable")) return
+  if (!desc || desc.ignoreMutation(mut)) return
 
-    DOMChange.start(view).addRange(from, to)
+  let from, to
+  if (mut.type == "childList") {
+    let fromOffset = mut.previousSibling && mut.previousSibling.parentNode == mut.target
+        ? Array.prototype.indexOf.call(mut.target.childNodes, mut.previousSibling) + 1 : 0
+    if (fromOffset == -1) return
+    from = desc.localPosFromDOM(mut.target, fromOffset, -1)
+    let toOffset = mut.nextSibling && mut.nextSibling.parentNode == mut.target
+        ? Array.prototype.indexOf.call(mut.target.childNodes, mut.nextSibling) : mut.target.childNodes.length
+    if (toOffset == -1) return
+    to = desc.localPosFromDOM(mut.target, toOffset, 1)
+  } else if (mut.type == "attributes") {
+    from = desc.posAtStart - desc.border
+    to = desc.posAtEnd + desc.border
+  } else { // "characterData"
+    from = desc.posAtStart
+    to = desc.posAtEnd
   }
+
+  DOMChange.start(view).addRange(from, to)
 }
 
 editHandlers.input = view => DOMChange.start(view)
