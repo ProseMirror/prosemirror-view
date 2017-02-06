@@ -532,18 +532,24 @@ exports.docViewDesc = docViewDesc
 class TextViewDesc extends NodeViewDesc {
   constructor(parent, node, outerDeco, innerDeco, dom, nodeDOM, view) {
     super(parent, node, outerDeco, innerDeco, dom, null, nodeDOM, view)
+    let textDOM = nodeDOM
+    while (textDOM.nodeType != 3) {
+      textDOM = textDOM.firstChild
+      if (!textDOM) throw new RangeError("Text node rendered without text DOM")
+    }
+    this.textDOM = textDOM
   }
 
   parseRule() {
-    return {skip: this.nodeDOM.parentNode}
+    return {skip: this.textDOM.parentNode}
   }
 
   update(node, outerDeco) {
     if (this.dirty == NODE_DIRTY || (this.dirty != NOT_DIRTY && !this.inParent()) ||
         !node.sameMarkup(this.node)) return false
     this.updateOuterDeco(outerDeco)
-    if ((this.dirty != NOT_DIRTY || node.text != this.node.text) && node.text != this.nodeDOM.nodeValue)
-      this.nodeDOM.nodeValue = node.text
+    if ((this.dirty != NOT_DIRTY || node.text != this.node.text) && node.text != this.textDOM.nodeValue)
+      this.textDOM.nodeValue = node.text
     this.node = node
     this.dirty = NOT_DIRTY
     return true
@@ -551,16 +557,16 @@ class TextViewDesc extends NodeViewDesc {
 
   inParent() {
     let parentDOM = this.parent.contentDOM
-    for (let n = this.nodeDOM; n; n = n.parentNode) if (n == parentDOM) return true
+    for (let n = this.textDOM; n; n = n.parentNode) if (n == parentDOM) return true
     return false
   }
 
   domFromPos(pos, searchDOM) {
-    return {node: this.nodeDOM, offset: searchDOM ? Math.max(pos, this.nodeDOM.nodeValue.length) : pos}
+    return {node: this.textDOM, offset: searchDOM ? Math.max(pos, this.textDOM.nodeValue.length) : pos}
   }
 
   localPosFromDOM(dom, offset, bias) {
-    if (dom == this.nodeDOM) return this.posAtStart + Math.min(offset, this.node.text.length)
+    if (dom == this.textDOM) return this.posAtStart + Math.min(offset, this.node.text.length)
     return super.localPosFromDOM(dom, offset, bias)
   }
 
