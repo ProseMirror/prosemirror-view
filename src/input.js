@@ -364,8 +364,10 @@ function startObserving(view) {
 exports.startObserving = startObserving
 
 function stopObserving(view) {
-  if (view.mutationObserver)
+  if (view.mutationObserver) {
+    registerMutations(view, view.mutationObserver.takeRecords())
     view.mutationObserver.disconnect()
+  }
   if (browser.ie && browser.ie_version <= 11)
     view.content.removeEventListener("DOMCharacterDataModified", view.onCharData)
 }
