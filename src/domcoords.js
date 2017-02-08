@@ -36,6 +36,25 @@ function scrollRectIntoView(view, rect) {
 }
 exports.scrollRectIntoView = scrollRectIntoView
 
+function scrollPosStack(view) {
+  let stack = []
+  for (let dom = view.content; dom; dom = parentNode(dom)) {
+    stack.push({dom, top: dom.scrollTop, left: dom.scrollLeft})
+    if (dom == document.body) break
+  }
+  return stack
+}
+exports.scrollPosStack = scrollPosStack
+
+function resetScrollPos(stack) {
+  for (let i = 0; i < stack.length; i++) {
+    let {dom, top, left} = stack[i]
+    if (dom.scrollTop != top) dom.scrollTop = top
+    if (dom.scrollLeft != left) dom.scrollLeft = left
+  }
+}
+exports.resetScrollPos = resetScrollPos
+
 function findOffsetInNode(node, coords) {
   let closest, dxClosest = 2e8, coordsClosest, offset = 0
   let rowBot = coords.top, rowTop = coords.top

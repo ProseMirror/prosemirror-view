@@ -1,4 +1,4 @@
-const {scrollRectIntoView, posAtCoords, coordsAtPos, endOfTextblock} = require("./domcoords")
+const {scrollRectIntoView, posAtCoords, coordsAtPos, endOfTextblock, scrollPosStack, resetScrollPos} = require("./domcoords")
 const {docViewDesc} = require("./viewdesc")
 const {initInput, destroyInput, dispatchEvent, startObserving, stopObserving, ensureListeners} = require("./input")
 const {SelectionReader, selectionToDOM} = require("./selection")
@@ -70,13 +70,14 @@ class EditorView {
     this.editable = getEditable(this)
     let innerDeco = viewDecorations(this), outerDeco = computeDocDeco(this)
 
-    if (!this.docView.matchesNode(state.doc, outerDeco, innerDeco)) {
+    let scrollToSelection = state.scrollToSelection > prev.scrollToSelection || prev.config != state.config
+    let updateDoc = !this.docView.matchesNode(state.doc, outerDeco, innerDeco)
+    let updateSel = updateDoc || !state.selection.eq(prev.selection) || this.selectionReader.domChanged()
+    let oldScrollPos = !scrollToSelection && updateSel && scrollPosStack(this)
+
+    if (updateSel) {
       stopObserving(this)
-      this.docView.update(state.doc, outerDeco, innerDeco, this)
-      selectionToDOM(this, state.selection)
-      startObserving(this)
-    } else if (!state.selection.eq(prev.selection) || this.selectionReader.domChanged()) {
-      stopObserving(this)
+      if (updateDoc) this.docView.update(state.doc, outerDeco, innerDeco, this)
       selectionToDOM(this, state.selection)
       startObserving(this)
     }
@@ -84,11 +85,13 @@ class EditorView {
     if (prevEditable != this.editable) this.selectionReader.editableChanged()
     this.updatePluginViews(prev)
 
-    if (state.scrollToSelection > prev.scrollToSelection || prev.config != state.config) {
+    if (scrollToSelection) {
       if (state.selection.node)
         scrollRectIntoView(this, this.docView.domAfterPos(state.selection.from).getBoundingClientRect())
       else
         scrollRectIntoView(this, this.coordsAtPos(state.selection.head))
+    } else if (oldScrollPos) {
+      resetScrollPos(oldScrollPos)
     }
   }
 
