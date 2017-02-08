@@ -66,8 +66,8 @@ exports.storeScrollPos = storeScrollPos
 // Reset the scroll position of the editor's parent nodes to that what
 // it was before, when storeScrollPos was called.
 function resetScrollPos({refDOM, refTop, stack}) {
-  let newRefTop = refDOM.getBoundingClientRect().top
-  let dTop = newRefTop.top == 0 ? 0 : newRefTop - refTop
+  let newRefTop = refDOM ? refDOM.getBoundingClientRect().top : 0
+  let dTop = newRefTop == 0 ? 0 : newRefTop - refTop
   for (let i = 0; i < stack.length; i++) {
     let {dom, top, left} = stack[i]
     if (dom.scrollTop != top + dTop) dom.scrollTop = top + dTop
