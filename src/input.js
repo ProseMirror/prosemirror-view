@@ -363,9 +363,14 @@ function startObserving(view) {
 }
 exports.startObserving = startObserving
 
+function flushObserver(view) {
+  if (view.mutationObserver) registerMutations(view, view.mutationObserver.takeRecords())
+}
+exports.flushObserver = flushObserver
+
 function stopObserving(view) {
   if (view.mutationObserver) {
-    registerMutations(view, view.mutationObserver.takeRecords())
+    flushObserver(view)
     view.mutationObserver.disconnect()
   }
   if (browser.ie && browser.ie_version <= 11)
