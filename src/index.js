@@ -1,4 +1,4 @@
-const {scrollRectIntoView, posAtCoords, coordsAtPos, endOfTextblock, scrollPosStack, resetScrollPos} = require("./domcoords")
+const {scrollRectIntoView, posAtCoords, coordsAtPos, endOfTextblock, storeScrollPos, resetScrollPos} = require("./domcoords")
 const {docViewDesc} = require("./viewdesc")
 const {initInput, destroyInput, dispatchEvent, startObserving, stopObserving, ensureListeners} = require("./input")
 const {SelectionReader, selectionToDOM} = require("./selection")
@@ -73,7 +73,7 @@ class EditorView {
     let scrollToSelection = state.scrollToSelection > prev.scrollToSelection || prev.config != state.config
     let updateDoc = !this.docView.matchesNode(state.doc, outerDeco, innerDeco)
     let updateSel = updateDoc || !state.selection.eq(prev.selection) || this.selectionReader.domChanged()
-    let oldScrollPos = !scrollToSelection && updateSel && scrollPosStack(this)
+    let oldScrollPos = !scrollToSelection && updateSel && storeScrollPos(this)
 
     if (updateSel) {
       stopObserving(this)

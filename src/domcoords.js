@@ -36,20 +36,41 @@ function scrollRectIntoView(view, rect) {
 }
 exports.scrollRectIntoView = scrollRectIntoView
 
-function scrollPosStack(view) {
+// Store the scroll position of the editor's parent nodes, along with
+// the top position of an element near the top of the editor, which
+// will be used to make sure the visible viewport remains stable even
+// when the size of the content above changes.
+function storeScrollPos(view) {
+  let rect = view.content.getBoundingClientRect(), startY = Math.max(0, rect.top)
+  let refDOM, refTop
+  for (let x = (rect.left + rect.right) / 2, y = startY + 1;
+       y < Math.min(innerHeight, rect.bottom); y += 5) {
+    let dom = view.root.elementFromPoint(x, y)
+    if (dom == view.content || !view.content.contains(dom)) continue
+    let localRect = dom.getBoundingClientRect()
+    if (localRect.top >= startY - 20) {
+      refDOM = dom
+      refTop = localRect.top
+      break
+    }
+  }
   let stack = []
   for (let dom = view.content; dom; dom = parentNode(dom)) {
     stack.push({dom, top: dom.scrollTop, left: dom.scrollLeft})
     if (dom == document.body) break
   }
-  return stack
+  return {refDOM, refTop, stack}
 }
-exports.scrollPosStack = scrollPosStack
+exports.storeScrollPos = storeScrollPos
 
-function resetScrollPos(stack) {
+// Reset the scroll position of the editor's parent nodes to that what
+// it was before, when storeScrollPos was called.
+function resetScrollPos({refDOM, refTop, stack}) {
+  let newRefTop = refDOM.getBoundingClientRect().top
+  let dTop = newRefTop.top == 0 ? 0 : newRefTop - refTop
   for (let i = 0; i < stack.length; i++) {
     let {dom, top, left} = stack[i]
-    if (dom.scrollTop != top) dom.scrollTop = top
+    if (dom.scrollTop != top + dTop) dom.scrollTop = top + dTop
     if (dom.scrollLeft != left) dom.scrollLeft = left
   }
 }
