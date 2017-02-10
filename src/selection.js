@@ -65,7 +65,7 @@ class SelectionReader {
     if (domSel.isCollapsed) {
       $anchor = $head
       while (nearestDesc && !nearestDesc.node) nearestDesc = nearestDesc.parent
-      if (nearestDesc && nearestDesc.node.isLeaf && NodeSelection.isSelectable(nearestDesc.node)) {
+      if (nearestDesc && nearestDesc.node.isAtom && NodeSelection.isSelectable(nearestDesc.node)) {
         let pos = nearestDesc.posAtStart
         selection = new NodeSelection(head == pos ? $head : doc.resolve(pos))
       }

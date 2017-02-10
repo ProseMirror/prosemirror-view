@@ -134,7 +134,7 @@ function updateSelection(view, selection, origin) {
 function selectClickedLeaf(view, inside) {
   if (inside == -1) return false
   let $pos = view.state.doc.resolve(inside), node = $pos.nodeAfter
-  if (node && node.isLeaf && NodeSelection.isSelectable(node)) {
+  if (node && node.isAtom && NodeSelection.isSelectable(node)) {
     updateSelection(view, new NodeSelection($pos), "pointer")
     return true
   }
@@ -149,7 +149,7 @@ function selectClickedNode(view, inside) {
   for (let i = $pos.depth + 1; i > 0; i--) {
     let node = i > $pos.depth ? $pos.nodeAfter : $pos.node(i)
     if (NodeSelection.isSelectable(node)) {
-     if (selectedNode && $from.depth > 0 &&
+      if (selectedNode && $from.depth > 0 &&
           i >= $from.depth && $pos.before($from.depth + 1) == $from.pos)
         selectAt = $pos.before($from.depth)
       else
