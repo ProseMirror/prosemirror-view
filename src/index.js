@@ -34,7 +34,7 @@ class EditorView {
     this.content = document.createElement("div")
 
     if (place && place.appendChild) place.appendChild(this.content)
-    else if (place) place(this.content)
+    else if (place) this.content = place(this.content) || this.content;
 
     this.editable = getEditable(this)
     this.docView = docViewDesc(this.state.doc, computeDocDeco(this), viewDecorations(this), this.content, this)
