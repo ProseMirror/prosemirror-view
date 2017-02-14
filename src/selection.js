@@ -13,6 +13,7 @@ class SelectionReader {
     // Track the state of the DOM selection.
     this.lastAnchorNode = this.lastHeadNode = this.lastAnchorOffset = this.lastHeadOffset = null
     this.lastSelection = view.state.selection
+    this.ignoreUpdates = false
     this.poller = poller(this)
 
     view.content.addEventListener("focus", () => this.poller.start())
@@ -50,8 +51,9 @@ class SelectionReader {
   // When the DOM selection changes in a notable manner, modify the
   // current selection state to match.
   readFromDOM(origin) {
+    if (this.ignoreUpdates || !this.domChanged() || !this.view.hasFocus()) return
     if (!this.view.inDOMChange) flushObserver(this.view)
-    if (!this.view.hasFocus() || this.view.inDOMChange || !this.domChanged()) return
+    if (this.view.inDOMChange) return
 
     let domSel = this.view.root.getSelection(), doc = this.view.state.doc
     let nearestDesc = this.view.docView.nearestDesc(domSel.focusNode)
@@ -185,9 +187,11 @@ function selectionToDOM(view, sel, takeFocus) {
       }
     }
   }
+  view.selectionReader.ignoreUpdates = true
   view.docView.setSelection(anchor, head, view.root)
   if (resetEditable) resetEditable.contentEditable = "false"
   reader.storeDOMState(sel)
+  view.selectionReader.ignoreUpdates = false
 }
 exports.selectionToDOM = selectionToDOM
 
