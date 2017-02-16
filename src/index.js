@@ -106,7 +106,7 @@ class EditorView {
       this.destroyPluginViews()
       for (let i = 0; i < plugins.length; i++) {
         let plugin = plugins[i]
-        if (plugin.options.view) this.pluginViews.push(plugin.options.view(this))
+        if (plugin.spec.view) this.pluginViews.push(plugin.spec.view(this))
       }
     } else {
       for (let i = 0; i < this.pluginViews.length; i++) {
