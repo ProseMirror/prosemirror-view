@@ -111,7 +111,7 @@ class EditorView {
     } else {
       for (let i = 0; i < this.pluginViews.length; i++) {
         let pluginView = this.pluginViews[i]
-        if (pluginView.update) pluginView.update(this)
+        if (pluginView.update) pluginView.update(this, prevState)
       }
     }
   }
