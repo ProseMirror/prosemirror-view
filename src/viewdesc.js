@@ -296,6 +296,9 @@ class ViewDesc {
 
     let anchorDOM = this.domFromPos(anchor), headDOM = this.domFromPos(head)
     let domSel = root.getSelection(), range = document.createRange()
+    if (anchorDOM.node == domSel.anchorNode && anchorDOM.offset == domSel.anchorOffset &&
+        headDOM.node == domSel.focusNode && headDOM.offset == domSel.focusOffset)
+      return
 
     // Selection.extend can be used to create an 'inverted' selection
     // (one where the focus is before the anchor), but not all
