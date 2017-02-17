@@ -267,4 +267,26 @@ describe("DOM change", () => {
       ist(view.state.selection.head, 6)
     })
   })
+
+  it("doesn't redraw content with marks when typing in front", () => {
+    let view = tempEditor({doc: doc(p("foo", em("bar"), strong("baz")))})
+    let bar = findTextNode(view.content, "bar"), foo = findTextNode(view.content, "foo")
+    foo.nodeValue = "froo"
+    return flush(view, () => {
+      ist(view.state.doc, doc(p("froo", em("bar"), strong("baz"))), eq)
+      ist(bar.parentNode && view.content.contains(bar.parentNode))
+      ist(foo.parentNode && view.content.contains(foo.parentNode))
+    })
+  })
+
+  it("doesn't redraw content with marks when typing inside mark", () => {
+    let view = tempEditor({doc: doc(p("foo", em("bar"), strong("baz")))})
+    let bar = findTextNode(view.content, "bar"), foo = findTextNode(view.content, "foo")
+    bar.nodeValue = "baar"
+    return flush(view, () => {
+      ist(view.state.doc, doc(p("foo", em("baar"), strong("baz"))), eq)
+      ist(bar.parentNode && view.content.contains(bar.parentNode))
+      ist(foo.parentNode && view.content.contains(foo.parentNode))
+    })
+  })
 })
