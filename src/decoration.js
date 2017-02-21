@@ -6,7 +6,7 @@ function compareObjs(a, b) {
 }
 
 class WidgetType {
-  constructor(widget, options) {
+  constructor(widget, spec) {
     if (widget.nodeType != 1) {
       let wrap = document.createElement("span")
       wrap.appendChild(widget)
@@ -15,11 +15,11 @@ class WidgetType {
     widget.contentEditable = false
     widget.classList.add("ProseMirror-widget")
     this.widget = widget
-    this.options = options || noOptions
+    this.spec = spec || noSpec
   }
 
   map(mapping, span, offset, oldOffset) {
-    let {pos, deleted} = mapping.mapResult(span.from + oldOffset, this.options.associative == "left" ? -1 : 1)
+    let {pos, deleted} = mapping.mapResult(span.from + oldOffset, this.spec.associative == "left" ? -1 : 1)
     return deleted ? null : new Decoration(pos - offset, pos - offset, this)
   }
 
@@ -27,20 +27,20 @@ class WidgetType {
 
   eq(other) {
     return this == other ||
-      (other instanceof WidgetType && (this.widget == other.widget || this.options.key) &&
-       compareObjs(this.options, other.options))
+      (other instanceof WidgetType && (this.widget == other.widget || this.spec.key) &&
+       compareObjs(this.spec, other.spec))
   }
 }
 
 class InlineType {
-  constructor(attrs, options) {
-    this.options = options || noOptions
+  constructor(attrs, spec) {
+    this.spec = spec || noSpec
     this.attrs = attrs
   }
 
   map(mapping, span, offset, oldOffset) {
-    let from = mapping.map(span.from + oldOffset, this.options.inclusiveLeft ? -1 : 1) - offset
-    let to = mapping.map(span.to + oldOffset, this.options.inclusiveRight ? 1 : -1) - offset
+    let from = mapping.map(span.from + oldOffset, this.spec.inclusiveLeft ? -1 : 1) - offset
+    let to = mapping.map(span.to + oldOffset, this.spec.inclusiveRight ? 1 : -1) - offset
     return from >= to ? null : new Decoration(from, to, this)
   }
 
@@ -49,16 +49,16 @@ class InlineType {
   eq(other) {
     return this == other ||
       (other instanceof InlineType && compareObjs(this.attrs, other.attrs) &&
-       compareObjs(this.options, other.options))
+       compareObjs(this.spec, other.spec))
   }
 
   static is(span) { return span.type instanceof InlineType }
 }
 
 class NodeType {
-  constructor(attrs, options) {
+  constructor(attrs, spec) {
     this.attrs = attrs
-    this.options = options || noOptions
+    this.spec = spec || noSpec
   }
 
   map(mapping, span, offset, oldOffset) {
@@ -77,7 +77,7 @@ class NodeType {
   eq(other) {
     return this == other ||
       (other instanceof NodeType && compareObjs(this.attrs, other.attrs) &&
-       compareObjs(this.options, other.options))
+       compareObjs(this.spec, other.spec))
   }
 }
 
@@ -108,7 +108,7 @@ class Decoration {
   // Creates a widget decoration, which is a DOM node that's shown in
   // the document at the given position.
   //
-  //   options::- These options are supported:
+  //   spec::- These options are supported:
   //
   //     associative:: ?string
   //     By default, widgets are right-associative, meaning they end
@@ -127,15 +127,15 @@ class Decoration {
   //     that key will be compared instead, which can be useful when
   //     you generate decorations on the fly and don't want to store
   //     and reuse DOM nodes.
-  static widget(pos, dom, options) {
-    return new Decoration(pos, pos, new WidgetType(dom, options))
+  static widget(pos, dom, spec) {
+    return new Decoration(pos, pos, new WidgetType(dom, spec))
   }
 
   // :: (number, number, DecorationAttrs, ?Object) → Decoration
   // Creates an inline decoration, which adds the given attributes to
   // each inline node between `from` and `to`.
   //
-  //   options::- These options are recognized:
+  //   spec::- These options are recognized:
   //
   //     inclusiveLeft:: ?bool
   //     Determines how the left side of the decoration is
@@ -147,25 +147,35 @@ class Decoration {
   //     inclusiveRight:: ?bool
   //     Determines how the right side of the decoration is mapped.
   //     See
-  //     [`inclusiveLeft`](#view.Decoration^inline^options.inclusiveLeft).
-  static inline(from, to, attrs, options) {
-    return new Decoration(from, to, new InlineType(attrs, options))
+  //     [`inclusiveLeft`](#view.Decoration^inline^spec.inclusiveLeft).
+  static inline(from, to, attrs, spec) {
+    return new Decoration(from, to, new InlineType(attrs, spec))
   }
 
   // :: (number, number, DecorationAttrs, ?Object) → Decoration
   // Creates a node decoration. `from` and `to` should point precisely
   // before and after a node in the document. That node, and only that
   // node, will receive the given attributes.
-  static node(from, to, attrs, options) {
-    return new Decoration(from, to, new NodeType(attrs, options))
+  static node(from, to, attrs, spec) {
+    return new Decoration(from, to, new NodeType(attrs, spec))
   }
 
   // :: Object
-  // The options provided when creating this decoration. Can be useful
+  // The spec provided when creating this decoration. Can be useful
   // if you've stored extra information in that object.
-  get options() { return this.type.options }
+  get spec() { return this.type.spec }
+
+  get options() {
+    if (!warnedAboutOptions && typeof console != "undefined" && console.warn) {
+      warnedAboutOptions = true
+      console.warn("Decoration.options has been renamed Decoration.spec")
+    }
+    return this.type.spec
+  }
 }
 exports.Decoration = Decoration
+
+let warnedAboutOptions = false
 
 // DecorationAttrs:: interface
 // A set of attributes to add to a decorated node. Most properties
@@ -183,7 +193,7 @@ exports.Decoration = Decoration
 //   When non-null, the target node is wrapped in a DOM element of
 //   this type (and the other attributes are applied to this element).
 
-const none = [], noOptions = {}
+const none = [], noSpec = {}
 
 // ::- A collection of [decorations](#view.Decoration), organized in
 // such a way that the drawing algorithm can efficiently use and
@@ -199,7 +209,7 @@ class DecorationSet {
   // Create a set of decorations, using the structure of the given
   // document.
   static create(doc, decorations) {
-    return decorations.length ? buildTree(decorations, doc, 0, noOptions) : empty
+    return decorations.length ? buildTree(decorations, doc, 0, noSpec) : empty
   }
 
   // :: (?number, ?number) → [Decoration]
@@ -233,13 +243,13 @@ class DecorationSet {
   //
   //   options::- An optional set of options.
   //
-  //     onRemove:: ?(decorationOptions: Object)
+  //     onRemove:: ?(decorationSpec: Object)
   //     When given, this function will be called for each decoration
   //     that gets dropped as a result of the mapping, passing the
-  //     options of that decoration.
+  //     spec of that decoration.
   map(mapping, doc, options) {
     if (this == empty || mapping.maps.length == 0) return this
-    return this.mapInner(mapping, doc, 0, 0, options || noOptions)
+    return this.mapInner(mapping, doc, 0, 0, options || noSpec)
   }
 
   mapInner(mapping, node, offset, oldOffset, options) {
@@ -247,7 +257,7 @@ class DecorationSet {
     for (let i = 0; i < this.local.length; i++) {
       let mapped = this.local[i].map(mapping, offset, oldOffset)
       if (mapped && mapped.type.valid(node, mapped)) (newLocal || (newLocal = [])).push(mapped)
-      else if (options.onRemove) options.onRemove(this.local[i].options)
+      else if (options.onRemove) options.onRemove(this.local[i].spec)
     }
 
     if (this.children.length)
@@ -277,7 +287,7 @@ class DecorationSet {
       if (children[childIndex] == childOffset)
         children[childIndex + 2] = children[childIndex + 2].addInner(childNode, found, baseOffset + 1)
       else
-        children.splice(childIndex, 0, childOffset, childOffset + childNode.nodeSize, buildTree(found, childNode, baseOffset + 1, noOptions))
+        children.splice(childIndex, 0, childOffset, childOffset + childNode.nodeSize, buildTree(found, childNode, baseOffset + 1, noSpec))
       childIndex += 3
     })
 
@@ -525,7 +535,7 @@ function mapAndGatherRemainingDecorations(children, decorations, mapping, oldOff
     for (let i = 0; i < set.local.length; i++) {
       let mapped = set.local[i].map(mapping, 0, oldOffset)
       if (mapped) decorations.push(mapped)
-      else if (options.onRemove) options.onRemove(set.local[i].options)
+      else if (options.onRemove) options.onRemove(set.local[i].spec)
     }
     for (let i = 0; i < set.children.length; i += 3)
       gather(set.children[i + 2], set.children[i] + oldOffset + 1)
@@ -573,7 +583,7 @@ function buildTree(spans, node, offset, options) {
   })
   let locals = moveSpans(hasNulls ? withoutNulls(spans) : spans, -offset).sort(byPos)
   for (let i = 0; i < locals.length; i++) if (!locals[i].type.valid(node, locals[i])) {
-    if (options.onRemove) options.onRemove(locals[i].options)
+    if (options.onRemove) options.onRemove(locals[i].spec)
     locals.splice(i--, 1)
   }
   return locals.length || children.length ? new DecorationSet(locals, children) : empty

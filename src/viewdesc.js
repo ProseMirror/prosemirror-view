@@ -368,7 +368,7 @@ class WidgetViewDesc extends ViewDesc {
   parseRule() { return {ignore: true} }
 
   stopEvent(event) {
-    let stop = this.widget.type.options.stopEvent
+    let stop = this.widget.spec.stopEvent
     return stop ? stop(event) : false
   }
 }

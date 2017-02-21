@@ -277,7 +277,7 @@ describe("Decoration drawing", () => {
       plugins: [decoPlugin([])],
       nodeViews: {horizontal_rule: () => ({
         update(_, decos) {
-          current = decos.map(d => d.options.name).join()
+          current = decos.map(d => d.spec.name).join()
         }
       })}
     })

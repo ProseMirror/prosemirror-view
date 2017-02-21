@@ -94,7 +94,7 @@ describe("nodeViews prop", () => {
       nodeViews: {image(_n, _v, _p, deco) {
         let dom = document.createElement("var")
         function update(deco) {
-          dom.textContent = deco.length ? deco[0].options.name : "[]"
+          dom.textContent = deco.length ? deco[0].spec.name : "[]"
         }
         update(deco)
         return {dom, update(_, deco) { update(deco); return true }}

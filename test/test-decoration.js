@@ -196,7 +196,7 @@ describe("DecorationSet", () => {
       let d = doc(p("foo"))
       let set = build(d, {pos: 3, associative: "left", name: "a"}, {pos: 3, name: "b"})
       let tr = new Transform(d).replaceWith(3, 3, schema.text("ay"))
-      let result = set.map(tr.mapping, tr.doc).find().map(d => d.from + "-" + d.type.options.name).sort().join(", ")
+      let result = set.map(tr.mapping, tr.doc).find().map(d => d.from + "-" + d.spec.name).sort().join(", ")
       ist(result, "3-a, 5-b")
     })
   })
