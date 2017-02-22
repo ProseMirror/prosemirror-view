@@ -949,8 +949,8 @@ function iterDeco(parent, deco, onWidget, onNode) {
 // prop object.
 let cachedCustomViews, cachedCustomFor
 function customNodeViews(view) {
-  if (cachedCustomFor == view.props) return cachedCustomViews
-  cachedCustomFor = view.props
+  if (cachedCustomFor == view._props) return cachedCustomViews
+  cachedCustomFor = view._props
   return cachedCustomViews = buildCustomViews(view)
 }
 function buildCustomViews(view) {

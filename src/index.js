@@ -18,9 +18,7 @@ class EditorView {
   // or an object whose `mount` property holds the node to use. If it
   // is `null`, the editor will not be added to the document.
   constructor(place, props) {
-    // :: EditorProps
-    // The view's current [props](#view.EditorProps).
-    this.props = props
+    this._props = props
     // :: EditorState
     // The view's current [state](#state.EditorState).
     this.state = props.state
@@ -51,6 +49,19 @@ class EditorView {
     this.updatePluginViews()
   }
 
+  // :: EditorProps
+  // The view's current [props](#view.EditorProps).
+  get props() {
+    if (this._props.state != this.state) {
+      let prev = this._props
+      this._props = {}
+      for (let name in prev) this._props[name] = prev[name]
+      this._props.state = this.state
+    }
+    return this._props
+  }
+
+
   get content() {
     if (!warnedAboutContent && typeof console != "undefined" && console.warn) {
       warnedAboutContent = true
@@ -63,8 +74,8 @@ class EditorView {
   // Update the view's props. Will immediately cause an update to
   // the view's DOM.
   update(props) {
-    if (props.handleDOMEvents != this.props.handleDOMEvents) ensureListeners(this)
-    this.props = props
+    if (props.handleDOMEvents != this._props.handleDOMEvents) ensureListeners(this)
+    this._props = props
     this.updateState(props.state)
   }
 
@@ -144,7 +155,7 @@ class EditorView {
   // treated as the identity function (the prop value is returned
   // directly).
   someProp(propName, f) {
-    let prop = this.props && this.props[propName], value
+    let prop = this._props && this._props[propName], value
     if (prop != null && (value = f ? f(prop) : prop)) return value
     let plugins = this.state.plugins
     if (plugins) for (let i = 0; i < plugins.length; i++) {
@@ -231,7 +242,7 @@ class EditorView {
   // This method is bound to the view instance, so that it can be
   // easily passed around.
   dispatch(tr) {
-    let dispatchTransaction = this.props.dispatchTransaction
+    let dispatchTransaction = this._props.dispatchTransaction
     if (dispatchTransaction) dispatchTransaction(tr)
     else this.updateState(this.state.apply(tr))
   }
