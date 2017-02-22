@@ -1,6 +1,7 @@
 // declare global: mocha
 mocha.setup("bdd")
 
+require("./test-view")
 require("./test-draw")
 require("./test-selection")
 require("./test-domchange")

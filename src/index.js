@@ -12,11 +12,11 @@ let warnedAboutContent = false
 // editor. Its state and behavior are determined by its
 // [props](#view.EditorProps).
 class EditorView {
-  // :: (?union<dom.Node, (dom.Node)>, EditorProps)
+  // :: (?union<dom.Node, (dom.Node), {mount: dom.Node}>, EditorProps)
   // Create a view. `place` may be a DOM node that the editor should
-  // be appended to, or a function that will place it into the
-  // document. If it is `null`, the editor will not be added to the
-  // document.
+  // be appended to, a function that will place it into the document,
+  // or an object whose `mount` property holds the node to use. If it
+  // is `null`, the editor will not be added to the document.
   constructor(place, props) {
     // :: EditorProps
     // The view's current [props](#view.EditorProps).
@@ -33,9 +33,12 @@ class EditorView {
     // :: dom.Element
     // The editable DOM node containing the document. (You probably
     // should not be directly interfering with its child nodes.)
-    this.dom = document.createElement("div")
-    if (place && place.appendChild) place.appendChild(this.dom)
-    else if (place && place.apply) place(this.dom)
+    this.dom = (place && place.mount) || document.createElement("div")
+    if (place) {
+      if (place.appendChild) place.appendChild(this.dom)
+      else if (place.apply) place(this.dom)
+      else if (place.mount) this.mounted = true
+    }
 
     this.editable = getEditable(this)
     this.docView = docViewDesc(this.state.doc, computeDocDeco(this), viewDecorations(this), this.dom, this)
@@ -207,8 +210,12 @@ class EditorView {
     this.destroyPluginViews()
     this.docView.destroy()
     this.selectionReader.destroy()
-    if (!this.mounted && this.dom.parentNode)
+    if (this.mounted) {
+      this.docView.update(this.state.doc, [], viewDecorations(this), this)
+      this.dom.textContent = ""
+    } else if (this.dom.parentNode) {
       this.dom.parentNode.removeChild(this.dom)
+    }
   }
 
   // Used for testing.
