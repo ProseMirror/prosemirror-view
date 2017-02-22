@@ -71,7 +71,7 @@ function skipIgnoredNodesLeft(view) {
       }
       if (!prev) {
         node = node.parentNode
-        if (node == view.content) break
+        if (node == view.dom) break
         offset = 0
       } else {
         node = prev
@@ -108,7 +108,7 @@ function skipIgnoredNodesRight(view) {
       }
       if (!next) {
         node = node.parentNode
-        if (node == view.content) break
+        if (node == view.dom) break
         offset = len = 0
       } else {
         node = next

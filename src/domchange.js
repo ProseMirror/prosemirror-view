@@ -89,7 +89,7 @@ function parseBetween(view, oldState, from, to) {
   if (parent != parentRight) return null
   // If there's non-view nodes directly after the end of this region,
   // fail and let the caller try again with a wider range.
-  if (endOff == parent.childNodes.length) for (let scan = parent; scan != view.content;) {
+  if (endOff == parent.childNodes.length) for (let scan = parent; scan != view.dom;) {
     if (!scan) return null
     if (scan.nextSibling) {
       if (!scan.nextSibling.pmViewDesc) return null
@@ -99,7 +99,7 @@ function parseBetween(view, oldState, from, to) {
   }
 
   let domSel = view.root.getSelection(), find = null, anchor = domSel.anchorNode
-  if (anchor && view.content.contains(anchor.nodeType == 1 ? anchor : anchor.parentNode)) {
+  if (anchor && view.dom.contains(anchor.nodeType == 1 ? anchor : anchor.parentNode)) {
     find = [{node: anchor, offset: domSel.anchorOffset}]
     if (!domSel.isCollapsed)
       find.push({node: domSel.focusNode, offset: domSel.focusOffset})

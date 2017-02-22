@@ -66,7 +66,7 @@ describe("EditorView.endOfTextblock", () => {
 
   it("works at the start of an RTL block", () => {
     let view = tempEditor({doc: doc(p("<a>مرآة"))})
-    view.content.style.direction = "rtl"
+    view.dom.style.direction = "rtl"
     ist(!view.endOfTextblock("left"))
     ist(view.endOfTextblock("backward"))
     ist(view.endOfTextblock("right"))
@@ -75,7 +75,7 @@ describe("EditorView.endOfTextblock", () => {
 
   it("works at the end of an RTL block", () => {
     let view = tempEditor({doc: doc(p("مرآة<a>"))})
-    view.content.style.direction = "rtl"
+    view.dom.style.direction = "rtl"
     ist(view.endOfTextblock("left"))
     ist(!view.endOfTextblock("backward"))
     ist(!view.endOfTextblock("right"))
@@ -84,7 +84,7 @@ describe("EditorView.endOfTextblock", () => {
 
   it("works inside an RTL block", () => {
     let view = tempEditor({doc: doc(p("مر<a>آة"))})
-    view.content.style.direction = "rtl"
+    view.dom.style.direction = "rtl"
     ist(!view.endOfTextblock("left"))
     ist(!view.endOfTextblock("backward"))
     ist(!view.endOfTextblock("right"))

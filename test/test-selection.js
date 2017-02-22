@@ -61,13 +61,13 @@ describe("EditorView", () => {
     let view = tempEditor({doc: doc(p("one"), hr, blockquote(p("two")))})
     function test(node, offset, expected) {
       setDOMSel(node, offset)
-      view.content.focus()
+      view.dom.focus()
       view.selectionReader.readFromDOM()
       let sel = view.state.selection
       ist(sel.head == null ? sel.from : sel.head, expected)
     }
-    let one = findTextNode(view.content, "one")
-    let two = findTextNode(view.content, "two")
+    let one = findTextNode(view.dom, "one")
+    let two = findTextNode(view.dom, "two")
     test(one, 0, 1)
     test(one, 1, 2)
     test(one, 3, 4)
@@ -76,9 +76,9 @@ describe("EditorView", () => {
     test(two, 0, 8)
     test(two, 3, 11)
     test(two.parentNode, 1, 11)
-    test(view.content, 1, 4)
-    test(view.content, 2, 8)
-    test(view.content, 3, 11)
+    test(view.dom, 1, 4)
+    test(view.dom, 2, 8)
+    test(view.dom, 3, 11)
   })
 
   it("syncs the DOM selection with the editor selection", () => {
@@ -92,8 +92,8 @@ describe("EditorView", () => {
       ist(sel.node, node)
       ist(sel.offset, offset)
     }
-    let one = findTextNode(view.content, "one")
-    let two = findTextNode(view.content, "two")
+    let one = findTextNode(view.dom, "one")
+    let two = findTextNode(view.dom, "two")
     view.focus()
     test(1, one, 0)
     test(2, one, 1)

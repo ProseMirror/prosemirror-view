@@ -11,7 +11,7 @@ function parentNode(node) {
 function scrollRectIntoView(view, rect) {
   let scrollThreshold = view.someProp("scrollThreshold") || 0, scrollMargin = view.someProp("scrollMargin")
   if (scrollMargin == null) scrollMargin = 5
-  for (let parent = view.content;; parent = parentNode(parent)) {
+  for (let parent = view.dom;; parent = parentNode(parent)) {
     let atBody = parent == document.body
     let bounding = atBody ? windowRect() : parent.getBoundingClientRect()
     let moveX = 0, moveY = 0
@@ -41,12 +41,12 @@ exports.scrollRectIntoView = scrollRectIntoView
 // will be used to make sure the visible viewport remains stable even
 // when the size of the content above changes.
 function storeScrollPos(view) {
-  let rect = view.content.getBoundingClientRect(), startY = Math.max(0, rect.top)
+  let rect = view.dom.getBoundingClientRect(), startY = Math.max(0, rect.top)
   let refDOM, refTop
   for (let x = (rect.left + rect.right) / 2, y = startY + 1;
        y < Math.min(innerHeight, rect.bottom); y += 5) {
     let dom = view.root.elementFromPoint(x, y)
-    if (dom == view.content || !view.content.contains(dom)) continue
+    if (dom == view.dom || !view.dom.contains(dom)) continue
     let localRect = dom.getBoundingClientRect()
     if (localRect.top >= startY - 20) {
       refDOM = dom
@@ -55,7 +55,7 @@ function storeScrollPos(view) {
     }
   }
   let stack = []
-  for (let dom = view.content; dom; dom = parentNode(dom)) {
+  for (let dom = view.dom; dom; dom = parentNode(dom)) {
     stack.push({dom, top: dom.scrollTop, left: dom.scrollLeft})
     if (dom == document.body) break
   }
@@ -141,7 +141,7 @@ function targetKludge(dom, coords) {
 // Given an x,y position on the editor, get the position in the document.
 function posAtCoords(view, coords) {
   let elt = targetKludge(view.root.elementFromPoint(coords.left, coords.top + 1), coords)
-  if (!view.content.contains(elt.nodeType == 3 ? elt.parentNode : elt)) return null
+  if (!view.dom.contains(elt.nodeType != 1 ? elt.parentNode : elt)) return null
 
   let {node, offset} = findOffsetInNode(elt, coords), bias = -1
   if (node.nodeType == 1 && !node.firstChild) {
@@ -205,12 +205,12 @@ exports.coordsAtPos = coordsAtPos
 function withFlushedState(view, state, f) {
   let viewState = view.state, active = view.root.activeElement
   if (viewState != state || !view.inDOMChange) view.updateState(state)
-  if (active != view.content) view.focus()
+  if (active != view.dom) view.focus()
   try {
     return f()
   } finally {
     if (viewState != state) view.updateState(viewState)
-    if (active != view.content) active.focus()
+    if (active != view.dom) active.focus()
   }
 }
 

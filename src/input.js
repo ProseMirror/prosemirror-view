@@ -21,7 +21,7 @@ function initInput(view) {
 
   for (let event in handlers) {
     let handler = handlers[event]
-    view.content.addEventListener(event, event => {
+    view.dom.addEventListener(event, event => {
       if (eventBelongsToView(view, event) && !runCustomHandler(view, event) &&
           (view.editable || !(event.type in editHandlers)))
         handler(view, event)
@@ -43,7 +43,7 @@ function ensureListeners(view) {
   view.someProp("handleDOMEvents", handlers => {
     for (let type in handlers) if (!view.extraHandlers[type] && !handlers.hasOwnProperty(type)) {
       view.extraHandlers[type] = true
-      view.content.addEventListener(type, event => runCustomHandler(view, event))
+      view.dom.addEventListener(type, event => runCustomHandler(view, event))
     }
   })
 }
@@ -59,7 +59,7 @@ function runCustomHandler(view, event) {
 function eventBelongsToView(view, event) {
   if (!event.bubbles) return true
   if (event.defaultPrevented) return false
-  for (let node = event.target; node != view.content; node = node.parentNode)
+  for (let node = event.target; node != view.dom; node = node.parentNode)
     if (!node || node.nodeType == 11 ||
         (node.pmViewDesc && node.pmViewDesc.stopEvent(event)))
       return false
@@ -283,7 +283,7 @@ class MouseDown {
   up(event) {
     this.done()
 
-    if (!this.view.content.contains(event.target.nodeType == 3 ? event.target.parentNode : event.target))
+    if (!this.view.dom.contains(event.target.nodeType == 3 ? event.target.parentNode : event.target))
       return
 
     if (this.allowDefault) {
@@ -354,10 +354,10 @@ const observeOptions = {childList: true, characterData: true, attributes: true, 
 
 function startObserving(view) {
   if (view.mutationObserver)
-    view.mutationObserver.observe(view.content, observeOptions)
+    view.mutationObserver.observe(view.dom, observeOptions)
   // IE11 has very broken mutation observers, so we also listen to DOMCharacterDataModified
   if (browser.ie && browser.ie_version <= 11)
-    view.content.addEventListener("DOMCharacterDataModified", view.onCharData || (view.onCharData = e => {
+    view.dom.addEventListener("DOMCharacterDataModified", view.onCharData || (view.onCharData = e => {
       registerMutation(view, {target: e.target, type: "characterData"})
     }))
 }
@@ -374,7 +374,7 @@ function stopObserving(view) {
     view.mutationObserver.disconnect()
   }
   if (browser.ie && browser.ie_version <= 11)
-    view.content.removeEventListener("DOMCharacterDataModified", view.onCharData)
+    view.dom.removeEventListener("DOMCharacterDataModified", view.onCharData)
 }
 exports.stopObserving = stopObserving
 
@@ -536,7 +536,7 @@ editHandlers.drop = (view, e) => {
 
 handlers.focus = (view, event) => {
   if (!view.focused) {
-    view.content.classList.add("ProseMirror-focused")
+    view.dom.classList.add("ProseMirror-focused")
     view.focused = true
   }
   view.someProp("onFocus", f => { f(view, event) })
@@ -544,7 +544,7 @@ handlers.focus = (view, event) => {
 
 handlers.blur = (view, event) => {
   if (view.focused) {
-    view.content.classList.remove("ProseMirror-focused")
+    view.dom.classList.remove("ProseMirror-focused")
     view.focused = false
   }
   view.someProp("onBlur", f => { f(view, event) })

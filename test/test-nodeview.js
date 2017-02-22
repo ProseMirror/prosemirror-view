@@ -8,8 +8,8 @@ describe("nodeViews prop", () => {
   it("can replace a node's representation", () => {
     let view = tempEditor({doc: doc(p("foo", img)),
                            nodeViews: {image() { return {dom: document.createElement("var")}}}})
-    ist(view.content.querySelector("var"))
-    ist(!view.content.querySelector("img"))
+    ist(view.dom.querySelector("var"))
+    ist(!view.dom.querySelector("img"))
   })
 
   it("can override drawing of a node's content", () => {
@@ -21,9 +21,9 @@ describe("nodeViews prop", () => {
         return {dom}
       }}
     })
-    ist(view.content.querySelector("p").textContent, "FOO")
+    ist(view.dom.querySelector("p").textContent, "FOO")
     view.dispatch(view.state.tr.insertText("a"))
-    ist(view.content.querySelector("p").textContent, "AFOO")
+    ist(view.dom.querySelector("p").textContent, "AFOO")
   })
 
   it("can register its own update method", () => {
@@ -35,9 +35,9 @@ describe("nodeViews prop", () => {
         return {dom, update(node) { dom.textContent = node.textContent.toUpperCase(); return true }}
       }}
     })
-    let para = view.content.querySelector("p")
+    let para = view.dom.querySelector("p")
     view.dispatch(view.state.tr.insertText("a"))
-    ist(view.content.querySelector("p"), para)
+    ist(view.dom.querySelector("p"), para)
     ist(para.textContent, "AFOO")
   })
 
@@ -49,9 +49,9 @@ describe("nodeViews prop", () => {
         return {dom, contentDOM: dom}
       }}
     })
-    let para = view.content.querySelector("p")
+    let para = view.dom.querySelector("p")
     view.dispatch(view.state.tr.insertText("a"))
-    ist(view.content.querySelector("p"), para)
+    ist(view.dom.querySelector("p"), para)
     ist(para.textContent, "afoo")
   })
 
@@ -100,10 +100,10 @@ describe("nodeViews prop", () => {
         return {dom, update(_, deco) { update(deco); return true }}
       }}
     })
-    ist(view.content.querySelector("var").textContent, "[]")
+    ist(view.dom.querySelector("var").textContent, "[]")
     view.dispatch(view.state.tr.setMeta("setDeco", "foo"))
-    ist(view.content.querySelector("var").textContent, "foo")
+    ist(view.dom.querySelector("var").textContent, "foo")
     view.dispatch(view.state.tr.setMeta("setDeco", "bar"))
-    ist(view.content.querySelector("var").textContent, "bar")
+    ist(view.dom.querySelector("var").textContent, "bar")
   })
 })

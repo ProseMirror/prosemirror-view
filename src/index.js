@@ -6,6 +6,8 @@ const {viewDecorations, Decoration} = require("./decoration")
 
 ;({Decoration: exports.Decoration, DecorationSet: exports.DecorationSet} = require("./decoration"))
 
+let warnedAboutContent = false
+
 // ::- An editor view manages the DOM structure that represents an
 // editor. Its state and behavior are determined by its
 // [props](#view.EditorProps).
@@ -31,13 +33,12 @@ class EditorView {
     // :: dom.Element
     // The editable DOM node containing the document. (You probably
     // should not be directly interfering with its child nodes.)
-    this.content = document.createElement("div")
-
-    if (place && place.appendChild) place.appendChild(this.content)
-    else if (place) place(this.content)
+    this.dom = document.createElement("div")
+    if (place && place.appendChild) place.appendChild(this.dom)
+    else if (place && place.apply) place(this.dom)
 
     this.editable = getEditable(this)
-    this.docView = docViewDesc(this.state.doc, computeDocDeco(this), viewDecorations(this), this.content, this)
+    this.docView = docViewDesc(this.state.doc, computeDocDeco(this), viewDecorations(this), this.dom, this)
 
     this.lastSelectedViewDesc = null
     this.selectionReader = new SelectionReader(this)
@@ -45,6 +46,14 @@ class EditorView {
 
     this.pluginViews = []
     this.updatePluginViews()
+  }
+
+  get content() {
+    if (!warnedAboutContent && typeof console != "undefined" && console.warn) {
+      warnedAboutContent = true
+      console.warn("EditorView.content has been renamed to EditorView.dom")
+    }
+    return this.dom
   }
 
   // :: (EditorProps)
@@ -119,9 +128,9 @@ class EditorView {
   // :: () → bool
   // Query whether the view has focus.
   hasFocus() {
-    if (this.editable && this.content.ownerDocument.activeElement != this.content) return false
+    if (this.editable && this.dom.ownerDocument.activeElement != this.dom) return false
     let sel = this.root.getSelection()
-    return sel.rangeCount && this.content.contains(sel.anchorNode.nodeType == 3 ? sel.anchorNode.parentNode : sel.anchorNode)
+    return sel.rangeCount && this.dom.contains(sel.anchorNode.nodeType == 3 ? sel.anchorNode.parentNode : sel.anchorNode)
   }
 
   // :: (string, (prop: *) → *) → *
@@ -147,7 +156,7 @@ class EditorView {
     stopObserving(this)
     selectionToDOM(this, this.state.selection, true)
     startObserving(this)
-    if (this.editable) this.content.focus()
+    if (this.editable) this.dom.focus()
   }
 
   // :: union<dom.Document, dom.DocumentFragment>
@@ -156,7 +165,7 @@ class EditorView {
   // root if the editor is inside a shadow DOM.
   get root() {
     let cached = this._root
-    if (cached == null) for (let search = this.content.parentNode; search; search = search.parentNode) {
+    if (cached == null) for (let search = this.dom.parentNode; search; search = search.parentNode) {
       if (search.nodeType == 9 || (search.nodeType == 11 && search.host))
         return this._root = search
     }
@@ -198,7 +207,8 @@ class EditorView {
     this.destroyPluginViews()
     this.docView.destroy()
     this.selectionReader.destroy()
-    if (this.content.parentNode) this.content.parentNode.removeChild(this.content)
+    if (!this.mounted && this.dom.parentNode)
+      this.dom.parentNode.removeChild(this.dom)
   }
 
   // Used for testing.

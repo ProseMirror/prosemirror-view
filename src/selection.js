@@ -16,8 +16,8 @@ class SelectionReader {
     this.ignoreUpdates = false
     this.poller = poller(this)
 
-    view.content.addEventListener("focus", () => this.poller.start())
-    view.content.addEventListener("blur", () => this.poller.stop())
+    view.dom.addEventListener("focus", () => this.poller.start())
+    view.dom.addEventListener("blur", () => this.poller.stop())
 
     if (!view.editable) this.poller.start()
   }
@@ -170,7 +170,7 @@ function selectionToDOM(view, sel, takeFocus) {
   if (!view.hasFocus()) {
     if (!takeFocus) return
     // See https://bugzilla.mozilla.org/show_bug.cgi?id=921444
-    else if (browser.gecko && view.editable) view.content.focus()
+    else if (browser.gecko && view.editable) view.dom.focus()
   }
 
   let reader = view.selectionReader

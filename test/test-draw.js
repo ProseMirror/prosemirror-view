@@ -7,86 +7,86 @@ describe("EditorView draw", () => {
   it("updates the DOM", () => {
     let view = tempEditor({doc: doc(p("foo"))})
     view.dispatch(view.state.tr.insertText("bar"))
-    ist(view.content.textContent, "barfoo")
+    ist(view.dom.textContent, "barfoo")
   })
 
   it("doesn't redraw nodes after changes", () => {
     let view = tempEditor({doc: doc(h1("foo<a>"), p("bar"))})
-    let oldP = view.content.querySelector("p")
+    let oldP = view.dom.querySelector("p")
     view.dispatch(view.state.tr.insertText("!"))
-    ist(view.content.querySelector("p"), oldP)
+    ist(view.dom.querySelector("p"), oldP)
   })
 
   it("doesn't redraw nodes before changes", () => {
     let view = tempEditor({doc: doc(p("foo"), h1("bar"))})
-    let oldP = view.content.querySelector("p")
+    let oldP = view.dom.querySelector("p")
     view.dispatch(view.state.tr.insertText("!", 2))
-    ist(view.content.querySelector("p"), oldP)
+    ist(view.dom.querySelector("p"), oldP)
   })
 
   it("doesn't redraw nodes between changes", () => {
     let view = tempEditor({doc: doc(p("foo"), h1("bar"), pre("baz"))})
-    let oldP = view.content.querySelector("p")
-    let oldPre = view.content.querySelector("pre")
+    let oldP = view.dom.querySelector("p")
+    let oldPre = view.dom.querySelector("pre")
     view.dispatch(view.state.tr.insertText("!", 2))
-    ist(view.content.querySelector("p"), oldP)
-    ist(view.content.querySelector("pre"), oldPre)
+    ist(view.dom.querySelector("p"), oldP)
+    ist(view.dom.querySelector("pre"), oldPre)
   })
 
   it("doesn't redraw siblings of a split node", () => {
     let view = tempEditor({doc: doc(p("foo"), h1("bar"), pre("baz"))})
-    let oldP = view.content.querySelector("p")
-    let oldPre = view.content.querySelector("pre")
+    let oldP = view.dom.querySelector("p")
+    let oldPre = view.dom.querySelector("pre")
     view.dispatch(view.state.tr.split(8))
-    ist(view.content.querySelector("p"), oldP)
-    ist(view.content.querySelector("pre"), oldPre)
+    ist(view.dom.querySelector("p"), oldP)
+    ist(view.dom.querySelector("pre"), oldPre)
   })
 
   it("doesn't redraw siblings of a joined node", () => {
     let view = tempEditor({doc: doc(p("foo"), h1("bar"), h1("x"), pre("baz"))})
-    let oldP = view.content.querySelector("p")
-    let oldPre = view.content.querySelector("pre")
+    let oldP = view.dom.querySelector("p")
+    let oldPre = view.dom.querySelector("pre")
     view.dispatch(view.state.tr.join(10))
-    ist(view.content.querySelector("p"), oldP)
-    ist(view.content.querySelector("pre"), oldPre)
+    ist(view.dom.querySelector("p"), oldP)
+    ist(view.dom.querySelector("pre"), oldPre)
   })
 
   it("adds classes from the attributes prop", () => {
     let view = tempEditor({doc: doc(p()), attributes: {class: "foo bar"}})
-    ist(view.content.classList.contains("foo"))
-    ist(view.content.classList.contains("bar"))
-    ist(view.content.classList.contains("ProseMirror"))
+    ist(view.dom.classList.contains("foo"))
+    ist(view.dom.classList.contains("bar"))
+    ist(view.dom.classList.contains("ProseMirror"))
     view.update({state: view.state, attributes: {class: "baz"}})
-    ist(!view.content.classList.contains("foo"))
-    ist(view.content.classList.contains("baz"))
+    ist(!view.dom.classList.contains("foo"))
+    ist(view.dom.classList.contains("baz"))
   })
 
   it("can set other attributes", () => {
     let view = tempEditor({doc: doc(p()), attributes: {spellcheck: "false", "aria-label": "hello"}})
-    ist(view.content.spellcheck, false)
-    ist(view.content.getAttribute("aria-label"), "hello")
+    ist(view.dom.spellcheck, false)
+    ist(view.dom.getAttribute("aria-label"), "hello")
     view.update({state: view.state, attributes: {style: "background: yellow"}})
-    ist(view.content.hasAttribute("aria-label"), false)
-    ist(view.content.style.background, "yellow")
+    ist(view.dom.hasAttribute("aria-label"), false)
+    ist(view.dom.style.background, "yellow")
   })
 
   it("can't set the contenteditable attribute", () => {
     let view = tempEditor({doc: doc(p()), attributes: {contenteditable: "false"}})
-    ist(view.content.contentEditable, "true")
+    ist(view.dom.contentEditable, "true")
   })
 
   it("understands the editable prop", () => {
     let view = tempEditor({doc: doc(p()), editable: () => false})
-    ist(view.content.contentEditable, "false")
+    ist(view.dom.contentEditable, "false")
     view.update({state: view.state})
-    ist(view.content.contentEditable, "true")
+    ist(view.dom.contentEditable, "true")
   })
 
   it("doesn't redraw following paragraphs when a paragraph is split", () => {
     let view = tempEditor({doc: doc(p("abcde"), p("fg"))})
-    let lastPara = view.content.lastChild
+    let lastPara = view.dom.lastChild
     view.dispatch(view.state.tr.split(3))
-    ist(view.content.lastChild, lastPara)
+    ist(view.dom.lastChild, lastPara)
   })
 
   it("creates and destroys plugin views", () => {
