@@ -79,6 +79,18 @@ class EditorView {
     this.updateState(props.state)
   }
 
+  // :: (EditorProps)
+  // Update the view by updating existing props object with the object
+  // given as argument. Equivalent to `view.update(Object.assign({},
+  // view.props, props))`.
+  setProps(props) {
+    let updated = {}
+    for (let name in this._props) updated[name] = this._props[name]
+    updated.state = this.state
+    for (let name in props) updated[name] = props[name]
+    this.update(updated)
+  }
+
   // :: (EditorState)
   // Update the editor's `state` prop, without touching any of the
   // other props.
