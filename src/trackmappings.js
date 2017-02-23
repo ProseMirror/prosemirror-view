@@ -34,13 +34,13 @@ class TrackMappings {
       this.seen.push(new TrackedRecord(found, tr.docChanged ? tr.mapping : null, state))
   }
 
-  getMapping(state) {
+  getMapping(state, appendTo) {
     let found = this.find(state)
     if (!found) return null
     let mappings = []
     for (let rec = found; rec; rec = rec.prev)
       if (rec.mapping) mappings.push(rec.mapping)
-    let result = new Mapping
+    let result = appendTo || new Mapping
     for (let i = mappings.length - 1; i >= 0; i--)
       result.appendMapping(mappings[i])
     return result

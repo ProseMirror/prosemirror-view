@@ -1,5 +1,6 @@
 const {Fragment, DOMParser} = require("prosemirror-model")
 const {Selection} = require("prosemirror-state")
+const {Mapping} = require("prosemirror-transform")
 
 const {TrackMappings} = require("./trackmappings")
 
@@ -11,7 +12,13 @@ class DOMChange {
     this.composing = composing
     this.from = this.to = null
     this.timeout = composing ? null : setTimeout(() => this.finish(), 20)
-    this.mappings = new TrackMappings(view.state)
+    this.trackMappings = new TrackMappings(view.state)
+
+    // If there have been changes since this DOM update started, we must
+    // map our start and end positions, as well as the new selection
+    // positions, through them. This tracks that mapping.
+    this.mapping = new Mapping
+    this.mappingTo = view.state
   }
 
   addRange(from, to) {
@@ -31,19 +38,32 @@ class DOMChange {
     return {from: $from.before(shared + 1), to: $to.after(shared + 1)}
   }
 
+  markDirty(range) {
+    if (this.from == null) this.view.docView.markDirty((range = range || this.changedRange()).from, range.to)
+    else this.view.docView.markDirty(this.from, this.to)
+  }
+
+  stateUpdated(state) {
+    if (this.trackMappings.getMapping(state, this.mapping)) {
+      this.trackMappings.destroy()
+      this.trackMappings = new TrackMappings(state)
+      this.mappingTo = state
+      return true
+    } else {
+      this.markDirty()
+      this.destroy()
+      return false
+    }
+  }
+
   finish(force) {
     clearTimeout(this.timeout)
     if (this.composing && !force) return
     let range = this.changedRange()
-    if (this.from == null) this.view.docView.markDirty(range.from, range.to)
-    else this.view.docView.markDirty(this.from, this.to)
+    this.markDirty(range)
 
-    // If there have been changes since this DOM update started, we must
-    // map our start and end positions, as well as the new selection
-    // positions, through them.
-    let mapping = this.mappings.getMapping(this.view.state)
     this.destroy()
-    if (mapping) readDOMChange(this.view, mapping, this.state, range)
+    readDOMChange(this.view, this.mapping, this.state, range)
 
     // If the reading didn't result in a view update, force one by
     // resetting the view to its current state.
@@ -51,7 +71,8 @@ class DOMChange {
   }
 
   destroy() {
-    this.mappings.destroy()
+    clearTimeout(this.timeout)
+    this.trackMappings.destroy()
     this.view.inDOMChange = null
   }
 

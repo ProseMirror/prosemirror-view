@@ -13,10 +13,10 @@ describe("EditorView", () => {
       state: EditorState.create({doc: doc(p("hi"))})
     })
     ist(view.dom, dom)
-    ist(view.dom.contentEditable, "true")
-    ist(view.dom.firstChild.nodeName, "P")
+    ist(dom.contentEditable, "true")
+    ist(dom.firstChild.nodeName, "P")
     view.destroy()
-    ist(view.dom.contentEditable, "inherit")
+    ist(dom.contentEditable, "inherit")
     space.removeChild(dom)
   })
 

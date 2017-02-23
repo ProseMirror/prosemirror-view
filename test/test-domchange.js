@@ -1,5 +1,6 @@
 const ist = require("ist")
 const {eq, doc, p, pre, h1, em, img, br, strong, blockquote} = require("prosemirror-model/test/build")
+const {EditorState} = require("prosemirror-state")
 const {tempEditor, findTextNode} = require("./view")
 
 function setSel(aNode, aOff, fNode, fOff) {
@@ -237,6 +238,16 @@ describe("DOM change", () => {
     return flush(view, () => {
       ist(view.dom.textContent, "ONE AND A HALF two THREE")
       ist(view.state.doc, doc(p("ONE AND A HALF two THREE")), eq)
+    })
+  })
+
+  it("aborts when an incompatible state is set", () => {
+    let view = tempEditor({doc: doc(p("abcde"))})
+    findTextNode(view.dom, "abcde").nodeValue = "xabcde"
+    view.dispatchEvent({type: "input"})
+    view.updateState(EditorState.create({doc: doc(p("uvw"))}))
+    return flush(view, () => {
+      ist(view.state.doc, doc(p("uvw")), eq)
     })
   })
 

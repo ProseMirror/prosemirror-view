@@ -1,6 +1,6 @@
 const {scrollRectIntoView, posAtCoords, coordsAtPos, endOfTextblock, storeScrollPos, resetScrollPos} = require("./domcoords")
 const {docViewDesc} = require("./viewdesc")
-const {initInput, destroyInput, dispatchEvent, startObserving, stopObserving, ensureListeners} = require("./input")
+const {initInput, destroyInput, dispatchEvent, startObserving, stopObserving, ensureListeners, flushObserver} = require("./input")
 const {SelectionReader, selectionToDOM} = require("./selection")
 const {viewDecorations, Decoration} = require("./decoration")
 
@@ -99,7 +99,8 @@ class EditorView {
     this.state = state
     if (prev.plugins != state.plugins) ensureListeners(this)
 
-    if (this.inDOMChange) return
+    flushObserver(this)
+    if (this.inDOMChange && this.inDOMChange.stateUpdated(state)) return
 
     let prevEditable = this.editable
     this.editable = getEditable(this)
@@ -229,9 +230,9 @@ class EditorView {
   // Removes the editor from the DOM and destroys all [node
   // views](#view.NodeView).
   destroy() {
+    if (!this.docView) return
     destroyInput(this)
     this.destroyPluginViews()
-    this.docView.destroy()
     this.selectionReader.destroy()
     if (this.mounted) {
       this.docView.update(this.state.doc, [], viewDecorations(this), this)
@@ -239,6 +240,8 @@ class EditorView {
     } else if (this.dom.parentNode) {
       this.dom.parentNode.removeChild(this.dom)
     }
+    this.docView.destroy()
+    this.docView = null
   }
 
   // Used for testing.
