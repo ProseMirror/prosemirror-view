@@ -140,7 +140,9 @@ function targetKludge(dom, coords) {
 
 // Given an x,y position on the editor, get the position in the document.
 function posAtCoords(view, coords) {
-  let elt = targetKludge(view.root.elementFromPoint(coords.left, coords.top + 1), coords)
+  let elt = view.root.elementFromPoint(coords.left, coords.top + 1)
+  if (!elt) return null
+  elt = targetKludge(elt, coords)
   if (!view.dom.contains(elt.nodeType != 1 ? elt.parentNode : elt)) return null
 
   let {node, offset} = findOffsetInNode(elt, coords), bias = -1
