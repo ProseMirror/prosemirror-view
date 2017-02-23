@@ -65,9 +65,9 @@ describe("EditorView draw", () => {
     let view = tempEditor({doc: doc(p()), attributes: {spellcheck: "false", "aria-label": "hello"}})
     ist(view.dom.spellcheck, false)
     ist(view.dom.getAttribute("aria-label"), "hello")
-    view.update({state: view.state, attributes: {style: "background: yellow"}})
+    view.update({state: view.state, attributes: {style: "background-color: yellow"}})
     ist(view.dom.hasAttribute("aria-label"), false)
-    ist(view.dom.style.background, "yellow")
+    ist(view.dom.style.backgroundColor, "yellow")
   })
 
   it("can't set the contenteditable attribute", () => {
