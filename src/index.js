@@ -207,13 +207,24 @@ class EditorView {
   // and its `inside` property holds the position before the inner
   // node that the click happened inside of, or -1 if the click was at
   // the top level.
-  posAtCoords(coords) { return posAtCoords(this, coords) }
+  posAtCoords(coords) {
+    let pos = posAtCoords(this, coords)
+    if (this.inDOMChange && pos) {
+      pos.pos = this.inDOMChange.mapping.map(pos)
+      if (pos.inside != -1) pos.inside = this.inDOMChange.mapping.map(pos.inside)
+    }
+    return pos
+  }
 
   // :: (number) → {left: number, right: number, top: number, bottom: number}
   // Returns the screen rectangle at a given document position. `left`
   // and `right` will be the same number, as this returns a flat
   // cursor-ish rectangle.
-  coordsAtPos(pos) { return coordsAtPos(this, pos) }
+  coordsAtPos(pos) {
+    if (this.inDOMChange)
+      pos = this.inDOMChange.mapping.invert().map(pos)
+    return coordsAtPos(this, pos)
+  }
 
   // :: (union<"up", "down", "left", "right", "forward", "backward">, ?EditorState) → bool
   // Find out whether the selection is at the end of a textblock when

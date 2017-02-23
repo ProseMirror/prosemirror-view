@@ -300,4 +300,11 @@ describe("DOM change", () => {
       ist(foo.parentNode && view.dom.contains(foo.parentNode))
     })
   })
+
+  it("maps input to coordsAtPos through pending changes", () => {
+    let view = tempEditor({doc: doc(p("foo"))})
+    view.dispatchEvent({type: "input"})
+    view.dispatch(view.state.tr.insertText("more text"))
+    ist(view.coordsAtPos(13))
+  })
 })
