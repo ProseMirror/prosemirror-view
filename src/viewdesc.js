@@ -508,9 +508,14 @@ class NodeViewDesc extends ViewDesc {
   updateOuterDeco(outerDeco) {
     if (sameOuterDeco(outerDeco, this.outerDeco)) return
     let needsWrap = this.nodeDOM.nodeType != 1
+    let oldDOM = this.dom
     this.dom = patchOuterDeco(this.dom, this.nodeDOM,
                               computeOuterDeco(this.outerDeco, this.node, needsWrap),
                               computeOuterDeco(outerDeco, this.node, needsWrap))
+    if (this.dom != oldDOM) {
+      oldDOM.pmViewDesc = null
+      this.dom.pmViewDesc = this
+    }
     this.outerDeco = outerDeco
   }
 
