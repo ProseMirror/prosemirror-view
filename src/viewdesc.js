@@ -497,12 +497,16 @@ class NodeViewDesc extends ViewDesc {
   update(node, outerDeco, innerDeco, view) {
     if (this.dirty == NODE_DIRTY ||
         !node.sameMarkup(this.node)) return false
+    this.updateInner(node, outerDeco, innerDeco, view)
+    return true
+  }
+
+  updateInner(node, outerDeco, innerDeco, view) {
     this.updateOuterDeco(outerDeco)
     this.node = node
     this.innerDeco = innerDeco
-    if (!node.isLeaf) this.updateChildren(view)
+    if (this.contentDOM) this.updateChildren(view)
     this.dirty = NOT_DIRTY
-    return true
   }
 
   updateOuterDeco(outerDeco) {
@@ -608,10 +612,7 @@ class CustomNodeViewDesc extends NodeViewDesc {
     if (this.dirty == NODE_DIRTY) return false
     if (this.spec.update) {
       let result = this.spec.update(node, outerDeco)
-      if (result) {
-        this.node = node
-        if (this.contentDOM) this.updateChildren(view)
-      }
+      if (result) this.updateInner(node, outerDeco, innerDeco, view)
       return result
     } else if (!this.contentDOM && !node.isLeaf) {
       return false

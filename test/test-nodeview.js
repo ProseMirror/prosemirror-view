@@ -41,6 +41,26 @@ describe("nodeViews prop", () => {
     ist(para.textContent, "AFOO")
   })
 
+  it("allows decoration updates for node views with an update method", () => {
+    let view = tempEditor({
+      doc: doc(p("foo")),
+      nodeViews: {paragraph(node) {
+        let dom = document.createElement("p")
+        return {dom, contentDOM: dom, update(node_) { return node.sameMarkup(node_) }}
+      }}
+    })
+    view.setProps({
+      decorations(state) {
+        return DecorationSet.create(state.doc, [
+          Decoration.inline(2, 3, {someattr: "ok"}),
+          Decoration.node(0, 5, {otherattr: "ok"})
+        ])
+      }
+    })
+    ist(view.dom.querySelector("[someattr]"))
+    ist(view.dom.querySelector("[otherattr]"))
+  })
+
   it("can provide a contentDOM property", () => {
     let view = tempEditor({
       doc: doc(p("foo")),
