@@ -137,7 +137,8 @@ function parseBetween(view, oldState, from, to) {
     preserveWhitespace: true,
     editableContent: true,
     findPositions: find,
-    ruleFromNode
+    ruleFromNode,
+    context: $from
   })
   if (find && find[0].pos != null) {
     let anchor = find[0].pos, head = find[1] && find[1].pos

@@ -64,7 +64,7 @@ function fromClipboard(view, dataTransfer, plainText, $context) {
   }
 
   let parser = view.someProp("clipboardParser") || view.someProp("domParser") || DOMParser.fromSchema(view.state.schema)
-  let slice = parser.parseSlice(dom, {preserveWhitespace: true}), context
+  let slice = parser.parseSlice(dom, {preserveWhitespace: true, context: $context}), context
   if (dom.querySelector("[data-pm-node-selection]"))
     slice = new Slice(slice.content, 0, 0)
   else if (context = dom.querySelector("[data-pm-context]"))
