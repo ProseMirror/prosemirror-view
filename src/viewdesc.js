@@ -449,6 +449,10 @@ class NodeViewDesc extends ViewDesc {
   }
 
   parseRule() {
+    // FIXME the assumption that this can always return the current
+    // attrs means that if the user somehow manages to change the
+    // attrs in the dom, that won't be picked up. Not entirely sure
+    // whether this is a problem
     return {node: this.node.type.name, attrs: this.node.attrs, contentElement: this.contentLost ? null : this.contentDOM}
   }
 
@@ -635,6 +639,13 @@ class CustomNodeViewDesc extends NodeViewDesc {
   destroy() {
     if (this.spec.destroy) this.spec.destroy()
     super.destroy()
+  }
+
+  parseRule() {
+    if (this.contentDOM)
+      return super.parseRule()
+    else
+      return {node: this.node.type.name, attrs: this.node.attrs, getContent() { return this.node.content }}
   }
 
   stopEvent(event) {
