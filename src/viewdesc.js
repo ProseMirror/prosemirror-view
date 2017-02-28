@@ -429,7 +429,12 @@ class NodeViewDesc extends ViewDesc {
     }, outerDeco)
 
     let dom = spec && spec.dom, contentDOM = spec && spec.contentDOM
-    if (!dom) ({dom, contentDOM} = DOMSerializer.renderSpec(document, node.type.spec.toDOM(node)))
+    if (node.isText) {
+      if (!dom) dom = document.createTextNode(node.text)
+      else if (dom.nodeType != 3) throw new RangeError("Text must be rendered as a DOM text node")
+    } else if (!dom) {
+      ;({dom, contentDOM} = DOMSerializer.renderSpec(document, node.type.spec.toDOM(node)))
+    }
     if (!contentDOM && !node.isText) dom.contentEditable = false
 
     let nodeDOM = dom
