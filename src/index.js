@@ -1,8 +1,10 @@
+const {Mark} = require("prosemirror-model")
+
 const {scrollRectIntoView, posAtCoords, coordsAtPos, endOfTextblock, storeScrollPos, resetScrollPos} = require("./domcoords")
 const {docViewDesc} = require("./viewdesc")
 const {initInput, destroyInput, dispatchEvent, startObserving, stopObserving, ensureListeners, flushObserver} = require("./input")
 const {SelectionReader, selectionToDOM} = require("./selection")
-const {viewDecorations, Decoration} = require("./decoration")
+const {Decoration, viewDecorations} = require("./decoration")
 
 ;({Decoration: exports.Decoration, DecorationSet: exports.DecorationSet} = require("./decoration"))
 
@@ -39,6 +41,8 @@ class EditorView {
     }
 
     this.editable = getEditable(this)
+    this.cursorWrapper = null
+    updateCursorWrapper(this)
     this.docView = docViewDesc(this.state.doc, computeDocDeco(this), viewDecorations(this), this.dom, this)
 
     this.lastSelectedViewDesc = null
@@ -104,6 +108,7 @@ class EditorView {
 
     let prevEditable = this.editable
     this.editable = getEditable(this)
+    updateCursorWrapper(this)
     let innerDeco = viewDecorations(this), outerDeco = computeDocDeco(this)
 
     let scrollToSelection = state.scrollToSelection > prev.scrollToSelection || prev.config != state.config
@@ -114,7 +119,7 @@ class EditorView {
     if (updateSel) {
       stopObserving(this)
       if (updateDoc) this.docView.update(state.doc, outerDeco, innerDeco, this)
-      selectionToDOM(this, state.selection)
+      selectionToDOM(this)
       startObserving(this)
     }
 
@@ -181,7 +186,7 @@ class EditorView {
   // Focus the editor.
   focus() {
     stopObserving(this)
-    selectionToDOM(this, this.state.selection, true)
+    selectionToDOM(this, true)
     startObserving(this)
     if (this.editable) this.dom.focus()
   }
@@ -292,6 +297,33 @@ function computeDocDeco(view) {
   })
 
   return [Decoration.node(0, view.state.doc.content.size, attrs)]
+}
+
+function nonInclusiveMark(mark) {
+  return mark.type.spec.inclusiveRight === false
+}
+
+function cursorWrapperDOM() {
+  let span = document.createElement("span")
+  span.textContent = "\ufeff" // zero-width non-breaking space
+  return span
+}
+
+function updateCursorWrapper(view) {
+  let {empty, $head} = view.state.selection
+  if (empty && (view.state.storedMarks ||
+                $head.parent.content.length == 0 ||
+                $head.parentOffset && !$head.textOffset && $head.nodeBefore.marks.some(nonInclusiveMark))) {
+    // Needs a cursor wrapper
+    let marks = view.state.storedMarks || $head.marks()
+    let spec = {isCursorWrapper: true, marks, raw: true}
+    if (!view.cursorWrapper || !Mark.sameSet(view.cursorWrapper.spec.marks, marks))
+      view.cursorWrapper = Decoration.widget($head.pos, cursorWrapperDOM(), spec)
+    else if (view.cursorWrapper.pos != $head.pos)
+      view.cursorWrapper = Decoration.widget($head.pos, view.cursorWrapper.type.widget, spec)
+  } else {
+    view.cursorWrapper = null
+  }
 }
 
 function getEditable(view) {

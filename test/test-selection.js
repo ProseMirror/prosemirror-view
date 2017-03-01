@@ -1,4 +1,4 @@
-const {doc, blockquote, p, em, img, strong, code, br, hr, ul, li} = require("prosemirror-model/test/build")
+const {schema, doc, blockquote, p, em, img, strong, code, br, hr, ul, li} = require("prosemirror-model/test/build")
 const ist = require("ist")
 const {Selection, NodeSelection} = require("prosemirror-state")
 const {tempEditor, findTextNode} = require("./view")
@@ -216,5 +216,16 @@ describe("EditorView", () => {
     setSel(view, NodeSelection.create(view.state.doc, 8))
     view.dispatchEvent(event(UP))
     ist(view.state.selection.from, 6)
+  })
+
+  it("wraps the cursor in the appropriate marks", () => {
+    if (!document.hasFocus()) return
+    let view = tempEditor({doc: doc(p("fo<a>o"))})
+    view.dispatch(view.state.tr.setStoredMarks([schema.marks.em.create()]))
+    view.focus()
+    let inEm = false
+    for (let parent = getSelection().focusNode; parent != view.dom; parent = parent.parentNode)
+      if (parent.nodeName == "EM") inEm = true
+    ist(inEm)
   })
 })

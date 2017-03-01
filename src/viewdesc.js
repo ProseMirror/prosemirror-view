@@ -373,6 +373,30 @@ class WidgetViewDesc extends ViewDesc {
   }
 }
 
+// A cursor wrapper is used to put the cursor in when newly typed text
+// needs to be styled differently from its surrounding text (for
+// example through storedMarks), so that the style of the text doesn't
+// visually 'pop' between typing it and actually updating the view.
+class CursorWrapperDesc extends WidgetViewDesc {
+  parseRule() {
+    let content
+    for (let child = this.dom.firstChild; child; child = child.nextSibling) {
+      let add = child
+      if (child.nodeType == 3) {
+        let text = child.nodeValue.replace(/\ufeff/g, "")
+        if (!text) continue
+        add = document.createTextNode(text)
+      }
+      if (!content) content = document.createDocumentFragment()
+      content.appendChild(add)
+    }
+    if (content) return {skip: content}
+    else return super.parseRule()
+  }
+
+  ignoreMutation() { return false }
+}
+
 // A mark desc represents a mark. May have multiple children,
 // depending on how the mark is split. Note that marks are drawn using
 // a fixed nesting order, for simplicity and predictability, so in
@@ -472,6 +496,8 @@ class NodeViewDesc extends ViewDesc {
   updateChildren(view) {
     let updater = new ViewTreeUpdater(this)
     iterDeco(this.node, this.innerDeco, widget => {
+      if (widget.spec.isCursorWrapper)
+        updater.syncToMarks(widget.spec.marks, view)
       // If the next node is a desc matching this widget, reuse it,
       // otherwise insert the widget as a new view desc.
       updater.placeWidget(widget)
@@ -884,7 +910,8 @@ class ViewTreeUpdater {
     if (this.index < this.top.children.length && this.top.children[this.index].matchesWidget(widget)) {
       this.index++
     } else {
-      this.top.children.splice(this.index++, 0, new WidgetViewDesc(this.top, widget))
+      let desc = new (widget.spec.isCursorWrapper ? CursorWrapperDesc : WidgetViewDesc)(this.top, widget)
+      this.top.children.splice(this.index++, 0, desc)
       this.changed = true
     }
   }

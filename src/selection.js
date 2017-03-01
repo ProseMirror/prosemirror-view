@@ -164,8 +164,9 @@ function poller(reader) {
   return new ("onselectionchange" in document ? SelectionChangePoller : TimeoutPoller)(reader)
 }
 
-function selectionToDOM(view, sel, takeFocus) {
-  syncNodeSelection(view, sel)
+function selectionToDOM(view, takeFocus) {
+  let sel = view.state.selection
+  syncNodeSelection(view)
 
   if (!view.hasFocus()) {
     if (!takeFocus) return
@@ -175,25 +176,40 @@ function selectionToDOM(view, sel, takeFocus) {
 
   let reader = view.selectionReader
   if (sel == reader.lastSelection && !reader.domChanged()) return
-  let {anchor, head} = sel, resetEditable
-  if (anchor == null) {
-    anchor = sel.from
-    head = sel.to
-    if (browser.webkit && sel.node.isBlock) {
-      let desc = view.docView.descAt(sel.from)
-      if (!desc.contentDOM && desc.dom.contentEditable == "false") {
-        resetEditable = desc.dom
-        desc.dom.contentEditable = "true"
+
+  view.selectionReader.ignoreUpdates = true
+
+  if (view.cursorWrapper) {
+    selectCursorWrapper(view)
+  } else {
+    let {anchor, head} = sel, resetEditable
+    if (anchor == null) {
+      anchor = sel.from
+      head = sel.to
+      if (browser.webkit && sel.node.isBlock) {
+        let desc = view.docView.descAt(sel.from)
+        if (!desc.contentDOM && desc.dom.contentEditable == "false") {
+          resetEditable = desc.dom
+          desc.dom.contentEditable = "true"
+        }
       }
     }
+    view.docView.setSelection(anchor, head, view.root)
+    if (resetEditable) resetEditable.contentEditable = "false"
+    reader.storeDOMState(sel)
   }
-  view.selectionReader.ignoreUpdates = true
-  view.docView.setSelection(anchor, head, view.root)
-  if (resetEditable) resetEditable.contentEditable = "false"
-  reader.storeDOMState(sel)
   view.selectionReader.ignoreUpdates = false
 }
 exports.selectionToDOM = selectionToDOM
+
+function selectCursorWrapper(view) {
+  let domSel = view.root.getSelection(), range = document.createRange()
+  let node = view.cursorWrapper.type.widget
+  range.setEnd(node, node.childNodes.length)
+  range.collapse(false)
+  domSel.removeAllRanges()
+  domSel.addRange(range)
+}
 
 function syncNodeSelection(view, sel) {
   if (sel instanceof NodeSelection) {

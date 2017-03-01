@@ -189,7 +189,7 @@ describe("DOM change", () => {
   it("resolves ambiguous text input", () => {
     let view = tempEditor({doc: doc(p("fo<a>o"))})
     view.dispatch(view.state.tr.addStoredMark(view.state.schema.marks.strong.create()))
-    findTextNode(view.dom, "foo").nodeValue = "fooo"
+    findTextNode(view.dom, "\ufeff").nodeValue = "\ufeffo"
     return flush(view, () => ist(view.state.doc, doc(p("fo", strong("o"), "o")), eq))
   })
 

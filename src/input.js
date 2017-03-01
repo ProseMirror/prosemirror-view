@@ -334,7 +334,6 @@ handlers.contextmenu = (view, e) => {
 
 editHandlers.compositionstart = editHandlers.compositionupdate = view => {
   DOMChange.start(view, true)
-  if (view.state.storedMarks) view.inDOMChange.finish(true)
 }
 
 editHandlers.compositionend = (view, e) => {

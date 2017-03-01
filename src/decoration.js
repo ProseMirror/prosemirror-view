@@ -7,15 +7,17 @@ function compareObjs(a, b) {
 
 class WidgetType {
   constructor(widget, spec) {
-    if (widget.nodeType != 1) {
-      let wrap = document.createElement("span")
-      wrap.appendChild(widget)
-      widget = wrap
-    }
-    widget.contentEditable = false
-    widget.classList.add("ProseMirror-widget")
-    this.widget = widget
     this.spec = spec || noSpec
+    if (!this.spec.raw) {
+      if (widget.nodeType != 1) {
+        let wrap = document.createElement("span")
+        wrap.appendChild(widget)
+        widget = wrap
+      }
+      widget.contentEditable = false
+      widget.classList.add("ProseMirror-widget")
+    }
+    this.widget = widget
   }
 
   map(mapping, span, offset, oldOffset) {
@@ -57,8 +59,8 @@ class InlineType {
 
 class NodeType {
   constructor(attrs, spec) {
-    this.attrs = attrs
     this.spec = spec || noSpec
+    this.attrs = attrs
   }
 
   map(mapping, span, offset, oldOffset) {
@@ -646,6 +648,8 @@ function viewDecorations(view) {
     let result = f(view.state)
     if (result && result != empty) found.push(result)
   })
+  if (view.cursorWrapper)
+    found.push(DecorationSet.create(view.state.doc, [view.cursorWrapper]))
   return DecorationGroup.from(found)
 }
 exports.viewDecorations = viewDecorations
