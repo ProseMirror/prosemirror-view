@@ -118,7 +118,10 @@ class EditorView {
 
     if (updateSel) {
       stopObserving(this)
-      if (updateDoc) this.docView.update(state.doc, outerDeco, innerDeco, this)
+      if (updateDoc && !this.docView.update(state.doc, outerDeco, innerDeco, this)) {
+        this.docView.destroy()
+        this.docView = docViewDesc(state.doc, outerDeco, innerDeco, this.dom, this)
+      }
       selectionToDOM(this)
       startObserving(this)
     }
