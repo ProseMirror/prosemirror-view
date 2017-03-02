@@ -1,6 +1,6 @@
 const {DOMSerializer} = require("prosemirror-model")
 
-const {domIndex} = require("./dom")
+const {domIndex, isEquivalentPosition} = require("./dom")
 const browser = require("./browser")
 
 // NodeView:: interface
@@ -296,8 +296,8 @@ class ViewDesc {
 
     let anchorDOM = this.domFromPos(anchor), headDOM = this.domFromPos(head)
     let domSel = root.getSelection(), range = document.createRange()
-    if (anchorDOM.node == domSel.anchorNode && anchorDOM.offset == domSel.anchorOffset &&
-        headDOM.node == domSel.focusNode && headDOM.offset == domSel.focusOffset)
+    if (isEquivalentPosition(anchorDOM.node, anchorDOM.offset, domSel.anchorNode, domSel.anchorOffset) &&
+        isEquivalentPosition(headDOM.node, headDOM.offset, domSel.focusNode, domSel.focusOffset))
       return
 
     // Selection.extend can be used to create an 'inverted' selection
