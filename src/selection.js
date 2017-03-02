@@ -47,6 +47,10 @@ class SelectionReader {
     this.lastSelection = selection
   }
 
+  clearDOMState() {
+    this.lastAnchorNode = this.lastSelection = null
+  }
+
   // : (?string) → bool
   // When the DOM selection changes in a notable manner, modify the
   // current selection state to match.
@@ -165,7 +169,6 @@ function poller(reader) {
 }
 
 function selectionToDOM(view, takeFocus) {
-  let sel = view.state.selection
   syncNodeSelection(view)
 
   if (!view.hasFocus()) {
@@ -174,10 +177,10 @@ function selectionToDOM(view, takeFocus) {
     else if (browser.gecko && view.editable) view.dom.focus()
   }
 
-  let reader = view.selectionReader
-  if (sel == reader.lastSelection && !reader.domChanged()) return
+  let sel = view.state.selection, reader = view.selectionReader
+  if (reader.lastSelection && reader.lastSelection.eq(sel) && !reader.domChanged()) return
 
-  view.selectionReader.ignoreUpdates = true
+  reader.ignoreUpdates = true
 
   if (view.cursorWrapper) {
     selectCursorWrapper(view)
@@ -197,8 +200,9 @@ function selectionToDOM(view, takeFocus) {
     view.docView.setSelection(anchor, head, view.root)
     if (resetEditable) resetEditable.contentEditable = "false"
   }
+
   reader.storeDOMState(sel)
-  view.selectionReader.ignoreUpdates = false
+  reader.ignoreUpdates = false
 }
 exports.selectionToDOM = selectionToDOM
 

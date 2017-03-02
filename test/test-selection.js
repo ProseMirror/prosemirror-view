@@ -2,6 +2,7 @@ const {schema, doc, blockquote, p, em, img, strong, code, br, hr, ul, li} = requ
 const ist = require("ist")
 const {Selection, NodeSelection} = require("prosemirror-state")
 const {tempEditor, findTextNode} = require("./view")
+const {Decoration, DecorationSet} = require("../dist")
 
 function allPositions(doc) {
   let found = []
@@ -227,5 +228,19 @@ describe("EditorView", () => {
     for (let parent = getSelection().focusNode; parent != view.dom; parent = parent.parentNode)
       if (parent.nodeName == "EM") inEm = true
     ist(inEm)
+  })
+
+  it("updates the selection even if the DOM parameters look unchanged", () => {
+    if (!document.hasFocus()) return
+    let view = tempEditor({doc: doc(p("foobar<a>"))})
+    view.focus()
+    let decos = DecorationSet.create(view.state.doc, [Decoration.inline(1, 4, {color: "green"})])
+    view.setProps({decorations() { return decos }})
+    view.setProps({decorations: null})
+    view.setProps({decorations() { return decos }})
+    let range = document.createRange()
+    range.setEnd(document.getSelection().anchorNode, document.getSelection().anchorOffset)
+    range.setStart(view.dom, 0)
+    ist(range.toString(), "foobar")
   })
 })
