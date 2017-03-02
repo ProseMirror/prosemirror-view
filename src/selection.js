@@ -196,8 +196,8 @@ function selectionToDOM(view, takeFocus) {
     }
     view.docView.setSelection(anchor, head, view.root)
     if (resetEditable) resetEditable.contentEditable = "false"
-    reader.storeDOMState(sel)
   }
+  reader.storeDOMState(sel)
   view.selectionReader.ignoreUpdates = false
 }
 exports.selectionToDOM = selectionToDOM
