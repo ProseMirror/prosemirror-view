@@ -1,5 +1,6 @@
 const {Selection, NodeSelection, TextSelection} = require("prosemirror-state")
 const browser = require("./browser")
+const {domIndex} = require("./dom")
 
 function moveSelectionBlock(state, dir) {
   let {$from, $to, node} = state.selection
@@ -70,7 +71,7 @@ function skipIgnoredNodesLeft(view) {
       let prev = node.previousSibling
       while (prev && isIgnorable(prev)) {
         moveNode = node.parentNode
-        moveOffset = Array.prototype.indexOf.call(moveNode.childNodes, prev)
+        moveOffset = domIndex(prev)
         prev = prev.previousSibling
       }
       if (!prev) {
@@ -107,7 +108,7 @@ function skipIgnoredNodesRight(view) {
       let next = node.nextSibling
       while (next && isIgnorable(next)) {
         moveNode = next.parentNode
-        moveOffset = Array.prototype.indexOf.call(moveNode.childNodes, next) + 1
+        moveOffset = domIndex(next) + 1
         next = next.nextSibling
       }
       if (!next) {

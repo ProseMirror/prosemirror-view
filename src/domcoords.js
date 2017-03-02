@@ -1,11 +1,8 @@
+const {textRange, parentNode} = require("./dom")
+
 function windowRect() {
   return {left: 0, right: window.innerWidth,
           top: 0, bottom: window.innerHeight}
-}
-
-function parentNode(node) {
-  let parent = node.parentNode
-  return parent.nodeType == 11 ? parent.host : parent
 }
 
 function scrollRectIntoView(view, rect) {
@@ -156,13 +153,6 @@ function posAtCoords(view, coords) {
           inside: desc && (desc.posAtStart - desc.border)}
 }
 exports.posAtCoords = posAtCoords
-
-function textRange(node, from, to) {
-  let range = document.createRange()
-  range.setEnd(node, to == null ? node.nodeValue.length : to)
-  range.setStart(node, from || 0)
-  return range
-}
 
 function singleRect(object, bias) {
   let rects = object.getClientRects()

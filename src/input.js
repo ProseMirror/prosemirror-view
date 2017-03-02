@@ -1,6 +1,7 @@
 const {Selection, NodeSelection, TextSelection} = require("prosemirror-state")
 
 const browser = require("./browser")
+const {domIndex} = require("./dom")
 const {captureKeyDown} = require("./capturekeys")
 const {DOMChange} = require("./domchange")
 const {fromClipboard, toClipboard, canUpdateClipboard} = require("./clipboard")
@@ -391,11 +392,11 @@ function registerMutation(view, mut) {
   let from, to
   if (mut.type == "childList") {
     let fromOffset = mut.previousSibling && mut.previousSibling.parentNode == mut.target
-        ? Array.prototype.indexOf.call(mut.target.childNodes, mut.previousSibling) + 1 : 0
+        ? domIndex(mut.previousSibling) + 1 : 0
     if (fromOffset == -1) return
     from = desc.localPosFromDOM(mut.target, fromOffset, -1)
     let toOffset = mut.nextSibling && mut.nextSibling.parentNode == mut.target
-        ? Array.prototype.indexOf.call(mut.target.childNodes, mut.nextSibling) : mut.target.childNodes.length
+        ? domIndex(mut.nextSibling) : mut.target.childNodes.length
     if (toOffset == -1) return
     to = desc.localPosFromDOM(mut.target, toOffset, 1)
   } else if (mut.type == "attributes") {

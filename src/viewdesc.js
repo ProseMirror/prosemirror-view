@@ -1,5 +1,6 @@
 const {DOMSerializer} = require("prosemirror-model")
 
+const {domIndex} = require("./dom")
 const browser = require("./browser")
 
 // NodeView:: interface
@@ -250,12 +251,11 @@ class ViewDesc {
   // desc offsets anymore, so we search the actual DOM to figure out
   // the offset that corresponds to a given child.
   findDOMOffset(i, searchDOM) {
-    let content = this.contentDOM
     if (searchDOM < 0) {
       for (let j = i - 1; j >= 0; j--) {
         let child = this.children[j]
         if (!child.size) continue
-        let found = Array.prototype.indexOf.call(content.childNodes, child.dom)
+        let found = domIndex(child.dom)
         if (found > -1) return found + 1
       }
       return 0
@@ -263,10 +263,10 @@ class ViewDesc {
       for (let j = i; j < this.children.length; j++) {
         let child = this.children[j]
         if (!child.size) continue
-        let found = Array.prototype.indexOf.call(content.childNodes, child.dom)
+        let found = domIndex(child.dom)
         if (found > -1) return found
       }
-      return content.childNodes.length
+      return this.contentDOM.childNodes.length
     }
   }
 
