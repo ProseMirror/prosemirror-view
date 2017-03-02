@@ -1,5 +1,6 @@
-const {doc, p} = require("prosemirror-model/test/build")
+const {schema, doc, p, strong} = require("prosemirror-model/test/build")
 const {EditorState} = require("prosemirror-state")
+const {Schema} = require("prosemirror-model")
 const {EditorView} = require("../dist")
 const {tempEditor} = require("./view")
 const ist = require("ist")
@@ -37,5 +38,12 @@ describe("EditorView", () => {
     ist(view.state.doc.content.size, 3)
     ist(view.props.scrollThreshold, null)
     ist(view.props.scrollMargin, 10)
+  })
+
+  it("can update with a state using a different schema", () => {
+    let testSchema = new Schema({nodes: schema.spec.nodes})
+    let view = tempEditor({doc: doc(p(strong("foo")))})
+    view.updateState(EditorState.create({doc: testSchema.nodes.doc.createAndFill()}))
+    ist(!view.dom.querySelector("strong"))
   })
 })
