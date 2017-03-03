@@ -169,7 +169,8 @@ function poller(reader) {
 }
 
 function selectionToDOM(view, takeFocus) {
-  syncNodeSelection(view)
+  let sel = view.state.selection
+  syncNodeSelection(view, sel)
 
   if (!view.hasFocus()) {
     if (!takeFocus) return
@@ -177,7 +178,7 @@ function selectionToDOM(view, takeFocus) {
     else if (browser.gecko && view.editable) view.dom.focus()
   }
 
-  let sel = view.state.selection, reader = view.selectionReader
+  let reader = view.selectionReader
   if (reader.lastSelection && reader.lastSelection.eq(sel) && !reader.domChanged()) return
 
   reader.ignoreUpdates = true
