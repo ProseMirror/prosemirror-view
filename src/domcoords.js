@@ -150,7 +150,7 @@ function posAtCoords(view, coords) {
 
   let desc = view.docView.nearestDesc(elt, true)
   return {pos: view.docView.posFromDOM(node, offset, bias),
-          inside: desc && (desc.posAtStart - desc.border)}
+          inside: desc ? desc.posAtStart - desc.border : -1}
 }
 exports.posAtCoords = posAtCoords
 
