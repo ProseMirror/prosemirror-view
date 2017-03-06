@@ -671,7 +671,7 @@ class CustomNodeViewDesc extends NodeViewDesc {
     if (this.contentDOM)
       return super.parseRule()
     else
-      return {node: this.node.type.name, attrs: this.node.attrs, getContent() { return this.node.content }}
+      return {node: this.node.type.name, attrs: this.node.attrs, getContent: () => this.node.content}
   }
 
   stopEvent(event) {
