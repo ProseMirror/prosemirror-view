@@ -380,7 +380,7 @@ class DecorationSet {
 
   localsInner(node) {
     if (this == empty) return none
-    if (node.isTextblock || !this.local.some(InlineType.is)) return this.local
+    if (node.inlineContent || !this.local.some(InlineType.is)) return this.local
     let result = []
     for (let i = 0; i < this.local.length; i++) {
       if (!(this.local[i].type instanceof InlineType))

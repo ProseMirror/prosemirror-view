@@ -187,7 +187,7 @@ function handleTripleClick(view, pos, inside, event) {
 function defaultTripleClick(view, inside) {
   let doc = view.state.doc
   if (inside == -1) {
-    if (doc.isTextblock) {
+    if (doc.inlineContent) {
       updateSelection(view, TextSelection.create(doc, 0, doc.content.size), "pointer")
       return true
     }
@@ -198,7 +198,7 @@ function defaultTripleClick(view, inside) {
   for (let i = $pos.depth + 1; i > 0; i--) {
     let node = i > $pos.depth ? $pos.nodeAfter : $pos.node(i)
     let nodePos = $pos.before(i)
-    if (node.isTextblock)
+    if (node.inlineContent)
       updateSelection(view, TextSelection.create(doc, nodePos + 1, nodePos + 1 + node.content.size), "pointer")
     else if (NodeSelection.isSelectable(node))
       updateSelection(view, NodeSelection.create(doc, nodePos), "pointer")

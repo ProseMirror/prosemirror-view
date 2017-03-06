@@ -246,7 +246,7 @@ function readDOMChange(view, mapping, oldState, range) {
   let from = mapping.map(change.start), to = mapping.map(change.endA, -1)
 
   let tr, storedMarks, markChange, $from1
-  if ($from.sameParent($to) && $from.parent.isTextblock) {
+  if ($from.sameParent($to) && $from.parent.inlineContent) {
     if ($from.pos == $to.pos) { // Deletion
       tr = view.state.tr.delete(from, to)
       let $start = doc.resolve(change.start)
