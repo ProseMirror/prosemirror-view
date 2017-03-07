@@ -288,8 +288,7 @@ exports.EditorView = EditorView
 
 function computeDocDeco(view) {
   let attrs = Object.create(null)
-  attrs.class = "ProseMirror" + (view.focused ? " ProseMirror-focused" : "") +
-    (view.state.selection.node ? " ProseMirror-nodeselection" : "")
+  attrs.class = "ProseMirror" + (view.focused ? " ProseMirror-focused" : "")
   attrs.contenteditable = String(view.editable)
 
   view.someProp("attributes", value => {

@@ -200,12 +200,29 @@ function selectionToDOM(view, takeFocus) {
     }
     view.docView.setSelection(anchor, head, view.root)
     if (resetEditable) resetEditable.contentEditable = "false"
+    if (!sel.node) {
+      view.dom.classList.remove("ProseMirror-hideselection")
+    } else if (!view.dom.classList.contains("ProseMirror-hideselection")) {
+      view.dom.classList.add("ProseMirror-hideselection")
+      if ("onselectionchange" in document) removeClassOnSelectionChange(view)
+    }
   }
 
   reader.storeDOMState(sel)
   reader.ignoreUpdates = false
 }
 exports.selectionToDOM = selectionToDOM
+
+function removeClassOnSelectionChange(view) {
+  let domSel = view.root.getSelection(), remove
+  let node = domSel.anchorNode, offset = domSel.anchorOffset
+  document.addEventListener("selectionchange", remove = () => {
+    if (domSel.anchorNode != node || domSel.anchorOffset != offset) {
+      document.removeEventListener("selectionchange", remove)
+      view.dom.classList.remove("ProseMirror-hideselection")
+    }
+  })
+}
 
 function selectCursorWrapper(view) {
   let domSel = view.root.getSelection(), range = document.createRange()

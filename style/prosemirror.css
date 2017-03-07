@@ -30,8 +30,8 @@
   pointer-events: auto;
 }
 
-.ProseMirror-nodeselection *::selection, .ProseMirror-widget *::selection { background: transparent; }
-.ProseMirror-nodeselection *::-moz-selection, .ProseMirror-widget *::-moz-selection { background: transparent; }
+.ProseMirror-hideselection *::selection { background: transparent; }
+.ProseMirror-hideselection *::-moz-selection { background: transparent; }
 
 .ProseMirror-selectednode {
   outline: 2px solid #8cf;
