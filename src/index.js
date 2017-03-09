@@ -305,7 +305,7 @@ function computeDocDeco(view) {
 }
 
 function nonInclusiveMark(mark) {
-  return mark.type.spec.inclusiveRight === false
+  return mark.type.spec.inclusive === false
 }
 
 function cursorWrapperDOM() {
