@@ -9,6 +9,7 @@ function scrollRectIntoView(view, rect) {
   let scrollThreshold = view.someProp("scrollThreshold") || 0, scrollMargin = view.someProp("scrollMargin")
   if (scrollMargin == null) scrollMargin = 5
   for (let parent = view.dom;; parent = parentNode(parent)) {
+    if (!parent) break
     let atBody = parent == document.body
     let bounding = atBody ? windowRect() : parent.getBoundingClientRect()
     let moveX = 0, moveY = 0
