@@ -166,18 +166,8 @@ class Decoration {
   // The spec provided when creating this decoration. Can be useful
   // if you've stored extra information in that object.
   get spec() { return this.type.spec }
-
-  get options() {
-    if (!warnedAboutOptions && typeof console != "undefined" && console.warn) {
-      warnedAboutOptions = true
-      console.warn("Decoration.options has been renamed Decoration.spec")
-    }
-    return this.type.spec
-  }
 }
 exports.Decoration = Decoration
-
-let warnedAboutOptions = false
 
 // DecorationAttrs:: interface
 // A set of attributes to add to a decorated node. Most properties

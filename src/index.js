@@ -8,8 +8,6 @@ const {Decoration, viewDecorations} = require("./decoration")
 
 ;({Decoration: exports.Decoration, DecorationSet: exports.DecorationSet} = require("./decoration"))
 
-let warnedAboutContent = false
-
 // ::- An editor view manages the DOM structure that represents an
 // editor. Its state and behavior are determined by its
 // [props](#view.EditorProps).
@@ -63,15 +61,6 @@ class EditorView {
       this._props.state = this.state
     }
     return this._props
-  }
-
-
-  get content() {
-    if (!warnedAboutContent && typeof console != "undefined" && console.warn) {
-      warnedAboutContent = true
-      console.warn("EditorView.content has been renamed to EditorView.dom")
-    }
-    return this.dom
   }
 
   // :: (EditorProps)
