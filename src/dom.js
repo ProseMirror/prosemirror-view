@@ -7,7 +7,7 @@ const domIndex = exports.domIndex = function(node) {
 
 exports.parentNode = function(node) {
   let parent = node.parentNode
-  return parent.nodeType == 11 ? parent.host : parent
+  return parent && parent.nodeType == 11 ? parent.host : parent
 }
 
 exports.textRange = function(node, from, to) {
