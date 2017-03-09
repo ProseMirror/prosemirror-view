@@ -136,10 +136,7 @@ function targetKludge(dom, coords) {
   return dom
 }
 
-// Given an x,y position on the editor, get the position in the document.
-function posAtCoords(view, coords) {
-  let elt = view.root.elementFromPoint(coords.left, coords.top + 1)
-  if (!elt) return null
+function posFromElement(view, elt, coords) {
   elt = targetKludge(elt, coords)
   if (!view.dom.contains(elt.nodeType != 1 ? elt.parentNode : elt)) return null
 
@@ -148,10 +145,51 @@ function posAtCoords(view, coords) {
     let rect = node.getBoundingClientRect()
     bias = rect.left != rect.right && coords.left > (rect.left + rect.right) / 2 ? 1 : -1
   }
+  return view.docView.posFromDOM(node, offset, bias)
+}
+
+function posFromCaret(view, node, offset, coords) {
+  // Browser (in caretPosition/RangeFromPoint) will agressively
+  // normalize towards nearby inline nodes. Since we are interested in
+  // positions between block nodes too, we first walk up the hierarchy
+  // of nodes to see if there are block nodes that the coordinates
+  // fall outside of. If so, we take the position before/after that
+  // block. If not, we call `posFromDOM` on the raw node/offset.
+  let outside = -1
+  for (let cur = node;;) {
+    if (cur == view.dom) break
+    let desc = view.docView.nearestDesc(cur, true)
+    if (desc.node.isBlock) {
+      let rect = desc.dom.getBoundingClientRect()
+      if (rect.left > coords.left || rect.top > coords.top) outside = desc.posBefore
+      else if (rect.right < coords.left || rect.bottom < coords.top) outside = desc.posAfter
+      else break
+    }
+    cur = desc.dom.parentNode
+  }
+  return outside > -1 ? outside : view.docView.posFromDOM(node, offset)
+}
+
+// Given an x,y position on the editor, get the position in the document.
+function posAtCoords(view, coords) {
+  let root = view.root, node, offset
+  if (root.caretPositionFromPoint) {
+    let pos = root.caretPositionFromPoint(coords.left, coords.top)
+    if (!pos) return null
+    ;({offsetNode: node, offset} = pos)
+  } else if (root.caretRangeFromPoint) {
+    let range = root.caretRangeFromPoint(coords.left, coords.top)
+    if (!range) return null
+    ;({startContainer: node, startOffset: offset} = range)
+  }
+
+  let elt = root.elementFromPoint(coords.left, coords.top + 1)
+  if (!elt) return null
+  let pos = node ? posFromCaret(view, node, offset, coords) : posFromElement(view, elt, coords)
+  if (pos == null) return null
 
   let desc = view.docView.nearestDesc(elt, true)
-  return {pos: view.docView.posFromDOM(node, offset, bias),
-          inside: desc ? desc.posAtStart - desc.border : -1}
+  return {pos, inside: desc ? desc.posAtStart - desc.border : -1}
 }
 exports.posAtCoords = posAtCoords
 

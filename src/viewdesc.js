@@ -139,8 +139,16 @@ class ViewDesc {
     }
   }
 
+  get posBefore() {
+    return this.parent.posBeforeChild(this)
+  }
+
   get posAtStart() {
     return this.parent ? this.parent.posBeforeChild(this) + this.border : 0
+  }
+
+  get posAfter() {
+    return this.posBefore + this.size
   }
 
   get posAtEnd() {
