@@ -1,4 +1,4 @@
-const {DOMSerializer} = require("prosemirror-model")
+const {DOMSerializer, Fragment} = require("prosemirror-model")
 
 const {domIndex, isEquivalentPosition} = require("./dom")
 const browser = require("./browser")
@@ -485,7 +485,10 @@ class NodeViewDesc extends ViewDesc {
     // attrs means that if the user somehow manages to change the
     // attrs in the dom, that won't be picked up. Not entirely sure
     // whether this is a problem
-    return {node: this.node.type.name, attrs: this.node.attrs, contentElement: this.contentLost ? null : this.contentDOM}
+    if (this.contentDOM && !this.contentLost)
+      return {node: this.node.type.name, attrs: this.node.attrs, contentElement: this.contentDOM}
+    else
+      return {node: this.node.type.name, attrs: this.node.attrs, getContent: () => this.contentDOM ? Fragment.empty : this.node.content}
   }
 
   matchesNode(node, outerDeco, innerDeco) {
@@ -673,13 +676,6 @@ class CustomNodeViewDesc extends NodeViewDesc {
   destroy() {
     if (this.spec.destroy) this.spec.destroy()
     super.destroy()
-  }
-
-  parseRule() {
-    if (this.contentDOM)
-      return super.parseRule()
-    else
-      return {node: this.node.type.name, attrs: this.node.attrs, getContent: () => this.node.content}
   }
 
   stopEvent(event) {
