@@ -201,7 +201,7 @@ function selectionToDOM(view, takeFocus) {
     if (resetEditable) resetEditable.contentEditable = "false"
     if (!sel.node) {
       view.dom.classList.remove("ProseMirror-hideselection")
-    } else if (!view.dom.classList.contains("ProseMirror-hideselection")) {
+    } else {
       view.dom.classList.add("ProseMirror-hideselection")
       if ("onselectionchange" in document) removeClassOnSelectionChange(view)
     }
@@ -213,11 +213,12 @@ function selectionToDOM(view, takeFocus) {
 exports.selectionToDOM = selectionToDOM
 
 function removeClassOnSelectionChange(view) {
-  let domSel = view.root.getSelection(), remove
+  document.removeEventListener("selectionchange", view.hideSelectionGuard)
+  let domSel = view.root.getSelection()
   let node = domSel.anchorNode, offset = domSel.anchorOffset
-  document.addEventListener("selectionchange", remove = () => {
+  document.addEventListener("selectionchange", view.hideSelectionGuard = () => {
     if (domSel.anchorNode != node || domSel.anchorOffset != offset) {
-      document.removeEventListener("selectionchange", remove)
+      document.removeEventListener("selectionchange", view.hideSelectionGuard)
       view.dom.classList.remove("ProseMirror-hideselection")
     }
   })
