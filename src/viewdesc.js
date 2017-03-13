@@ -427,6 +427,17 @@ class MarkViewDesc extends ViewDesc {
   parseRule() { return {mark: this.mark.type.name, attrs: this.mark.attrs, contentElement: this.contentDOM} }
 
   matchesMark(mark) { return this.dirty != NODE_DIRTY && this.mark.eq(mark) }
+
+  markDirty(from, to) {
+    super.markDirty(from, to)
+    // Move dirty info to nearest node view
+    if (this.dirty != NOT_DIRTY) {
+      let parent = this.parent
+      while (!parent.node) parent = parent.parent
+      if (parent.dirty < this.dirty) parent.dirty = this.dirty
+      this.dirty = NOT_DIRTY
+    }
+  }
 }
 
 // Node view descs are the main, most common type of view desc, and
