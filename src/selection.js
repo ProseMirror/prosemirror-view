@@ -1,4 +1,4 @@
-const {Selection, NodeSelection} = require("prosemirror-state")
+const {TextSelection, NodeSelection} = require("prosemirror-state")
 
 const browser = require("./browser")
 const {flushObserver} = require("./input")
@@ -82,7 +82,7 @@ class SelectionReader {
     if (!selection) {
       let bias = origin == "pointer" ||
           (this.view.state.selection.head != null && this.view.state.selection.head < $head.pos) ? 1 : -1
-      selection = Selection.between($anchor, $head, bias)
+      selection = TextSelection.between($anchor, $head, bias)
     }
     if ($head.pos == selection.head && $anchor.pos == selection.anchor)
       this.storeDOMState(selection)

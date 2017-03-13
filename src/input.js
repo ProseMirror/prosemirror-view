@@ -529,7 +529,7 @@ editHandlers.drop = (view, e) => {
       $pos.nodeAfter && $pos.nodeAfter.sameMarkup(slice.content.firstChild))
     tr.setSelection(new NodeSelection($pos))
   else
-    tr.setSelection(Selection.between($pos, tr.doc.resolve(tr.mapping.map(insertPos))))
+    tr.setSelection(TextSelection.between($pos, tr.doc.resolve(tr.mapping.map(insertPos))))
   view.focus()
   view.dispatch(tr)
 }

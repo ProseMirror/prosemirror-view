@@ -1,5 +1,5 @@
 const {Fragment, DOMParser} = require("prosemirror-model")
-const {Selection} = require("prosemirror-state")
+const {Selection, TextSelection} = require("prosemirror-state")
 const {Mapping} = require("prosemirror-transform")
 
 const {TrackMappings} = require("./trackmappings")
@@ -279,8 +279,8 @@ function readDOMChange(view, mapping, oldState, range) {
 
 function resolveSelection(doc, mapping, parsedSel) {
   if (Math.max(parsedSel.anchor, parsedSel.head) > doc.content.size) return null
-  return Selection.between(doc.resolve(mapping.map(parsedSel.anchor)),
-                           doc.resolve(mapping.map(parsedSel.head)))
+  return TextSelection.between(doc.resolve(mapping.map(parsedSel.anchor)),
+                               doc.resolve(mapping.map(parsedSel.head)))
 }
 
 // : (Fragment, Fragment) → ?{mark: Mark, type: string}
