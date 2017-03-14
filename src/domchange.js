@@ -274,7 +274,7 @@ function readDOMChange(view, mapping, oldState, range) {
     let sel = resolveSelection(view, tr.doc, mapping, parsedSel)
     if (sel) tr.setSelection(sel)
   }
-  if (storedMarks) tr.setStoredMarks(storedMarks)
+  if (storedMarks) tr.ensureMarks(storedMarks)
   view.dispatch(tr.scrollIntoView())
 }
 
