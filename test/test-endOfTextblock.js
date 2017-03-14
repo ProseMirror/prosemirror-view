@@ -1,6 +1,7 @@
-const {doc, p} = require("prosemirror-model/test/build")
+const {schema, doc, p} = require("prosemirror-model/test/build")
 const ist = require("ist")
 const {tempEditor} = require("./view")
+const {Decoration, DecorationSet} = require("../dist")
 
 describe("EditorView.endOfTextblock", () => {
   it("works at the left side of a textblock", () => {
@@ -97,5 +98,20 @@ describe("EditorView.endOfTextblock", () => {
     ist(!view.endOfTextblock("backward"))
     ist(view.endOfTextblock("right"))
     ist(view.endOfTextblock("forward"))
+  })
+
+  it("works in a cursor wrapper", () => {
+    let view = tempEditor({doc: doc(p("foo<a>"))})
+    view.dispatch(view.state.tr.setStoredMarks([schema.marks.em.create()]))
+    ist(!view.endOfTextblock("backward"))
+  })
+
+  it("works after a widget", () => {
+    let d = doc(p("fo<a>o")), w = document.createElement("span")
+    w.textContent = "!"
+    let view = tempEditor({doc: d, decorations() {
+      return DecorationSet.create(d, [Decoration.widget(3, w)])
+    }})
+    ist(!view.endOfTextblock("backward"))
   })
 })

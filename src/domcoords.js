@@ -287,11 +287,11 @@ function endOfTextblockHorizontal(view, state, dir) {
     // one character, and see if that moves the cursor out of the
     // textblock (or doesn't move it at all, when at the start/end of
     // the document).
-    let oldRange = sel.getRangeAt(0)
+    let oldRange = sel.getRangeAt(0), oldNode = sel.focusNode, oldOff = sel.focusOffset
     sel.modify("move", dir, "character")
     let parentDOM = view.docView.domAfterPos($head.before())
     let result = !parentDOM.contains(sel.focusNode.nodeType == 1 ? sel.focusNode : sel.focusNode.parentNode) ||
-        view.docView.posFromDOM(sel.focusNode, sel.focusOffset) == $head.pos
+        (oldNode == sel.focusNode && oldOff == sel.focusOffset)
     // Restore the previous selection
     sel.removeAllRanges()
     sel.addRange(oldRange)
