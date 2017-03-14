@@ -304,17 +304,17 @@ function cursorWrapperDOM() {
 }
 
 function updateCursorWrapper(view) {
-  let {empty, $head} = view.state.selection
-  if (empty && (view.state.storedMarks ||
-                $head.parent.content.length == 0 ||
-                $head.parentOffset && !$head.textOffset && $head.nodeBefore.marks.some(nonInclusiveMark))) {
+  let {$cursor} = view.state.selection
+  if ($cursor && (view.state.storedMarks ||
+                  $cursor.parent.content.length == 0 ||
+                  $cursor.parentOffset && !$cursor.textOffset && $cursor.nodeBefore.marks.some(nonInclusiveMark))) {
     // Needs a cursor wrapper
-    let marks = view.state.storedMarks || $head.marks()
+    let marks = view.state.storedMarks || $cursor.marks()
     let spec = {isCursorWrapper: true, marks, raw: true}
     if (!view.cursorWrapper || !Mark.sameSet(view.cursorWrapper.spec.marks, marks))
-      view.cursorWrapper = Decoration.widget($head.pos, cursorWrapperDOM(), spec)
-    else if (view.cursorWrapper.pos != $head.pos)
-      view.cursorWrapper = Decoration.widget($head.pos, view.cursorWrapper.type.widget, spec)
+      view.cursorWrapper = Decoration.widget($cursor.pos, cursorWrapperDOM(), spec)
+    else if (view.cursorWrapper.pos != $cursor.pos)
+      view.cursorWrapper = Decoration.widget($cursor.pos, view.cursorWrapper.type.widget, spec)
   } else {
     view.cursorWrapper = null
   }

@@ -15,8 +15,8 @@ function apply(view, sel) {
 }
 
 function selectHorizontally(view, dir) {
-  let {empty, node, $from, $to} = view.state.selection
-  if (!empty && !node) return false
+  let {$cursor, node, $from, $to} = view.state.selection
+  if (!$cursor && !node) return false
 
   if (node && node.isInline)
     return apply(view, new TextSelection(dir > 0 ? $to : $from))
@@ -143,8 +143,8 @@ function setSel(sel, node, offset) {
 // selections. If so, apply it (if not, the result is left to the
 // browser)
 function selectVertically(view, dir) {
-  let {empty, node, $from, $to} = view.state.selection
-  if (!empty && !node) return false
+  let {$cursor, node, $from, $to} = view.state.selection
+  if (!$cursor && !node) return false
 
   let leavingTextblock = true, $start = dir < 0 ? $from : $to
   if (!node || node.isInline)
