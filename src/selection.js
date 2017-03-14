@@ -184,20 +184,22 @@ function selectionToDOM(view, takeFocus) {
   if (view.cursorWrapper) {
     selectCursorWrapper(view)
   } else {
-    let {anchor, head} = sel, resetEditable
+    let {anchor, head} = sel, resetEditableFrom, resetEditableTo
     if (anchor == null) {
       anchor = sel.from
       head = sel.to
-      if (browser.webkit && sel.node.isBlock) {
-        let desc = view.docView.descAt(sel.from)
-        if (!desc.contentDOM && desc.dom.contentEditable == "false") {
-          resetEditable = desc.dom
-          desc.dom.contentEditable = "true"
-        }
+      if (browser.webkit) {
+        if (!sel.$from.parent.inlineContent)
+          resetEditableFrom = temporarilyEditable(view, sel.from)
+        if (!sel.empty && !sel.$from.parent.inlineContent)
+          resetEditableTo = temporarilyEditable(view, sel.to)
       }
     }
     view.docView.setSelection(anchor, head, view.root)
-    if (resetEditable) resetEditable.contentEditable = "false"
+    if (browser.webkit) {
+      if (resetEditableFrom) resetEditableFrom.contentEditable = "false"
+      if (resetEditableTo) resetEditableTo.contentEditable = "false"
+    }
     if (sel.visible) {
       view.dom.classList.remove("ProseMirror-hideselection")
     } else {
@@ -210,6 +212,17 @@ function selectionToDOM(view, takeFocus) {
   reader.ignoreUpdates = false
 }
 exports.selectionToDOM = selectionToDOM
+
+// Kludge to work around Webkit not allowing a selection to start/end
+// before a non-editable block node. We briefly make it editable, set
+// the selection, then set it uneditable again.
+function temporarilyEditable(view, pos) {
+  let desc = view.docView.descAt(pos)
+  if (desc && !desc.contentDOM && desc.dom.contentEditable == "false") {
+    desc.dom.contentEditable = "true"
+    return desc.dom
+  }
+}
 
 function removeClassOnSelectionChange(view) {
   document.removeEventListener("selectionchange", view.hideSelectionGuard)
