@@ -275,11 +275,11 @@ function endOfTextblockHorizontal(view, state, dir) {
   let {$head, empty} = state.selection
   if (!empty || !$head.parent.isTextblock || !$head.depth) return false
   let offset = $head.parentOffset, atStart = !offset, atEnd = offset == $head.parent.content.size
-  // If the textblock is all LTR and the cursor isn't at the sides, we don't need to touch the DOM
-  if (!atStart && !atEnd && !maybeRTL.test($head.parent.textContent)) return false
   let sel = getSelection()
-  // Fall back to a primitive approach if the necessary selection method isn't supported (Edge)
-  if (!sel.modify) return dir == "left" || dir == "backward" ? atStart : atEnd
+  // If the textblock is all LTR, or the browser doesn't support
+  // Selection.modify (Edge), fall back to a primitive approach
+  if (!maybeRTL.test($head.parent.textContent) || !sel.modify)
+    return dir == "left" || dir == "backward" ? atStart : atEnd
 
   return withFlushedState(view, state, () => {
     // This is a huge hack, but appears to be the best we can
