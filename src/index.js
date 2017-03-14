@@ -2,7 +2,7 @@ const {Mark} = require("prosemirror-model")
 
 const {scrollRectIntoView, posAtCoords, coordsAtPos, endOfTextblock, storeScrollPos, resetScrollPos} = require("./domcoords")
 const {docViewDesc} = require("./viewdesc")
-const {initInput, destroyInput, dispatchEvent, startObserving, stopObserving, ensureListeners, flushObserver} = require("./input")
+const {initInput, destroyInput, dispatchEvent, ensureListeners} = require("./input")
 const {SelectionReader, selectionToDOM} = require("./selection")
 const {Decoration, viewDecorations} = require("./decoration")
 
@@ -92,7 +92,7 @@ class EditorView {
     this.state = state
     if (prev.plugins != state.plugins) ensureListeners(this)
 
-    flushObserver(this)
+    this.domObserver.flush()
     if (this.inDOMChange && this.inDOMChange.stateUpdated(state)) return
 
     let prevEditable = this.editable
@@ -106,7 +106,7 @@ class EditorView {
     let oldScrollPos = !scrollToSelection && updateSel && storeScrollPos(this)
 
     if (updateSel) {
-      stopObserving(this)
+      this.domObserver.stop()
       if (updateDoc) {
         if (!this.docView.update(state.doc, outerDeco, innerDeco, this)) {
           this.docView.destroy()
@@ -115,7 +115,7 @@ class EditorView {
         this.selectionReader.clearDOMState()
       }
       selectionToDOM(this)
-      startObserving(this)
+      this.domObserver.start()
     }
 
     if (prevEditable != this.editable) this.selectionReader.editableChanged()
@@ -180,9 +180,9 @@ class EditorView {
   // :: ()
   // Focus the editor.
   focus() {
-    stopObserving(this)
+    this.domObserver.stop()
     selectionToDOM(this, true)
-    startObserving(this)
+    this.domObserver.start()
     if (this.editable) this.dom.focus()
   }
 

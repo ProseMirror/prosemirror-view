@@ -1,7 +1,6 @@
 const {TextSelection, NodeSelection} = require("prosemirror-state")
 
 const browser = require("./browser")
-const {flushObserver} = require("./input")
 
 // Track the state of the current editor selection. Keeps the editor
 // selection in sync with the DOM selection by polling for changes,
@@ -56,7 +55,7 @@ class SelectionReader {
   // current selection state to match.
   readFromDOM(origin) {
     if (this.ignoreUpdates || !this.domChanged() || !this.view.hasFocus()) return
-    if (!this.view.inDOMChange) flushObserver(this.view)
+    if (!this.view.inDOMChange) this.view.domObserver.flush()
     if (this.view.inDOMChange) return
 
     let domSel = this.view.root.getSelection(), doc = this.view.state.doc

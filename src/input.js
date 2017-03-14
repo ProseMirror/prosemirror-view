@@ -1,11 +1,11 @@
 const {Selection, NodeSelection, TextSelection} = require("prosemirror-state")
 
 const browser = require("./browser")
-const {domIndex} = require("./dom")
 const {captureKeyDown} = require("./capturekeys")
 const {DOMChange} = require("./domchange")
 const {fromClipboard, toClipboard, canUpdateClipboard} = require("./clipboard")
 const {TrackMappings} = require("./trackmappings")
+const {DOMObserver} = require("./domobserver")
 
 // A collection of DOM events that occur within the editor, and callback functions
 // to invoke when the event fires.
@@ -16,9 +16,8 @@ function initInput(view) {
   view.mouseDown = null
   view.dragging = null
   view.inDOMChange = null
-  view.mutationObserver = window.MutationObserver &&
-    new window.MutationObserver(mutations => registerMutations(view, mutations))
-  startObserving(view)
+  view.domObserver = new DOMObserver(view)
+  view.domObserver.start()
 
   for (let event in handlers) {
     let handler = handlers[event]
@@ -34,7 +33,7 @@ function initInput(view) {
 exports.initInput = initInput
 
 function destroyInput(view) {
-  stopObserving(view)
+  view.domObserver.stop()
   if (view.inDOMChange) view.inDOMChange.destroy()
   if (view.dragging) view.dragging.destroy()
 }
@@ -257,11 +256,11 @@ class MouseDown {
     this.mightDrag = (targetNode.type.spec.draggable || targetNode == view.state.selection.node) ? {node: targetNode, pos: targetPos} : null
     this.target = flushed ? null : event.target
     if (this.target && this.mightDrag) {
-      stopObserving(this.view)
+      this.view.domObserver.stop()
       this.target.draggable = true
       if (browser.gecko && (this.setContentEditable = !this.target.hasAttribute("contentEditable")))
         setTimeout(() => this.target.setAttribute("contentEditable", "false"), 20)
-      startObserving(this.view)
+      this.view.domObserver.start()
     }
 
     view.root.addEventListener("mouseup", this.up = this.up.bind(this))
@@ -273,11 +272,11 @@ class MouseDown {
     this.view.root.removeEventListener("mouseup", this.up)
     this.view.root.removeEventListener("mousemove", this.move)
     if (this.mightDrag && this.target) {
-      stopObserving(this.view)
+      this.view.domObserver.stop()
       this.target.draggable = false
       if (browser.gecko && this.setContentEditable)
         this.target.removeAttribute("contentEditable")
-      startObserving(this.view)
+      this.view.domObserver.start()
     }
   }
 
@@ -348,66 +347,6 @@ editHandlers.compositionend = (view, e) => {
   }
 
   view.inDOMChange.compositionEnd()
-}
-
-const observeOptions = {childList: true, characterData: true, attributes: true, subtree: true}
-
-function startObserving(view) {
-  if (view.mutationObserver)
-    view.mutationObserver.observe(view.dom, observeOptions)
-  // IE11 has very broken mutation observers, so we also listen to DOMCharacterDataModified
-  if (browser.ie && browser.ie_version <= 11)
-    view.dom.addEventListener("DOMCharacterDataModified", view.onCharData || (view.onCharData = e => {
-      registerMutation(view, {target: e.target, type: "characterData"})
-    }))
-}
-exports.startObserving = startObserving
-
-function flushObserver(view) {
-  if (view.mutationObserver) registerMutations(view, view.mutationObserver.takeRecords())
-}
-exports.flushObserver = flushObserver
-
-function stopObserving(view) {
-  if (view.mutationObserver) {
-    flushObserver(view)
-    view.mutationObserver.disconnect()
-  }
-  if (browser.ie && browser.ie_version <= 11)
-    view.dom.removeEventListener("DOMCharacterDataModified", view.onCharData)
-}
-exports.stopObserving = stopObserving
-
-function registerMutations(view, mutations) {
-  if (view.editable) for (let i = 0; i < mutations.length; i++)
-    registerMutation(view, mutations[i])
-}
-
-function registerMutation(view, mut) {
-  let desc = view.docView.nearestDesc(mut.target)
-  if (mut.type == "attributes" &&
-      (desc == view.docView || mut.attributeName == "contenteditable")) return
-  if (!desc || desc.ignoreMutation(mut)) return
-
-  let from, to
-  if (mut.type == "childList") {
-    let fromOffset = mut.previousSibling && mut.previousSibling.parentNode == mut.target
-        ? domIndex(mut.previousSibling) + 1 : 0
-    if (fromOffset == -1) return
-    from = desc.localPosFromDOM(mut.target, fromOffset, -1)
-    let toOffset = mut.nextSibling && mut.nextSibling.parentNode == mut.target
-        ? domIndex(mut.nextSibling) : mut.target.childNodes.length
-    if (toOffset == -1) return
-    to = desc.localPosFromDOM(mut.target, toOffset, 1)
-  } else if (mut.type == "attributes") {
-    from = desc.posAtStart - desc.border
-    to = desc.posAtEnd + desc.border
-  } else { // "characterData"
-    from = desc.posAtStart
-    to = desc.posAtEnd
-  }
-
-  DOMChange.start(view).addRange(from, to)
 }
 
 editHandlers.input = view => DOMChange.start(view)
