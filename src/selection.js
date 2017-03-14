@@ -198,7 +198,7 @@ function selectionToDOM(view, takeFocus) {
     }
     view.docView.setSelection(anchor, head, view.root)
     if (resetEditable) resetEditable.contentEditable = "false"
-    if (!sel.node) {
+    if (sel.visible) {
       view.dom.classList.remove("ProseMirror-hideselection")
     } else {
       view.dom.classList.add("ProseMirror-hideselection")
