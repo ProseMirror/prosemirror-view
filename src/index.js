@@ -402,6 +402,10 @@ function getEditable(view) {
 //   onBlur:: ?(view: EditorView, event: dom.Event)
 //   Called when the editor loses focus.
 //
+//   createSelectionBetween:: ?(view: EditorView, anchor: ResolvedPos, head: ResolvedPos) → ?Selection
+//   Can be used to override the selection object created when reading
+//   a DOM selection between the given anchor and head.
+//
 //   domParser:: ?DOMParser
 //   The [parser](#model.DOMParser) to use when reading editor changes
 //   from the DOM. Defaults to calling

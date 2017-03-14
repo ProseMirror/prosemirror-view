@@ -6,6 +6,7 @@ const {DOMChange} = require("./domchange")
 const {fromClipboard, toClipboard, canUpdateClipboard} = require("./clipboard")
 const {TrackMappings} = require("./trackmappings")
 const {DOMObserver} = require("./domobserver")
+const {selectionBetween} = require("./selection")
 
 // A collection of DOM events that occur within the editor, and callback functions
 // to invoke when the event fires.
@@ -468,7 +469,7 @@ editHandlers.drop = (view, e) => {
       $pos.nodeAfter && $pos.nodeAfter.sameMarkup(slice.content.firstChild))
     tr.setSelection(new NodeSelection($pos))
   else
-    tr.setSelection(TextSelection.between($pos, tr.doc.resolve(tr.mapping.map(insertPos))))
+    tr.setSelection(selectionBetween(view, $pos, tr.doc.resolve(tr.mapping.map(insertPos))))
   view.focus()
   view.dispatch(tr)
 }

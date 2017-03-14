@@ -1,8 +1,9 @@
 const {Fragment, DOMParser} = require("prosemirror-model")
-const {Selection, TextSelection} = require("prosemirror-state")
+const {Selection} = require("prosemirror-state")
 const {Mapping} = require("prosemirror-transform")
 
 const {TrackMappings} = require("./trackmappings")
+const {selectionBetween} = require("./selection")
 
 class DOMChange {
   constructor(view, id, composing) {
@@ -221,7 +222,7 @@ function readDOMChange(view, mapping, oldState, range) {
 
   if (!change) {
     if (parsedSel) {
-      let sel = resolveSelection(view.state.doc, mapping, parsedSel)
+      let sel = resolveSelection(view, view.state.doc, mapping, parsedSel)
       if (sel && !sel.eq(view.state.selection)) view.dispatch(view.state.tr.setSelection(sel))
     }
     return
@@ -270,17 +271,17 @@ function readDOMChange(view, mapping, oldState, range) {
   if (!tr)
     tr = view.state.tr.replace(from, to, parsed.slice(change.start - range.from, change.endB - range.from))
   if (parsedSel) {
-    let sel = resolveSelection(tr.doc, mapping, parsedSel)
+    let sel = resolveSelection(view, tr.doc, mapping, parsedSel)
     if (sel) tr.setSelection(sel)
   }
   if (storedMarks) tr.setStoredMarks(storedMarks)
   view.dispatch(tr.scrollIntoView())
 }
 
-function resolveSelection(doc, mapping, parsedSel) {
+function resolveSelection(view, doc, mapping, parsedSel) {
   if (Math.max(parsedSel.anchor, parsedSel.head) > doc.content.size) return null
-  return TextSelection.between(doc.resolve(mapping.map(parsedSel.anchor)),
-                               doc.resolve(mapping.map(parsedSel.head)))
+  return selectionBetween(view, doc.resolve(mapping.map(parsedSel.anchor)),
+                          doc.resolve(mapping.map(parsedSel.head)))
 }
 
 // : (Fragment, Fragment) → ?{mark: Mark, type: string}

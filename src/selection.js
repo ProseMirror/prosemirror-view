@@ -81,9 +81,9 @@ class SelectionReader {
     if (!selection) {
       let bias = origin == "pointer" ||
           (this.view.state.selection.head != null && this.view.state.selection.head < $head.pos) ? 1 : -1
-      selection = TextSelection.between($anchor, $head, bias)
+      selection = selectionBetween(this.view, $anchor, $head, bias)
     }
-    if ($head.pos == selection.head && $anchor.pos == selection.anchor)
+    if (head == selection.head && $anchor.pos == selection.anchor)
       this.storeDOMState(selection)
     if (!this.view.state.selection.eq(selection)) {
       let tr = this.view.state.tr.setSelection(selection)
@@ -252,3 +252,9 @@ function clearNodeSelection(view) {
     view.lastSelectedViewDesc = null
   }
 }
+
+function selectionBetween(view, $anchor, $head, bias) {
+  return view.someProp("createSelectionBetween", f => f(view, $anchor, $head))
+    || TextSelection.between($anchor, $head, bias)
+}
+exports.selectionBetween = selectionBetween
