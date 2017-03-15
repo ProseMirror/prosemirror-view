@@ -185,15 +185,11 @@ function selectionToDOM(view, takeFocus) {
     selectCursorWrapper(view)
   } else {
     let {anchor, head} = sel, resetEditableFrom, resetEditableTo
-    if (anchor == null) {
-      anchor = sel.from
-      head = sel.to
-      if (browser.webkit) {
-        if (!sel.$from.parent.inlineContent)
-          resetEditableFrom = temporarilyEditable(view, sel.from)
-        if (!sel.empty && !sel.$from.parent.inlineContent)
-          resetEditableTo = temporarilyEditable(view, sel.to)
-      }
+    if (browser.webkit && !(sel instanceof TextSelection)) {
+      if (!sel.$from.parent.inlineContent)
+        resetEditableFrom = temporarilyEditable(view, sel.from)
+      if (!sel.empty && !sel.$from.parent.inlineContent)
+        resetEditableTo = temporarilyEditable(view, sel.to)
     }
     view.docView.setSelection(anchor, head, view.root)
     if (browser.webkit) {

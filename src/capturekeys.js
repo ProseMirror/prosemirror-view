@@ -163,8 +163,9 @@ function selectVertically(view, dir) {
 }
 
 function stopNativeHorizontalDelete(view, dir) {
+  if (!(view.state.selection instanceof TextSelection)) return true
   let {$head, $anchor, empty} = view.state.selection
-  if (!$head || !$head.sameParent($anchor)) return true
+  if (!$head.sameParent($anchor)) return true
   if (!empty) return false
   if (view.endOfTextblock(dir > 0 ? "forward" : "backward")) return true
   let nextNode = !$head.textOffset && (dir < 0 ? $head.nodeBefore : $head.nodeAfter)
