@@ -230,9 +230,7 @@ class EditorView {
   // Find out whether the selection is at the end of a textblock when
   // moving in a given direction. When, for example, given `"left"`,
   // it will return true if moving left from the current cursor
-  // position would leave that position's parent textblock. For
-  // horizontal motion, it will always return false if the selection
-  // isn't a cursor selection.
+  // position would leave that position's parent textblock.
   endOfTextblock(dir, state) {
     return endOfTextblock(this, state || this.state, dir)
   }
