@@ -107,6 +107,7 @@ function parseBetween(view, oldState, from, to) {
   let {node: parent, offset: startOff} = view.docView.domFromPos(from, -1)
   let {node: parentRight, offset: endOff} = view.docView.domFromPos(to, 1)
   if (parent != parentRight) return null
+  console.log(parent.outerHTML, startOff, endOff, "for", from, to)
   // If there's non-view nodes directly after the end of this region,
   // fail and let the caller try again with a wider range.
   if (endOff == parent.childNodes.length) for (let scan = parent; scan != view.dom;) {

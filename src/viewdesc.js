@@ -246,8 +246,7 @@ class ViewDesc {
     if (!this.contentDOM) return {node: this.dom, offset: 0}
     for (let offset = 0, i = 0;; i++) {
       if (offset == pos)
-        return {node: this.contentDOM,
-                offset: searchDOM ? this.findDOMOffset(i, searchDOM) : i}
+        return searchDOM ? this.findDOMOffset(i, searchDOM) : {node: this.contentDOM, offset: i}
       if (i == this.children.length) throw new Error("Invalid position " + pos)
       let child = this.children[i], end = offset + child.size
       if (pos < end) return child.domFromPos(pos - offset - child.border, searchDOM)
@@ -259,23 +258,31 @@ class ViewDesc {
   // desc offsets anymore, so we search the actual DOM to figure out
   // the offset that corresponds to a given child.
   findDOMOffset(i, searchDOM) {
+    let node = this.contentDOM
     if (searchDOM < 0) {
       for (let j = i - 1; j >= 0; j--) {
         let child = this.children[j]
         if (!child.size) continue
         let found = domIndex(child.dom)
-        if (found > -1) return found + 1
+        if (found > -1) return child.skipEmpty(-1) || {node, offset: found + 1}
       }
-      return 0
+      return {node, offset: 0}
     } else {
       for (let j = i; j < this.children.length; j++) {
         let child = this.children[j]
         if (!child.size) continue
         let found = domIndex(child.dom)
-        if (found > -1) return found
+        if (found > -1) return child.skipEmpty(1) || {node, offset: found}
       }
-      return this.contentDOM.childNodes.length
+      return {node, offset: this.contentDOM.childNodes.length}
     }
+  }
+
+  skipEmpty(dir) {
+    if (this.border || !this.contentDOM || !this.size) return null
+    let start = dir < 0 ? this.children.length - 1 : 0, i = start
+    while (!this.children[i].size) i += dir
+    return this.children[i].skipEmpty(dir) || (i == start ? null : this.findDOMOffset(dir < 0 ? i + 1 : i, dir))
   }
 
   // : (number) → dom.Node
