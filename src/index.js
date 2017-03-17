@@ -309,7 +309,8 @@ function updateCursorWrapper(view) {
     // Needs a cursor wrapper
     let marks = view.state.storedMarks || $cursor.marks()
     let spec = {isCursorWrapper: true, marks, raw: true}
-    if (!view.cursorWrapper || !Mark.sameSet(view.cursorWrapper.spec.marks, marks))
+    if (!view.cursorWrapper || !Mark.sameSet(view.cursorWrapper.spec.marks, marks) ||
+        view.cursorWrapper.type.widget.textContent != "\ufeff")
       view.cursorWrapper = Decoration.widget($cursor.pos, cursorWrapperDOM(), spec)
     else if (view.cursorWrapper.pos != $cursor.pos)
       view.cursorWrapper = Decoration.widget($cursor.pos, view.cursorWrapper.type.widget, spec)
