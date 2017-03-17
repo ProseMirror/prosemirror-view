@@ -6,9 +6,8 @@ const {TrackMappings} = require("./trackmappings")
 const {selectionBetween} = require("./selection")
 
 class DOMChange {
-  constructor(view, id, composing) {
+  constructor(view, composing) {
     this.view = view
-    this.id = id
     this.state = view.state
     this.composing = composing
     this.from = this.to = null
@@ -91,8 +90,7 @@ class DOMChange {
         view.inDOMChange.composing = true
       }
     } else {
-      let id = Math.floor(Math.random() * 0xffffffff)
-      view.inDOMChange = new DOMChange(view, id, composing)
+      view.inDOMChange = new DOMChange(view, composing)
     }
     return view.inDOMChange
   }
