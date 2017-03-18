@@ -318,4 +318,19 @@ describe("DOM change", () => {
     view.dispatch(view.state.tr.insertText("more text"))
     ist(view.coordsAtPos(13))
   })
+
+  it("notices text added to a cursor wrapper at the start of a mark", () => {
+    let view = tempEditor({doc: doc(p(strong(a("foo<a>"), "bar")))})
+    findTextNode(view.dom, "\ufeff").nodeValue = "\ufeffxy"
+    flush(view)
+    ist(view.state.doc, doc(p(strong(a("foo"), "xybar"))), eq)
+  })
+
+  it("removes cursor wrapper text when the wrapper otherwise remains valid", () => {
+    let view = tempEditor({doc: doc(p(a(strong("foo<a>"), "bar")))})
+    findTextNode(view.dom, "\ufeff").nodeValue = "\ufeffq"
+    flush(view)
+    ist(view.state.doc, doc(p(a(strong("fooq"), "bar"))), eq)
+    ist(!findTextNode(view.dom, "\ufeffq"))
+  })
 })

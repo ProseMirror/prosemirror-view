@@ -241,48 +241,65 @@ class ViewDesc {
     }
   }
 
-  // : (number, ?bool) → {node: dom.Node, offset: number}
-  domFromPos(pos, searchDOM) {
+  // : (number) → {node: dom.Node, offset: number}
+  domFromPos(pos) {
     if (!this.contentDOM) return {node: this.dom, offset: 0}
     for (let offset = 0, i = 0;; i++) {
       if (offset == pos)
-        return searchDOM ? this.findDOMOffset(i, searchDOM) : {node: this.contentDOM, offset: i}
+        return {node: this.contentDOM, offset: i}
       if (i == this.children.length) throw new Error("Invalid position " + pos)
       let child = this.children[i], end = offset + child.size
-      if (pos < end) return child.domFromPos(pos - offset - child.border, searchDOM)
+      if (pos < end) return child.domFromPos(pos - offset - child.border)
       offset = end
     }
   }
 
-  // If the DOM was directly edited, we can't trust the child view
-  // desc offsets anymore, so we search the actual DOM to figure out
-  // the offset that corresponds to a given child.
-  findDOMOffset(i, searchDOM) {
-    let node = this.contentDOM
-    if (searchDOM < 0) {
-      for (let j = i - 1; j >= 0; j--) {
-        let child = this.children[j]
-        if (!child.size) continue
-        let found = domIndex(child.dom)
-        if (found > -1) return child.skipEmpty(-1) || {node, offset: found + 1}
+  // Used to find a DOM range in a single parent for a given changed
+  // range.
+  parseRange(from, to, base = 0) {
+    let fromOffset = -1, toOffset = -1
+    for (let offset = 0, i = 0;; i++) {
+      let child = this.children[i], end = offset + child.size
+      if (fromOffset == -1 && from <= end) {
+        let childBase = offset + child.border
+        // FIXME maybe descend mark views to parse a narrower range?
+        if (from >= childBase && to <= end - child.border && child.node &&
+            child.contentDOM && this.contentDOM.contains(child.contentDOM))
+          return child.parseRange(from - childBase, to - childBase, base + childBase)
+
+        from = base + offset
+        for (let j = i; j > 0; j--) {
+          let prev = this.children[j - 1]
+          if (prev.size && prev.dom.parentNode == this.contentDOM && !prev.emptyChildAt(1)) {
+            fromOffset = domIndex(prev.dom) + 1
+            break
+          }
+          from -= prev.size
+        }
+        if (fromOffset == -1) fromOffset = 0
       }
-      return {node, offset: 0}
-    } else {
-      for (let j = i; j < this.children.length; j++) {
-        let child = this.children[j]
-        if (!child.size) continue
-        let found = domIndex(child.dom)
-        if (found > -1) return child.skipEmpty(1) || {node, offset: found}
+      if (fromOffset > -1 && to <= end) {
+        to = base + end
+        for (let j = i + 1; j < this.children.length; j++) {
+          let next = this.children[j]
+          if (next.size && next.dom.parentNode == this.contentDOM && !next.emptyChildAt(-1)) {
+            toOffset = domIndex(next.dom)
+            break
+          }
+          to += next.size
+        }
+        if (toOffset == -1) toOffset = this.contentDOM.childNodes.length
+        break
       }
-      return {node, offset: this.contentDOM.childNodes.length}
+      offset = end
     }
+    return {node: this.contentDOM, from, to, fromOffset, toOffset}
   }
 
-  skipEmpty(dir) {
-    if (this.border || !this.contentDOM || !this.size) return null
-    let start = dir < 0 ? this.children.length - 1 : 0, i = start
-    while (!this.children[i].size) i += dir
-    return this.children[i].skipEmpty(dir) || (i == start ? null : this.findDOMOffset(dir < 0 ? i + 1 : i, dir))
+  emptyChildAt(side) {
+    if (this.border || !this.contentDOM || !this.children.length) return false
+    let child = this.children[side < 0 ? 0 : this.children.length - 1]
+    return child.size == 0 || child.emptyChildAt(side)
   }
 
   // : (number) → dom.Node
@@ -632,8 +649,8 @@ class TextViewDesc extends NodeViewDesc {
     return false
   }
 
-  domFromPos(pos, searchDOM) {
-    return {node: this.nodeDOM, offset: searchDOM ? Math.max(pos, this.nodeDOM.nodeValue.length) : pos}
+  domFromPos(pos) {
+    return {node: this.nodeDOM, offset: pos}
   }
 
   localPosFromDOM(dom, offset, bias) {

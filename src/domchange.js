@@ -103,20 +103,8 @@ exports.DOMChange = DOMChange
 // the modification is mapped over those before it is applied, in
 // readDOMChange.
 
-function parseBetween(view, oldState, from, to) {
-  let {node: parent, offset: startOff} = view.docView.domFromPos(from, -1)
-  let {node: parentRight, offset: endOff} = view.docView.domFromPos(to, 1)
-  if (parent != parentRight) return null
-  // If there's non-view nodes directly after the end of this region,
-  // fail and let the caller try again with a wider range.
-  if (endOff == parent.childNodes.length) for (let scan = parent; scan != view.dom;) {
-    if (!scan) return null
-    if (scan.nextSibling) {
-      if (!scan.nextSibling.pmViewDesc) return null
-      break
-    }
-    scan = scan.parentNode
-  }
+function parseBetween(view, oldState, range) {
+  let {node: parent, fromOffset, toOffset, from, to} = view.docView.parseRange(range.from, range.to)
 
   let domSel = view.root.getSelection(), find = null, anchor = domSel.anchorNode
   if (anchor && view.dom.contains(anchor.nodeType == 1 ? anchor : anchor.parentNode)) {
@@ -131,8 +119,8 @@ function parseBetween(view, oldState, from, to) {
     topNode: $from.parent.copy(),
     topStart: $from.index(),
     topOpen: true,
-    from: startOff,
-    to: endOff,
+    from: fromOffset,
+    to: toOffset,
     preserveWhitespace: true,
     editableContent: true,
     findPositions: find,
@@ -144,7 +132,7 @@ function parseBetween(view, oldState, from, to) {
     if (head == null) head = anchor
     sel = {anchor: anchor + from, head: head + from}
   }
-  return {doc, sel}
+  return {doc, sel, from, to}
 }
 
 function ruleFromNode(dom) {
@@ -204,35 +192,26 @@ function keyEvent(keyCode, key) {
 }
 
 function readDOMChange(view, mapping, oldState, range) {
-  let parseResult, doc = oldState.doc
+  let parse = parseBetween(view, oldState, range)
 
-  for (;;) {
-    parseResult = parseBetween(view, oldState, range.from, range.to)
-    if (parseResult) break
-    let $from = doc.resolve(range.from), $to = doc.resolve(range.to)
-    range = {from: $from.depth ? $from.before() : 0,
-             to: $to.depth ? $to.after() : doc.content.size}
-  }
-  let {doc: parsed, sel: parsedSel} = parseResult
-
-  let compare = doc.slice(range.from, range.to)
-  let change = findDiff(compare.content, parsed.content, range.from, oldState.selection.from)
+  let doc = oldState.doc, compare = doc.slice(parse.from, parse.to)
+  let change = findDiff(compare.content, parse.doc.content, parse.from, oldState.selection.from)
 
   if (!change) {
-    if (parsedSel) {
-      let sel = resolveSelection(view, view.state.doc, mapping, parsedSel)
+    if (parse.sel) {
+      let sel = resolveSelection(view, view.state.doc, mapping, parse.sel)
       if (sel && !sel.eq(view.state.selection)) view.dispatch(view.state.tr.setSelection(sel))
     }
     return
   }
 
-  let $from = parsed.resolveNoCache(change.start - range.from)
-  let $to = parsed.resolveNoCache(change.endB - range.from)
+  let $from = parse.doc.resolveNoCache(change.start - parse.from)
+  let $to = parse.doc.resolveNoCache(change.endB - parse.from)
   let nextSel
   // If this looks like the effect of pressing Enter, just dispatch an
   // Enter key instead.
-  if (!$from.sameParent($to) && $from.pos < parsed.content.size &&
-      (nextSel = Selection.findFrom(parsed.resolve($from.pos + 1), 1, true)) &&
+  if (!$from.sameParent($to) && $from.pos < parse.doc.content.size &&
+      (nextSel = Selection.findFrom(parse.doc.resolve($from.pos + 1), 1, true)) &&
       nextSel.head == $to.pos &&
       view.someProp("handleKeyDown", f => f(view, keyEvent(13, "Enter"))))
     return
@@ -267,9 +246,9 @@ function readDOMChange(view, mapping, oldState, range) {
   }
 
   if (!tr)
-    tr = view.state.tr.replace(from, to, parsed.slice(change.start - range.from, change.endB - range.from))
-  if (parsedSel) {
-    let sel = resolveSelection(view, tr.doc, mapping, parsedSel)
+    tr = view.state.tr.replace(from, to, parse.doc.slice(change.start - parse.from, change.endB - parse.from))
+  if (parse.sel) {
+    let sel = resolveSelection(view, tr.doc, mapping, parse.sel)
     if (sel) tr.setSelection(sel)
   }
   if (storedMarks) tr.ensureMarks(storedMarks)
