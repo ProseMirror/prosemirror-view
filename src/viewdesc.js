@@ -736,8 +736,11 @@ function renderDescs(parentDOM, descs) {
     } else {
       parentDOM.insertBefore(childDOM, dom)
     }
-    if (desc instanceof MarkViewDesc)
+    if (desc instanceof MarkViewDesc) {
+      let pos = dom ? dom.previousSibling : parentDOM.lastChild
       renderDescs(desc.contentDOM, desc.children)
+      dom = pos ? pos.nextSibling : parentDOM.firstChild
+    }
   }
   while (dom) dom = rm(dom)
 }
