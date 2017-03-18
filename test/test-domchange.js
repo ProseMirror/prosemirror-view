@@ -1,5 +1,5 @@
 const ist = require("ist")
-const {eq, doc, p, pre, h1, em, img, br, strong, blockquote} = require("prosemirror-model/test/build")
+const {eq, doc, p, pre, h1, a, em, img, br, strong, blockquote} = require("prosemirror-model/test/build")
 const {EditorState} = require("prosemirror-state")
 const {tempEditor, findTextNode} = require("./view")
 
@@ -11,71 +11,78 @@ function setSel(aNode, aOff, fNode, fOff) {
   s.addRange(r)
 }
 
-function flush(view, f) {
-  return new Promise(accept => setTimeout(accept, 0)).then(() => {
-    if (view.inDOMChange) view.inDOMChange.finish()
-    f()
-  })
+function flush(view) {
+  view.domObserver.flush()
+  if (view.inDOMChange) view.inDOMChange.finish()
 }
 
 describe("DOM change", () => {
   it("notices when text is added", () => {
     let view = tempEditor({doc: doc(p("hello"))})
     findTextNode(view.dom, "hello").nodeValue = "heLllo"
-    return flush(view, () => ist(view.state.doc, doc(p("heLllo")), eq))
+    flush(view)
+    ist(view.state.doc, doc(p("heLllo")), eq)
   })
 
   it("notices when text is removed", () => {
     let view = tempEditor({doc: doc(p("hello"))})
     findTextNode(view.dom, "hello").nodeValue = "heo"
-    return flush(view, () => ist(view.state.doc, doc(p("heo")), eq))
+    flush(view)
+    ist(view.state.doc, doc(p("heo")), eq)
   })
 
   it("handles ambiguous changes", () => {
     let view = tempEditor({doc: doc(p("hello"))})
     findTextNode(view.dom, "hello").nodeValue = "helo"
-    return flush(view, () => ist(view.state.doc, doc(p("helo")), eq))
+    flush(view)
+    ist(view.state.doc, doc(p("helo")), eq)
   })
 
   it("respects stored marks", () => {
     let view = tempEditor({doc: doc(p("hello"))})
     view.dispatch(view.state.tr.addStoredMark(view.state.schema.marks.em.create()))
     findTextNode(view.dom, "hello").nodeValue = "helloo"
-    return flush(view, () => ist(view.state.doc, doc(p("hello", em("o"))), eq))
+    flush(view)
+    ist(view.state.doc, doc(p("hello", em("o"))), eq)
   })
 
   it("can add a node", () => {
     let view = tempEditor({doc: doc(p("hello"))})
     let txt = findTextNode(view.dom, "hello")
     txt.parentNode.appendChild(document.createTextNode("!"))
-    return flush(view, () => ist(view.state.doc, doc(p("hello!")), eq))
+    flush(view)
+    ist(view.state.doc, doc(p("hello!")), eq)
   })
 
   it("can remove a text node", () => {
     let view = tempEditor({doc: doc(p("hello"))})
     let txt = findTextNode(view.dom, "hello")
     txt.parentNode.removeChild(txt)
-    return flush(view, () => ist(view.state.doc, doc(p()), eq))
+    flush(view)
+    ist(view.state.doc, doc(p()), eq)
   })
 
   it("can add a paragraph", () => {
     let view = tempEditor({doc: doc(p("hello"))})
     view.dom.insertBefore(document.createElement("p"), view.dom.firstChild)
       .appendChild(document.createTextNode("hey"))
-    return flush(view, () => ist(view.state.doc, doc(p("hey"), p("hello")), eq))
+    flush(view)
+    ist(view.state.doc, doc(p("hey"), p("hello")), eq)
   })
 
   it("supports duplicating a paragraph", () => {
     let view = tempEditor({doc: doc(p("hello"))})
     view.dom.insertBefore(document.createElement("p"), view.dom.firstChild)
       .appendChild(document.createTextNode("hello"))
-    return flush(view, () => ist(view.state.doc, doc(p("hello"), p("hello")), eq))
+    flush(view)
+    ist(view.state.doc, doc(p("hello"), p("hello")), eq)
   })
 
   it("support inserting repeated text", () => {
     let view = tempEditor({doc: doc(p("hello"))})
     findTextNode(view.dom, "hello").nodeValue = "helhello"
-    return flush(view, () => ist(view.state.doc, doc(p("helhello")), eq))
+    flush(view)
+    ist(view.state.doc, doc(p("helhello")), eq)
   })
 
   it("detects an enter press", () => {
@@ -86,7 +93,8 @@ describe("DOM change", () => {
     })
     let bq = view.dom.querySelector("blockquote")
     bq.appendChild(document.createElement("p"))
-    return flush(view, () => ist(enterPressed))
+    flush(view)
+    ist(enterPressed)
   })
 
   it("detects a simple backspace press", () => {
@@ -97,7 +105,8 @@ describe("DOM change", () => {
     })
     view.dom.removeChild(view.dom.lastChild)
     view.dom.firstChild.textContent = "foobar"
-    return flush(view, () => ist(backspacePressed))
+    flush(view)
+    ist(backspacePressed)
   })
 
   it("detects a complex backspace press", () => {
@@ -109,7 +118,8 @@ describe("DOM change", () => {
     let bq = view.dom.firstChild
     bq.removeChild(bq.lastChild)
     bq.firstChild.firstChild.innerHTML = "foo<br>bar"
-    return flush(view, () => ist(backspacePressed))
+    flush(view)
+    ist(backspacePressed)
   })
 
   it("doesn't confuse delete with backspace", () => {
@@ -120,7 +130,8 @@ describe("DOM change", () => {
     })
     view.dom.removeChild(view.dom.lastChild)
     view.dom.firstChild.textContent = "foobar"
-    return flush(view, () => ist(!backspacePressed))
+    flush(view)
+    ist(!backspacePressed)
   })
 
   it("correctly adjusts the selection", () => {
@@ -128,11 +139,10 @@ describe("DOM change", () => {
     let textNode = findTextNode(view.dom, "abc")
     textNode.nodeValue = "abcd"
     setSel(textNode, 3)
-    return flush(view, () => {
-      ist(view.state.doc, doc(p("abcd")), eq)
-      ist(view.state.selection.anchor, 4)
-      ist(view.state.selection.head, 4)
-    })
+    flush(view)
+    ist(view.state.doc, doc(p("abcd")), eq)
+    ist(view.state.selection.anchor, 4)
+    ist(view.state.selection.head, 4)
   })
 
   it("handles splitting of a textblock", () => {
@@ -142,10 +152,9 @@ describe("DOM change", () => {
     split.innerHTML = "fg"
     findTextNode(para, "defg").nodeValue = "dexy"
     setSel(split.firstChild, 1)
-    return flush(view, () => {
-      ist(view.state.doc, doc(h1("abc"), p("dexy"), p("fg")), eq)
-      ist(view.state.selection.anchor, 13)
-    })
+    flush(view)
+    ist(view.state.doc, doc(h1("abc"), p("dexy"), p("fg")), eq)
+    ist(view.state.selection.anchor, 13)
   })
 
   it("handles a deep split of nodes", () => {
@@ -156,41 +165,45 @@ describe("DOM change", () => {
     let text2 = findTextNode(quote2, "abcd")
     text2.nodeValue = "cd"
     setSel(text2.parentNode, 0)
-    return flush(view, () => {
-      ist(view.state.doc, doc(blockquote(p("abx")), blockquote(p("cd"))), eq)
-      ist(view.state.selection.anchor, 9)
-    })
+    flush(view)
+    ist(view.state.doc, doc(blockquote(p("abx")), blockquote(p("cd"))), eq)
+    ist(view.state.selection.anchor, 9)
   })
 
   it("can delete the third instance of a character", () => {
     let view = tempEditor({doc: doc(p("foo xxx<a> bar"))})
     findTextNode(view.dom, "foo xxx bar").nodeValue = "foo xx bar"
-    return flush(view, () => ist(view.state.doc, doc(p("foo xx bar")), eq))
+    flush(view)
+    ist(view.state.doc, doc(p("foo xx bar")), eq)
   })
 
   it("can read a simple composition", () => {
     let view = tempEditor({doc: doc(p("hello"))})
     findTextNode(view.dom, "hello").nodeValue = "hellox"
-    return flush(view, () => ist(view.state.doc, doc(p("hellox")), eq))
+    flush(view)
+    ist(view.state.doc, doc(p("hellox")), eq)
   })
 
   it("can delete text in markup", () => {
     let view = tempEditor({doc: doc(p("a", em("b", img, strong("cd<a>")), "e"))})
     findTextNode(view.dom, "cd").nodeValue = "c"
-    return flush(view, () => ist(view.state.doc, doc(p("a", em("b", img, strong("c")), "e")), eq))
+    flush(view)
+    ist(view.state.doc, doc(p("a", em("b", img, strong("c")), "e")), eq)
   })
 
   it("recognizes typing inside markup", () => {
     let view = tempEditor({doc: doc(p("a", em("b", img, strong("cd<a>")), "e"))})
     findTextNode(view.dom, "cd").nodeValue = "cdxy"
-    return flush(view, () => ist(view.state.doc, doc(p("a", em("b", img, strong("cdxy")), "e")), eq))
+    flush(view)
+    ist(view.state.doc, doc(p("a", em("b", img, strong("cdxy")), "e")), eq)
   })
 
   it("resolves ambiguous text input", () => {
     let view = tempEditor({doc: doc(p("fo<a>o"))})
     view.dispatch(view.state.tr.addStoredMark(view.state.schema.marks.strong.create()))
     findTextNode(view.dom, "\ufeff").nodeValue = "\ufeffo"
-    return flush(view, () => ist(view.state.doc, doc(p("fo", strong("o"), "o")), eq))
+    flush(view)
+    ist(view.state.doc, doc(p("fo", strong("o"), "o")), eq)
   })
 
   it("does not repaint a text node when it's typed into", () => {
@@ -198,36 +211,39 @@ describe("DOM change", () => {
     findTextNode(view.dom, "foo").nodeValue = "fojo"
     let mutated = false, observer = new MutationObserver(() => mutated = true)
     observer.observe(view.dom, {subtree: true, characterData: true, childList: true})
-    return flush(view, () => {
-      ist(view.state.doc, doc(p("fojo")), eq)
-      ist(!mutated)
-      observer.disconnect()
-    })
+    flush(view)
+    ist(view.state.doc, doc(p("fojo")), eq)
+    ist(!mutated)
+    observer.disconnect()
   })
 
   it("understands text typed into an empty paragraph", () => {
     let view = tempEditor({doc: doc(p("<a>"))})
     view.dom.querySelector("p").textContent = "i"
-    return flush(view, () => ist(view.state.doc, doc(p("i")), eq))
+    flush(view)
+    ist(view.state.doc, doc(p("i")), eq)
   })
 
   it("doesn't treat a placeholder BR as real content", () => {
     let view = tempEditor({doc: doc(p("i<a>"))})
     view.dom.querySelector("p").innerHTML = "<br>"
-    return flush(view, () => ist(view.state.doc, doc(p()), eq))
+    flush(view)
+    ist(view.state.doc, doc(p()), eq)
   })
 
   it("fixes text changes when input is ignored", () => {
     let view = tempEditor({doc: doc(p("foo")), dispatchTransaction: () => null})
     findTextNode(view.dom, "foo").nodeValue = "food"
-    return flush(view, () => ist(view.dom.textContent, "foo"))
+    flush(view)
+    ist(view.dom.textContent, "foo")
   })
 
   it("fixes structure changes when input is ignored", () => {
     let view = tempEditor({doc: doc(p("foo", br, "bar")), dispatchTransaction: () => null})
     let para = view.dom.querySelector("p")
     para.replaceChild(document.createElement("img"), para.lastChild)
-    return flush(view, () => ist(view.dom.textContent, "foobar"))
+    flush(view)
+    ist(view.dom.textContent, "foobar")
   })
 
   it("maps through concurrent changes", () => {
@@ -235,10 +251,9 @@ describe("DOM change", () => {
     findTextNode(view.dom, "one two three").nodeValue = "one two THREE"
     view.dispatchEvent({type: "input"})
     view.dispatch(view.state.tr.insertText("ONE AND A HALF", 1, 4))
-    return flush(view, () => {
-      ist(view.dom.textContent, "ONE AND A HALF two THREE")
-      ist(view.state.doc, doc(p("ONE AND A HALF two THREE")), eq)
-    })
+    flush(view)
+    ist(view.dom.textContent, "ONE AND A HALF two THREE")
+    ist(view.state.doc, doc(p("ONE AND A HALF two THREE")), eq)
   })
 
   it("aborts when an incompatible state is set", () => {
@@ -246,9 +261,8 @@ describe("DOM change", () => {
     findTextNode(view.dom, "abcde").nodeValue = "xabcde"
     view.dispatchEvent({type: "input"})
     view.updateState(EditorState.create({doc: doc(p("uvw"))}))
-    return flush(view, () => {
-      ist(view.state.doc, doc(p("uvw")), eq)
-    })
+    flush(view)
+    ist(view.state.doc, doc(p("uvw")), eq)
   })
 
   it("recognizes a mark change as such", () => {
@@ -256,49 +270,46 @@ describe("DOM change", () => {
     view.dom.querySelector("p").innerHTML = "<b>one</b>"
     view.dispatchEvent({type: "input"})
     view.dispatch(view.state.tr.insertText("X", 2, 2))
-    return flush(view, () => ist(view.state.doc, doc(p(strong("oXne"))), eq))
+    flush(view)
+    ist(view.state.doc, doc(p(strong("oXne"))), eq)
   })
 
   it("preserves marks on deletion", () => {
     let view = tempEditor({doc: doc(p("one", em("x<a>")))})
     view.dom.querySelector("em").innerText = ""
     view.dispatchEvent({type: "input"})
-    return flush(view, () => {
-      view.dispatch(view.state.tr.insertText("y"))
-      ist(view.state.doc, doc(p("one", em("y"))), eq)
-    })
+    flush(view)
+    view.dispatch(view.state.tr.insertText("y"))
+    ist(view.state.doc, doc(p("one", em("y"))), eq)
   })
 
   it("works when a node's contentDOM is deleted", () => {
     let view = tempEditor({doc: doc(p("one"), pre("two<a>"))})
     view.dom.querySelector("pre").innerText = ""
     view.dispatchEvent({type: "input"})
-    return flush(view, () => {
-      ist(view.state.doc, doc(p("one"), pre()), eq)
-      ist(view.state.selection.head, 6)
-    })
+    flush(view)
+    ist(view.state.doc, doc(p("one"), pre()), eq)
+    ist(view.state.selection.head, 6)
   })
 
   it("doesn't redraw content with marks when typing in front", () => {
     let view = tempEditor({doc: doc(p("foo", em("bar"), strong("baz")))})
     let bar = findTextNode(view.dom, "bar"), foo = findTextNode(view.dom, "foo")
     foo.nodeValue = "froo"
-    return flush(view, () => {
-      ist(view.state.doc, doc(p("froo", em("bar"), strong("baz"))), eq)
-      ist(bar.parentNode && view.dom.contains(bar.parentNode))
-      ist(foo.parentNode && view.dom.contains(foo.parentNode))
-    })
+    flush(view)
+    ist(view.state.doc, doc(p("froo", em("bar"), strong("baz"))), eq)
+    ist(bar.parentNode && view.dom.contains(bar.parentNode))
+    ist(foo.parentNode && view.dom.contains(foo.parentNode))
   })
 
   it("doesn't redraw content with marks when typing inside mark", () => {
     let view = tempEditor({doc: doc(p("foo", em("bar"), strong("baz")))})
     let bar = findTextNode(view.dom, "bar"), foo = findTextNode(view.dom, "foo")
     bar.nodeValue = "baar"
-    return flush(view, () => {
-      ist(view.state.doc, doc(p("foo", em("baar"), strong("baz"))), eq)
-      ist(bar.parentNode && view.dom.contains(bar.parentNode))
-      ist(foo.parentNode && view.dom.contains(foo.parentNode))
-    })
+    flush(view)
+    ist(view.state.doc, doc(p("foo", em("baar"), strong("baz"))), eq)
+    ist(bar.parentNode && view.dom.contains(bar.parentNode))
+    ist(foo.parentNode && view.dom.contains(foo.parentNode))
   })
 
   it("maps input to coordsAtPos through pending changes", () => {
