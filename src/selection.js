@@ -1,6 +1,7 @@
 const {TextSelection, NodeSelection} = require("prosemirror-state")
 
 const browser = require("./browser")
+const {selectionCollapsed} = require("./dom")
 
 // Track the state of the current editor selection. Keeps the editor
 // selection in sync with the DOM selection by polling for changes,
@@ -219,21 +220,6 @@ function temporarilyEditable(view, pos) {
     return desc.dom
   }
 }
-
-function selectionCollapsed(selection) {
-  if (!selection.isCollapsed) {
-    return false
-  }
-
-  for (let i = 0, k = selection.rangeCount; i < k; i++) {
-    if (!selection.getRangeAt(i).collapsed) {
-      return false
-    }
-  }
-
-  return true
-}
-exports.selectionCollapsed = selectionCollapsed
 
 function removeClassOnSelectionChange(view) {
   document.removeEventListener("selectionchange", view.hideSelectionGuard)

@@ -1,3 +1,5 @@
+const browser = require("./browser")
+
 const domIndex = exports.domIndex = function(node) {
   for (var index = 0;; index++) {
     node = node.previousSibling
@@ -49,4 +51,13 @@ function nodeSize(node) {
 function hasBlockDesc(dom) {
   let desc = dom.pmViewDesc
   return desc && desc.node && desc.node.isBlock
+}
+
+// Work around Chrome issue https://bugs.chromium.org/p/chromium/issues/detail?id=447523
+// (isCollapsed inappropriately returns true in shadow dom)
+exports.selectionCollapsed = function(domSel) {
+  let collapsed = domSel.isCollapsed
+  if (collapsed && browser.chrome && domSel.rangeCount && !domSel.getRangeAt(0).collapsed)
+    collapsed = false
+  return collapsed
 }

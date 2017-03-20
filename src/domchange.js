@@ -3,7 +3,8 @@ const {Selection} = require("prosemirror-state")
 const {Mapping} = require("prosemirror-transform")
 
 const {TrackMappings} = require("./trackmappings")
-const {selectionBetween, selectionCollapsed} = require("./selection")
+const {selectionBetween} = require("./selection")
+const {selectionCollapsed} = require("./dom")
 
 class DOMChange {
   constructor(view, composing) {
