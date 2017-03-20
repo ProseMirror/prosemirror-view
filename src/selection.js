@@ -67,7 +67,7 @@ class SelectionReader {
     }
     let head = this.view.docView.posFromDOM(domSel.focusNode, domSel.focusOffset)
     let $head = doc.resolve(head), $anchor, selection
-    if (domSel.isCollapsed) {
+    if (selectionCollapsed(domSel)) {
       $anchor = $head
       while (nearestDesc && !nearestDesc.node) nearestDesc = nearestDesc.parent
       if (nearestDesc && nearestDesc.node.isAtom && NodeSelection.isSelectable(nearestDesc.node)) {
@@ -219,6 +219,21 @@ function temporarilyEditable(view, pos) {
     return desc.dom
   }
 }
+
+function selectionCollapsed(selection) {
+  if (!selection.isCollapsed) {
+    return false
+  }
+
+  for (let i = 0, k = selection.rangeCount; i < k; i++) {
+    if (!selection.getRangeAt(i).collapsed) {
+      return false
+    }
+  }
+
+  return true
+}
+exports.selectionCollapsed = selectionCollapsed
 
 function removeClassOnSelectionChange(view) {
   document.removeEventListener("selectionchange", view.hideSelectionGuard)

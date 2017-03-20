@@ -3,7 +3,7 @@ const {Selection} = require("prosemirror-state")
 const {Mapping} = require("prosemirror-transform")
 
 const {TrackMappings} = require("./trackmappings")
-const {selectionBetween} = require("./selection")
+const {selectionBetween, selectionCollapsed} = require("./selection")
 
 class DOMChange {
   constructor(view, composing) {
@@ -109,7 +109,7 @@ function parseBetween(view, oldState, range) {
   let domSel = view.root.getSelection(), find = null, anchor = domSel.anchorNode
   if (anchor && view.dom.contains(anchor.nodeType == 1 ? anchor : anchor.parentNode)) {
     find = [{node: anchor, offset: domSel.anchorOffset}]
-    if (!domSel.isCollapsed)
+    if (!selectionCollapsed(domSel))
       find.push({node: domSel.focusNode, offset: domSel.focusOffset})
   }
   let startDoc = oldState.doc
