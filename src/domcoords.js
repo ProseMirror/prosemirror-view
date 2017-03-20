@@ -159,6 +159,7 @@ function posFromCaret(view, node, offset, coords) {
   for (let cur = node;;) {
     if (cur == view.dom) break
     let desc = view.docView.nearestDesc(cur, true)
+    if (!desc) return null
     if (desc.node.isBlock) {
       let rect = desc.dom.getBoundingClientRect()
       if (rect.left > coords.left || rect.top > coords.top) outside = desc.posBefore
