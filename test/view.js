@@ -1,7 +1,7 @@
 const {selFor} = require("prosemirror-state/test/state")
 const {EditorView} = require("../dist")
 const {EditorState} = require("prosemirror-state")
-const {schema} = require("prosemirror-model/test/build")
+const {schema} = require("prosemirror-test-builder")
 
 let tempView = null
 

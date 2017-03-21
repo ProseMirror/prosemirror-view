@@ -1,7 +1,9 @@
 const ist = require("ist")
-const {eq, doc, p, pre, h1, a, em, img, br, strong, blockquote} = require("prosemirror-model/test/build")
+const {eq, doc, p, pre, h1, a, em, img: img_, br, strong, blockquote} = require("prosemirror-test-builder")
 const {EditorState} = require("prosemirror-state")
 const {tempEditor, findTextNode} = require("./view")
+
+const img = img_({src: "data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw=="})
 
 function setSel(aNode, aOff, fNode, fOff) {
   let r = document.createRange(), s = window.getSelection()

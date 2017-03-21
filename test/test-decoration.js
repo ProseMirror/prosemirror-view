@@ -1,5 +1,5 @@
 const ist = require("ist")
-const {schema, doc, p, blockquote} = require("prosemirror-model/test/build")
+const {schema, doc, p, blockquote} = require("prosemirror-test-builder")
 const {Transform} = require("prosemirror-transform")
 
 const {Decoration, DecorationSet, removeOverlap} = require("../dist/decoration")

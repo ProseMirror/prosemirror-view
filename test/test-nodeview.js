@@ -1,4 +1,4 @@
-const {doc, p, img} = require("prosemirror-model/test/build")
+const {doc, p, br} = require("prosemirror-test-builder")
 const {Plugin} = require("prosemirror-state")
 const {tempEditor} = require("./view")
 const {DecorationSet, Decoration} = require("../dist")
@@ -6,10 +6,9 @@ const ist = require("ist")
 
 describe("nodeViews prop", () => {
   it("can replace a node's representation", () => {
-    let view = tempEditor({doc: doc(p("foo", img)),
-                           nodeViews: {image() { return {dom: document.createElement("var")}}}})
+    let view = tempEditor({doc: doc(p("foo", br)),
+                           nodeViews: {hard_break() { return {dom: document.createElement("var")}}}})
     ist(view.dom.querySelector("var"))
-    ist(!view.dom.querySelector("img"))
   })
 
   it("can override drawing of a node's content", () => {
@@ -77,8 +76,8 @@ describe("nodeViews prop", () => {
 
   it("has its destroy method called", () => {
     let destroyed = false, view = tempEditor({
-      doc: doc(p("foo", img)),
-      nodeViews: {image() { return {destroy: () => destroyed = true}}}
+      doc: doc(p("foo", br)),
+      nodeViews: {hard_break() { return {destroy: () => destroyed = true}}}
     })
     ist(!destroyed)
     view.dispatch(view.state.tr.delete(3, 5))
@@ -87,8 +86,8 @@ describe("nodeViews prop", () => {
 
   it("can query its own position", () => {
     let get, view = tempEditor({
-      doc: doc(p("foo", img)),
-      nodeViews: {image(_n, _v, getPos) { get = getPos; return {}}}
+      doc: doc(p("foo", br)),
+      nodeViews: {hard_break(_n, _v, getPos) { get = getPos; return {}}}
     })
     ist(get(), 4)
     view.dispatch(view.state.tr.insertText("a"))
@@ -109,9 +108,9 @@ describe("nodeViews prop", () => {
       }
     })
     let view = tempEditor({
-      doc: doc(p("foo", img)),
+      doc: doc(p("foo", br)),
       plugins: [plugin],
-      nodeViews: {image(_n, _v, _p, deco) {
+      nodeViews: {hard_break(_n, _v, _p, deco) {
         let dom = document.createElement("var")
         function update(deco) {
           dom.textContent = deco.length ? deco[0].spec.name : "[]"

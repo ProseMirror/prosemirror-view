@@ -1,5 +1,5 @@
 const ist = require("ist")
-const {eq, doc, p, blockquote, ul, ol, li, hr, br} = require("prosemirror-model/test/build")
+const {eq, doc, p, blockquote, ul, ol, li, hr, br} = require("prosemirror-test-builder")
 const {NodeSelection, TextSelection} = require("prosemirror-state")
 const {Slice} = require("prosemirror-model")
 const {tempEditor} = require("./view")

@@ -1,4 +1,4 @@
-const {doc, pre, h1, p} = require("prosemirror-model/test/build")
+const {doc, pre, h1, p} = require("prosemirror-test-builder")
 const {Plugin} = require("prosemirror-state")
 const {tempEditor} = require("./view")
 const ist = require("ist")

@@ -1,8 +1,10 @@
-const {schema, doc, blockquote, p, em, img, strong, code, br, hr, ul, li} = require("prosemirror-model/test/build")
+const {schema, doc, blockquote, p, em, img: img_, strong, code, br, hr, ul, li} = require("prosemirror-test-builder")
 const ist = require("ist")
 const {Selection, NodeSelection} = require("prosemirror-state")
 const {tempEditor, findTextNode} = require("./view")
 const {Decoration, DecorationSet} = require("../dist")
+
+const img = img_({src: "data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw=="})
 
 function allPositions(doc) {
   let found = []
