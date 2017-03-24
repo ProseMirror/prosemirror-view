@@ -53,7 +53,7 @@ exports.ensureListeners = ensureListeners
 function runCustomHandler(view, event) {
   return view.someProp("handleDOMEvents", handlers => {
     let handler = handlers[event.type]
-    return handler ? handler(view, event) : false
+    return handler ? handler(view, event) || event.defaultPrevented : false
   })
 }
 
