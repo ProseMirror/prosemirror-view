@@ -55,7 +55,7 @@ function fromClipboard(view, dataTransfer, plainText, $context) {
     view.someProp("transformPastedText", f => txt = f(txt))
     if (inCode) return new Slice(Fragment.from(view.state.schema.text(txt)), 0, 0)
     dom = document.createElement("div")
-    txt.split(/(?:\r\n?|\n)+/).forEach(block => {
+    txt.trim().split(/(?:\r\n?|\n)+/).forEach(block => {
       dom.appendChild(document.createElement("p")).textContent = block
     })
   } else {

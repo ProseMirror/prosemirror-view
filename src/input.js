@@ -359,8 +359,8 @@ handlers.copy = editHandlers.cut = (view, e) => {
     if (cut && browser.ie && browser.ie_version <= 11) DOMChange.start(view)
     return
   }
-  toClipboard(view, sel, e.clipboardData)
   e.preventDefault()
+  toClipboard(view, sel, e.clipboardData)
   if (cut) view.dispatch(view.state.tr.deleteRange(sel.from, sel.to).scrollIntoView())
 }
 
@@ -374,13 +374,15 @@ editHandlers.paste = (view, e) => {
     return
   }
   let slice = fromClipboard(view, e.clipboardData, view.shiftKey, view.state.selection.$from)
-  if (slice) {
-    e.preventDefault()
-    view.someProp("transformPasted", f => { slice = f(slice) })
-    let singleNode = sliceSingleNode(slice)
-    let tr = singleNode ? view.state.tr.replaceSelectionWith(singleNode) : view.state.tr.replaceSelection(slice)
-    view.dispatch(tr.scrollIntoView())
-  }
+  if (!slice) return
+  e.preventDefault()
+
+  view.someProp("transformPasted", f => { slice = f(slice) })
+  if (view.someProp("handlePaste", f => f(view, e, slice))) return
+
+  let singleNode = sliceSingleNode(slice)
+  let tr = singleNode ? view.state.tr.replaceSelectionWith(singleNode) : view.state.tr.replaceSelection(slice)
+  view.dispatch(tr.scrollIntoView())
 }
 
 class Dragging {
@@ -439,6 +441,12 @@ handlers.dragend = view => {
 
 editHandlers.dragover = editHandlers.dragenter = (_, e) => e.preventDefault()
 
+function movedFrom(view, dragging) {
+  if (!dragging || !dragging.move) return null
+  let mapping = dragging.move.getMapping(view.state)
+  return mapping && {from: mapping.map(dragging.range.from, 1), to: mapping.map(dragging.range.to, -1)}
+}
+
 editHandlers.drop = (view, e) => {
   let dragging = view.dragging
   clearDragging(view)
@@ -449,15 +457,15 @@ editHandlers.drop = (view, e) => {
   if (!$mouse) return
   let slice = dragging && dragging.slice || fromClipboard(view, e.dataTransfer, false, $mouse)
   if (!slice) return
-  let insertPos = dropPos(slice, view.state.doc.resolve($mouse.pos))
 
   e.preventDefault()
-  let tr = view.state.tr
-  if (dragging && dragging.move) {
-    let {from, to} = dragging.range, mapping = dragging.move.getMapping(view.state)
-    if (mapping) tr.deleteRange(mapping.map(from, 1), mapping.map(to, -1))
-  }
   view.someProp("transformPasted", f => { slice = f(slice) })
+  if (view.someProp("handleDrop", e, slice, movedFrom(view, dragging))) return
+  let insertPos = dropPos(slice, view.state.doc.resolve($mouse.pos))
+
+  let tr = view.state.tr, moved = movedFrom(view, dragging)
+  if (moved) tr.deleteRange(moved.from, moved.to)
+
   let pos = tr.mapping.map(insertPos)
   let isNode = slice.openLeft == 0 && slice.openRight == 0 && slice.content.childCount == 1
   if (isNode)

@@ -395,6 +395,16 @@ function getEditable(view) {
 //   handleContextMenu:: ?(view: EditorView, pos: number, event: dom.MouseEvent) → bool
 //   Called when a context menu event is fired in the editor.
 //
+//   handlePaste:: ?(view: EditorView, event: dom.Event, slice: Slice) → bool
+//   Can be used to override the behavior of pasting. `slice` is the
+//   pasted content parsed by the editor, but you can directly access
+//   the event to get at the raw content.
+//
+//   handleDrop:: ?(view: EditorView, event: dom.Event, slice: Slice, moved: ?{from: number, to: number}) → bool
+//   Called when something is dropped on the editor. `moved` will
+//   point at the original range when this drop moves something inside
+//   the editor.
+//
 //   onFocus:: ?(view: EditorView, event: dom.Event)
 //   Called when the editor is focused.
 //
