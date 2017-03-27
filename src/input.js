@@ -41,8 +41,8 @@ function destroyInput(view) {
 exports.destroyInput = destroyInput
 
 function ensureListeners(view) {
-  view.someProp("handleDOMEvents", handlers => {
-    for (let type in handlers) if (!view.extraHandlers[type] && handlers.hasOwnProperty(type)) {
+  view.someProp("handleDOMEvents", currentHandlers => {
+    for (let type in currentHandlers) if (!view.extraHandlers[type] && !handlers.hasOwnProperty(type)) {
       view.extraHandlers[type] = true
       view.dom.addEventListener(type, event => runCustomHandler(view, event))
     }
