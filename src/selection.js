@@ -174,7 +174,11 @@ function selectionToDOM(view, takeFocus) {
   if (!view.hasFocus()) {
     if (!takeFocus) return
     // See https://bugzilla.mozilla.org/show_bug.cgi?id=921444
-    else if (browser.gecko && view.editable) view.dom.focus()
+    if (browser.gecko && view.editable) {
+      view.selectionReader.ignoreUpdates = true
+      view.dom.focus()
+      view.selectionReader.ignoreUpdates = false
+    }
   }
 
   let reader = view.selectionReader
