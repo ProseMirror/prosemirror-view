@@ -176,12 +176,11 @@ function posAtCoords(view, coords) {
   let root = view.root, node, offset
   if (root.caretPositionFromPoint) {
     let pos = root.caretPositionFromPoint(coords.left, coords.top)
-    if (!pos) return null
-    ;({offsetNode: node, offset} = pos)
-  } else if (root.caretRangeFromPoint) {
+    if (pos) ({offsetNode: node, offset} = pos)
+  }
+  if (!node && root.caretRangeFromPoint) {
     let range = root.caretRangeFromPoint(coords.left, coords.top)
-    if (!range) return null
-    ;({startContainer: node, startOffset: offset} = range)
+    if (range) ({startContainer: node, startOffset: offset} = range)
   }
 
   let elt = root.elementFromPoint(coords.left, coords.top + 1)
