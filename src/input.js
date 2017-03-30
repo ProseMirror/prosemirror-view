@@ -96,8 +96,8 @@ editHandlers.keypress = (view, event) => {
     return
   }
 
-  let {node, $from, $to} = view.state.selection
-  if (node || !$from.sameParent($to) || !(view.state.selection instanceof TextSelection)) {
+  let {$from, $to} = view.state.selection
+  if (!(view.state.selection instanceof TextSelection) || !$from.sameParent($to)) {
     let text = String.fromCharCode(event.charCode)
     if (!view.someProp("handleTextInput", f => f(view, $from.pos, $to.pos, text)))
       view.dispatch(view.state.tr.insertText(text).scrollIntoView())
