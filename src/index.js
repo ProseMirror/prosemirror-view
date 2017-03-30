@@ -1,4 +1,5 @@
 const {Mark} = require("prosemirror-model")
+const {NodeSelection} = require("prosemirror-state")
 
 const {scrollRectIntoView, posAtCoords, coordsAtPos, endOfTextblock, storeScrollPos, resetScrollPos} = require("./domcoords")
 const {docViewDesc} = require("./viewdesc")
@@ -122,7 +123,7 @@ class EditorView {
     this.updatePluginViews(prev)
 
     if (scrollToSelection) {
-      if (state.selection.node)
+      if (state.selection instanceof NodeSelection)
         scrollRectIntoView(this, this.docView.domAfterPos(state.selection.from).getBoundingClientRect())
       else
         scrollRectIntoView(this, this.coordsAtPos(state.selection.head))

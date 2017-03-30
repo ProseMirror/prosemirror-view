@@ -80,8 +80,7 @@ class SelectionReader {
     }
 
     if (!selection) {
-      let bias = origin == "pointer" ||
-          (this.view.state.selection.head != null && this.view.state.selection.head < $head.pos) ? 1 : -1
+      let bias = origin == "pointer" || this.view.state.selection.head < $head.pos ? 1 : -1
       selection = selectionBetween(this.view, $anchor, $head, bias)
     }
     if (head == selection.head && $anchor.pos == selection.anchor)

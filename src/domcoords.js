@@ -249,7 +249,8 @@ function withFlushedState(view, state, f) {
 // Whether vertical position motion in a given direction
 // from a position would leave a text block.
 function endOfTextblockVertical(view, state, dir) {
-  let $pos = dir == "up" ? state.selection.$from : state.selection.$to
+  let sel = state.selection
+  let $pos = dir == "up" ? sel.$anchor.min(sel.$head) : sel.$anchor.max(sel.$head)
   if (!$pos.depth) return false
   return withFlushedState(view, state, () => {
     let dom = view.docView.domAfterPos($pos.before())

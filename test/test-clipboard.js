@@ -20,7 +20,7 @@ describe("Clipboard interface", () => {
     let d = doc(blockquote(p("a"), "<a>", hr), p("b"))
     let view = tempEditor({doc: d}), dt = transfer()
     toClipboard(view, NodeSelection.create(d, d.tag.a), dt)
-    ist(dt.getData("text/html"), '<hr data-pm-node-selection="true">')
+    ist(dt.getData("text/html"), '<hr data-pm-context="none">')
     ist(fromClipboard(view, dt, false, d.resolve(1)), d.slice(d.tag.a, d.tag.a + 1), eq)
   })
 

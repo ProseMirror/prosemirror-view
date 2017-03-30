@@ -96,10 +96,10 @@ editHandlers.keypress = (view, event) => {
     return
   }
 
-  let {$from, $to} = view.state.selection
-  if (!(view.state.selection instanceof TextSelection) || !$from.sameParent($to)) {
+  let sel = view.state.selection
+  if (!(sel instanceof TextSelection) || !sel.$from.sameParent(sel.$to)) {
     let text = String.fromCharCode(event.charCode)
-    if (!view.someProp("handleTextInput", f => f(view, $from.pos, $to.pos, text)))
+    if (!view.someProp("handleTextInput", f => f(view, sel.$from.pos, sel.$to.pos, text)))
       view.dispatch(view.state.tr.insertText(text).scrollIntoView())
     event.preventDefault()
   }
@@ -144,15 +144,16 @@ function selectClickedLeaf(view, inside) {
 
 function selectClickedNode(view, inside) {
   if (inside == -1) return false
-  let {node: selectedNode, $from} = view.state.selection, selectAt
+  let sel = view.state.selection, selectedNode, selectAt
+  if (sel instanceof NodeSelection) selectedNode = sel.node
 
   let $pos = view.state.doc.resolve(inside)
   for (let i = $pos.depth + 1; i > 0; i--) {
     let node = i > $pos.depth ? $pos.nodeAfter : $pos.node(i)
     if (NodeSelection.isSelectable(node)) {
-      if (selectedNode && $from.depth > 0 &&
-          i >= $from.depth && $pos.before($from.depth + 1) == $from.pos)
-        selectAt = $pos.before($from.depth)
+      if (selectedNode && sel.$from.depth > 0 &&
+          i >= sel.$from.depth && $pos.before(sel.$from.depth + 1) == sel.$from.pos)
+        selectAt = $pos.before(sel.$from.depth)
       else
         selectAt = $pos.before(i)
       break
@@ -254,7 +255,11 @@ class MouseDown {
       targetPos = $pos.depth ? $pos.before() : 0
     }
 
-    this.mightDrag = (targetNode.type.spec.draggable || targetNode == view.state.selection.node) ? {node: targetNode, pos: targetPos} : null
+    this.mightDrag = null
+    if (targetNode.type.spec.draggable ||
+        view.state.selection instanceof NodeSelection && targetNode == view.state.selection.node)
+      this.mightDrag = {node: targetNode, pos: targetPos}
+
     this.target = flushed ? null : event.target
     if (this.target && this.mightDrag) {
       this.view.domObserver.stop()
@@ -361,7 +366,7 @@ handlers.copy = editHandlers.cut = (view, e) => {
   }
   e.preventDefault()
   toClipboard(view, sel, e.clipboardData)
-  if (cut) view.dispatch(view.state.tr.deleteRange(sel.from, sel.to).scrollIntoView())
+  if (cut) view.dispatch(view.state.tr.deleteSelection().scrollIntoView())
 }
 
 function sliceSingleNode(slice) {

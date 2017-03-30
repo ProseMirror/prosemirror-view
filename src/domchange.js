@@ -154,9 +154,10 @@ function isAtStart($pos, depth) {
 }
 
 function rangeAroundSelection(selection) {
-  let {$from, $to} = selection
+  // Intentionally uses $head/$anchor because those will correspond to the DOM selection
+  let $from = selection.$anchor.min(selection.$head), $to = selection.$anchor.max(selection.$head)
 
-  if ($from.sameParent($to) && $from.parent.isTextblock && $from.parentOffset && $to.parentOffset < $to.parent.content.size) {
+  if ($from.sameParent($to) && $from.parent.inlineContent && $from.parentOffset && $to.parentOffset < $to.parent.content.size) {
     let startOff = Math.max(0, $from.parentOffset)
     let size = $from.parent.content.size
     let endOff = Math.min(size, $to.parentOffset)
