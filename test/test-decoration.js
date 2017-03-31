@@ -141,13 +141,13 @@ describe("DecorationSet", () => {
     })
 
     it("understands unclusiveLeft", () => {
-      let {set} = buildMap(doc(p("foo")), {from: 2, to: 3, inclusiveLeft: true},
+      let {set} = buildMap(doc(p("foo")), {from: 2, to: 3, inclusiveStart: true},
                            tr => tr.replaceWith(2, 2, schema.text(".")).replaceWith(4, 4, schema.text("?")))
       ist(str(set), "[0: [1-3]]")
     })
 
     it("understands unclusiveRight", () => {
-      let {set} = buildMap(doc(p("foo")), {from: 2, to: 3, inclusiveRight: true},
+      let {set} = buildMap(doc(p("foo")), {from: 2, to: 3, inclusiveEnd: true},
                            tr => tr.replaceWith(2, 2, schema.text(".")).replaceWith(4, 4, schema.text("?")))
       ist(str(set), "[0: [2-4]]")
     })
