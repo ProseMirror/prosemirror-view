@@ -3,7 +3,7 @@ const {Selection, NodeSelection, TextSelection} = require("prosemirror-state")
 const browser = require("./browser")
 const {captureKeyDown} = require("./capturekeys")
 const {DOMChange} = require("./domchange")
-const {fromClipboard, toClipboard, canUpdateClipboard} = require("./clipboard")
+const {fromClipboard, toClipboard} = require("./clipboard")
 const {TrackMappings} = require("./trackmappings")
 const {DOMObserver} = require("./domobserver")
 const {selectionBetween} = require("./selection")
@@ -360,7 +360,8 @@ editHandlers.input = view => DOMChange.start(view)
 handlers.copy = editHandlers.cut = (view, e) => {
   let sel = view.state.selection, cut = e.type == "cut"
   if (sel.empty) return
-  if (!e.clipboardData || !canUpdateClipboard(e.clipboardData)) {
+  // IE and Edge's clipboard interface is completely broken
+  if (!e.clipboardData || browser.ie) {
     if (cut && browser.ie && browser.ie_version <= 11) DOMChange.start(view)
     return
   }

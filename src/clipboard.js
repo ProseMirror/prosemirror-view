@@ -29,14 +29,6 @@ function toClipboard(view, range, dataTransfer) {
 }
 exports.toClipboard = toClipboard
 
-let cachedCanUpdateClipboard = null
-function canUpdateClipboard(dataTransfer) {
-  if (cachedCanUpdateClipboard != null) return cachedCanUpdateClipboard
-  dataTransfer.setData("text/html", "<hr>")
-  return cachedCanUpdateClipboard = dataTransfer.getData("text/html") == "<hr>"
-}
-exports.canUpdateClipboard = canUpdateClipboard
-
 // : (EditorView, dom.DataTransfer, ?bool, ResolvedPos) → ?Slice
 // Read a slice of content from the clipboard (or drop data).
 function fromClipboard(view, dataTransfer, plainText, $context) {
