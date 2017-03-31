@@ -28,7 +28,7 @@ class SelectionReader {
 
   editableChanged() {
     if (!this.view.editable) this.poller.start()
-    else if (!this.view.hasFocus()) this.poller.stop()
+    else if (!hasFocusAndSelection(this.view)) this.poller.stop()
   }
 
   // : () → bool
@@ -55,7 +55,7 @@ class SelectionReader {
   // When the DOM selection changes in a notable manner, modify the
   // current selection state to match.
   readFromDOM(origin) {
-    if (this.ignoreUpdates || !this.domChanged() || !this.view.hasFocus()) return
+    if (this.ignoreUpdates || !this.domChanged() || !hasFocusAndSelection(this.view)) return
     if (!this.view.inDOMChange) this.view.domObserver.flush()
     if (this.view.inDOMChange) return
 
@@ -116,7 +116,7 @@ class SelectionChangePoller {
     if (!this.listening) {
       document.addEventListener("selectionchange", this.readFunc)
       this.listening = true
-      if (this.reader.view.hasFocus()) this.readFunc()
+      if (hasFocusAndSelection(this.reader.view)) this.readFunc()
     }
   }
 
@@ -271,3 +271,9 @@ function selectionBetween(view, $anchor, $head, bias) {
     || TextSelection.between($anchor, $head, bias)
 }
 exports.selectionBetween = selectionBetween
+
+function hasFocusAndSelection(view) {
+  if (view.editable && view.root.activeElement != view.dom) return false
+  let sel = view.root.getSelection()
+  return sel.rangeCount && view.dom.contains(sel.anchorNode.nodeType == 3 ? sel.anchorNode.parentNode : sel.anchorNode)
+}

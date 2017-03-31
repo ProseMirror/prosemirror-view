@@ -156,9 +156,7 @@ class EditorView {
   // :: () → bool
   // Query whether the view has focus.
   hasFocus() {
-    if (this.editable && this.root.activeElement != this.dom) return false
-    let sel = this.root.getSelection()
-    return sel.rangeCount && this.dom.contains(sel.anchorNode.nodeType == 3 ? sel.anchorNode.parentNode : sel.anchorNode)
+    return this.root.activeElement == this.dom
   }
 
   // :: (string, (prop: *) → *) → *
