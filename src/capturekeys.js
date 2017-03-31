@@ -52,19 +52,23 @@ function skipIgnoredNodesLeft(view) {
   let sel = view.root.getSelection()
   let node = sel.anchorNode, offset = sel.anchorOffset
   let moveNode, moveOffset
-  if (node.nodeType == 3 && offset && node.nodeValue.charAt(offset - 1) == "\ufeff") {
-    moveNode = node
-    moveOffset = --offset
-  }
   for (;;) {
     if (offset > 0) {
-      if (node.nodeType != 1) break
-      let before = node.childNodes[offset - 1]
-      if (isIgnorable(before)) {
-        moveNode = node
-        moveOffset = --offset
+      if (node.nodeType != 1) {
+        if (node.nodeType == 3 && node.nodeValue.charAt(offset - 1) == "\ufeff") {
+          moveNode = node
+          moveOffset = --offset
+        } else break
+      } else {
+        let before = node.childNodes[offset - 1]
+        if (isIgnorable(before)) {
+          moveNode = node
+          moveOffset = --offset
+        } else if (before.nodeType == 3) {
+          node = before
+          offset = node.nodeValue.length
+        } else break
       }
-      else break
     } else if (isBlockNode(node)) {
       break
     } else {
