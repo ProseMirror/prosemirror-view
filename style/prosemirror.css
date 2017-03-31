@@ -8,14 +8,7 @@
 }
 
 .ProseMirror ul, .ProseMirror ol {
-  padding-left: 30px;
   cursor: default;
-}
-
-.ProseMirror blockquote {
-  padding-left: 1em;
-  border-left: 3px solid #eee;
-  margin-left: 0; margin-right: 0;
 }
 
 .ProseMirror pre {
