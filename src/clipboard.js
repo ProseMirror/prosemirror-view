@@ -1,6 +1,8 @@
 const {Slice, Fragment, DOMParser, DOMSerializer} = require("prosemirror-model")
 const {NodeSelection} = require("prosemirror-state")
 
+const browser = require("./browser")
+
 // : (EditorView, Selection, dom.DataTransfer) → Slice
 // Store the content of a selection in the clipboard (or whatever the
 // given data transfer refers to)
@@ -34,8 +36,8 @@ exports.toClipboard = toClipboard
 function fromClipboard(view, dataTransfer, plainText, $context) {
   let txt = dataTransfer.getData("text/plain")
   let html = dataTransfer.getData("text/html")
-  if (!html && !txt) return null
   let dom, inCode = $context.parent.type.spec.code
+  if (!html && (!txt || browser.ie && !(inCode, plainText))) return null
   if ((plainText || inCode || !html) && txt) {
     view.someProp("transformPastedText", f => txt = f(txt))
     if (inCode) return new Slice(Fragment.from(view.state.schema.text(txt)), 0, 0)
