@@ -745,10 +745,8 @@ function renderDescs(parentDOM, descs) {
   while (dom) dom = rm(dom)
 }
 
-class OuterDecoLevel {
-  constructor(nodeName) {
-    if (nodeName) this.nodeName = nodeName
-  }
+function OuterDecoLevel(nodeName) {
+  if (nodeName) this.nodeName = nodeName
 }
 OuterDecoLevel.prototype = Object.create(null)
 
