@@ -413,11 +413,15 @@ class CursorWrapperDesc extends WidgetViewDesc {
   parseRule() {
     let content
     for (let child = this.dom.firstChild; child; child = child.nextSibling) {
-      let add = child
+      let add
       if (child.nodeType == 3) {
         let text = child.nodeValue.replace(/\ufeff/g, "")
         if (!text) continue
         add = document.createTextNode(text)
+      } else if (child.textContent == "\ufeff") {
+        continue
+      } else {
+        add = child.cloneNode(true)
       }
       if (!content) content = document.createDocumentFragment()
       content.appendChild(add)
