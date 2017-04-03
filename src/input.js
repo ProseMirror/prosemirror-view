@@ -239,6 +239,7 @@ class MouseDown {
   constructor(view, pos, event, flushed) {
     this.view = view
     this.pos = pos
+    this.event = event
     this.flushed = flushed
     this.selectNode = event[selectNodeModifier]
     this.allowDefault = event.shiftKey
@@ -303,8 +304,8 @@ class MouseDown {
   }
 
   move(event) {
-    if (!this.allowDefault && (Math.abs(this.x - event.clientX) > 4 ||
-                               Math.abs(this.y - event.clientY) > 4))
+    if (!this.allowDefault && (Math.abs(this.event.x - event.clientX) > 4 ||
+                               Math.abs(this.event.y - event.clientY) > 4))
       this.allowDefault = true
     this.view.selectionReader.poll("pointer")
   }
