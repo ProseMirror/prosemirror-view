@@ -4,7 +4,6 @@ const browser = require("./browser")
 const {captureKeyDown} = require("./capturekeys")
 const {DOMChange} = require("./domchange")
 const {fromClipboard, toClipboard} = require("./clipboard")
-const {TrackMappings} = require("./trackmappings")
 const {DOMObserver} = require("./domobserver")
 const {selectionBetween} = require("./selection")
 
@@ -36,7 +35,6 @@ exports.initInput = initInput
 function destroyInput(view) {
   view.domObserver.stop()
   if (view.inDOMChange) view.inDOMChange.destroy()
-  if (view.dragging) view.dragging.destroy()
 }
 exports.destroyInput = destroyInput
 
@@ -256,8 +254,8 @@ class MouseDown {
     }
 
     this.mightDrag = null
-    if (targetNode.type.spec.draggable ||
-        view.state.selection instanceof NodeSelection && targetNode == view.state.selection.node)
+    if (targetNode.type.spec.draggable && targetNode.type.spec.selectable !== false ||
+        view.state.selection instanceof NodeSelection && targetPos == view.state.selection.from)
       this.mightDrag = {node: targetNode, pos: targetPos}
 
     this.target = flushed ? null : event.target
@@ -392,21 +390,9 @@ editHandlers.paste = (view, e) => {
 }
 
 class Dragging {
-  constructor(state, slice, range, move) {
+  constructor(slice, move) {
     this.slice = slice
-    this.range = range
-    this.move = move && new TrackMappings(state)
-  }
-
-  destroy() {
-    if (this.move) this.move.destroy()
-  }
-}
-
-function clearDragging(view) {
-  if (view.dragging) {
-    view.dragging.destroy()
-    view.dragging = null
+    this.move = move
   }
 }
 
@@ -428,34 +414,27 @@ handlers.dragstart = (view, e) => {
   if (mouseDown) mouseDown.done()
   if (!e.dataTransfer) return
 
-  let sel = view.state.selection, draggedRange
+  let sel = view.state.selection
   let pos = sel.empty ? null : view.posAtCoords(eventCoords(e))
-  if (pos != null && pos.pos >= sel.from && pos.pos <= sel.to)
-    draggedRange = sel
-  else if (mouseDown && mouseDown.mightDrag)
-    draggedRange = NodeSelection.create(view.state.doc, mouseDown.mightDrag.pos)
-
-  if (draggedRange) {
-    let slice = toClipboard(view, draggedRange, e.dataTransfer)
-    view.dragging = new Dragging(view.state, slice, draggedRange, !e.ctrlKey)
+  if (pos && pos.pos >= sel.from && pos.pos <= sel.to) {
+    // In selection
+  } else if (mouseDown && mouseDown.mightDrag) {
+    view.dispatch(view.state.tr.setSelection(NodeSelection.create(view.state.doc, mouseDown.mightDrag.pos)))
+  } else {
+    return
   }
+  view.dragging = new Dragging(toClipboard(view, view.state.selection, e.dataTransfer), !e.ctrlKey)
 }
 
 handlers.dragend = view => {
-  window.setTimeout(() => clearDragging(view), 50)
+  window.setTimeout(() => view.dragging = null, 50)
 }
 
 editHandlers.dragover = editHandlers.dragenter = (_, e) => e.preventDefault()
 
-function movedFrom(view, dragging) {
-  if (!dragging || !dragging.move) return null
-  let mapping = dragging.move.getMapping(view.state)
-  return mapping && {from: mapping.map(dragging.range.from, 1), to: mapping.map(dragging.range.to, -1)}
-}
-
 editHandlers.drop = (view, e) => {
   let dragging = view.dragging
-  clearDragging(view)
+  view.dragging = null
 
   if (!e.dataTransfer) return
 
@@ -466,11 +445,11 @@ editHandlers.drop = (view, e) => {
 
   e.preventDefault()
   view.someProp("transformPasted", f => { slice = f(slice) })
-  if (view.someProp("handleDrop", e, slice, movedFrom(view, dragging))) return
+  if (view.someProp("handleDrop", e, slice, dragging && dragging.move)) return
   let insertPos = dropPos(slice, view.state.doc.resolve($mouse.pos))
 
-  let tr = view.state.tr, moved = movedFrom(view, dragging)
-  if (moved) tr.deleteRange(moved.from, moved.to)
+  let tr = view.state.tr
+  if (dragging && dragging.move) tr.deleteSelection()
 
   let pos = tr.mapping.map(insertPos)
   let isNode = slice.openLeft == 0 && slice.openRight == 0 && slice.content.childCount == 1
