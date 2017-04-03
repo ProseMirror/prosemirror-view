@@ -191,9 +191,9 @@ function selectionToDOM(view, takeFocus) {
     let {anchor, head} = sel, resetEditableFrom, resetEditableTo
     if (browser.webkit && !(sel instanceof TextSelection)) {
       if (!sel.$from.parent.inlineContent)
-        resetEditableFrom = temporarilyEditable(view, sel.from)
+        resetEditableFrom = temporarilyEditableNear(view, sel.from)
       if (!sel.empty && !sel.$from.parent.inlineContent)
-        resetEditableTo = temporarilyEditable(view, sel.to)
+        resetEditableTo = temporarilyEditableNear(view, sel.to)
     }
     view.docView.setSelection(anchor, head, view.root)
     if (browser.webkit) {
@@ -214,13 +214,20 @@ function selectionToDOM(view, takeFocus) {
 exports.selectionToDOM = selectionToDOM
 
 // Kludge to work around Webkit not allowing a selection to start/end
-// before a non-editable block node. We briefly make it editable, set
-// the selection, then set it uneditable again.
-function temporarilyEditable(view, pos) {
-  let desc = view.docView.descAt(pos)
-  if (desc && !desc.contentDOM && desc.dom.contentEditable == "false") {
-    desc.dom.contentEditable = "true"
-    return desc.dom
+// between non-editable block nodes. We briefly make something
+// editable, set the selection, then set it uneditable again.
+function temporarilyEditableNear(view, pos) {
+  let {node, offset} = view.docView.domFromPos(pos)
+  let after = offset < node.childNodes.length ? node.childNodes[offset] : null
+  let before = offset ? node.childNodes[offset - 1] : null
+  if ((!after || after.contentEditable == "false") && (!before || before.contentEditable == "false")) {
+    if (after) {
+      after.contentEditable = "true"
+      return after
+    } else if (before) {
+      before.contentEditable = "true"
+      return before
+    }
   }
 }
 
