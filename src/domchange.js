@@ -60,6 +60,7 @@ class DOMChange {
   finish(force) {
     clearTimeout(this.timeout)
     if (this.composing && !force) return
+    this.view.domObserver.flush()
     let range = this.changedRange()
     this.markDirty(range)
 
