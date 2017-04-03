@@ -123,7 +123,7 @@ function parseBetween(view, oldState, range) {
     topOpen: true,
     from: fromOffset,
     to: toOffset,
-    preserveWhitespace: true,
+    preserveWhitespace: $from.parent.type.spec.code ? "full" : true,
     editableContent: true,
     findPositions: find,
     ruleFromNode,
