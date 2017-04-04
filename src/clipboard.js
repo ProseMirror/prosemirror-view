@@ -1,15 +1,9 @@
 const {Slice, Fragment, DOMParser, DOMSerializer} = require("prosemirror-model")
-const {NodeSelection} = require("prosemirror-state")
 
 const browser = require("./browser")
 
-// : (EditorView, Selection, dom.DataTransfer) → Slice
-// Store the content of a selection in the clipboard (or whatever the
-// given data transfer refers to)
-function toClipboard(view, range, dataTransfer) {
-  // Node selections are copied using just the node, text selection include parents
-  let slice = range.content(), context = []
-  let {content, openLeft, openRight} = slice
+function serializeForClipboard(view, slice) {
+  let context = [], {content, openLeft, openRight} = slice
   while (openLeft > 1 && openRight > 1 && content.childCount == 1 && content.firstChild.childCount == 1) {
     openLeft--
     openRight--
@@ -22,27 +16,24 @@ function toClipboard(view, range, dataTransfer) {
   let wrap = document.createElement("div")
   wrap.appendChild(serializer.serializeFragment(content))
   let child = wrap.firstChild.nodeType == 1 && wrap.firstChild
-  if (child) child.setAttribute("data-pm-context", range instanceof NodeSelection ? "none" : JSON.stringify(context))
-
-  dataTransfer.clearData()
-  dataTransfer.setData("text/html", wrap.innerHTML)
-  dataTransfer.setData("text/plain", content.textBetween(0, content.size, "\n\n"))
-  return slice
+  if (child) {
+    let singleNode = slice.openLeft == 0 && slice.openRight == 0 && slice.content.childCount == 1 && !slice.content.firstChild.isText
+    child.setAttribute("data-pm-context", singleNode ? "none" : JSON.stringify(context))
+  }
+  return wrap
 }
-exports.toClipboard = toClipboard
+exports.serializeForClipboard = serializeForClipboard
 
-// : (EditorView, dom.DataTransfer, ?bool, ResolvedPos) → ?Slice
+// : (EditorView, string, string, ?bool, ResolvedPos) → ?Slice
 // Read a slice of content from the clipboard (or drop data).
-function fromClipboard(view, dataTransfer, plainText, $context) {
-  let txt = dataTransfer.getData("text/plain")
-  let html = dataTransfer.getData("text/html")
+function parseFromClipboard(view, text, html, plainText, $context) {
   let dom, inCode = $context.parent.type.spec.code
-  if (!html && (!txt || browser.ie && !(inCode, plainText))) return null
-  if ((plainText || inCode || !html) && txt) {
-    view.someProp("transformPastedText", f => txt = f(txt))
-    if (inCode) return new Slice(Fragment.from(view.state.schema.text(txt)), 0, 0)
+  if (!html && (!text || browser.ie && !(inCode, plainText))) return null
+  if ((plainText || inCode || !html) && text) {
+    view.someProp("transformPastedText", f => text = f(text))
+    if (inCode) return new Slice(Fragment.from(view.state.schema.text(text)), 0, 0)
     dom = document.createElement("div")
-    txt.trim().split(/(?:\r\n?|\n)+/).forEach(block => {
+    text.trim().split(/(?:\r\n?|\n)+/).forEach(block => {
       dom.appendChild(document.createElement("p")).textContent = block
     })
   } else {
@@ -59,9 +50,10 @@ function fromClipboard(view, dataTransfer, plainText, $context) {
     slice = addContext(slice, context)
   else // HTML wasn't created by ProseMirror. Make sure top-level siblings are coherent
     slice = normalizeSiblings(slice, $context)
+  view.someProp("transformPasted", f => { slice = f(slice) })
   return slice
 }
-exports.fromClipboard = fromClipboard
+exports.parseFromClipboard = parseFromClipboard
 
 // Takes a slice parsed with parseSlice, which means there hasn't been
 // any content-expression checking done on the top nodes, tries to

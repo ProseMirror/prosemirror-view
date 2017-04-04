@@ -3,7 +3,7 @@ const {Selection, NodeSelection, TextSelection} = require("prosemirror-state")
 const browser = require("./browser")
 const {captureKeyDown} = require("./capturekeys")
 const {DOMChange} = require("./domchange")
-const {fromClipboard, toClipboard} = require("./clipboard")
+const {parseFromClipboard, serializeForClipboard} = require("./clipboard")
 const {DOMObserver} = require("./domobserver")
 const {selectionBetween} = require("./selection")
 
@@ -356,16 +356,37 @@ editHandlers.compositionend = (view, e) => {
 
 editHandlers.input = view => DOMChange.start(view)
 
+function captureCopy(view, dom) {
+  // The extra wrapper is somehow necessary on IE/Edge to prevent the
+  // content from being mangled when it is put onto the clipboard
+  let wrap = document.body.appendChild(document.createElement("div"))
+  wrap.appendChild(dom)
+  wrap.style.cssText = "position: fixed; left: -10000px; top: 10px"
+  let sel = getSelection(), range = document.createRange()
+  range.selectNodeContents(dom)
+  sel.removeAllRanges()
+  sel.addRange(range)
+  setTimeout(() => {
+    document.body.removeChild(wrap)
+    view.focus()
+  }, 50)
+}
+
 handlers.copy = editHandlers.cut = (view, e) => {
   let sel = view.state.selection, cut = e.type == "cut"
   if (sel.empty) return
+
   // IE and Edge's clipboard interface is completely broken
-  if (!e.clipboardData || browser.ie) {
-    if (cut && browser.ie && browser.ie_version <= 11) DOMChange.start(view)
-    return
+  let data = browser.ie ? null : e.clipboardData
+  let slice = sel.content(), dom = serializeForClipboard(view, slice)
+  if (data) {
+    e.preventDefault()
+    data.clearData()
+    data.setData("text/html", dom.innerHTML)
+    data.setData("text/plain", slice.content.textBetween(0, slice.content.size, "\n\n"))
+  } else {
+    captureCopy(view, dom)
   }
-  e.preventDefault()
-  toClipboard(view, sel, e.clipboardData)
   if (cut) view.dispatch(view.state.tr.deleteSelection().scrollIntoView())
 }
 
@@ -373,21 +394,36 @@ function sliceSingleNode(slice) {
   return slice.openLeft == 0 && slice.openRight == 0 && slice.content.childCount == 1 ? slice.content.firstChild : null
 }
 
-editHandlers.paste = (view, e) => {
-  if (!e.clipboardData) {
-    if (browser.ie && browser.ie_version <= 11) DOMChange.start(view)
-    return
-  }
-  let slice = fromClipboard(view, e.clipboardData, view.shiftKey, view.state.selection.$from)
-  if (!slice) return
-  e.preventDefault()
+function capturePaste(view, e) {
+  let target = document.body.appendChild(document.createElement("div"))
+  target.style.cssText = "position: fixed; left: -10000px; top: 10px"
+  target.contentEditable = "true"
+  target.focus()
+  setTimeout(() => {
+    view.focus()
+    document.body.removeChild(target)
+    doPaste(view, target.textContent, target.innerHTML, e)
+  }, 50)
+}
 
-  view.someProp("transformPasted", f => { slice = f(slice) })
-  if (view.someProp("handlePaste", f => f(view, e, slice))) return
+function doPaste(view, text, html, e) {
+  let slice = parseFromClipboard(view, text, html, view.shiftKey, view.state.selection.$from)
+  if (!slice) return false
+
+  if (view.someProp("handlePaste", f => f(view, e, slice))) return true
 
   let singleNode = sliceSingleNode(slice)
   let tr = singleNode ? view.state.tr.replaceSelectionWith(singleNode) : view.state.tr.replaceSelection(slice)
   view.dispatch(tr.scrollIntoView())
+  return true
+}
+
+editHandlers.paste = (view, e) => {
+  let data = browser.ie ? null : e.clipboardData
+  if (data && doPaste(view, data.getData("text/plain"), data.getData("text/html"), e))
+    e.preventDefault()
+  else
+    capturePaste(view, e)
 }
 
 class Dragging {
@@ -424,7 +460,11 @@ handlers.dragstart = (view, e) => {
   } else {
     return
   }
-  view.dragging = new Dragging(toClipboard(view, view.state.selection, e.dataTransfer), !e.ctrlKey)
+  let slice = view.state.selection.content(), dom = serializeForClipboard(view, slice)
+  e.dataTransfer.clearData()
+  e.dataTranser.setData("text/html", dom.innerHTML)
+  e.dataTranser.setData("text/plain", slice.content.textBetween(0, slice.content.size, "\n\n"))
+  view.dragging = new Dragging(slice, !e.ctrlKey)
 }
 
 handlers.dragend = view => {
@@ -441,11 +481,11 @@ editHandlers.drop = (view, e) => {
 
   let $mouse = view.state.doc.resolve(view.posAtCoords(eventCoords(e)).pos)
   if (!$mouse) return
-  let slice = dragging && dragging.slice || fromClipboard(view, e.dataTransfer, false, $mouse)
+  let slice = dragging && dragging.slice ||
+      parseFromClipboard(view, e.dataTransfer.getData("text/plain"), e.dataTransfer.getData("text/html"), false, $mouse)
   if (!slice) return
 
   e.preventDefault()
-  view.someProp("transformPasted", f => { slice = f(slice) })
   if (view.someProp("handleDrop", e, slice, dragging && dragging.move)) return
   let insertPos = dropPos(slice, view.state.doc.resolve($mouse.pos))
 
