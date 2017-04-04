@@ -124,7 +124,7 @@ function runHandlerOnContext(view, propName, pos, inside, event) {
 }
 
 function updateSelection(view, selection, origin) {
-  view.focus()
+  if (!view.focused) view.focus()
   let tr = view.state.tr.setSelection(selection)
   if (origin == "pointer") tr.setMeta("pointer", true)
   view.dispatch(tr)
