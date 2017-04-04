@@ -372,12 +372,19 @@ function captureCopy(view, dom) {
   }, 50)
 }
 
+// This is very crude, but unfortunately both these browsers _pretend_
+// that they have a clipboard API—all the objects and methods are
+// there, they just don't work, and they are hard to test.
+// FIXME when Edge/Mobile Safari fixes this, change this to a version
+// range test
+const brokenClipboardAPI = browser.ie || browser.ios
+
 handlers.copy = editHandlers.cut = (view, e) => {
   let sel = view.state.selection, cut = e.type == "cut"
   if (sel.empty) return
 
   // IE and Edge's clipboard interface is completely broken
-  let data = browser.ie ? null : e.clipboardData
+  let data = brokenClipboardAPI ? null : e.clipboardData
   let slice = sel.content(), dom = serializeForClipboard(view, slice)
   if (data) {
     e.preventDefault()
@@ -419,7 +426,7 @@ function doPaste(view, text, html, e) {
 }
 
 editHandlers.paste = (view, e) => {
-  let data = browser.ie ? null : e.clipboardData
+  let data = brokenClipboardAPI ? null : e.clipboardData
   if (data && doPaste(view, data.getData("text/plain"), data.getData("text/html"), e))
     e.preventDefault()
   else
