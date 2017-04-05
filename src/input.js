@@ -469,8 +469,8 @@ handlers.dragstart = (view, e) => {
   }
   let slice = view.state.selection.content(), dom = serializeForClipboard(view, slice)
   e.dataTransfer.clearData()
-  e.dataTranser.setData("text/html", dom.innerHTML)
-  e.dataTranser.setData("text/plain", slice.content.textBetween(0, slice.content.size, "\n\n"))
+  e.dataTransfer.setData("text/html", dom.innerHTML)
+  e.dataTransfer.setData("text/plain", slice.content.textBetween(0, slice.content.size, "\n\n"))
   view.dragging = new Dragging(slice, !e.ctrlKey)
 }
 
