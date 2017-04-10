@@ -282,5 +282,5 @@ exports.selectionBetween = selectionBetween
 function hasFocusAndSelection(view) {
   if (view.editable && view.root.activeElement != view.dom) return false
   let sel = view.root.getSelection()
-  return sel.rangeCount && view.dom.contains(sel.anchorNode.nodeType == 3 ? sel.anchorNode.parentNode : sel.anchorNode)
+  return sel.rangeCount && sel.anchorNode && view.dom.contains(sel.anchorNode.nodeType == 3 ? sel.anchorNode.parentNode : sel.anchorNode)
 }
