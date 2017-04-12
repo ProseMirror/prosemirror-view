@@ -402,14 +402,16 @@ function sliceSingleNode(slice) {
 }
 
 function capturePaste(view, e) {
-  let target = document.body.appendChild(document.createElement("div"))
+  let plainText = view.shiftKey || view.state.selection.$from.parent.type.spec.code
+  let target = document.body.appendChild(document.createElement(plainText ? "textarea" : "div"))
+  if (!plainText) target.contentEditable = "true"
   target.style.cssText = "position: fixed; left: -10000px; top: 10px"
-  target.contentEditable = "true"
   target.focus()
   setTimeout(() => {
     view.focus()
     document.body.removeChild(target)
-    doPaste(view, target.textContent, target.innerHTML, e)
+    if (plainText) doPaste(view, target.value, null, e)
+    else doPaste(view, target.textContent, target.innerHTML, e)
   }, 50)
 }
 
