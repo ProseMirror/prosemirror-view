@@ -1,7 +1,5 @@
 const {Slice, Fragment, DOMParser, DOMSerializer} = require("prosemirror-model")
 
-const browser = require("./browser")
-
 function serializeForClipboard(view, slice) {
   let context = [], {content, openLeft, openRight} = slice
   while (openLeft > 1 && openRight > 1 && content.childCount == 1 && content.firstChild.childCount == 1) {
@@ -28,7 +26,7 @@ exports.serializeForClipboard = serializeForClipboard
 // Read a slice of content from the clipboard (or drop data).
 function parseFromClipboard(view, text, html, plainText, $context) {
   let dom, inCode = $context.parent.type.spec.code
-  if (!html && (!text || browser.ie && !(inCode, plainText))) return null
+  if (!html && !text) return null
   if ((plainText || inCode || !html) && text) {
     view.someProp("transformPastedText", f => text = f(text))
     if (inCode) return new Slice(Fragment.from(view.state.schema.text(text)), 0, 0)
