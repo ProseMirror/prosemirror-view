@@ -216,9 +216,7 @@ function captureKeyDown(view, event) {
   } else if (mods == (browser.mac ? "m" : "c") &&
              (code == 66 || code == 73 || code == 89 || code == 90)) { // Mod-[biyz]
     return true
-  } else if (browser.mac && // Ctrl-[dh] and Alt-d on Mac
-             ((code == 68 || code == 72) && mods == "c") ||
-              (code == 68 && mods == "a")) {
+  } else if (browser.mac && ((code == 68 || code == 72) && mods == "c")) { // Ctrl-[dh] on Mac
     return stopNativeHorizontalDelete(view, code == 68 ? 1 : -1) || skipIgnoredNodesRight(view)
   }
   return false
