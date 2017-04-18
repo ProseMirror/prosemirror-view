@@ -183,10 +183,13 @@ function posAtCoords(view, coords) {
     if (range) ({startContainer: node, startOffset: offset} = range)
   }
 
-  let elt = root.elementFromPoint(coords.left, coords.top + 1)
+  let elt = root.elementFromPoint(coords.left, coords.top + 1), pos
   if (!elt) return null
-  let pos = node ? posFromCaret(view, node, offset, coords) : posFromElement(view, elt, coords)
-  if (pos == null) return null
+  if (node) pos = posFromCaret(view, node, offset, coords)
+  if (pos == null) {
+    pos = posFromElement(view, elt, coords)
+    if (pos == null) return null
+  }
 
   let desc = view.docView.nearestDesc(elt, true)
   return {pos, inside: desc ? desc.posAtStart - desc.border : -1}
