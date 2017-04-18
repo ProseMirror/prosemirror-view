@@ -199,9 +199,9 @@ function getMods(event) {
 
 function captureKeyDown(view, event) {
   let code = event.keyCode, mods = getMods(event)
-  if (code == 8) { // Backspace
+  if (code == 8 || (browser.mac && code == 72 && mods == "c")) { // Backspace, Ctrl-h on Mac
     return stopNativeHorizontalDelete(view, -1) || skipIgnoredNodesLeft(view)
-  } else if (code == 46) { // Delete
+  } else if (code == 46 || (browser.mac && code == 68 && mods == "c")) { // Delete, Ctrl-d on Mac
     return stopNativeHorizontalDelete(view, 1) || skipIgnoredNodesRight(view)
   } else if (code == 13 || code == 27) { // Enter, Esc
     return true
@@ -216,8 +216,6 @@ function captureKeyDown(view, event) {
   } else if (mods == (browser.mac ? "m" : "c") &&
              (code == 66 || code == 73 || code == 89 || code == 90)) { // Mod-[biyz]
     return true
-  } else if (browser.mac && ((code == 68 || code == 72) && mods == "c")) { // Ctrl-[dh] on Mac
-    return stopNativeHorizontalDelete(view, code == 68 ? 1 : -1) || skipIgnoredNodesRight(view)
   }
   return false
 }
