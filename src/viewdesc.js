@@ -257,6 +257,9 @@ class ViewDesc {
   // Used to find a DOM range in a single parent for a given changed
   // range.
   parseRange(from, to, base = 0) {
+    if (this.children.length == 0)
+      return {node: this.contentDOM, from, to, fromOffset: 0, toOffset: this.contentDOM.childNodes.length}
+
     let fromOffset = -1, toOffset = -1
     for (let offset = 0, i = 0;; i++) {
       let child = this.children[i], end = offset + child.size
