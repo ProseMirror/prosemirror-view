@@ -636,7 +636,8 @@ class TextViewDesc extends NodeViewDesc {
   }
 
   parseRule() {
-    return {skip: this.nodeDOM.parentNode}
+    let parent = this.nodeDOM.parentNode
+    return parent ? {skip: parent} : {ignore: true}
   }
 
   update(node, outerDeco) {
