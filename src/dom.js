@@ -27,12 +27,14 @@ exports.isEquivalentPosition = function(node, off, targetNode, targetOff) {
                         scanFor(node, off, targetNode, targetOff, 1))
 }
 
+const atomElements = /^(img|br|input|textarea|hr)$/i
+
 function scanFor(node, off, targetNode, targetOff, dir) {
   for (;;) {
     if (node == targetNode && off == targetOff) return true
     if (off == (dir < 0 ? 0 : nodeSize(node))) {
       let parent = node.parentNode
-      if (parent.nodeType != 1 || hasBlockDesc(node)) return false
+      if (parent.nodeType != 1 || hasBlockDesc(node) || atomElements.test(node.nodeName)) return false
       off = domIndex(node) + (dir < 0 ? 0 : 1)
       node = parent
     } else if (node.nodeType == 1) {
