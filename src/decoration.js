@@ -5,9 +5,20 @@ function compareObjs(a, b) {
   return true
 }
 
+let warnedAboutAssociative = false
+
 class WidgetType {
   constructor(widget, spec) {
     this.spec = spec || noSpec
+    this.side = this.spec.side || 0
+    if (this.spec.associative == "left" && this.spec.side == null) {
+      if (!warnedAboutAssociative && typeof console != "undefined" && console.warn) {
+        warnedAboutAssociative = true
+        console.warn("Widget decoration associativity should now be expressed with the `side` option.")
+      }
+      this.side = -1
+    }
+
     if (!this.spec.raw) {
       if (widget.nodeType != 1) {
         let wrap = document.createElement("span")
@@ -21,7 +32,7 @@ class WidgetType {
   }
 
   map(mapping, span, offset, oldOffset) {
-    let {pos, deleted} = mapping.mapResult(span.from + oldOffset, this.spec.associative == "left" ? -1 : 1)
+    let {pos, deleted} = mapping.mapResult(span.from + oldOffset, this.side < 0 ? -1 : 1)
     return deleted ? null : new Decoration(pos - offset, pos - offset, this)
   }
 
@@ -122,11 +133,18 @@ class Decoration {
   //
   //   spec::- These options are supported:
   //
-  //     associative:: ?string
-  //     By default, widgets are right-associative, meaning they end
-  //     up to the right of content inserted at their position. You
-  //     can set this to `"left"` to make it left-associative, so that
-  //     the inserted content will end up after the widget.
+  //     side:: ?number
+  //     Controls which side of the document position this widget is
+  //     associated with. When negative, it is drawn before a cursor
+  //     at its position, and content inserted at that position ends
+  //     up after the widget. When zero (the default) or positive, the
+  //     widget is drawn after the cursor and content inserted there
+  //     ends up before the widget.
+  //
+  //     When there are multiple widgets at a given position, their
+  //     `side` values determine the order in which they appear. Those
+  //     with lower values appear first. The ordering of widgets with
+  //     the same `side` value is unspecified.
   //
   //     stopEvent:: ?(event: dom.Event) → bool
   //     Can be used to control which DOM events, when they bubble out

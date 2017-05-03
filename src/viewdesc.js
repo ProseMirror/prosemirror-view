@@ -102,6 +102,8 @@ class ViewDesc {
   matchesNode() { return false }
   matchesHack() { return false }
 
+  get beforePosition() { return false }
+
   // : () → ?ParseRule
   // When parsing in-editor content (in domchange.js), we allow
   // descriptions to determine the parse rules that should be used to
@@ -245,8 +247,10 @@ class ViewDesc {
   domFromPos(pos) {
     if (!this.contentDOM) return {node: this.dom, offset: 0}
     for (let offset = 0, i = 0;; i++) {
-      if (offset == pos)
+      if (offset == pos) {
+        while (i < this.children.length && this.children[i].beforePosition) i++
         return {node: this.contentDOM, offset: i}
+      }
       if (i == this.children.length) throw new Error("Invalid position " + pos)
       let child = this.children[i], end = offset + child.size
       if (pos < end) return child.domFromPos(pos - offset - child.border)
@@ -394,6 +398,10 @@ class WidgetViewDesc extends ViewDesc {
   constructor(parent, widget) {
     super(parent, nothing, widget.type.widget, null)
     this.widget = widget
+  }
+
+  get beforePosition() {
+    return this.widget.type.side < 0
   }
 
   matchesWidget(widget) {
@@ -1003,8 +1011,17 @@ function iterDeco(parent, deco, onWidget, onNode) {
 
   let decoIndex = 0, active = [], restNode = null
   for (let parentIndex = 0;;) {
-    while (decoIndex < locals.length && locals[decoIndex].to == offset)
-      onWidget(locals[decoIndex++])
+    if (decoIndex < locals.length && locals[decoIndex].to == offset) {
+      let widget = locals[decoIndex++], widgets
+      while (decoIndex < locals.length && locals[decoIndex].to == offset)
+        (widgets || (widgets = [widget])).push(locals[decoIndex++])
+      if (widgets) {
+        widgets.sort((a, b) => a.type.side - b.type.side)
+        widgets.forEach(onWidget)
+      } else {
+        onWidget(widget)
+      }
+    }
 
     let child
     if (restNode) {
