@@ -45,20 +45,10 @@ class WidgetType {
   }
 }
 
-let warnedAboutInclusive = false
-
 class InlineType {
   constructor(attrs, spec) {
     this.spec = spec || noSpec
     this.attrs = attrs
-    if (spec && (spec.inclusiveLeft || spec.inclusiveRight)) {
-      if (!spec.inclusiveStart) spec.inclusiveStart = spec.inclusiveLeft
-      if (!spec.inclusiveEnd) spec.inclusiveEnd = spec.inclusiveRight
-      if (!warnedAboutInclusive && typeof console != "undefined" && console.warn) {
-        warnedAboutInclusive = true
-        console.warn("The inclusiveLeft and inclusiveRight options to inline decorations are now called inclusiveStart and inclusiveEnd")
-      }
-    }
   }
 
   map(mapping, span, offset, oldOffset) {
