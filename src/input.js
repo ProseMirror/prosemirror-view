@@ -398,7 +398,7 @@ handlers.copy = editHandlers.cut = (view, e) => {
 }
 
 function sliceSingleNode(slice) {
-  return slice.openLeft == 0 && slice.openRight == 0 && slice.content.childCount == 1 ? slice.content.firstChild : null
+  return slice.openStart == 0 && slice.openEnd == 0 && slice.content.childCount == 1 ? slice.content.firstChild : null
 }
 
 function capturePaste(view, e) {
@@ -445,7 +445,7 @@ class Dragging {
 function dropPos(slice, $pos) {
   if (!slice || !slice.content.size) return $pos.pos
   let content = slice.content
-  for (let i = 0; i < slice.openLeft; i++) content = content.firstChild.content
+  for (let i = 0; i < slice.openStart; i++) content = content.firstChild.content
   for (let d = $pos.depth; d >= 0; d--) {
     let bias = d == $pos.depth ? 0 : $pos.pos <= ($pos.start(d + 1) + $pos.end(d + 1)) / 2 ? -1 : 1
     let insertPos = $pos.index(d) + (bias > 0 ? 1 : 0)
@@ -502,7 +502,7 @@ editHandlers.drop = (view, e) => {
   if (dragging && dragging.move) tr.deleteSelection()
 
   let pos = tr.mapping.map(insertPos)
-  let isNode = slice.openLeft == 0 && slice.openRight == 0 && slice.content.childCount == 1
+  let isNode = slice.openStart == 0 && slice.openEnd == 0 && slice.content.childCount == 1
   if (isNode)
     tr.replaceRangeWith(pos, pos, slice.content.firstChild)
   else

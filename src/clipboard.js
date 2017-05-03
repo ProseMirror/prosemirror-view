@@ -1,10 +1,10 @@
 const {Slice, Fragment, DOMParser, DOMSerializer} = require("prosemirror-model")
 
 function serializeForClipboard(view, slice) {
-  let context = [], {content, openLeft, openRight} = slice
-  while (openLeft > 1 && openRight > 1 && content.childCount == 1 && content.firstChild.childCount == 1) {
-    openLeft--
-    openRight--
+  let context = [], {content, openStart, openEnd} = slice
+  while (openStart > 1 && openEnd > 1 && content.childCount == 1 && content.firstChild.childCount == 1) {
+    openStart--
+    openEnd--
     let node = content.firstChild
     context.push(node.type.name, node.type.hasRequiredAttrs() ? node.attrs : null)
     content = node.content
@@ -15,7 +15,7 @@ function serializeForClipboard(view, slice) {
   wrap.appendChild(serializer.serializeFragment(content))
   let child = wrap.firstChild.nodeType == 1 && wrap.firstChild
   if (child) {
-    let singleNode = slice.openLeft == 0 && slice.openRight == 0 && slice.content.childCount == 1 && !slice.content.firstChild.isText
+    let singleNode = slice.openStart == 0 && slice.openEnd == 0 && slice.content.childCount == 1 && !slice.content.firstChild.isText
     child.setAttribute("data-pm-context", singleNode ? "none" : JSON.stringify(context))
   }
   return wrap
@@ -138,12 +138,12 @@ function addContext(slice, context) {
   let schema = slice.content.firstChild.type.schema, array
   try { array = JSON.parse(context) }
   catch(e) { return slice }
-  let {content, openLeft, openRight} = slice
+  let {content, openStart, openEnd} = slice
   for (let i = array.length - 2; i >= 0; i -= 2) {
     let type = schema.nodes[array[i]]
     if (!type || type.hasRequiredAttrs()) break
     content = Fragment.from(type.create(array[i + 1], content))
-    openLeft++; openRight++
+    openStart++; openEnd++
   }
-  return new Slice(content, openLeft, openRight)
+  return new Slice(content, openStart, openEnd)
 }
