@@ -495,7 +495,7 @@ editHandlers.drop = (view, e) => {
   if (!slice) return
 
   e.preventDefault()
-  if (view.someProp("handleDrop", e, slice, dragging && dragging.move)) return
+  if (view.someProp("handleDrop", f => f(view, e, slice, dragging && dragging.move))) return
   let insertPos = dropPos(slice, view.state.doc.resolve($mouse.pos))
 
   let tr = view.state.tr
