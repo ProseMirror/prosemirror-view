@@ -41,6 +41,7 @@ function parseFromClipboard(view, text, html, plainText, $context) {
 
   let parser = view.someProp("clipboardParser") || view.someProp("domParser") || DOMParser.fromSchema(view.state.schema)
   let slice = parser.parseSlice(dom, {preserveWhitespace: true, context: $context})
+  slice = closeIsolatingStart(slice)
   let contextNode = dom.querySelector("[data-pm-context]"), context = contextNode && contextNode.getAttribute("data-pm-context")
   if (context == "none")
     slice = new Slice(slice.content, 0, 0)
@@ -146,4 +147,24 @@ function addContext(slice, context) {
     openStart++; openEnd++
   }
   return new Slice(content, openStart, openEnd)
+}
+
+function closeIsolatingStart(slice) {
+  let closeTo = 0, frag = slice.content
+  for (let i = 0; i < slice.openStart; i++) {
+    let node = frag.firstChild
+    if (node.type.spec.isolating) closeTo = i + 1
+    frag = node.content
+  }
+
+  if (closeTo == 0) return slice
+  return new Slice(closeFragment(slice.content, closeTo, slice.openEnd), slice.openStart - closeTo, slice.openEnd)
+}
+
+function closeFragment(frag, n, openEnd) {
+  if (n == 0) return frag
+  let node = frag.firstChild
+  let content = closeFragment(node.content, n - 1, openEnd - 1)
+  let fill = node.contentMatchAt(0).fillBefore(node.content, openEnd <= 0)
+  return frag.replaceChild(0, node.copy(fill.append(content)))
 }
