@@ -151,9 +151,9 @@ function addContext(slice, context) {
 
 function closeIsolatingStart(slice) {
   let closeTo = 0, frag = slice.content
-  for (let i = 0; i < slice.openStart; i++) {
+  for (let i = 1; i <= slice.openStart; i++) {
     let node = frag.firstChild
-    if (node.type.spec.isolating) closeTo = i + 1
+    if (node.type.spec.isolating) { closeTo = i; break }
     frag = node.content
   }
 
