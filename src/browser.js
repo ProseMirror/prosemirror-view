@@ -12,4 +12,5 @@ if (typeof navigator != "undefined") {
   result.chrome = !ie && /Chrome\//.test(navigator.userAgent)
   result.ios = !ie && /AppleWebKit/.test(navigator.userAgent) && /Mobile\/\w+/.test(navigator.userAgent)
   result.webkit = !ie && 'WebkitAppearance' in document.documentElement.style
+  result.chrome = !ie && /Chrome/.test(navigator.userAgent)
 }
