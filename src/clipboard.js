@@ -13,10 +13,20 @@ function serializeForClipboard(view, slice) {
   let serializer = view.someProp("clipboardSerializer") || DOMSerializer.fromSchema(view.state.schema)
   let wrap = document.createElement("div")
   wrap.appendChild(serializer.serializeFragment(content))
-  let child = wrap.firstChild.nodeType == 1 && wrap.firstChild
-  if (child) {
+
+  let firstChild = wrap.firstChild, needsWrap
+  while (firstChild && firstChild.nodeType == 1 && (needsWrap = wrapMap[firstChild.nodeName.toLowerCase()])) {
+    for (let i = 0; i < needsWrap.length; i++) {
+      let wrapper = document.createElement(needsWrap[i])
+      while (wrap.firstChild) wrapper.appendChild(wrap.firstChild)
+      wrap.appendChild(wrapper)
+    }
+    firstChild = wrap.firstChild
+  }
+
+  if (firstChild && firstChild.nodeType == 1) {
     let singleNode = slice.openStart == 0 && slice.openEnd == 0 && slice.content.childCount == 1 && !slice.content.firstChild.isText
-    child.setAttribute("data-pm-context", singleNode ? "none" : JSON.stringify(context))
+    firstChild.setAttribute("data-pm-context", singleNode ? "none" : JSON.stringify(context))
   }
   return wrap
 }
@@ -115,8 +125,8 @@ function closeRight(node, depth) {
 // Trick from jQuery -- some elements must be wrapped in other
 // elements for innerHTML to work. I.e. if you do `div.innerHTML =
 // "<td>..</td>"` the table cells are ignored.
-const wrapMap = {thead: "table", colgroup: "table", col: "table colgroup",
-                 tr: "table tbody", td: "table tbody tr", th: "table tbody tr"}
+const wrapMap = {thead: ["table"], colgroup: ["table"], col: ["table", "colgroup"],
+                 tr: ["table", "tbody"], td: ["table", "tbody", "tr"], th: ["table", "tbody", "tr"]}
 let detachedDoc = null
 function readHTML(html) {
   let metas = /(\s*<meta [^>]*>)*/.exec(html)
@@ -125,9 +135,8 @@ function readHTML(html) {
   let elt = doc.createElement("div")
   let firstTag = /(?:<meta [^>]*>)*<([a-z][^>\s]+)/i.exec(html), wrap, depth = 0
   if (wrap = firstTag && wrapMap[firstTag[1].toLowerCase()]) {
-    let nodes = wrap.split(" ")
-    html = nodes.map(n => "<" + n + ">").join("") + html + nodes.map(n => "</" + n + ">").reverse().join("")
-    depth = nodes.length
+    html = wrap.map(n => "<" + n + ">").join("") + html + wrap.map(n => "</" + n + ">").reverse().join("")
+    depth = wrap.length
   }
   elt.innerHTML = html
   for (let i = 0; i < depth; i++) elt = elt.firstChild
