@@ -422,7 +422,7 @@ function doPaste(view, text, html, e) {
   if (view.someProp("handlePaste", f => f(view, e, slice))) return true
 
   let singleNode = sliceSingleNode(slice)
-  let tr = singleNode ? view.state.tr.replaceSelectionWith(singleNode) : view.state.tr.replaceSelection(slice)
+  let tr = singleNode ? view.state.tr.replaceSelectionWith(singleNode, view.shiftKey) : view.state.tr.replaceSelection(slice)
   view.dispatch(tr.scrollIntoView())
   return true
 }
