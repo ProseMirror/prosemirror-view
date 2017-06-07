@@ -11,9 +11,9 @@ const {Decoration, viewDecorations} = require("./decoration")
 
 // ::- An editor view manages the DOM structure that represents an
 // editor. Its state and behavior are determined by its
-// [props](#view.EditorProps).
+// [props](#view.DirectEditorProps).
 class EditorView {
-  // :: (?union<dom.Node, (dom.Node), {mount: dom.Node}>, EditorProps)
+  // :: (?union<dom.Node, (dom.Node), {mount: dom.Node}>, DirectEditorProps)
   // Create a view. `place` may be a DOM node that the editor should
   // be appended to, a function that will place it into the document,
   // or an object whose `mount` property holds the node to use. If it
@@ -52,7 +52,7 @@ class EditorView {
     this.updatePluginViews()
   }
 
-  // :: EditorProps
+  // :: DirectEditorProps
   // The view's current [props](#view.EditorProps).
   get props() {
     if (this._props.state != this.state) {
@@ -64,7 +64,7 @@ class EditorView {
     return this._props
   }
 
-  // :: (EditorProps)
+  // :: (DirectEditorProps)
   // Update the view's props. Will immediately cause an update to
   // the view's DOM.
   update(props) {
@@ -73,7 +73,7 @@ class EditorView {
     this.updateState(props.state)
   }
 
-  // :: (EditorProps)
+  // :: (DirectEditorProps)
   // Update the view by updating existing props object with the object
   // given as argument. Equivalent to `view.update(Object.assign({},
   // view.props, props))`.
@@ -324,32 +324,20 @@ function getEditable(view) {
 
 // EditorProps:: interface
 //
-// The configuration object that can be passed to an editor view. It
-// supports the following properties (only `state` is required).
+// The configuration object that can be passed to an editor view or
+// included in a plugin. It supports the following properties.
 //
 // The various event-handling functions may all return `true` to
 // indicate that they handled the given event. The view will then take
 // care to call `preventDefault` on the event, except with
 // `handleDOMEvents`, where the handler itself is responsible for that.
 //
-// Except for `state` and `dispatchTransaction`, these may also be
-// present on the `props` property of plugins. How a prop is resolved
-// depends on the prop. Handler functions are called one at a time,
-// starting with the plugins (in order of appearance), and finally
-// looking at the base props, until one of them returns true. For some
-// props, the first plugin that yields a value gets precedence. For
-// `class`, all the classes returned are combined.
-//
-//   state:: EditorState
-//   The state of the editor.
-//
-//   dispatchTransaction:: ?(tr: Transaction)
-//   The callback over which to send transactions (state updates)
-//   produced by the view. You'll usually want to make sure this ends
-//   up calling the view's
-//   [`updateState`](#view.EditorView.updateState) method with a new
-//   state that has the transaction
-//   [applied](#state.EditorState.apply).
+// How a prop is resolved depends on the prop. Handler functions are
+// called one at a time, starting with the plugins (in order of
+// appearance), and finally looking at the base props, until one of
+// them returns true. For some props, the first plugin that yields a
+// value gets precedence. For `class`, all the classes returned are
+// combined.
 //
 //   handleDOMEvents:: ?Object<(view: EditorView, event: dom.Event) → bool>
 //   Can be an object mapping DOM event type names to functions that
@@ -482,3 +470,19 @@ function getEditable(view) {
 //   scrollMargin:: ?number
 //   Determines the extra space (in pixels) that is left above or
 //   below the cursor when it is scrolled into view. Defaults to 5.
+
+// DirectEditorProps:: interface extends EditorProps
+//
+// The prop object given directly to the editor view supports two
+// props that can't be used in plugins:
+//
+//   state:: EditorState
+//   The state of the editor.
+//
+//   dispatchTransaction:: ?(tr: Transaction)
+//   The callback over which to send transactions (state updates)
+//   produced by the view. You'll usually want to make sure this ends
+//   up calling the view's
+//   [`updateState`](#view.EditorView.updateState) method with a new
+//   state that has the transaction
+//   [applied](#state.EditorState.apply).

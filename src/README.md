@@ -8,6 +8,8 @@ to instantiate a ProseMirror editor.
 
 @EditorProps
 
+@DirectEditorProps
+
 @NodeView
 
 @Decoration
