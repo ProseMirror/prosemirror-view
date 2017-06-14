@@ -41,7 +41,7 @@ exports.scrollRectIntoView = scrollRectIntoView
 // when the size of the content above changes.
 function storeScrollPos(view) {
   let rect = view.dom.getBoundingClientRect(), startY = Math.max(0, rect.top)
-  let doc = view.dom.defaultView
+  let doc = view.dom.ownerDocument
   let refDOM, refTop
   for (let x = (rect.left + rect.right) / 2, y = startY + 1;
        y < Math.min(innerHeight, rect.bottom); y += 5) {
