@@ -1,17 +1,18 @@
 const {textRange, parentNode} = require("./dom")
 
-function windowRect() {
-  return {left: 0, right: window.innerWidth,
-          top: 0, bottom: window.innerHeight}
+function windowRect(win) {
+  return {left: 0, right: win.innerWidth,
+          top: 0, bottom: win.innerHeight}
 }
 
 function scrollRectIntoView(view, rect) {
   let scrollThreshold = view.someProp("scrollThreshold") || 0, scrollMargin = view.someProp("scrollMargin")
+  let doc = view.dom.ownerDocument, win = doc.defaultView;
   if (scrollMargin == null) scrollMargin = 5
   for (let parent = view.dom;; parent = parentNode(parent)) {
     if (!parent) break
-    let atBody = parent == document.body
-    let bounding = atBody ? windowRect() : parent.getBoundingClientRect()
+    let atBody = parent == doc.body
+    let bounding = atBody ? windowRect(win) : parent.getBoundingClientRect()
     let moveX = 0, moveY = 0
     if (rect.top < bounding.top + scrollThreshold)
       moveY = -(bounding.top - rect.top + scrollMargin)
@@ -23,7 +24,7 @@ function scrollRectIntoView(view, rect) {
       moveX = rect.right - bounding.right + scrollMargin
     if (moveX || moveY) {
       if (atBody) {
-        window.scrollBy(moveX, moveY)
+        win.scrollBy(moveX, moveY)
       } else {
         if (moveY) parent.scrollTop += moveY
         if (moveX) parent.scrollLeft += moveX
@@ -40,6 +41,7 @@ exports.scrollRectIntoView = scrollRectIntoView
 // when the size of the content above changes.
 function storeScrollPos(view) {
   let rect = view.dom.getBoundingClientRect(), startY = Math.max(0, rect.top)
+  let doc = view.dom.ownerDocument
   let refDOM, refTop
   for (let x = (rect.left + rect.right) / 2, y = startY + 1;
        y < Math.min(innerHeight, rect.bottom); y += 5) {
@@ -55,7 +57,7 @@ function storeScrollPos(view) {
   let stack = []
   for (let dom = view.dom; dom; dom = parentNode(dom)) {
     stack.push({dom, top: dom.scrollTop, left: dom.scrollLeft})
-    if (dom == document.body) break
+    if (dom == doc.body) break
   }
   return {refDOM, refTop, stack}
 }
