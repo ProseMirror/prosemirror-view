@@ -456,10 +456,10 @@ class MarkViewDesc extends ViewDesc {
     this.mark = mark
   }
 
-  static create(parent, mark, view) {
+  static create(parent, mark, inline, view) {
     let custom = customNodeViews(view)[mark.type.name]
     let spec = custom && custom(mark, view)
-    let dom = spec && spec.dom || DOMSerializer.renderSpec(document, mark.type.spec.toDOM(mark)).dom
+    let dom = spec && spec.dom || DOMSerializer.renderSpec(document, mark.type.spec.toDOM(mark, inline)).dom
     return new MarkViewDesc(parent, mark, dom)
   }
 
@@ -555,16 +555,16 @@ class NodeViewDesc extends ViewDesc {
   // separate step, syncs the DOM inside `this.contentDOM` to
   // `this.children`.
   updateChildren(view) {
-    let updater = new ViewTreeUpdater(this)
+    let updater = new ViewTreeUpdater(this), inline = this.node.inlineContent
     iterDeco(this.node, this.innerDeco, widget => {
       if (widget.spec.isCursorWrapper)
-        updater.syncToMarks(widget.spec.marks, view)
+        updater.syncToMarks(widget.spec.marks, inline, view)
       // If the next node is a desc matching this widget, reuse it,
       // otherwise insert the widget as a new view desc.
       updater.placeWidget(widget)
     }, (child, outerDeco, innerDeco, i) => {
       // Make sure the wrapping mark descs match the node's marks.
-      updater.syncToMarks(child.marks, view)
+      updater.syncToMarks(child.marks, inline, view)
       // Either find an existing desc that exactly matches this node,
       // and drop the descs before it.
       updater.findNodeMatch(child, outerDeco, innerDeco) ||
@@ -574,7 +574,7 @@ class NodeViewDesc extends ViewDesc {
         updater.addNode(child, outerDeco, innerDeco, view)
     })
     // Drop all remaining descs after the current position.
-    updater.syncToMarks(nothing, view)
+    updater.syncToMarks(nothing, inline, view)
     if (this.node.isTextblock) updater.addTextblockHacks()
     updater.destroyRest()
 
@@ -890,7 +890,7 @@ class ViewTreeUpdater {
   // : ([Mark], EditorView)
   // Sync the current stack of mark descs with the given array of
   // marks, reusing existing mark descs when possible.
-  syncToMarks(marks, view) {
+  syncToMarks(marks, inline, view) {
     let keep = 0, depth = this.stack.length >> 1
     let maxKeep = Math.min(depth, marks.length), next
     while (keep < maxKeep &&
@@ -910,7 +910,7 @@ class ViewTreeUpdater {
           (next = this.top.children[this.index]).matchesMark(marks[depth])) {
         this.top = next
       } else {
-        let markDesc = MarkViewDesc.create(this.top, marks[depth], view)
+        let markDesc = MarkViewDesc.create(this.top, marks[depth], inline, view)
         this.top.children.splice(this.index, 0, markDesc)
         this.top = markDesc
         this.changed = true
