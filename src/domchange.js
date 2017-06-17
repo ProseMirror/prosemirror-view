@@ -12,7 +12,7 @@ class DOMChange {
     this.state = view.state
     this.composing = composing
     this.from = this.to = null
-    this.timeout = composing ? null : setTimeout(() => this.finish(), 20)
+    this.timeout = composing ? null : setTimeout(() => this.finish(), DOMChange.commitTimeout)
     this.trackMappings = new TrackMappings(view.state)
 
     // If there have been changes since this DOM update started, we must
@@ -97,6 +97,7 @@ class DOMChange {
     return view.inDOMChange
   }
 }
+DOMChange.commitTimeout = 20
 exports.DOMChange = DOMChange
 
 // Note that all referencing and parsing is done with the
