@@ -114,7 +114,8 @@ class SelectionChangePoller {
 
   start() {
     if (!this.listening) {
-      this.reader.view.root.addEventListener("selectionchange", this.readFunc)
+      let doc = this.reader.view.dom.ownerDocument
+      doc.addEventListener("selectionchange", this.readFunc)
       this.listening = true
       if (hasFocusAndSelection(this.reader.view)) this.readFunc()
     }
@@ -122,7 +123,8 @@ class SelectionChangePoller {
 
   stop() {
     if (this.listening) {
-      this.reader.view.root.removeEventListener("selectionchange", this.readFunc)
+      let doc = this.reader.view.dom.ownerDocument
+      doc.removeEventListener("selectionchange", this.readFunc)
       this.listening = false
     }
   }
@@ -232,7 +234,7 @@ function temporarilyEditableNear(view, pos) {
 }
 
 function removeClassOnSelectionChange(view) {
-  let doc = this.reader.view.root
+  let doc = this.reader.view.dom.ownerDocument
   doc.removeEventListener("selectionchange", view.hideSelectionGuard)
   let domSel = view.root.getSelection()
   let node = domSel.anchorNode, offset = domSel.anchorOffset

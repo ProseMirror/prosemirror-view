@@ -359,7 +359,7 @@ editHandlers.input = view => DOMChange.start(view)
 function captureCopy(view, dom) {
   // The extra wrapper is somehow necessary on IE/Edge to prevent the
   // content from being mangled when it is put onto the clipboard
-  let doc = view.root
+  let doc = dom.ownerDocument
   let wrap = doc.body.appendChild(doc.createElement("div"))
   wrap.appendChild(dom)
   wrap.style.cssText = "position: fixed; left: -10000px; top: 10px"
@@ -403,7 +403,7 @@ function sliceSingleNode(slice) {
 }
 
 function capturePaste(view, e) {
-  let doc = view.root
+  let doc = view.dom.ownerDocument
   let plainText = view.shiftKey || view.state.selection.$from.parent.type.spec.code
   let target = doc.body.appendChild(doc.createElement(plainText ? "textarea" : "div"))
   if (!plainText) target.contentEditable = "true"
