@@ -114,7 +114,7 @@ class SelectionChangePoller {
 
   start() {
     if (!this.listening) {
-      document.addEventListener("selectionchange", this.readFunc)
+      this.reader.view.root.addEventListener("selectionchange", this.readFunc)
       this.listening = true
       if (hasFocusAndSelection(this.reader.view)) this.readFunc()
     }
@@ -122,7 +122,7 @@ class SelectionChangePoller {
 
   stop() {
     if (this.listening) {
-      document.removeEventListener("selectionchange", this.readFunc)
+      this.reader.view.root.removeEventListener("selectionchange", this.readFunc)
       this.listening = false
     }
   }
@@ -232,12 +232,13 @@ function temporarilyEditableNear(view, pos) {
 }
 
 function removeClassOnSelectionChange(view) {
-  document.removeEventListener("selectionchange", view.hideSelectionGuard)
+  let doc = this.reader.view.root
+  doc.removeEventListener("selectionchange", view.hideSelectionGuard)
   let domSel = view.root.getSelection()
   let node = domSel.anchorNode, offset = domSel.anchorOffset
-  document.addEventListener("selectionchange", view.hideSelectionGuard = () => {
+  doc.addEventListener("selectionchange", view.hideSelectionGuard = () => {
     if (domSel.anchorNode != node || domSel.anchorOffset != offset) {
-      document.removeEventListener("selectionchange", view.hideSelectionGuard)
+      doc.removeEventListener("selectionchange", view.hideSelectionGuard)
       view.dom.classList.remove("ProseMirror-hideselection")
     }
   })
