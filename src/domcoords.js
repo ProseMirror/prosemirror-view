@@ -7,7 +7,7 @@ function windowRect(win) {
 
 function scrollRectIntoView(view, rect) {
   let scrollThreshold = view.someProp("scrollThreshold") || 0, scrollMargin = view.someProp("scrollMargin")
-  let doc = view.dom.ownerDocument, win = doc.defaultView;
+  let doc = view.dom.ownerDocument, win = doc.defaultView
   if (scrollMargin == null) scrollMargin = 5
   for (let parent = view.dom;; parent = parentNode(parent)) {
     if (!parent) break
