@@ -238,6 +238,21 @@ function coordsAtPos(view, pos) {
 }
 exports.coordsAtPos = coordsAtPos
 
+// : (EditorView, number, number) → {left: number, top: number, right: number, bottom: number}
+// Given a range in the document model, get a bounding box of the
+// entire range, relative to the window.
+function coordsAtRange(view, from, to) {
+  if (from === to) return coordsAtPos(view, from)
+  let {node: fromNode, offset: fromOffset} = view.docView.domFromPos(from)
+  let {node: toNode, offset: toOffset} = view.docView.domFromPos(to)
+  let range = document.createRange()
+  range.setStart(fromNode, fromOffset)
+  range.setEnd(toNode, toOffset)
+  let rect = range.getBoundingClientRect()
+  return {left: rect.left, top: rect.top, right: rect.right, bottom: rect.bottom}
+}
+exports.coordsAtRange = coordsAtRange
+
 function withFlushedState(view, state, f) {
   let viewState = view.state, active = view.root.activeElement
   if (viewState != state || !view.inDOMChange) view.updateState(state)
