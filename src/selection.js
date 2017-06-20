@@ -234,7 +234,7 @@ function temporarilyEditableNear(view, pos) {
 }
 
 function removeClassOnSelectionChange(view) {
-  let doc = this.reader.view.dom.ownerDocument
+  let doc = view.dom.ownerDocument
   doc.removeEventListener("selectionchange", view.hideSelectionGuard)
   let domSel = view.root.getSelection()
   let node = domSel.anchorNode, offset = domSel.anchorOffset
