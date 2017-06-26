@@ -354,7 +354,10 @@ editHandlers.compositionend = (view, e) => {
   view.inDOMChange.compositionEnd()
 }
 
-editHandlers.input = view => DOMChange.start(view)
+editHandlers.input = view => {
+  let change = DOMChange.start(view)
+  if (!change.composing) change.finish()
+}
 
 function captureCopy(view, dom) {
   // The extra wrapper is somehow necessary on IE/Edge to prevent the
