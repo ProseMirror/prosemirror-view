@@ -225,6 +225,17 @@ class EditorView {
     return coordsAtPos(this, pos)
   }
 
+  // :: (number) → {node: dom.Node, offset: number}
+  // Find the DOM position that corresponds to the given document
+  // position. Note that you should **not** mutate the editor's
+  // internal DOM, only inspect it (and even that is usually not
+  // necessary).
+  domAtPos(pos) {
+    if (this.inDOMChange)
+      pos = this.inDOMChange.mapping.invert().map(pos)
+    return this.docView.domFromPos(pos)
+  }
+
   // :: (union<"up", "down", "left", "right", "forward", "backward">, ?EditorState) → bool
   // Find out whether the selection is at the end of a textblock when
   // moving in a given direction. When, for example, given `"left"`,
