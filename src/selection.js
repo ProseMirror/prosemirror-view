@@ -60,12 +60,7 @@ class SelectionReader {
     if (this.view.inDOMChange) return
 
     let domSel = this.view.root.getSelection(), doc = this.view.state.doc
-    let nearestDesc = this.view.docView.nearestDesc(domSel.focusNode)
-    // If the selection is in a non-document part of the view, ignore it
-    if (!nearestDesc.size) {
-      this.storeDOMState()
-      return
-    }
+    let nearestDesc = this.view.docView.nearestDesc(domSel.focusNode), inWidget = nearestDesc.size == 0
     let head = this.view.docView.posFromDOM(domSel.focusNode, domSel.focusOffset)
     let $head = doc.resolve(head), $anchor, selection
     if (selectionCollapsed(domSel)) {
@@ -80,15 +75,17 @@ class SelectionReader {
     }
 
     if (!selection) {
-      let bias = origin == "pointer" || this.view.state.selection.head < $head.pos ? 1 : -1
+      let bias = origin == "pointer" || (this.view.state.selection.head < $head.pos && !inWidget) ? 1 : -1
       selection = selectionBetween(this.view, $anchor, $head, bias)
     }
-    if (head == selection.head && $anchor.pos == selection.anchor)
-      this.storeDOMState(selection)
+    let preserve = !inWidget && head == selection.head && $anchor.pos == selection.anchor
+    if (preserve) this.storeDOMState(selection)
     if (!this.view.state.selection.eq(selection)) {
       let tr = this.view.state.tr.setSelection(selection)
       if (origin == "pointer") tr.setMeta("pointer", true)
       this.view.dispatch(tr)
+    } else if (!preserve) {
+      selectionToDOM(this.view)
     }
   }
 }
