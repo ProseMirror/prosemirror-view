@@ -210,9 +210,9 @@ function captureKeyDown(view, event) {
   } else if (code == 39) { // Right arrow
     return selectHorizontally(view, 1) || skipIgnoredNodesRight(view)
   } else if (code == 38) { // Up arrow
-    return selectVertically(view, -1)
+    return selectVertically(view, -1) || skipIgnoredNodesLeft(view)
   } else if (code == 40) { // Down arrow
-    return selectVertically(view, 1)
+    return selectVertically(view, 1) || skipIgnoredNodesRight(view)
   } else if (mods == (browser.mac ? "m" : "c") &&
              (code == 66 || code == 73 || code == 89 || code == 90)) { // Mod-[biyz]
     return true
