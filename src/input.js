@@ -19,15 +19,15 @@ function initInput(view) {
   view.domObserver = new DOMObserver(view)
   view.domObserver.start()
 
+  view.eventHandlers = Object.create(null)
   for (let event in handlers) {
     let handler = handlers[event]
-    view.dom.addEventListener(event, event => {
+    view.dom.addEventListener(event, view.eventHandlers[event] = event => {
       if (eventBelongsToView(view, event) && !runCustomHandler(view, event) &&
           (view.editable || !(event.type in editHandlers)))
         handler(view, event)
     })
   }
-  view.extraHandlers = Object.create(null)
   ensureListeners(view)
 }
 exports.initInput = initInput
@@ -35,15 +35,15 @@ exports.initInput = initInput
 function destroyInput(view) {
   view.domObserver.stop()
   if (view.inDOMChange) view.inDOMChange.destroy()
+  for (let type in view.eventHandlers)
+    view.dom.removeEventListener(type, view.eventHandlers[type])
 }
 exports.destroyInput = destroyInput
 
 function ensureListeners(view) {
   view.someProp("handleDOMEvents", currentHandlers => {
-    for (let type in currentHandlers) if (!view.extraHandlers[type] && !handlers.hasOwnProperty(type)) {
-      view.extraHandlers[type] = true
-      view.dom.addEventListener(type, event => runCustomHandler(view, event))
-    }
+    for (let type in currentHandlers) if (!view.eventHandlers[type])
+      view.dom.addEventListener(type, view.eventHandlers[type] = event => runCustomHandler(view, event))
   })
 }
 exports.ensureListeners = ensureListeners
