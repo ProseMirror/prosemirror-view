@@ -5,19 +5,10 @@ function compareObjs(a, b) {
   return true
 }
 
-let warnedAboutAssociative = false
-
 class WidgetType {
   constructor(widget, spec) {
     this.spec = spec || noSpec
     this.side = this.spec.side || 0
-    if (this.spec.associative == "left" && this.spec.side == null) {
-      if (!warnedAboutAssociative && typeof console != "undefined" && console.warn) {
-        warnedAboutAssociative = true
-        console.warn("Widget decoration associativity should now be expressed with the `side` option.")
-      }
-      this.side = -1
-    }
 
     if (!this.spec.raw) {
       if (widget.nodeType != 1) {
