@@ -1,7 +1,8 @@
 const {Mark} = require("prosemirror-model")
 const {NodeSelection} = require("prosemirror-state")
 
-const {scrollRectIntoView, posAtCoords, coordsAtPos, endOfTextblock, storeScrollPos, resetScrollPos} = require("./domcoords")
+const {scrollRectIntoView, posAtCoords, coordsAtPos, coordsAtRange, endOfTextblock,
+  storeScrollPos, resetScrollPos} = require("./domcoords")
 const {docViewDesc} = require("./viewdesc")
 const {initInput, destroyInput, dispatchEvent, ensureListeners} = require("./input")
 const {SelectionReader, selectionToDOM} = require("./selection")
@@ -223,6 +224,16 @@ class EditorView {
     if (this.inDOMChange)
       pos = this.inDOMChange.mapping.invert().map(pos)
     return coordsAtPos(this, pos)
+  }
+
+  // :: (number, number) → {left: number, right: number, top: number, bottom: number}
+  // Returns the screen rectangle at a given document range.
+  coordsAtRange(from, to) {
+    if (this.inDOMChange) {
+      from = this.inDOMChange.mapping.invert().map(from)
+      to = this.inDOMChange.mapping.invert().map(to)
+    }
+    return coordsAtRange(this, from, to)
   }
 
   // :: (union<"up", "down", "left", "right", "forward", "backward">, ?EditorState) → bool
