@@ -187,7 +187,15 @@ function posAtCoords(view, coords) {
 
   let elt = root.elementFromPoint(coords.left, coords.top + 1), pos
   if (!elt) return null
-  if (node) pos = posFromCaret(view, node, offset, coords)
+  if (node) {
+    // Suspiciously specific kludge to work around caret*FromPoint
+    // never returning a position at the end of the document
+    if (node == view.dom && offset == node.childNodes.length - 1 && node.lastChild.nodeType == 1 &&
+        coords.top > node.lastChild.getBoundingClientRect().bottom)
+      pos = view.state.doc.content.size
+    else
+      pos = posFromCaret(view, node, offset, coords)
+  }
   if (pos == null) {
     pos = posFromElement(view, elt, coords)
     if (pos == null) return null
