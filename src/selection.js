@@ -201,7 +201,7 @@ function selectionToDOM(view, takeFocus) {
     }
     if (sel.visible) {
       view.dom.classList.remove("ProseMirror-hideselection")
-    } else {
+    } else if (anchor != head) {
       view.dom.classList.add("ProseMirror-hideselection")
       if ("onselectionchange" in document) removeClassOnSelectionChange(view)
     }

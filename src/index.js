@@ -305,25 +305,32 @@ function nonInclusiveMark(mark) {
   return mark.type.spec.inclusive === false
 }
 
-function cursorWrapperDOM() {
+function cursorWrapperDOM(visible) {
   let span = document.createElement("span")
   span.textContent = "\ufeff" // zero-width non-breaking space
+  if (!visible) {
+    span.style.position = "absolute"
+    span.style.left = "-100000px"
+  }
   return span
 }
 
 function updateCursorWrapper(view) {
-  let {$cursor} = view.state.selection
-  if ($cursor && (view.state.storedMarks ||
-                  $cursor.parent.content.length == 0 ||
-                  $cursor.parentOffset && !$cursor.textOffset && $cursor.nodeBefore.marks.some(nonInclusiveMark))) {
+  let {$head, $anchor, visible} = view.state.selection
+  let $pos = $head.pos == $anchor.pos && (!visible || $head.parent.inlineContent) ? $head : null
+  if ($pos && (!visible ||
+               view.state.storedMarks ||
+               $pos.parent.content.length == 0 ||
+               $pos.parentOffset && !$pos.textOffset && $pos.nodeBefore.marks.some(nonInclusiveMark))) {
     // Needs a cursor wrapper
-    let marks = view.state.storedMarks || $cursor.marks()
-    let spec = {isCursorWrapper: true, marks, raw: true}
+    let marks = view.state.storedMarks || $pos.marks()
+    let spec = {isCursorWrapper: true, marks, raw: true, visible}
     if (!view.cursorWrapper || !Mark.sameSet(view.cursorWrapper.spec.marks, marks) ||
-        view.cursorWrapper.type.widget.textContent != "\ufeff")
-      view.cursorWrapper = Decoration.widget($cursor.pos, cursorWrapperDOM(), spec)
-    else if (view.cursorWrapper.pos != $cursor.pos)
-      view.cursorWrapper = Decoration.widget($cursor.pos, view.cursorWrapper.type.widget, spec)
+        view.cursorWrapper.type.widget.textContent != "\ufeff" ||
+        view.cursorWrapper.spec.visible != visible)
+      view.cursorWrapper = Decoration.widget($pos.pos, cursorWrapperDOM(visible), spec)
+    else if (view.cursorWrapper.pos != $pos.pos)
+      view.cursorWrapper = Decoration.widget($pos.pos, view.cursorWrapper.type.widget, spec)
   } else {
     view.cursorWrapper = null
   }
