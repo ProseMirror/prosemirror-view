@@ -78,7 +78,7 @@ class SelectionReader {
       let bias = origin == "pointer" || (this.view.state.selection.head < $head.pos && !inWidget) ? 1 : -1
       selection = selectionBetween(this.view, $anchor, $head, bias)
     }
-    let preserve = !inWidget && head == selection.head && $anchor.pos == selection.anchor
+    let preserve = !inWidget && !this.view.cursorWrapper && head == selection.head && $anchor.pos == selection.anchor
     if (preserve) this.storeDOMState(selection)
     if (!this.view.state.selection.eq(selection)) {
       let tr = this.view.state.tr.setSelection(selection)
