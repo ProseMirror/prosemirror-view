@@ -542,7 +542,7 @@ class NodeViewDesc extends ViewDesc {
   }
 
   matchesNode(node, outerDeco, innerDeco) {
-    return this.dirty == NOT_DIRTY && node.eq(this.node) &&
+    return this.dirty == NOT_DIRTY && node == this.node &&
       sameOuterDeco(outerDeco, this.outerDeco) && innerDeco.eq(this.innerDeco)
   }
 
