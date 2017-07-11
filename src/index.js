@@ -45,8 +45,9 @@ class EditorView {
     this.docView = docViewDesc(this.state.doc, computeDocDeco(this), viewDecorations(this), this.dom, this)
 
     this.lastSelectedViewDesc = null
+    initInput(this) // Must be done before creating a SelectionReader
+
     this.selectionReader = new SelectionReader(this)
-    initInput(this)
 
     this.pluginViews = []
     this.updatePluginViews()
