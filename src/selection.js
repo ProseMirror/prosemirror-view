@@ -16,10 +16,10 @@ class SelectionReader {
     this.ignoreUpdates = false
     this.poller = poller(this)
 
-    view.dom.addEventListener("focus", () => this.poller.start())
+    view.dom.addEventListener("focus", () => this.poller.start(hasFocusAndSelection(this.view)))
     view.dom.addEventListener("blur", () => this.poller.stop())
 
-    if (!view.editable) this.poller.start()
+    if (!view.editable) this.poller.start(false)
   }
 
   destroy() { this.poller.stop() }
@@ -109,12 +109,12 @@ class SelectionChangePoller {
     this.originTime = Date.now()
   }
 
-  start() {
+  start(andRead) {
     if (!this.listening) {
       let doc = this.reader.view.dom.ownerDocument
       doc.addEventListener("selectionchange", this.readFunc)
       this.listening = true
-      if (hasFocusAndSelection(this.reader.view)) this.readFunc()
+      if (andRead) this.readFunc()
     }
   }
 
