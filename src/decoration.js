@@ -92,8 +92,11 @@ class NodeType {
 class Decoration {
   constructor(from, to, type) {
     // :: number
+    // The start position of the decoration.
     this.from = from
     // :: number
+    // The end position. Will be the same as `from` for [widget
+    // decorations](##view.Decoration^widget).
     this.to = to
     this.type = type
   }
