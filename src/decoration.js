@@ -91,7 +91,9 @@ class NodeType {
 // static members of this class for details.
 class Decoration {
   constructor(from, to, type) {
+    // :: number
     this.from = from
+    // :: number
     this.to = to
     this.type = type
   }
