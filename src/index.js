@@ -200,8 +200,8 @@ class EditorView {
   }
 
   // :: ({left: number, top: number}) → ?{pos: number, inside: number}
-  // Given a pair of coordinates, return the document position that
-  // corresponds to them. May return null if the given coordinates
+  // Given a pair of viewport coordinates, return the document position
+  // that corresponds to them. May return null if the given coordinates
   // aren't inside of the visible editor. When an object is returned,
   // its `pos` property is the position nearest to the coordinates,
   // and its `inside` property holds the position before the inner
@@ -217,7 +217,7 @@ class EditorView {
   }
 
   // :: (number) → {left: number, right: number, top: number, bottom: number}
-  // Returns the screen rectangle at a given document position. `left`
+  // Returns the viewport rectangle at a given document position. `left`
   // and `right` will be the same number, as this returns a flat
   // cursor-ish rectangle.
   coordsAtPos(pos) {
