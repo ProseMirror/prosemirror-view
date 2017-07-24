@@ -1,4 +1,4 @@
-const {doc, p, hr, em, blockquote} = require("prosemirror-test-builder")
+const {doc, p, hr, em, img, blockquote} = require("prosemirror-test-builder")
 const {Plugin} = require("prosemirror-state")
 const {tempEditor} = require("./view")
 const {DecorationSet, Decoration} = require("../dist")
@@ -276,6 +276,17 @@ describe("Decoration drawing", () => {
     ist(view.dom.querySelector("p"), para)
     ist(para.className, "foo bar")
     ist(!para.title)
+  })
+
+  it("can add and remove inline style", () => {
+    let deco = Decoration.inline(1, 6, {style: "color: rgba(0,10,200,.4); text-decoration: underline"})
+    let view = tempEditor({doc: doc(p("al", img, "lo")),
+                           plugins: [decoPlugin([deco])]})
+    ist(/rgba/.test(view.dom.querySelector("img").style.color))
+    ist(view.dom.querySelector("img").previousSibling.style.textDecoration, "underline")
+    updateDeco(view, null, [deco])
+    ist(view.dom.querySelector("img").style.color, "")
+    ist(view.dom.querySelector("img").style.textDecoration, "")
   })
 
   it("passes decorations to a node view", () => {

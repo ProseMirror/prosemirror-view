@@ -832,10 +832,13 @@ function patchAttributes(dom, prev, cur) {
       dom.classList.add(curList[i])
   }
   if (prev.style != cur.style) {
-    let text = dom.style.cssText, found
-    if (prev.style && (found = text.indexOf(prev.style)) > -1)
-      text = text.slice(0, found) + text.slice(found + prev.style.length)
-    dom.style.cssText = text + (cur.style || "")
+    if (prev.style) {
+      let prop = /\s*([\w\-\xa1-\uffff]+)\s*:(?:"(?:\\.|[^"])*"|'(?:\\.|[^'])*'|\(.*?\)|[^;])*/g, m
+      while (m = prop.exec(prev.style))
+        dom.style[m[1]] = ""
+    }
+    if (cur.style)
+      dom.style.cssText += cur.style
   }
 }
 
