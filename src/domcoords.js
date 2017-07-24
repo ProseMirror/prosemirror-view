@@ -193,7 +193,10 @@ function posAtCoords(view, coords) {
     if (node == view.dom && offset == node.childNodes.length - 1 && node.lastChild.nodeType == 1 &&
         coords.top > node.lastChild.getBoundingClientRect().bottom)
       pos = view.state.doc.content.size
-    else
+    // Ignore positions directly after a BR, since caret*FromPoint
+    // 'round up' positions that would be more accurately places
+    // before the BR node.
+    else if (offset == 0 || node.nodeType != 1 || node.childNodes[offset - 1].nodeName != "BR")
       pos = posFromCaret(view, node, offset, coords)
   }
   if (pos == null) {
