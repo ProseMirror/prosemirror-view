@@ -835,7 +835,7 @@ function patchAttributes(dom, prev, cur) {
     if (prev.style) {
       let prop = /\s*([\w\-\xa1-\uffff]+)\s*:(?:"(?:\\.|[^"])*"|'(?:\\.|[^'])*'|\(.*?\)|[^;])*/g, m
       while (m = prop.exec(prev.style))
-        dom.style[m[1]] = ""
+        dom.style[m[1].toLowerCase()] = ""
     }
     if (cur.style)
       dom.style.cssText += cur.style
