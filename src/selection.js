@@ -282,5 +282,13 @@ exports.selectionBetween = selectionBetween
 function hasFocusAndSelection(view) {
   if (view.editable && view.root.activeElement != view.dom) return false
   let sel = view.root.getSelection()
-  return sel.anchorNode && view.dom.contains(sel.anchorNode.nodeType == 3 ? sel.anchorNode.parentNode : sel.anchorNode)
+  if (!sel.anchorNode) return false
+  try {
+    // Firefox will raise 'permission denied' errors when accessing
+    // properties of `sel.anchorNode` when it's in a generated CSS
+    // element.
+    return view.dom.contains(sel.anchorNode.nodeType == 3 ? sel.anchorNode.parentNode : sel.anchorNode)
+  } catch(_) {
+    return false
+  }
 }
