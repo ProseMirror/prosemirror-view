@@ -46,4 +46,12 @@ describe("EditorView", () => {
     view.updateState(EditorState.create({doc: testSchema.nodes.doc.createAndFill()}))
     ist(!view.dom.querySelector("strong"))
   })
+
+  it("calls handleScrollToSelection when appropriate", () => {
+    let called = 0
+    let view = tempEditor({doc: doc(p("foo")),
+                           handleScrollToSelection() { called++; return false }})
+    view.dispatch(view.state.tr.scrollIntoView())
+    ist(called, 1)
+  })
 })

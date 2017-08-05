@@ -124,7 +124,9 @@ class EditorView {
     this.updatePluginViews(prev)
 
     if (scrollToSelection) {
-      if (state.selection instanceof NodeSelection)
+      if (this.someProp("handleScrollToSelection", f => f(this)))
+        {} // Handled
+      else if (state.selection instanceof NodeSelection)
         scrollRectIntoView(this, this.docView.domAfterPos(state.selection.from).getBoundingClientRect())
       else
         scrollRectIntoView(this, this.coordsAtPos(state.selection.head))
@@ -410,6 +412,12 @@ function getEditable(view) {
 //   Called when something is dropped on the editor. `moved` will be
 //   true if this drop moves from the current selection (which should
 //   thus be deleted).
+//
+//   handleScrollToSelection:: ?(view: EditorView) → bool
+//   Called when the view, after updating its state, tries to scroll
+//   the selection into view. A handler function may return false to
+//   indicate that it did not handle the scrolling and further
+//   handlers or the default behavior should be tried.
 //
 //   onFocus:: ?(view: EditorView, event: dom.Event)
 //   Called when the editor is focused.
