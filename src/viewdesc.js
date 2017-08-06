@@ -1,7 +1,7 @@
-const {DOMSerializer, Fragment} = require("prosemirror-model")
+import {DOMSerializer, Fragment} from "prosemirror-model"
 
-const {domIndex, isEquivalentPosition} = require("./dom")
-const browser = require("./browser")
+import {domIndex, isEquivalentPosition} from "./dom"
+import browser from "./browser"
 
 // NodeView:: interface
 //
@@ -632,11 +632,10 @@ class NodeViewDesc extends ViewDesc {
 
 // Create a view desc for the top-level document node, to be exported
 // and used by the view class.
-function docViewDesc(doc, outerDeco, innerDeco, dom, view) {
+export function docViewDesc(doc, outerDeco, innerDeco, dom, view) {
   applyOuterDeco(dom, outerDeco, doc, true)
   return new NodeViewDesc(null, doc, outerDeco, innerDeco, dom, dom, dom, view)
 }
-exports.docViewDesc = docViewDesc
 
 class TextViewDesc extends NodeViewDesc {
   constructor(parent, node, outerDeco, innerDeco, dom, nodeDOM, view) {

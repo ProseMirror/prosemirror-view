@@ -1,12 +1,12 @@
-const {TextSelection, NodeSelection} = require("prosemirror-state")
+import {TextSelection, NodeSelection} from "prosemirror-state"
 
-const browser = require("./browser")
-const {selectionCollapsed} = require("./dom")
+import browser from "./browser"
+import {selectionCollapsed} from "./dom"
 
 // Track the state of the current editor selection. Keeps the editor
 // selection in sync with the DOM selection by polling for changes,
 // as there is no DOM event for DOM selection changes.
-class SelectionReader {
+export class SelectionReader {
   constructor(view) {
     this.view = view
 
@@ -89,7 +89,6 @@ class SelectionReader {
     }
   }
 }
-exports.SelectionReader = SelectionReader
 
 // There's two polling models. On browsers that support the
 // selectionchange event (everything except Firefox, basically), we
@@ -165,7 +164,7 @@ function poller(reader) {
   return new ("onselectionchange" in document ? SelectionChangePoller : TimeoutPoller)(reader)
 }
 
-function selectionToDOM(view, takeFocus) {
+export function selectionToDOM(view, takeFocus) {
   let sel = view.state.selection
   syncNodeSelection(view, sel)
 
@@ -210,7 +209,6 @@ function selectionToDOM(view, takeFocus) {
   reader.storeDOMState(sel)
   reader.ignoreUpdates = false
 }
-exports.selectionToDOM = selectionToDOM
 
 // Kludge to work around Webkit not allowing a selection to start/end
 // between non-editable block nodes. We briefly make something
@@ -273,11 +271,10 @@ function clearNodeSelection(view) {
   }
 }
 
-function selectionBetween(view, $anchor, $head, bias) {
+export function selectionBetween(view, $anchor, $head, bias) {
   return view.someProp("createSelectionBetween", f => f(view, $anchor, $head))
     || TextSelection.between($anchor, $head, bias)
 }
-exports.selectionBetween = selectionBetween
 
 function hasFocusAndSelection(view) {
   if (view.editable && view.root.activeElement != view.dom) return false

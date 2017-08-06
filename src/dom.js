@@ -1,18 +1,18 @@
-const browser = require("./browser")
+import browser from "./browser"
 
-const domIndex = exports.domIndex = function(node) {
+export const domIndex = function(node) {
   for (var index = 0;; index++) {
     node = node.previousSibling
     if (!node) return index
   }
 }
 
-exports.parentNode = function(node) {
+export const parentNode = function(node) {
   let parent = node.parentNode
   return parent && parent.nodeType == 11 ? parent.host : parent
 }
 
-exports.textRange = function(node, from, to) {
+export const textRange = function(node, from, to) {
   let range = document.createRange()
   range.setEnd(node, to == null ? node.nodeValue.length : to)
   range.setStart(node, from || 0)
@@ -22,7 +22,7 @@ exports.textRange = function(node, from, to) {
 // Scans forward and backward through DOM positions equivalent to the
 // given one to see if the two are in the same place (i.e. after a
 // text node vs at the end of that text node)
-exports.isEquivalentPosition = function(node, off, targetNode, targetOff) {
+export const isEquivalentPosition = function(node, off, targetNode, targetOff) {
   return targetNode && (scanFor(node, off, targetNode, targetOff, -1) ||
                         scanFor(node, off, targetNode, targetOff, 1))
 }
@@ -57,7 +57,7 @@ function hasBlockDesc(dom) {
 
 // Work around Chrome issue https://bugs.chromium.org/p/chromium/issues/detail?id=447523
 // (isCollapsed inappropriately returns true in shadow dom)
-exports.selectionCollapsed = function(domSel) {
+export const selectionCollapsed = function(domSel) {
   let collapsed = domSel.isCollapsed
   if (collapsed && browser.chrome && domSel.rangeCount && !domSel.getRangeAt(0).collapsed)
     collapsed = false

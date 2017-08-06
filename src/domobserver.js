@@ -1,12 +1,12 @@
-const browser = require("./browser")
-const {DOMChange} = require("./domchange")
-const {domIndex} = require("./dom")
+import browser from "./browser"
+import {DOMChange} from "./domchange"
+import {domIndex} from "./dom"
 
 const observeOptions = {childList: true, characterData: true, attributes: true, subtree: true}
 // IE11 has very broken mutation observers, so we also listen to DOMCharacterDataModified
 const useCharData = browser.ie && browser.ie_version <= 11
 
-class DOMObserver {
+export class DOMObserver {
   constructor(view) {
     this.view = view
     this.observer = window.MutationObserver &&
@@ -69,4 +69,3 @@ class DOMObserver {
     DOMChange.start(this.view).addRange(from, to)
   }
 }
-exports.DOMObserver = DOMObserver

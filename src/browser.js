@@ -1,4 +1,5 @@
-const result = module.exports = {}
+const result = {}
+export default result
 
 if (typeof navigator != "undefined") {
   const ie_edge = /Edge\/(\d+)/.exec(navigator.userAgent)

@@ -1,6 +1,6 @@
-const {Selection, NodeSelection, TextSelection} = require("prosemirror-state")
-const browser = require("./browser")
-const {domIndex} = require("./dom")
+import {Selection, NodeSelection, TextSelection} from "prosemirror-state"
+import browser from "./browser"
+import {domIndex} from "./dom"
 
 function moveSelectionBlock(state, dir) {
   let {$anchor, $head} = state.selection
@@ -197,7 +197,7 @@ function getMods(event) {
   return result
 }
 
-function captureKeyDown(view, event) {
+export function captureKeyDown(view, event) {
   let code = event.keyCode, mods = getMods(event)
   if (code == 8 || (browser.mac && code == 72 && mods == "c")) { // Backspace, Ctrl-h on Mac
     return stopNativeHorizontalDelete(view, -1) || skipIgnoredNodesLeft(view)
@@ -219,4 +219,3 @@ function captureKeyDown(view, event) {
   }
   return false
 }
-exports.captureKeyDown = captureKeyDown

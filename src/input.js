@@ -1,17 +1,17 @@
-const {Selection, NodeSelection, TextSelection} = require("prosemirror-state")
+import {Selection, NodeSelection, TextSelection} from "prosemirror-state"
 
-const browser = require("./browser")
-const {captureKeyDown} = require("./capturekeys")
-const {DOMChange} = require("./domchange")
-const {parseFromClipboard, serializeForClipboard} = require("./clipboard")
-const {DOMObserver} = require("./domobserver")
-const {selectionBetween} = require("./selection")
+import browser from "./browser"
+import {captureKeyDown} from "./capturekeys"
+import {DOMChange} from "./domchange"
+import {parseFromClipboard, serializeForClipboard} from "./clipboard"
+import {DOMObserver} from "./domobserver"
+import {selectionBetween} from "./selection"
 
 // A collection of DOM events that occur within the editor, and callback functions
 // to invoke when the event fires.
 const handlers = {}, editHandlers = {}
 
-function initInput(view) {
+export function initInput(view) {
   view.shiftKey = false
   view.mouseDown = null
   view.dragging = null
@@ -30,23 +30,20 @@ function initInput(view) {
   }
   ensureListeners(view)
 }
-exports.initInput = initInput
 
-function destroyInput(view) {
+export function destroyInput(view) {
   view.domObserver.stop()
   if (view.inDOMChange) view.inDOMChange.destroy()
   for (let type in view.eventHandlers)
     view.dom.removeEventListener(type, view.eventHandlers[type])
 }
-exports.destroyInput = destroyInput
 
-function ensureListeners(view) {
+export function ensureListeners(view) {
   view.someProp("handleDOMEvents", currentHandlers => {
     for (let type in currentHandlers) if (!view.eventHandlers[type])
       view.dom.addEventListener(type, view.eventHandlers[type] = event => runCustomHandler(view, event))
   })
 }
-exports.ensureListeners = ensureListeners
 
 function runCustomHandler(view, event) {
   return view.someProp("handleDOMEvents", handlers => {
@@ -65,12 +62,11 @@ function eventBelongsToView(view, event) {
   return true
 }
 
-function dispatchEvent(view, event) {
+export function dispatchEvent(view, event) {
   if (!runCustomHandler(view, event) && handlers[event.type] &&
       (view.editable || !(event.type in editHandlers)))
     handlers[event.type](view, event)
 }
-exports.dispatchEvent = dispatchEvent
 
 editHandlers.keydown = (view, event) => {
   if (event.keyCode == 16) view.shiftKey = true

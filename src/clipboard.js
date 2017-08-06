@@ -1,6 +1,6 @@
-const {Slice, Fragment, DOMParser, DOMSerializer} = require("prosemirror-model")
+import {Slice, Fragment, DOMParser, DOMSerializer} from "prosemirror-model"
 
-function serializeForClipboard(view, slice) {
+export function serializeForClipboard(view, slice) {
   let context = [], {content, openStart, openEnd} = slice
   while (openStart > 1 && openEnd > 1 && content.childCount == 1 && content.firstChild.childCount == 1) {
     openStart--
@@ -30,11 +30,10 @@ function serializeForClipboard(view, slice) {
   }
   return wrap
 }
-exports.serializeForClipboard = serializeForClipboard
 
 // : (EditorView, string, string, ?bool, ResolvedPos) → ?Slice
 // Read a slice of content from the clipboard (or drop data).
-function parseFromClipboard(view, text, html, plainText, $context) {
+export function parseFromClipboard(view, text, html, plainText, $context) {
   let dom, inCode = $context.parent.type.spec.code
   if (!html && !text) return null
   if ((plainText || inCode || !html) && text) {
@@ -62,7 +61,6 @@ function parseFromClipboard(view, text, html, plainText, $context) {
   view.someProp("transformPasted", f => { slice = f(slice) })
   return slice
 }
-exports.parseFromClipboard = parseFromClipboard
 
 // Takes a slice parsed with parseSlice, which means there hasn't been
 // any content-expression checking done on the top nodes, tries to

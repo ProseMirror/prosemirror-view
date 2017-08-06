@@ -89,7 +89,7 @@ class NodeType {
 // [`decorations` prop](#view.EditorProps.decorations)) to adjust the
 // way the document is drawn. They come in several variants. See the
 // static members of this class for details.
-class Decoration {
+export class Decoration {
   constructor(from, to, type) {
     // :: number
     // The start position of the decoration.
@@ -181,7 +181,6 @@ class Decoration {
   // if you've stored extra information in that object.
   get spec() { return this.type.spec }
 }
-exports.Decoration = Decoration
 
 // DecorationAttrs:: interface
 // A set of attributes to add to a decorated node. Most properties
@@ -205,7 +204,7 @@ const none = [], noSpec = {}
 // such a way that the drawing algorithm can efficiently use and
 // compare them. This is a persistent data structure—it is not
 // modified, updates create a new value.
-class DecorationSet {
+export class DecorationSet {
   constructor(local, children) {
     this.local = local && local.length ? local : none
     this.children = children && children.length ? children : none
@@ -393,7 +392,6 @@ class DecorationSet {
     return result
   }
 }
-exports.DecorationSet = DecorationSet
 
 const empty = new DecorationSet()
 
@@ -608,7 +606,7 @@ function byPos(a, b) {
 // and split those so that only fully overlapping spans are left (to
 // make subsequent rendering easier). Will return the input array if
 // no partially overlapping spans are found (the common case).
-function removeOverlap(spans) {
+export function removeOverlap(spans) {
   let working = spans
   for (let i = 0; i < working.length - 1; i++) {
     let span = working[i]
@@ -637,7 +635,6 @@ function removeOverlap(spans) {
   }
   return working
 }
-exports.removeOverlap = removeOverlap
 
 function insertAhead(array, i, deco) {
   while (i < array.length && byPos(deco, array[i]) > 0) i++
@@ -646,7 +643,7 @@ function insertAhead(array, i, deco) {
 
 // : (EditorView) → union<DecorationSet, DecorationGroup>
 // Get the decorations associated with the current props of a view.
-function viewDecorations(view) {
+export function viewDecorations(view) {
   let found = []
   view.someProp("decorations", f => {
     let result = f(view.state)
@@ -656,4 +653,3 @@ function viewDecorations(view) {
     found.push(DecorationSet.create(view.state.doc, [view.cursorWrapper]))
   return DecorationGroup.from(found)
 }
-exports.viewDecorations = viewDecorations

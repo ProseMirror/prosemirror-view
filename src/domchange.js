@@ -1,12 +1,12 @@
-const {Fragment, DOMParser} = require("prosemirror-model")
-const {Selection} = require("prosemirror-state")
-const {Mapping} = require("prosemirror-transform")
+import {Fragment, DOMParser} from "prosemirror-model"
+import {Selection} from "prosemirror-state"
+import {Mapping} from "prosemirror-transform"
 
-const {TrackMappings} = require("./trackmappings")
-const {selectionBetween} = require("./selection")
-const {selectionCollapsed} = require("./dom")
+import {TrackMappings} from "./trackmappings"
+import {selectionBetween} from "./selection"
+import {selectionCollapsed} from "./dom"
 
-class DOMChange {
+export class DOMChange {
   constructor(view, composing) {
     this.view = view
     this.state = view.state
@@ -98,7 +98,6 @@ class DOMChange {
   }
 }
 DOMChange.commitTimeout = 20
-exports.DOMChange = DOMChange
 
 // Note that all referencing and parsing is done with the
 // start-of-operation selection and document, since that's the one

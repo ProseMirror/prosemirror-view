@@ -1,18 +1,18 @@
-const {Mark} = require("prosemirror-model")
-const {NodeSelection} = require("prosemirror-state")
+import {Mark} from "prosemirror-model"
+import {NodeSelection} from "prosemirror-state"
 
-const {scrollRectIntoView, posAtCoords, coordsAtPos, endOfTextblock, storeScrollPos, resetScrollPos} = require("./domcoords")
-const {docViewDesc} = require("./viewdesc")
-const {initInput, destroyInput, dispatchEvent, ensureListeners} = require("./input")
-const {SelectionReader, selectionToDOM} = require("./selection")
-const {Decoration, viewDecorations} = require("./decoration")
+import {scrollRectIntoView, posAtCoords, coordsAtPos, endOfTextblock, storeScrollPos, resetScrollPos} from "./domcoords"
+import {docViewDesc} from "./viewdesc"
+import {initInput, destroyInput, dispatchEvent, ensureListeners} from "./input"
+import {SelectionReader, selectionToDOM} from "./selection"
+import {Decoration, viewDecorations} from "./decoration"
 
-;({Decoration: exports.Decoration, DecorationSet: exports.DecorationSet} = require("./decoration"))
+export {Decoration, DecorationSet} from "./decoration"
 
 // ::- An editor view manages the DOM structure that represents an
 // editor. Its state and behavior are determined by its
 // [props](#view.DirectEditorProps).
-class EditorView {
+export class EditorView {
   // :: (?union<dom.Node, (dom.Node), {mount: dom.Node}>, DirectEditorProps)
   // Create a view. `place` may be a DOM node that the editor should
   // be appended to, a function that will place it into the document,
@@ -284,7 +284,6 @@ class EditorView {
     else this.updateState(this.state.apply(tr))
   }
 }
-exports.EditorView = EditorView
 
 function computeDocDeco(view) {
   let attrs = Object.create(null)

@@ -1,5 +1,5 @@
-const {EditorState} = require("prosemirror-state")
-const {Mapping} = require("prosemirror-transform")
+import {EditorState} from "prosemirror-state"
+import {Mapping} from "prosemirror-transform"
 
 class TrackedRecord {
   constructor(prev, mapping, state) {
@@ -9,7 +9,7 @@ class TrackedRecord {
   }
 }
 
-class TrackMappings {
+export class TrackMappings {
   constructor(state) {
     this.seen = [new TrackedRecord(null, null, state)]
     // Kludge to listen to state changes globally in order to be able
@@ -46,4 +46,3 @@ class TrackMappings {
     return result
   }
 }
-exports.TrackMappings = TrackMappings
