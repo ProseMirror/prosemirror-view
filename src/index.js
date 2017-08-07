@@ -273,11 +273,12 @@ export class EditorView {
 
   // :: (Transaction)
   // Dispatch a transaction. Will call the
-  // [`dispatchTransaction`](#view.EditorProps.dispatchTransaction) when given,
-  // and defaults to applying the transaction to the current state and
-  // calling [`updateState`](#view.EditorView.updateState) otherwise.
-  // This method is bound to the view instance, so that it can be
-  // easily passed around.
+  // [`dispatchTransaction`](#view.DirectEditorProps.dispatchTransaction)
+  // when given, and defaults to applying the transaction to the
+  // current state and calling
+  // [`updateState`](#view.EditorView.updateState) otherwise. This
+  // method is bound to the view instance, so that it can be easily
+  // passed around.
   dispatch(tr) {
     let dispatchTransaction = this._props.dispatchTransaction
     if (dispatchTransaction) dispatchTransaction(tr)
