@@ -385,12 +385,12 @@ handlers.copy = editHandlers.cut = (view, e) => {
 
   // IE and Edge's clipboard interface is completely broken
   let data = brokenClipboardAPI ? null : e.clipboardData
-  let slice = sel.content(), dom = serializeForClipboard(view, slice)
+  let slice = sel.content(), {dom, text} = serializeForClipboard(view, slice)
   if (data) {
     e.preventDefault()
     data.clearData()
     data.setData("text/html", dom.innerHTML)
-    data.setData("text/plain", slice.content.textBetween(0, slice.content.size, "\n\n"))
+    data.setData("text/plain", text)
   } else {
     captureCopy(view, dom)
   }
@@ -470,10 +470,10 @@ handlers.dragstart = (view, e) => {
   } else {
     return
   }
-  let slice = view.state.selection.content(), dom = serializeForClipboard(view, slice)
+  let slice = view.state.selection.content(), {dom, text} = serializeForClipboard(view, slice)
   e.dataTransfer.clearData()
   e.dataTransfer.setData("text/html", dom.innerHTML)
-  e.dataTransfer.setData("text/plain", slice.content.textBetween(0, slice.content.size, "\n\n"))
+  e.dataTransfer.setData("text/plain", text)
   view.dragging = new Dragging(slice, !e.ctrlKey)
 }
 

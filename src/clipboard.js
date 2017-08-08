@@ -28,30 +28,42 @@ export function serializeForClipboard(view, slice) {
     let singleNode = slice.openStart == 0 && slice.openEnd == 0 && slice.content.childCount == 1 && !slice.content.firstChild.isText
     firstChild.setAttribute("data-pm-context", singleNode ? "none" : JSON.stringify(context))
   }
-  return wrap
+
+  let text = view.someProp("clipboardTextSerializer", f => f(slice)) ||
+      slice.content.textBetween(0, slice.content.size, "\n\n")
+
+  return {dom: wrap, text}
 }
 
 // : (EditorView, string, string, ?bool, ResolvedPos) → ?Slice
 // Read a slice of content from the clipboard (or drop data).
 export function parseFromClipboard(view, text, html, plainText, $context) {
-  let dom, inCode = $context.parent.type.spec.code
+  let dom, inCode = $context.parent.type.spec.code, slice
   if (!html && !text) return null
   if ((plainText || inCode || !html) && text) {
-    view.someProp("transformPastedText", f => text = f(text))
+    view.someProp("transformPastedText", f => { text = f(text) })
     if (inCode) return new Slice(Fragment.from(view.state.schema.text(text)), 0, 0)
-    dom = document.createElement("div")
-    text.trim().split(/(?:\r\n?|\n)+/).forEach(block => {
-      dom.appendChild(document.createElement("p")).textContent = block
-    })
+    let parsed = view.someProp("clipboardTextParser", f => f(text))
+    if (parsed) {
+      slice = parsed
+    } else {
+      dom = document.createElement("div")
+      text.trim().split(/(?:\r\n?|\n)+/).forEach(block => {
+        dom.appendChild(document.createElement("p")).textContent = block
+      })
+    }
   } else {
     view.someProp("transformPastedHTML", f => html = f(html))
     dom = readHTML(html)
   }
 
-  let parser = view.someProp("clipboardParser") || view.someProp("domParser") || DOMParser.fromSchema(view.state.schema)
-  let slice = parser.parseSlice(dom, {preserveWhitespace: true, context: $context})
+  if (!slice) {
+    let parser = view.someProp("clipboardParser") || view.someProp("domParser") || DOMParser.fromSchema(view.state.schema)
+    slice = parser.parseSlice(dom, {preserveWhitespace: true, context: $context})
+  }
   slice = closeIsolatingStart(slice)
-  let contextNode = dom.querySelector("[data-pm-context]"), context = contextNode && contextNode.getAttribute("data-pm-context")
+  let contextNode = dom && dom.querySelector("[data-pm-context]")
+  let context = contextNode && contextNode.getAttribute("data-pm-context")
   if (context == "none")
     slice = new Slice(slice.content, 0, 0)
   else if (context)

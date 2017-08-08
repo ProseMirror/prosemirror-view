@@ -482,7 +482,7 @@ function getEditable(view) {
 //   [`DOMSerializer.fromSchema`](#model.DOMSerializer^fromSchema)
 //   will be used.
 //
-//   clipboardTextSerializer:: ?(state: EditorState) → string
+//   clipboardTextSerializer:: ?(slice: Slice) → string
 //   A function that will be called to get the text for the current
 //   selection when copying text to the clipboard. By default, the
 //   editor will use [`textBetween`](#model.Node.textBetween) on the
