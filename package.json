@@ -32,7 +32,7 @@
   },
   "scripts": {
     "test": "FIXME autorun browser tests",
-    "test-server": "moduleserve test --port 8090",
+    "test-server": "node test/link-mocha-css.js && moduleserve test --port 8090",
     "build": "rollup -c",
     "watch": "rollup -c -w",
     "prepare": "npm run build"

@@ -9,6 +9,9 @@ import {Decoration, viewDecorations} from "./decoration"
 
 export {Decoration, DecorationSet} from "./decoration"
 
+// Exported for testing
+export {serializeForClipboard as __serializeForClipboard, parseFromClipboard as __parseFromClipboard} from "./clipboard"
+
 // ::- An editor view manages the DOM structure that represents an
 // editor. Its state and behavior are determined by its
 // [props](#view.DirectEditorProps).
@@ -435,21 +438,29 @@ function getEditable(view) {
 //   [`DOMParser.fromSchema`](#model.DOMParser^fromSchema) on the
 //   editor's schema.
 //
+//   transformPastedHTML:: ?(string) → string
+//   Can be used to transform pasted HTML text, _before_ it is parsed,
+//   for example to clean it up.
+//
 //   clipboardParser:: ?DOMParser
 //   The [parser](#model.DOMParser) to use when reading content from
 //   the clipboard. When not given, the value of the
 //   [`domParser`](#view.EditorProps.domParser) prop is used.
 //
+//   transformPastedText:: ?(string) → string
+//   Transform pasted plain text.
+//
+//   clipboardTextParser:: ?(string) → Slice
+//   A function to parse text from the clipboard into a document
+//   slice. Called after
+//   [`transformPastedText`](#view.EditorProps.transformPastedText).
+//   The default behavior is to split the text into lines, wrap them
+//   in `<p>` tags, and call
+//   [`clipboardParser`](#view.EditorProps.clipboardParser) on it.
+//
 //   transformPasted:: ?(Slice) → Slice
 //   Can be used to transform pasted content before it is applied to
 //   the document.
-//
-//   transformPastedHTML:: ?(string) → string
-//   Can be used to transform pasted HTML text, _before_ it is parsed,
-//   for example to clean it up.
-//
-//   transformPastedText:: ?(string) → string
-//   Transform pasted plain text.
 //
 //   nodeViews:: ?Object<(node: Node, view: EditorView, getPos: () → number, decorations: [Decoration]) → NodeView>
 //   Allows you to pass custom rendering and behavior logic for nodes
@@ -470,6 +481,12 @@ function getEditable(view) {
 //   clipboard. If not given, the result of
 //   [`DOMSerializer.fromSchema`](#model.DOMSerializer^fromSchema)
 //   will be used.
+//
+//   clipboardTextSerializer:: ?(state: EditorState) → string
+//   A function that will be called to get the text for the current
+//   selection when copying text to the clipboard. By default, the
+//   editor will use [`textBetween`](#model.Node.textBetween) on the
+//   selected range.
 //
 //   decorations:: ?(EditorState) → ?DecorationSet
 //   A set of [document decorations](#view.Decoration) to add to the

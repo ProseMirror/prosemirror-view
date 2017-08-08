@@ -2,7 +2,7 @@ const ist = require("ist")
 const {schema, doc, p, blockquote} = require("prosemirror-test-builder")
 const {Transform} = require("prosemirror-transform")
 
-const {Decoration, DecorationSet, removeOverlap} = require("../dist/decoration")
+const {Decoration, DecorationSet} = require("../dist")
 
 let widget = document.createElement("button")
 
@@ -251,21 +251,21 @@ describe("DecorationSet", () => {
 describe("removeOverlap", () => {
   it("returns the original array when there is no overlap", () => {
     let decs = [make({pos: 1}), make({from: 1, to: 4}), make({from: 1, to: 4})]
-    ist(removeOverlap(decs), decs)
+    ist(DecorationSet.removeOverlap(decs), decs)
   })
 
   it("splits a partially overlapping decoration", () => {
     let decs = [make({from: 1, to: 2}), make({from: 1, to: 4}), make({from: 3, to: 4})]
-    ist(arrayStr(removeOverlap(decs)), "1-2, 1-2, 2-3, 3-4, 3-4")
+    ist(arrayStr(DecorationSet.removeOverlap(decs)), "1-2, 1-2, 2-3, 3-4, 3-4")
   })
 
   it("splits a decoration that spans multiple widgets", () => {
     let decs = [make({from: 1, to: 5}), make({pos: 2}), make({pos: 3})]
-    ist(arrayStr(removeOverlap(decs)), "1-2, 2-2, 2-3, 3-3, 3-5")
+    ist(arrayStr(DecorationSet.removeOverlap(decs)), "1-2, 2-2, 2-3, 3-3, 3-5")
   })
 
   it("correctly splits overlapping inline decorations", () => {
     let decs = [make({from: 0, to: 6}), make({from: 1, to: 4}), make({from: 3, to: 5})]
-    ist(arrayStr(removeOverlap(decs)), "0-1, 1-3, 1-3, 3-4, 3-4, 3-4, 4-5, 4-5, 5-6")
+    ist(arrayStr(DecorationSet.removeOverlap(decs)), "0-1, 1-3, 1-3, 3-4, 3-4, 3-4, 4-5, 4-5, 5-6")
   })
 })

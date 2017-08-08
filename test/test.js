@@ -1,3 +1,5 @@
+require("mocha/mocha")
+
 // declare global: mocha
 mocha.setup("bdd")
 

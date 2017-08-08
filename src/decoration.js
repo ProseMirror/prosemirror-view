@@ -399,6 +399,8 @@ const empty = new DecorationSet()
 // The empty set of decorations.
 DecorationSet.empty = empty
 
+DecorationSet.removeOverlap = removeOverlap
+
 // :- An abstraction that allows the code dealing with decorations to
 // treat multiple DecorationSet objects as if it were a single object
 // with (a subset of) the same interface.
@@ -606,7 +608,7 @@ function byPos(a, b) {
 // and split those so that only fully overlapping spans are left (to
 // make subsequent rendering easier). Will return the input array if
 // no partially overlapping spans are found (the common case).
-export function removeOverlap(spans) {
+function removeOverlap(spans) {
   let working = spans
   for (let i = 0; i < working.length - 1; i++) {
     let span = working[i]
