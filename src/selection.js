@@ -250,6 +250,15 @@ function selectCursorWrapper(view) {
   range.collapse(false)
   domSel.removeAllRanges()
   domSel.addRange(range)
+  // Kludge to kill 'control selection' in IE11 when selecting an
+  // invisible cursor wrapper, since that would result in those weird
+  // resize handles and a selection that considers the absolutely
+  // positioned wrapper, rather than the root editable node, the
+  // focused element.
+  if (!view.state.selection.visible && browser.ie && browser.ie_version <= 11) {
+    node.disabled = true
+    node.disabled = false
+  }
 }
 
 function syncNodeSelection(view, sel) {
