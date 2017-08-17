@@ -230,8 +230,7 @@ function readDOMChange(view, mapping, oldState, range) {
   if ($from.sameParent($to) && $from.parent.inlineContent) {
     if ($from.pos == $to.pos) { // Deletion
       tr = view.state.tr.delete(from, to)
-      let $start = doc.resolve(change.start)
-      if ($start.parentOffset < $start.parent.content.size) storedMarks = $start.marks(true)
+      storedMarks = doc.resolve(change.start).marksAcross(doc.resolve(change.endA))
     } else if ( // Adding or removing a mark
       change.endA == change.endB && ($from1 = doc.resolve(change.start)) &&
       (markChange = isMarkChange($from.parent.content.cut($from.parentOffset, $to.parentOffset),
