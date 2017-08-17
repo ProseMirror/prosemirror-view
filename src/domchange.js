@@ -118,7 +118,7 @@ function parseBetween(view, oldState, range) {
   let parser = view.someProp("domParser") || DOMParser.fromSchema(view.state.schema)
   let $from = startDoc.resolve(from)
   let sel = null, doc = parser.parse(parent, {
-    topNode: $from.parent.copy(),
+    topNode: $from.parent,
     topStart: $from.index(),
     topOpen: true,
     from: fromOffset,

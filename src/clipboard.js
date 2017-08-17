@@ -90,7 +90,7 @@ function normalizeSiblings(slice, $context) {
     let lastWrap, result = []
     slice.content.forEach(node => {
       if (!result) return
-      let wrap = match.findWrappingFor(node), inLast
+      let wrap = match.findWrapping(node.type), inLast
       if (!wrap) return result = null
       if (inLast = result.length && lastWrap.length && addToSibling(wrap, lastWrap, node, result[result.length - 1], 0)) {
         result[result.length - 1] = inLast
@@ -109,18 +109,18 @@ function normalizeSiblings(slice, $context) {
 
 function withWrappers(node, wrap, from = 0) {
   for (let i = wrap.length - 1; i >= from; i--)
-    node = wrap[i].type.create(wrap[i].attrs, Fragment.from(node))
+    node = wrap[i].create(null, Fragment.from(node))
   return node
 }
 
 // Used to group adjacent nodes wrapped in similar parents by
 // normalizeSiblings into the same parent node
 function addToSibling(wrap, lastWrap, node, sibling, depth) {
-  if (depth < wrap.length && depth < lastWrap.length && wrap[depth].type == lastWrap[depth].type) {
+  if (depth < wrap.length && depth < lastWrap.length && wrap[depth] == lastWrap[depth]) {
     let inner = addToSibling(wrap, lastWrap, node, sibling.lastChild, depth + 1)
     if (inner) return sibling.copy(sibling.content.replaceChild(sibling.childCount - 1, inner))
     let match = sibling.contentMatchAt(sibling.childCount)
-    if (depth == wrap.length - 1 ? match.matchNode(node) : match.matchType(wrap[depth + 1].type, wrap[depth + 1].attrs))
+    if (match.matchType(depth == wrap.length - 1 ? node.type : wrap[depth + 1]))
       return sibling.copy(sibling.content.append(Fragment.from(withWrappers(node, wrap, depth + 1))))
   }
 }
