@@ -97,6 +97,11 @@ describe("DecorationSet", () => {
       let set = build(doc(blockquote(blockquote(p("a")))), {from: 3, to: 4})
       ist(arrayStr(set.find()), "3-4")
     })
+
+    it("can filter by predicate", () => {
+      let set = build(doc(blockquote(blockquote(p("a")))), {from: 3, to: 4, name: "X"}, {from: 3, to: 4, name: "Y"})
+      ist(set.find(undefined, undefined, x => x.name == "Y").map(d => d.spec.name).join(), "Y")
+    })
   })
 
   describe("map", () => {

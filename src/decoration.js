@@ -217,27 +217,29 @@ export class DecorationSet {
     return decorations.length ? buildTree(decorations, doc, 0, noSpec) : empty
   }
 
-  // :: (?number, ?number) → [Decoration]
+  // :: (?number, ?number, ?(spec: Object) → bool) → [Decoration]
   // Find all decorations in this set which touch the given range
   // (including decorations that start or end directly at the
-  // boundaries). When the arguments are omitted, all decorations in
-  // the set are collected.
-  find(start, end) {
+  // boundaries) and match the given predicate on their spec. When
+  // `start` and `end` are omitted, all decorations in the set are
+  // considered. When `predicate` isn't given, all decorations are
+  // asssumed to match.
+  find(start, end, predicate) {
     let result = []
-    this.findInner(start == null ? 0 : start, end == null ? 1e9 : end, result, 0)
+    this.findInner(start == null ? 0 : start, end == null ? 1e9 : end, result, 0, predicate)
     return result
   }
 
-  findInner(start, end, result, offset) {
+  findInner(start, end, result, offset, predicate) {
     for (let i = 0; i < this.local.length; i++) {
       let span = this.local[i]
-      if (span.from <= end && span.to >= start)
+      if (span.from <= end && span.to >= start && (!predicate || predicate(span.spec)))
         result.push(span.copy(span.from + offset, span.to + offset))
     }
     for (let i = 0; i < this.children.length; i += 3) {
       if (this.children[i] < end && this.children[i + 1] > start) {
         let childOff = this.children[i] + 1
-        this.children[i + 2].findInner(start - childOff, end - childOff, result, offset + childOff)
+        this.children[i + 2].findInner(start - childOff, end - childOff, result, offset + childOff, predicate)
       }
     }
   }
