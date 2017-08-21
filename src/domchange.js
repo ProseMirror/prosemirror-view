@@ -1,5 +1,5 @@
 import {Fragment, DOMParser} from "prosemirror-model"
-import {Selection} from "prosemirror-state"
+import {Selection, TextSelection} from "prosemirror-state"
 import {Mapping} from "prosemirror-transform"
 
 import {TrackMappings} from "./trackmappings"
@@ -12,6 +12,7 @@ export class DOMChange {
     this.state = view.state
     this.composing = composing
     this.from = this.to = null
+    this.typeOver = false
     this.timeout = composing ? null : setTimeout(() => this.finish(), DOMChange.commitTimeout)
     this.trackMappings = new TrackMappings(view.state)
 
@@ -65,7 +66,9 @@ export class DOMChange {
     this.markDirty(range)
 
     this.destroy()
-    readDOMChange(this.view, this.mapping, this.state, range)
+    let sel = this.state.selection, allowTypeOver = this.typeOver && sel instanceof TextSelection &&
+        !sel.empty && sel.$head.sameParent(sel.$anchor)
+    readDOMChange(this.view, this.mapping, this.state, range, allowTypeOver)
 
     // If the reading didn't result in a view update, force one by
     // resetting the view to its current state.
@@ -194,14 +197,17 @@ function keyEvent(keyCode, key) {
   return event
 }
 
-function readDOMChange(view, mapping, oldState, range) {
+function readDOMChange(view, mapping, oldState, range, allowTypeOver) {
   let parse = parseBetween(view, oldState, range)
 
   let doc = oldState.doc, compare = doc.slice(parse.from, parse.to)
   let change = findDiff(compare.content, parse.doc.content, parse.from, oldState.selection.from)
 
   if (!change) {
-    if (parse.sel) {
+    if (allowTypeOver) {
+      let state = view.state, sel = state.selection
+      view.dispatch(state.tr.replaceSelectionWith(state.schema.text(state.doc.textBetween(sel.from, sel.to)), true).scrollIntoView())
+    } else if (parse.sel) {
       let sel = resolveSelection(view, view.state.doc, mapping, parse.sel)
       if (sel && !sel.eq(view.state.selection)) view.dispatch(view.state.tr.setSelection(sel))
     }
