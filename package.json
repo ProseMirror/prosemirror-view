@@ -26,9 +26,8 @@
     "mocha": "^3.0.2",
     "moduleserve": "^0.7.0",
     "prosemirror-test-builder": "^0.22.0",
-    "rollup": "^0.45.2",
-    "rollup-plugin-buble": "^0.15.0",
-    "rollup-watch": "^4.3.1"
+    "rollup": "^0.46.0",
+    "rollup-plugin-buble": "^0.15.0"
   },
   "scripts": {
     "test": "FIXME autorun browser tests",
