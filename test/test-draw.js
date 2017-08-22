@@ -89,6 +89,13 @@ describe("EditorView draw", () => {
     ist(view.dom.lastChild, lastPara)
   })
 
+  it("doesn't greedily match nodes that have another match", () => {
+    let view = tempEditor({doc: doc(p("a"), p("b"), p())})
+    let secondPara = view.dom.querySelectorAll("p")[1]
+    view.dispatch(view.state.tr.split(2))
+    ist(view.dom.querySelectorAll("p")[2], secondPara)
+  })
+
   it("creates and destroys plugin views", () => {
     let events = []
     class PluginView {

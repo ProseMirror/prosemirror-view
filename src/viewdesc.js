@@ -567,9 +567,9 @@ class NodeViewDesc extends ViewDesc {
       updater.syncToMarks(child.marks, inline, view)
       // Either find an existing desc that exactly matches this node,
       // and drop the descs before it.
-      updater.findNodeMatch(child, outerDeco, innerDeco) ||
+      updater.findNodeMatch(child, outerDeco, innerDeco, i) ||
         // Or try updating the next desc to reflect this node.
-        updater.updateNextNode(child, outerDeco, innerDeco, view, this.node.content, i) ||
+        updater.updateNextNode(child, outerDeco, innerDeco, view, i) ||
         // Or just add it as a new desc.
         updater.addNode(child, outerDeco, innerDeco, view)
     })
@@ -873,6 +873,8 @@ class ViewTreeUpdater {
     this.stack = []
     // Tracks whether anything was changed
     this.changed = false
+
+    this.preMatched = preMatch(top.node.content, top.children)
   }
 
   // Destroy and remove the children between the given indices in
@@ -925,9 +927,11 @@ class ViewTreeUpdater {
   // : (Node, [Decoration], DecorationSet) → bool
   // Try to find a node desc matching the given data. Skip over it and
   // return true when successful.
-  findNodeMatch(node, outerDeco, innerDeco) {
+  findNodeMatch(node, outerDeco, innerDeco, index) {
     for (let i = this.index, children = this.top.children, e = Math.min(children.length, i + 5); i < e; i++) {
-      if (children[i].matchesNode(node, outerDeco, innerDeco)) {
+      let child = children[i], preMatched
+      if (child.matchesNode(node, outerDeco, innerDeco) &&
+          ((preMatched = this.preMatched.indexOf(child)) == -1 || preMatched == index)) {
         this.destroyBetween(this.index, i)
         this.index++
         return true
@@ -937,16 +941,14 @@ class ViewTreeUpdater {
   }
 
   // : (Node, [Decoration], DecorationSet, EditorView, Fragment, number) → bool
-  // Try to update the next node, if any, to the given data. First
-  // tries scanning ahead in the siblings fragment to see if the next
-  // node matches any of those, and if so, doesn't touch it, to avoid
-  // overwriting nodes that could still be used.
-  updateNextNode(node, outerDeco, innerDeco, view, siblings, index) {
+  // Try to update the next node, if any, to the given data. Checks
+  // pre-matches to avoid overwriting nodes that could still be used.
+  updateNextNode(node, outerDeco, innerDeco, view, index) {
     if (this.index == this.top.children.length) return false
     let next = this.top.children[this.index]
     if (next instanceof NodeViewDesc) {
-      for (let i = index + 1, e = Math.min(siblings.childCount, i + 5); i < e; i++)
-        if (next.node == siblings.child(i)) return false
+      let preMatch = this.preMatched.indexOf(next)
+      if (preMatch > -1 && preMatch != index) return false
       let nextDOM = next.dom
       if (next.update(node, outerDeco, innerDeco, view)) {
         if (next.dom != nextDOM) this.changed = true
@@ -994,7 +996,24 @@ class ViewTreeUpdater {
   }
 }
 
-// : (ViewDesc, DecorationSet, (Decoration), (Node, [Decoration], DecorationSet))
+// : (Fragment, [ViewDesc]) → [ViewDesc]
+// Iterate from the end of the fragment and array of descs to find
+// directly matching ones, in order to avoid overeagerly reusing
+// those for other nodes. Returns an array whose positions correspond
+// to node positions in the fragment, and whose elements are either
+// descs matched to the child at that index, or empty.
+function preMatch(frag, descs) {
+  let result = [], end = frag.childCount
+  for (let i = descs.length - 1; end > 0 && i >= 0; i--) {
+    let desc = descs[i], node = desc.node
+    if (!node) continue
+    if (node != frag.child(end - 1)) break
+    result[--end] = desc
+  }
+  return result
+}
+
+// : (ViewDesc, DecorationSet, (Decoration), (Node, [Decoration], DecorationSet, number))
 // This function abstracts iterating over the nodes and decorations in
 // a fragment. Calls `onNode` for each node, with its local and child
 // decorations. Splits text nodes when there is a decoration starting
