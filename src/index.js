@@ -105,10 +105,11 @@ export class EditorView {
     updateCursorWrapper(this)
     let innerDeco = viewDecorations(this), outerDeco = computeDocDeco(this)
 
-    let scrollToSelection = state.scrollToSelection > prev.scrollToSelection || prev.config != state.config
+    let scroll = prev.config != state.config ? "reset"
+        : state.scrollToSelection > prev.scrollToSelection ? "to selection" : "preserve"
     let updateDoc = !this.docView.matchesNode(state.doc, outerDeco, innerDeco)
     let updateSel = updateDoc || !state.selection.eq(prev.selection) || this.selectionReader.domChanged()
-    let oldScrollPos = !scrollToSelection && updateSel && storeScrollPos(this)
+    let oldScrollPos = scroll == "preserve" && updateSel && storeScrollPos(this)
 
     if (updateSel) {
       this.domObserver.stop()
@@ -126,7 +127,9 @@ export class EditorView {
     if (prevEditable != this.editable) this.selectionReader.editableChanged()
     this.updatePluginViews(prev)
 
-    if (scrollToSelection) {
+    if (scroll == "reset") {
+      this.dom.scrollTop = 0
+    } else if (scroll == "to selection") {
       if (this.someProp("handleScrollToSelection", f => f(this)))
         {} // Handled
       else if (state.selection instanceof NodeSelection)
