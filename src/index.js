@@ -425,12 +425,6 @@ function getEditable(view) {
 //   indicate that it did not handle the scrolling and further
 //   handlers or the default behavior should be tried.
 //
-//   onFocus:: ?(view: EditorView, event: dom.Event)
-//   Called when the editor is focused.
-//
-//   onBlur:: ?(view: EditorView, event: dom.Event)
-//   Called when the editor loses focus.
-//
 //   createSelectionBetween:: ?(view: EditorView, anchor: ResolvedPos, head: ResolvedPos) → ?Selection
 //   Can be used to override the selection object created when reading
 //   a DOM selection between the given anchor and head.

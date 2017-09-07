@@ -523,7 +523,6 @@ handlers.focus = (view, event) => {
     view.dom.classList.add("ProseMirror-focused")
     view.focused = true
   }
-  view.someProp("onFocus", f => { f(view, event) })
 }
 
 handlers.blur = (view, event) => {
@@ -531,7 +530,6 @@ handlers.blur = (view, event) => {
     view.dom.classList.remove("ProseMirror-focused")
     view.focused = false
   }
-  view.someProp("onBlur", f => { f(view, event) })
 }
 
 // Make sure all handlers get registered
