@@ -44,9 +44,10 @@ import browser from "./browser"
 //
 //   setSelection:: ?(anchor: number, head: number, root: dom.Document)
 //   This will be called to handle setting the selection inside the
-//   node. By default, a DOM selection will be created between the DOM
-//   positions corresponding to the given anchor and head positions,
-//   but if you override it you can do something else.
+//   node. The `anchor` and `head` positions are relative to the start
+//   of the node. By default, a DOM selection will be created between
+//   the DOM positions corresponding to those positions, but if you
+//   override it you can do something else.
 //
 //   stopEvent:: ?(event: dom.Event) → bool
 //   Can be used to prevent the editor view from trying to handle some
