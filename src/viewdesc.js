@@ -8,9 +8,11 @@ import browser from "./browser"
 // By default, document nodes are rendered using the result of the
 // [`toDOM`](#model.NodeSpec.toDOM) method of their spec, and managed
 // entirely by the editor. For some use cases, such as embedded
-// node-specific editing interfaces, when you need more control over
-// the behavior of a node's in-editor representation, and can
+// node-specific editing interfaces, you want more control over
+// the behavior of a node's in-editor representation, and need to
 // [define](#view.EditorProps.nodeViews) a custom node view.
+//
+// Objects returned as node views must conform to this interface.
 //
 //   dom:: ?dom.Node
 //   The outer DOM node that represents the document node. When not
@@ -40,7 +42,7 @@ import browser from "./browser"
 //
 //   deselectNode:: ?()
 //   When defining a `selectNode` method, you should also provide a
-//   `deselectNode` method to disable it again.
+//   `deselectNode` method to remove the effect again.
 //
 //   setSelection:: ?(anchor: number, head: number, root: dom.Document)
 //   This will be called to handle setting the selection inside the
@@ -51,7 +53,8 @@ import browser from "./browser"
 //
 //   stopEvent:: ?(event: dom.Event) → bool
 //   Can be used to prevent the editor view from trying to handle some
-//   or all DOM events that bubble up from the node view.
+//   or all DOM events that bubble up from the node view. Events for
+//   which this returns true are not handled by the editor.
 //
 //   ignoreMutation:: ?(dom.MutationRecord) → bool
 //   Called when a DOM
@@ -62,7 +65,7 @@ import browser from "./browser"
 //
 //   destroy:: ?()
 //   Called when the node view is removed from the editor or the whole
-//   editor is detached.
+//   editor is destroyed.
 
 // View descriptions are data structures that describe the DOM that is
 // used to represent the editor's content. They are used for:

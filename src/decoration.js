@@ -85,10 +85,9 @@ class NodeType {
   }
 }
 
-// ::- Decorations can be provided to the view (through the
-// [`decorations` prop](#view.EditorProps.decorations)) to adjust the
-// way the document is drawn. They come in several variants. See the
-// static members of this class for details.
+// ::- Decoration objects can be provided to the view through the
+// [`decorations` prop](#view.EditorProps.decorations). They come in
+// several variants—see the static members of this class for details.
 export class Decoration {
   constructor(from, to, type) {
     // :: number
@@ -96,7 +95,7 @@ export class Decoration {
     this.from = from
     // :: number
     // The end position. Will be the same as `from` for [widget
-    // decorations](##view.Decoration^widget).
+    // decorations](#view.Decoration^widget).
     this.to = to
     this.type = type
   }
