@@ -406,9 +406,6 @@ function getEditable(view) {
 //   handleTripleClick:: ?(view: EditorView, pos: number, event: dom.MouseEvent) → bool
 //   Called when the editor is triple-clicked, after `handleTripleClickOn`.
 //
-//   handleContextMenu:: ?(view: EditorView, pos: number, event: dom.MouseEvent) → bool
-//   Called when a context menu event is fired in the editor.
-//
 //   handlePaste:: ?(view: EditorView, event: dom.Event, slice: Slice) → bool
 //   Can be used to override the behavior of pasting. `slice` is the
 //   pasted content parsed by the editor, but you can directly access

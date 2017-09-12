@@ -312,12 +312,7 @@ handlers.touchdown = view => {
   view.selectionReader.poll("pointer")
 }
 
-handlers.contextmenu = (view, e) => {
-  forceDOMFlush(view)
-  let pos = view.posAtCoords(eventCoords(e))
-  if (pos && view.someProp("handleContextMenu", f => f(view, pos.pos, e)))
-    e.preventDefault()
-}
+handlers.contextmenu = view => forceDOMFlush(view)
 
 // Input compositions are hard. Mostly because the events fired by
 // browsers are A) very unpredictable and inconsistent, and B) not
