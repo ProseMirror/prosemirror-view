@@ -122,7 +122,7 @@ function parseBetween(view, oldState, range) {
   let $from = startDoc.resolve(from)
   let sel = null, doc = parser.parse(parent, {
     topNode: $from.parent,
-    topMatch: $from.contentMatchAt($from.index()),
+    topMatch: $from.parent.contentMatchAt($from.index()),
     topOpen: true,
     from: fromOffset,
     to: toOffset,
