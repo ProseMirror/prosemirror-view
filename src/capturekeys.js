@@ -24,8 +24,9 @@ function selectHorizontally(view, dir) {
       if (next && (next instanceof NodeSelection)) return apply(view, next)
       return false
     } else {
-      let $head = sel.$head, node = $head.textOffset ? null : dir < 0 ? $head.nodeBefore : $head.nodeAfter
-      if (node && NodeSelection.isSelectable(node))
+      let $head = sel.$head, node = $head.textOffset ? null : dir < 0 ? $head.nodeBefore : $head.nodeAfter, desc
+      if (node && NodeSelection.isSelectable(node) &&
+          (node.isAtom || (desc = view.docView.descAt($head.pos)) && !desc.contentDOM))
         return apply(view, new NodeSelection(dir < 0 ? view.state.doc.resolve($head.pos - node.nodeSize) : $head))
       return false
     }
