@@ -5,6 +5,8 @@
 .ProseMirror {
   word-wrap: break-word;
   white-space: pre-wrap;
+  -webkit-font-variant-ligatures: none;
+  font-variant-ligatures: none;
 }
 
 .ProseMirror ul, .ProseMirror ol {
