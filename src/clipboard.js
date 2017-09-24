@@ -43,7 +43,7 @@ export function parseFromClipboard(view, text, html, plainText, $context) {
   if ((plainText || inCode || !html) && text) {
     view.someProp("transformPastedText", f => { text = f(text) })
     if (inCode) return new Slice(Fragment.from(view.state.schema.text(text)), 0, 0)
-    let parsed = view.someProp("clipboardTextParser", f => f(text))
+    let parsed = view.someProp("clipboardTextParser", f => f(text, $context))
     if (parsed) {
       slice = parsed
     } else {

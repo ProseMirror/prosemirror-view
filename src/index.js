@@ -447,7 +447,7 @@ function getEditable(view) {
 //   transformPastedText:: ?(string) → string
 //   Transform pasted plain text.
 //
-//   clipboardTextParser:: ?(string) → Slice
+//   clipboardTextParser:: ?(string, $context: ResolvedPos) → Slice
 //   A function to parse text from the clipboard into a document
 //   slice. Called after
 //   [`transformPastedText`](#view.EditorProps.transformPastedText).
