@@ -435,7 +435,7 @@ function getEditable(view) {
 //   [`DOMParser.fromSchema`](#model.DOMParser^fromSchema) on the
 //   editor's schema.
 //
-//   transformPastedHTML:: ?(string) → string
+//   transformPastedHTML:: ?(html: string) → string
 //   Can be used to transform pasted HTML text, _before_ it is parsed,
 //   for example to clean it up.
 //
@@ -444,10 +444,10 @@ function getEditable(view) {
 //   the clipboard. When not given, the value of the
 //   [`domParser`](#view.EditorProps.domParser) prop is used.
 //
-//   transformPastedText:: ?(string) → string
+//   transformPastedText:: ?(text: string) → string
 //   Transform pasted plain text.
 //
-//   clipboardTextParser:: ?(string, $context: ResolvedPos) → Slice
+//   clipboardTextParser:: ?(text: string, $context: ResolvedPos) → Slice
 //   A function to parse text from the clipboard into a document
 //   slice. Called after
 //   [`transformPastedText`](#view.EditorProps.transformPastedText).
@@ -479,17 +479,17 @@ function getEditable(view) {
 //   [`DOMSerializer.fromSchema`](#model.DOMSerializer^fromSchema)
 //   will be used.
 //
-//   clipboardTextSerializer:: ?(slice: Slice) → string
+//   clipboardTextSerializer:: ?(Slice) → string
 //   A function that will be called to get the text for the current
 //   selection when copying text to the clipboard. By default, the
 //   editor will use [`textBetween`](#model.Node.textBetween) on the
 //   selected range.
 //
-//   decorations:: ?(EditorState) → ?DecorationSet
+//   decorations:: ?(state: EditorState) → ?DecorationSet
 //   A set of [document decorations](#view.Decoration) to show in the
 //   view.
 //
-//   editable:: ?(EditorState) → bool
+//   editable:: ?(state: EditorState) → bool
 //   When this returns false, the content of the view is not directly
 //   editable.
 //
