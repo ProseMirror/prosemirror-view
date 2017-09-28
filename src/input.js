@@ -464,8 +464,10 @@ handlers.dragstart = (view, e) => {
     // In selection
   } else if (mouseDown && mouseDown.mightDrag) {
     view.dispatch(view.state.tr.setSelection(NodeSelection.create(view.state.doc, mouseDown.mightDrag.pos)))
-  } else {
-    return
+  } else if (e.target && e.target.nodeType == 1) {
+    let desc = view.docView.nearestDesc(e.target, true)
+    if (!desc || !desc.node.type.spec.draggable || desc == view.docView) return
+    view.dispatch(view.state.tr.setSelection(NodeSelection.create(view.state.doc, desc.posBefore)))
   }
   let slice = view.state.selection.content(), {dom, text} = serializeForClipboard(view, slice)
   e.dataTransfer.clearData()
@@ -491,7 +493,7 @@ editHandlers.drop = (view, e) => {
   let slice = dragging && dragging.slice ||
       parseFromClipboard(view, e.dataTransfer.getData("text/plain"), e.dataTransfer.getData("text/html"), false, $mouse)
   if (!slice) return
-  
+
   e.preventDefault()
   if (view.someProp("handleDrop", f => f(view, e, slice, dragging && dragging.move))) return
   let insertPos = dropPos(slice, view.state.doc.resolve($mouse.pos))
