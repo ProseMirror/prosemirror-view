@@ -251,15 +251,18 @@ class MouseDown {
     }
 
     this.mightDrag = null
+    this.target = flushed ? null : event.target
     if (targetNode.type.spec.draggable && targetNode.type.spec.selectable !== false ||
         view.state.selection instanceof NodeSelection && targetPos == view.state.selection.from)
-      this.mightDrag = {node: targetNode, pos: targetPos}
+      this.mightDrag = {node: targetNode,
+                        pos: targetPos,
+                        addAttr: this.target && !this.target.draggable,
+                        setUneditable: this.target && browser.gecko && !this.target.hasAttribute("contentEditable")}
 
-    this.target = flushed ? null : event.target
-    if (this.target && this.mightDrag) {
+    if (this.target && this.mightDrag && (this.mightDrag.addAttr || this.mightDrag.setUneditable)) {
       this.view.domObserver.stop()
-      this.target.draggable = true
-      if (browser.gecko && (this.setContentEditable = !this.target.hasAttribute("contentEditable")))
+      if (this.mightDrag.addAttr) this.target.draggable = true
+      if (this.mightDrag.setUneditable)
         setTimeout(() => this.target.setAttribute("contentEditable", "false"), 20)
       this.view.domObserver.start()
     }
@@ -274,9 +277,8 @@ class MouseDown {
     this.view.root.removeEventListener("mousemove", this.move)
     if (this.mightDrag && this.target) {
       this.view.domObserver.stop()
-      this.target.draggable = false
-      if (browser.gecko && this.setContentEditable)
-        this.target.removeAttribute("contentEditable")
+      if (this.mightDrag.addAttr) this.target.draggable = false
+      if (this.mightDrag.setUneditable) this.target.removeAttribute("contentEditable")
       this.view.domObserver.start()
     }
   }
