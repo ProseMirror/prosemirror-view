@@ -521,7 +521,10 @@ class NodeViewDesc extends ViewDesc {
     } else if (!dom) {
       ;({dom, contentDOM} = DOMSerializer.renderSpec(document, node.type.spec.toDOM(node)))
     }
-    if (!contentDOM && !node.isText) dom.contentEditable = false
+    if (!contentDOM && !node.isText) {
+      dom.contentEditable = false
+      if (node.type.spec.draggable) dom.draggable = true
+    }
 
     let nodeDOM = dom
     dom = applyOuterDeco(dom, outerDeco, node)
