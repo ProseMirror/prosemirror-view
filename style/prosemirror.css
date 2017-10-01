@@ -19,10 +19,6 @@
 
 .ProseMirror li {
   position: relative;
-  pointer-events: none; /* Don't do weird stuff with marker clicks */
-}
-.ProseMirror li > * {
-  pointer-events: auto;
 }
 
 .ProseMirror-hideselection *::selection { background: transparent; }

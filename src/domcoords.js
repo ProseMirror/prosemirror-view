@@ -124,19 +124,13 @@ function findOffsetInText(node, coords) {
 }
 
 function targetKludge(dom, coords) {
-  if (/^[uo]l$/i.test(dom.nodeName)) {
-    for (let child = dom.firstChild; child; child = child.nextSibling) {
-      if (!child.pmViewDesc || !/^li$/i.test(child.nodeName)) continue
-      let childBox = child.getBoundingClientRect()
-      if (coords.left > childBox.left - 2) break
-      if (childBox.top <= coords.top && childBox.bottom >= coords.top) return child
-    }
-  }
+  let parent = dom.parentNode
+  if (parent && /^li$/i.test(parent.nodeName) && coords.left < dom.getBoundingClientRect().left)
+    return parent
   return dom
 }
 
 function posFromElement(view, elt, coords) {
-  elt = targetKludge(elt, coords)
   if (!view.dom.contains(elt.nodeType != 1 ? elt.parentNode : elt)) return null
 
   let {node, offset} = findOffsetInNode(elt, coords), bias = -1
@@ -184,6 +178,7 @@ export function posAtCoords(view, coords) {
 
   let elt = root.elementFromPoint(coords.left, coords.top + 1), pos
   if (!elt) return null
+  elt = targetKludge(elt, coords)
   if (node) {
     // Suspiciously specific kludge to work around caret*FromPoint
     // never returning a position at the end of the document
