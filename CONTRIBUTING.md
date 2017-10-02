@@ -34,6 +34,10 @@ Before reporting a bug, please read these pointers.
 
 ## Contributing code
 
+If you want to make a change that involves a significant overhaul of
+the code or introduces a user-visible new feature, create an
+[RFC](https://github.com/ProseMirror/rfcs/) first with your proposal.
+
 - Make sure you have a [GitHub Account](https://github.com/signup/free)
 
 - Fork the relevant repository
