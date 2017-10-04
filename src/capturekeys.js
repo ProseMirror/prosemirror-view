@@ -45,7 +45,7 @@ function nodeLen(node) {
 
 function isIgnorable(dom) {
   let desc = dom.pmViewDesc
-  return desc && desc.size == 0
+  return desc && desc.size == 0 && (dom.nextSibling || dom.nodeName != "BR")
 }
 
 // Make sure the cursor isn't directly after one or more ignored
