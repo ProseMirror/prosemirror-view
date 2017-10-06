@@ -49,6 +49,11 @@ export class EditorView {
     this.docView = docViewDesc(this.state.doc, computeDocDeco(this), viewDecorations(this), this.dom, this)
 
     this.lastSelectedViewDesc = null
+    // :: ?{slice: Slice, move: bool}
+    // When editor content is being dragged, this object contains
+    // information about the dragged slice and whether it is being
+    // copied or moved. At any other time, it is null.
+    this.dragging = null
     initInput(this) // Must be done before creating a SelectionReader
 
     this.selectionReader = new SelectionReader(this)

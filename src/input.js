@@ -14,7 +14,6 @@ const handlers = {}, editHandlers = {}
 export function initInput(view) {
   view.shiftKey = false
   view.mouseDown = null
-  view.dragging = null
   view.inDOMChange = null
   view.domObserver = new DOMObserver(view)
   view.domObserver.start()
