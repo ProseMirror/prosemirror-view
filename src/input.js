@@ -453,6 +453,8 @@ function dropPos(slice, $pos) {
   return $pos.pos
 }
 
+const dragCopyModifier = browser.mac ? "altKey" : "ctrlKey"
+
 handlers.dragstart = (view, e) => {
   let mouseDown = view.mouseDown
   if (mouseDown) mouseDown.done()
@@ -473,7 +475,7 @@ handlers.dragstart = (view, e) => {
   e.dataTransfer.clearData()
   e.dataTransfer.setData("text/html", dom.innerHTML)
   e.dataTransfer.setData("text/plain", text)
-  view.dragging = new Dragging(slice, !e.ctrlKey)
+  view.dragging = new Dragging(slice, !e[dragCopyModifier])
 }
 
 handlers.dragend = view => {
