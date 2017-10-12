@@ -360,6 +360,10 @@ function captureCopy(view, dom) {
   wrap.style.cssText = "position: fixed; left: -10000px; top: 10px"
   let sel = getSelection(), range = doc.createRange()
   range.selectNodeContents(dom)
+  // Done because IE will fire a selectionchange moving the selection
+  // to its start when removeAllRanges is called and the editor still
+  // has focus (which will mess up the editor's selection state).
+  view.dom.blur()
   sel.removeAllRanges()
   sel.addRange(range)
   setTimeout(() => {
