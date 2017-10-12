@@ -375,9 +375,9 @@ function captureCopy(view, dom) {
 // This is very crude, but unfortunately both these browsers _pretend_
 // that they have a clipboard API—all the objects and methods are
 // there, they just don't work, and they are hard to test.
-// FIXME when Edge/Mobile Safari fixes this, change this to a version
+// FIXME when Mobile Safari fixes this, change this to a version
 // range test
-const brokenClipboardAPI = browser.ie || browser.ios
+const brokenClipboardAPI = (browser.ie && browser.ie_version < 15) || browser.ios
 
 handlers.copy = editHandlers.cut = (view, e) => {
   let sel = view.state.selection, cut = e.type == "cut"
