@@ -358,7 +358,7 @@ export class DecorationSet {
       }
     }
     if (local) {
-      let localSet = new DecorationSet(local)
+      let localSet = new DecorationSet(local.sort(byPos))
       return child ? new DecorationGroup([localSet, child]) : localSet
     }
     return child || empty
