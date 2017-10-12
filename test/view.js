@@ -1,7 +1,16 @@
-const {selFor} = require("prosemirror-state/test/state")
 const {EditorView} = require("../dist")
-const {EditorState} = require("prosemirror-state")
+const {EditorState, Selection, TextSelection, NodeSelection} = require("prosemirror-state")
 const {schema} = require("prosemirror-test-builder")
+
+function selFor(doc) {
+  let a = doc.tag.a
+  if (a != null) {
+    let $a = doc.resolve(a)
+    if ($a.parent.inlineContent) return new TextSelection($a, doc.tag.b != null ? doc.resolve(doc.tag.b) : undefined)
+    else return new NodeSelection($a)
+  }
+  return Selection.atStart(doc)
+}
 
 let tempView = null
 
