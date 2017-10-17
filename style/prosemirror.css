@@ -13,6 +13,10 @@
   cursor: default;
 }
 
+.ProseMirror li > * {
+  cursor: auto;
+}
+
 .ProseMirror pre {
   white-space: pre-wrap;
 }
