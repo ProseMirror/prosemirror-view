@@ -9,10 +9,6 @@
   font-variant-ligatures: none;
 }
 
-.ProseMirror ul, .ProseMirror ol {
-  cursor: default;
-}
-
 .ProseMirror pre {
   white-space: pre-wrap;
 }
