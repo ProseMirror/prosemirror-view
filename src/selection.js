@@ -91,7 +91,7 @@ export class SelectionReader {
 }
 
 // There's two polling models. On browsers that support the
-// selectionchange event (everything except Firefox, basically), we
+// selectionchange event (everything except Firefox < 52, basically), we
 // register a listener for that whenever the editor is focused.
 class SelectionChangePoller {
   constructor(reader) {
@@ -126,7 +126,8 @@ class SelectionChangePoller {
   }
 }
 
-// On Firefox, we use timeout-based polling.
+// On Browsers that don't support the selectionchange event,
+// we use timeout-based polling.
 class TimeoutPoller {
   constructor(reader) {
     // The timeout ID for the poller when active.
