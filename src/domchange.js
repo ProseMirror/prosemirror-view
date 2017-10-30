@@ -5,6 +5,7 @@ import {Mapping} from "prosemirror-transform"
 import {TrackMappings} from "./trackmappings"
 import {selectionBetween} from "./selection"
 import {selectionCollapsed} from "./dom"
+import browser from "./browser"
 
 export class DOMChange {
   constructor(view, composing) {
@@ -129,7 +130,7 @@ function parseBetween(view, oldState, range) {
     preserveWhitespace: $from.parent.type.spec.code ? "full" : true,
     editableContent: true,
     findPositions: find,
-    ruleFromNode,
+    ruleFromNode: ruleFromNode(parser, $from),
     context: $from
   })
   if (find && find[0].pos != null) {
@@ -140,10 +141,19 @@ function parseBetween(view, oldState, range) {
   return {doc, sel, from, to}
 }
 
-function ruleFromNode(dom) {
-  let desc = dom.pmViewDesc
-  if (desc) return desc.parseRule()
-  else if (dom.nodeName == "BR" && dom.parentNode && dom.parentNode.lastChild == dom) return {ignore: true}
+function ruleFromNode(parser, context) {
+  return dom => {
+    let desc = dom.pmViewDesc
+    if (desc) {
+      return desc.parseRule()
+    } else if (dom.nodeName == "BR" && dom.parentNode) {
+      // Safari replaces the list item with a BR directly in the list node (?!) if you delete the last character in a list item (#708)
+      if (browser.safari && /^(ul|ol)$/i.test(dom.parentNode.nodeName))
+        return parser.matchTag(document.createElement("li"), context)
+      else if (dom.parentNode.lastChild == dom)
+        return {ignore: true}
+    }
+  }
 }
 
 function isAtEnd($pos, depth) {
