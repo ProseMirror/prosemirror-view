@@ -476,8 +476,8 @@ handlers.dragstart = (view, e) => {
   }
   let slice = view.state.selection.content(), {dom, text} = serializeForClipboard(view, slice)
   e.dataTransfer.clearData()
-  e.dataTransfer.setData("text/html", dom.innerHTML)
-  e.dataTransfer.setData("text/plain", text)
+  e.dataTransfer.setData(brokenClipboardAPI ? "Text" : "text/html", dom.innerHTML)
+  if (!brokenClipboardAPI) e.dataTransfer.setData("text/plain", text)
   view.dragging = new Dragging(slice, !e[dragCopyModifier])
 }
 
@@ -496,7 +496,8 @@ editHandlers.drop = (view, e) => {
   let $mouse = view.state.doc.resolve(view.posAtCoords(eventCoords(e)).pos)
   if (!$mouse) return
   let slice = dragging && dragging.slice ||
-      parseFromClipboard(view, e.dataTransfer.getData("text/plain"), e.dataTransfer.getData("text/html"), false, $mouse)
+      parseFromClipboard(view, e.dataTransfer.getData(brokenClipboardAPI ? "Text" : "text/plain"),
+                         brokenClipboardAPI ? null : e.dataTransfer.getData("text/html"), false, $mouse)
   if (!slice) return
 
   e.preventDefault()
