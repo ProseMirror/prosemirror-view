@@ -25,10 +25,11 @@ function selectHorizontally(view, dir) {
       return false
     } else {
       let $head = sel.$head, node = $head.textOffset ? null : dir < 0 ? $head.nodeBefore : $head.nodeAfter, desc
-      let nodePos = dir < 0 ? $head.pos - node.nodeSize : $head.pos
-      if (node && NodeSelection.isSelectable(node) &&
-          (node.isAtom || (desc = view.docView.descAt(nodePos)) && !desc.contentDOM))
-        return apply(view, new NodeSelection(dir < 0 ? view.state.doc.resolve($head.pos - node.nodeSize) : $head))
+      if (node && NodeSelection.isSelectable(node)) {
+        let nodePos = dir < 0 ? $head.pos - node.nodeSize : $head.pos
+        if (node.isAtom || (desc = view.docView.descAt(nodePos)) && !desc.contentDOM)
+          return apply(view, new NodeSelection(dir < 0 ? view.state.doc.resolve($head.pos - node.nodeSize) : $head))
+      }
       return false
     }
   } else if (sel instanceof NodeSelection && sel.node.isInline) {
