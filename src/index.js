@@ -225,7 +225,7 @@ export class EditorView {
   posAtCoords(coords) {
     let pos = posAtCoords(this, coords)
     if (this.inDOMChange && pos) {
-      pos.pos = this.inDOMChange.mapping.map(pos)
+      pos.pos = this.inDOMChange.mapping.map(pos.pos)
       if (pos.inside != -1) pos.inside = this.inDOMChange.mapping.map(pos.inside)
     }
     return pos
