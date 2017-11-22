@@ -211,7 +211,9 @@ function readDOMChange(view, mapping, oldState, range, allowTypeOver) {
   let parse = parseBetween(view, oldState, range)
 
   let doc = oldState.doc, compare = doc.slice(parse.from, parse.to)
-  let change = findDiff(compare.content, parse.doc.content, parse.from, oldState.selection.from)
+  // Shift preferedStart by 1 when Backspace is pressed
+  let preferedStart = view.lastKeyCode === 8 ? oldState.selection.from - 1 : oldState.selection.from
+  let change = findDiff(compare.content, parse.doc.content, parse.from, preferedStart)
 
   if (!change) {
     if (allowTypeOver) {
