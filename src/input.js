@@ -16,6 +16,7 @@ export function initInput(view) {
   view.mouseDown = null
   view.inDOMChange = null
   view.lastKeyCode = null
+  view.lastKeyCodeTime = 0
   view.domObserver = new DOMObserver(view)
   view.domObserver.start()
 
@@ -72,6 +73,7 @@ editHandlers.keydown = (view, event) => {
   if (event.keyCode == 16) view.shiftKey = true
   if (view.inDOMChange) return
   view.lastKeyCode = event.keyCode
+  view.lastKeyCodeTime = Date.now()
   if (view.someProp("handleKeyDown", f => f(view, event)) || captureKeyDown(view, event))
     event.preventDefault()
   else
