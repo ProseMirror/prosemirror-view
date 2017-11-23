@@ -211,13 +211,18 @@ function readDOMChange(view, mapping, oldState, range, allowTypeOver) {
   let parse = parseBetween(view, oldState, range)
 
   let doc = oldState.doc, compare = doc.slice(parse.from, parse.to)
-  let preferedStart = oldState.selection.from
-  // Shift preferedStart by 1 when Backspace is pressed
-  if (view.lastKeyCode === 8 && Date.now() - 100 < view.lastKeyCodeTime) { preferedStart-- }
-
-  let change = findDiff(compare.content, parse.doc.content, parse.from, preferedStart)
+  let preferredPos, preferredSide
+  // Prefer anchoring to end when Backspace is pressed
+  if (view.lastKeyCode === 8 && Date.now() - 100 < view.lastKeyCodeTime) {
+    preferredPos = oldState.selection.to
+    preferredSide = "end"
+  } else {
+    preferredPos = oldState.selection.from
+    preferredSide = "start"
+  }
   view.lastKeyCode = null
 
+  let change = findDiff(compare.content, parse.doc.content, parse.from, preferredPos, preferredSide)
   if (!change) {
     if (allowTypeOver) {
       let state = view.state, sel = state.selection
@@ -348,17 +353,21 @@ function skipClosingAndOpening($pos, fromEnd, mayOpen) {
   return end
 }
 
-function findDiff(a, b, pos, preferedStart) {
+function findDiff(a, b, pos, preferredPos, preferredSide) {
   let start = a.findDiffStart(b, pos)
   if (start == null) return null
   let {a: endA, b: endB} = a.findDiffEnd(b, pos + a.size, pos + b.size)
+  if (preferredSide == "end") {
+    let adjust = Math.max(0, start - Math.min(endA, endB))
+    preferredPos -= endA + adjust - start
+  }
   if (endA < start && a.size < b.size) {
-    let move = preferedStart <= start && preferedStart >= endA ? start - preferedStart : 0
+    let move = preferredPos <= start && preferredPos >= endA ? start - preferredPos : 0
     start -= move
     endB = start + (endB - endA)
     endA = start
   } else if (endB < start) {
-    let move = preferedStart <= start && preferedStart >= endB ? start - preferedStart : 0
+    let move = preferredPos <= start && preferredPos >= endB ? start - preferredPos : 0
     start -= move
     endA = start + (endA - endB)
     endB = start

@@ -1,6 +1,6 @@
 const ist = require("ist")
 const {eq, doc, p, pre, h1, a, em, img: img_, br, strong, blockquote} = require("prosemirror-test-builder")
-const {EditorState, Plugin} = require("prosemirror-state")
+const {EditorState} = require("prosemirror-state")
 const {tempEditor, findTextNode} = require("./view")
 
 const img = img_({src: "data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw=="})
@@ -16,19 +16,6 @@ function setSel(aNode, aOff, fNode, fOff) {
 function flush(view) {
   view.domObserver.flush()
   if (view.inDOMChange) view.inDOMChange.finish()
-}
-
-function getStepPlugin(step) {
-  return new Plugin({
-    state: {
-      init() {},
-      apply(tr) {
-        let { from, to } = tr.steps[0]
-        step.from = from
-        step.to = to
-      }
-    }
-  })
 }
 
 describe("DOM change", () => {
@@ -137,7 +124,7 @@ describe("DOM change", () => {
     ist(backspacePressed)
   })
 
-  it("doesn't confuse delete with backspace", () => {
+  it("doesn't route delete as backspace", () => {
     let backspacePressed = false
     let view = tempEditor({
       doc: doc(p("foo<a>"), p("bar")),
@@ -349,54 +336,94 @@ describe("DOM change", () => {
     ist(!findTextNode(view.dom, "\ufeffq"))
   })
 
-  it("doesn't confuse delete with backspace around same character with hint", () => {
-    let step = {};
-
-    let view = tempEditor({
+  it("doesn't confuse backspace with delete", () => {
+    let steps, view = tempEditor({
       doc: doc(p("a<a>a")),
-      plugins: [getStepPlugin(step)]
+      dispatchTransaction(tr) {
+        steps = tr.steps
+        view.updateState(view.state.apply(tr))
+      }
     })
 
     view.lastKeyCode = 8
     view.lastKeyCodeTime = Date.now()
     findTextNode(view.dom, "aa").nodeValue = "a"
     flush(view)
-    ist(view.state.doc, doc(p("a")), eq)
-    ist(step.from, 1)
-    ist(step.to, 2)
+
+    ist(steps.length, 1)
+    ist(steps[0].from, 1)
+    ist(steps[0].to, 2)
   })
 
-  it("does confuse delete with backspace around same character", () => {
-    let step = {};
-
-    let view = tempEditor({
-      doc: doc(p("a<a>a")),
-      plugins: [getStepPlugin(step)]
-    })
-
-    view.lastKeyCode = 0
-    view.lastKeyCodeTime = Date.now()
-    findTextNode(view.dom, "aa").nodeValue = "a"
-    flush(view)
-    ist(view.state.doc, doc(p("a")), eq)
-    ist(step.from, 2)
-    ist(step.to, 3)
-  })
-
-  it("does confuse delete with backspace around same character after some time", () => {
-    let step = {};
-
-    let view = tempEditor({
-      doc: doc(p("a<a>a")),
-      plugins: [getStepPlugin(step)]
+  it("can disambiguate a multiple-character backspace event", () => {
+    let steps, view = tempEditor({
+      doc: doc(p("foo<a>foo")),
+      dispatchTransaction(tr) {
+        steps = tr.steps
+        view.updateState(view.state.apply(tr))
+      }
     })
 
     view.lastKeyCode = 8
-    view.lastKeyCodeTime = Date.now() - 150
+    view.lastKeyCodeTime = Date.now()
+    findTextNode(view.dom, "foofoo").nodeValue = "foo"
+    flush(view)
+
+    ist(steps.length, 1)
+    ist(steps[0].from, 1)
+    ist(steps[0].to, 4)
+  })
+
+  it("doesn't confuse delete with backspace", () => {
+    let steps, view = tempEditor({
+      doc: doc(p("a<a>a")),
+      dispatchTransaction(tr) {
+        steps = tr.steps
+        view.updateState(view.state.apply(tr))
+      }
+    })
+
     findTextNode(view.dom, "aa").nodeValue = "a"
     flush(view)
-    ist(view.state.doc, doc(p("a")), eq)
-    ist(step.from, 2)
-    ist(step.to, 3)
+
+    ist(steps.length, 1)
+    ist(steps[0].from, 2)
+    ist(steps[0].to, 3)
+  })
+
+  it("doesn't confuse delete with backspace for multi-character deletions", () => {
+    let steps, view = tempEditor({
+      doc: doc(p("one foo<a>foo three")),
+      dispatchTransaction(tr) {
+        steps = tr.steps
+        view.updateState(view.state.apply(tr))
+      }
+    })
+
+    findTextNode(view.dom, "one foofoo three").nodeValue = "one foo three"
+    flush(view)
+
+    ist(steps.length, 1)
+    ist(steps[0].from, 8)
+    ist(steps[0].to, 11)
+  })
+
+  it("creates a correct step for an ambiguous selection-deletion", () => {
+    let steps, view = tempEditor({
+      doc: doc(p("la<a>la<b>la")),
+      dispatchTransaction(tr) {
+        steps = tr.steps
+        view.updateState(view.state.apply(tr))
+      }
+    })
+
+    view.lastKeyCode = 8
+    view.lastKeyCodeTime = Date.now()
+    findTextNode(view.dom, "lalala").nodeValue = "lala"
+    flush(view)
+
+    ist(steps.length, 1)
+    ist(steps[0].from, 3)
+    ist(steps[0].to, 5)
   })
 })
