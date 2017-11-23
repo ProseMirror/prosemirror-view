@@ -1,6 +1,6 @@
 const ist = require("ist")
 const {eq, doc, p, pre, h1, a, em, img: img_, br, strong, blockquote} = require("prosemirror-test-builder")
-const {EditorState} = require("prosemirror-state")
+const {EditorState, Plugin} = require("prosemirror-state")
 const {tempEditor, findTextNode} = require("./view")
 
 const img = img_({src: "data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw=="})
@@ -16,6 +16,19 @@ function setSel(aNode, aOff, fNode, fOff) {
 function flush(view) {
   view.domObserver.flush()
   if (view.inDOMChange) view.inDOMChange.finish()
+}
+
+function getStepPlugin(step) {
+  return new Plugin({
+    state: {
+      init() {},
+      apply(tr) {
+        let { from, to } = tr.steps[0]
+        step.from = from
+        step.to = to
+      }
+    }
+  })
 }
 
 describe("DOM change", () => {
@@ -334,5 +347,53 @@ describe("DOM change", () => {
     flush(view)
     ist(view.state.doc, doc(p(a(strong("fooq"), "bar"))), eq)
     ist(!findTextNode(view.dom, "\ufeffq"))
+  })
+
+  it("doesn't confuse delete with backspace around same character with hint", () => {
+    let step = {}
+    let view = tempEditor({
+      doc: doc(p("a<a>a")),
+      plugins: [getStepPlugin(step)]
+    })
+
+    view.lastKeyCode = 8
+    view.lastKeyCodeTime = Date.now()
+    findTextNode(view.dom, "aa").nodeValue = "a"
+    flush(view)
+    ist(view.state.doc, doc(p("a")), eq)
+    ist(step.from, 1)
+    ist(step.to, 2)
+  })
+
+  it("does confuse delete with backspace around same character", () => {
+    let step = {}
+    let view = tempEditor({
+      doc: doc(p("a<a>a")),
+      plugins: [getStepPlugin(step)]
+    })
+
+    view.lastKeyCode = 0
+    view.lastKeyCodeTime = Date.now()
+    findTextNode(view.dom, "aa").nodeValue = "a"
+    flush(view)
+    ist(view.state.doc, doc(p("a")), eq)
+    ist(step.from, 2)
+    ist(step.to, 3)
+  })
+
+  it("does confuse delete with backspace around same character after some time", () => {
+    let step = {}
+    let view = tempEditor({
+      doc: doc(p("a<a>a")),
+      plugins: [getStepPlugin(step)]
+    })
+
+    view.lastKeyCode = 8
+    view.lastKeyCodeTime = Date.now() - 150
+    findTextNode(view.dom, "aa").nodeValue = "a"
+    flush(view)
+    ist(view.state.doc, doc(p("a")), eq)
+    ist(step.from, 2)
+    ist(step.to, 3)
   })
 })
