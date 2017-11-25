@@ -396,20 +396,28 @@ function getEditable(view) {
 //
 //   handleClickOn:: ?(view: EditorView, pos: number, node: Node, nodePos: number, event: dom.MouseEvent, direct: bool) → bool
 //   Called for each node around a click, from the inside out. The
-//   `direct` flag will be true for the inner node.
+//   `direct` flag will be true for the inner node. Note that this
+//   handler is not called with text nodes. However, you can retrieve
+//   the text node that was clicked on with `node.nodeAt(pos - nodePos - 1)`.
 //
 //   handleClick:: ?(view: EditorView, pos: number, event: dom.MouseEvent) → bool
 //   Called when the editor is clicked, after `handleClickOn` handlers
 //   have been called.
 //
 //   handleDoubleClickOn:: ?(view: EditorView, pos: number, node: Node, nodePos: number, event: dom.MouseEvent, direct: bool) → bool
-//   Called for each node around a double click.
+//   Called for each node around a double click. The
+//   `direct` flag will be true for the inner node. Note that this
+//   handler is not called with text nodes. However, you can retrieve
+//   the text node that was clicked on with `node.nodeAt(pos - nodePos - 1)`.
 //
 //   handleDoubleClick:: ?(view: EditorView, pos: number, event: dom.MouseEvent) → bool
 //   Called when the editor is double-clicked, after `handleDoubleClickOn`.
 //
 //   handleTripleClickOn:: ?(view: EditorView, pos: number, node: Node, nodePos: number, event: dom.MouseEvent, direct: bool) → bool
-//   Called for each node around a triple click.
+//   Called for each node around a triple click. The
+//   `direct` flag will be true for the inner node. Note that this
+//   handler is not called with text nodes. However, you can retrieve
+//   the text node that was clicked on with `node.nodeAt(pos - nodePos - 1)`.
 //
 //   handleTripleClick:: ?(view: EditorView, pos: number, event: dom.MouseEvent) → bool
 //   Called when the editor is triple-clicked, after `handleTripleClickOn`.
