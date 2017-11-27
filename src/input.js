@@ -497,7 +497,9 @@ editHandlers.drop = (view, e) => {
 
   if (!e.dataTransfer) return
 
-  let $mouse = view.state.doc.resolve(view.posAtCoords(eventCoords(e)).pos)
+  let eventPos = view.posAtCoords(eventCoords(e))
+  if (!eventPos) return
+  let $mouse = view.state.doc.resolve(eventPos.pos)
   if (!$mouse) return
   let slice = dragging && dragging.slice ||
       parseFromClipboard(view, e.dataTransfer.getData(brokenClipboardAPI ? "Text" : "text/plain"),
