@@ -1,5 +1,5 @@
 const ist = require("ist")
-const {schema, doc, p, blockquote} = require("prosemirror-test-builder")
+const {schema, doc, p, h1, blockquote} = require("prosemirror-test-builder")
 const {Transform} = require("prosemirror-transform")
 
 const {Decoration, DecorationSet} = require("../dist")
@@ -203,6 +203,13 @@ describe("DecorationSet", () => {
       let tr = new Transform(d).replaceWith(3, 3, schema.text("ay"))
       let result = set.map(tr.mapping, tr.doc).find().map(d => d.from + "-" + d.spec.name).sort().join(", ")
       ist(result, "3-a, 5-b")
+    })
+
+    it("doesn't doubly map decorations nested in multiple nodes", () => {
+      let d = doc(h1("u"), blockquote(p()))
+      let set = build(d, {pos: 5})
+      let tr = new Transform(d).replaceWith(0, 3, schema.node("heading", {level: 1}))
+      ist(set.map(tr.mapping, tr.doc).find().map(d => d.from).join(), "4")
     })
   })
 

@@ -471,7 +471,7 @@ function mapChildren(oldChildren, newLocal, mapping, node, offset, oldOffset, op
       if (end == -1 || oldStart > end + oldOffset) continue
       if (oldEnd >= children[i] + oldOffset) {
         children[i + 1] = -1
-      } else if (dSize = (newEnd - newStart) - (oldEnd - oldStart)) {
+      } else if (dSize = (newEnd - newStart) - (oldEnd - oldStart) + (oldOffset - offset)) {
         children[i] += dSize
         children[i + 1] += dSize
       }
