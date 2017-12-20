@@ -287,7 +287,7 @@ export function selectionBetween(view, $anchor, $head, bias) {
 }
 
 function hasFocusAndSelection(view) {
-  if (view.editable && view.root.activeElement != view.dom) return false
+  if (view.editable && !view.hasFocus()) return false
   let sel = view.root.getSelection()
   if (!sel.anchorNode) return false
   try {

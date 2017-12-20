@@ -188,7 +188,7 @@ export class EditorView {
   // :: () → bool
   // Query whether the view has focus.
   hasFocus() {
-    return this.root.activeElement == this.dom
+    return this.dom.contains(this.root.activeElement)
   }
 
   // :: ()
