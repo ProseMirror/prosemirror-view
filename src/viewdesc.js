@@ -464,7 +464,9 @@ class MarkViewDesc extends ViewDesc {
     let custom = customNodeViews(view)[mark.type.name]
     let spec = custom && custom(mark, view)
     let dom = spec && spec.dom || DOMSerializer.renderSpec(document, mark.type.spec.toDOM(mark, inline)).dom
-    return new MarkViewDesc(parent, mark, dom)
+    let markDesc = new MarkViewDesc(parent, mark, dom)
+    if (spec && spec.contentDOM) markDesc.contentDOM = spec.contentDOM
+    return markDesc
   }
 
   parseRule() { return {mark: this.mark.type.name, attrs: this.mark.attrs, contentElement: this.contentDOM} }
