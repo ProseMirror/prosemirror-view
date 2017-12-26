@@ -331,7 +331,7 @@ export class DecorationSet {
       }
     }
     if (local.length) for (let i = 0, span; i < decorations.length; i++) if (span = decorations[i]) {
-      for (let j = 0; j < local.length; j++) if (local[j].type == span.type) {
+      for (let j = 0; j < local.length; j++) if (local[j].type.eq(span.type)) {
         if (local == this.local) local = this.local.slice()
         local.splice(j--, 1)
       }
