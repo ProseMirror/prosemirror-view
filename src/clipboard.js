@@ -69,7 +69,7 @@ export function parseFromClipboard(view, text, html, plainText, $context) {
   else if (context)
     slice = addContext(slice, context)
   else // HTML wasn't created by ProseMirror. Make sure top-level siblings are coherent
-    slice = normalizeSiblings(slice, $context)
+    slice = Slice.maxOpen(normalizeSiblings(slice.content, $context), false)
   view.someProp("transformPasted", f => { slice = f(slice) })
   return slice
 }
@@ -82,13 +82,13 @@ export function parseFromClipboard(view, text, html, plainText, $context) {
 // This addresses the problem that Transform.replace expects a
 // coherent slice, and will fail to place a set of siblings that don't
 // fit anywhere in the schema.
-function normalizeSiblings(slice, $context) {
-  if (slice.content.childCount < 2) return slice
+function normalizeSiblings(fragment, $context) {
+  if (fragment.childCount < 2) return fragment
   for (let d = $context.depth; d >= 0; d--) {
     let parent = $context.node(d)
     let match = parent.contentMatchAt($context.index(d))
     let lastWrap, result = []
-    slice.content.forEach(node => {
+    fragment.forEach(node => {
       if (!result) return
       let wrap = match.findWrapping(node.type), inLast
       if (!wrap) return result = null
@@ -102,9 +102,9 @@ function normalizeSiblings(slice, $context) {
         lastWrap = wrap
       }
     })
-    if (result) return Slice.maxOpen(Fragment.from(result))
+    if (result) return Fragment.from(result)
   }
-  return slice
+  return fragment
 }
 
 function withWrappers(node, wrap, from = 0) {
