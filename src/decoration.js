@@ -509,7 +509,8 @@ function mapChildren(oldChildren, newLocal, mapping, node, offset, oldOffset, op
 
   // Remaining children must be collected and rebuilt into the appropriate structure
   if (mustRebuild) {
-    let decorations = mapAndGatherRemainingDecorations(children, newLocal ? moveSpans(newLocal, offset) : [], mapping, oldOffset, options)
+    let decorations = mapAndGatherRemainingDecorations(children, newLocal ? moveSpans(newLocal, offset) : [], mapping,
+                                                       offset, oldOffset, options)
     let built = buildTree(decorations, node, 0, options)
     newLocal = built.local
     for (let i = 0; i < children.length; i += 3) if (children[i + 1] == -1) {
@@ -536,11 +537,11 @@ function moveSpans(spans, offset) {
   return result
 }
 
-function mapAndGatherRemainingDecorations(children, decorations, mapping, oldOffset, options) {
+function mapAndGatherRemainingDecorations(children, decorations, mapping, offset, oldOffset, options) {
   // Gather all decorations from the remaining marked children
   function gather(set, oldOffset) {
     for (let i = 0; i < set.local.length; i++) {
-      let mapped = set.local[i].map(mapping, 0, oldOffset)
+      let mapped = set.local[i].map(mapping, offset, oldOffset)
       if (mapped) decorations.push(mapped)
       else if (options.onRemove) options.onRemove(set.local[i].spec)
     }

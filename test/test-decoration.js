@@ -1,5 +1,5 @@
 const ist = require("ist")
-const {schema, doc, p, h1, blockquote} = require("prosemirror-test-builder")
+const {schema, doc, p, h1, li, ul, blockquote} = require("prosemirror-test-builder")
 const {Transform} = require("prosemirror-transform")
 
 const {Decoration, DecorationSet} = require("../dist")
@@ -210,6 +210,13 @@ describe("DecorationSet", () => {
       let set = build(d, {pos: 5})
       let tr = new Transform(d).replaceWith(0, 3, schema.node("heading", {level: 1}))
       ist(set.map(tr.mapping, tr.doc).find().map(d => d.from).join(), "4")
+    })
+
+    it("rebuilds subtrees correctly at an offset", () => {
+      let d = doc(p("foobar"), ul(li(p("abc")), li(p("b"))))
+      let set = build(d, {pos: 18})
+      let tr = new Transform(d).join(16)
+      ist(set.map(tr.mapping, tr.doc).find().map(d => d.from).join(), "16")
     })
   })
 
