@@ -1,7 +1,7 @@
 const ist = require("ist")
 const {eq, doc, p, blockquote, ul, ol, li, hr, br} = require("prosemirror-test-builder")
 const {NodeSelection, TextSelection} = require("prosemirror-state")
-const {Slice} = require("prosemirror-model")
+const {Slice, Fragment} = require("prosemirror-model")
 const {tempEditor} = require("./view")
 
 const {__serializeForClipboard: serializeForClipboard, __parseFromClipboard: parseFromClipboard} = require("../dist")
@@ -11,7 +11,7 @@ describe("Clipboard interface", () => {
     let d = doc(blockquote(p("a"), "<a>", hr), p("b"))
     let view = tempEditor({doc: d})
     let {dom} = serializeForClipboard(view, NodeSelection.create(d, d.tag.a).content())
-    ist(dom.innerHTML, '<hr data-pm-context="none">')
+    ist(dom.innerHTML, '<hr data-pm-slice="0 0 []">')
     ist(parseFromClipboard(view, "", dom.innerHTML, false, d.resolve(1)), d.slice(d.tag.a, d.tag.a + 1), eq)
   })
 
@@ -19,9 +19,18 @@ describe("Clipboard interface", () => {
     let d = doc(blockquote(ul(li(p("fo<a>o"), p("b<b>ar")))))
     let view = tempEditor({doc: d})
     let slice = TextSelection.create(d, d.tag.a, d.tag.b).content(), {dom, text} = serializeForClipboard(view, slice)
-    ist(dom.innerHTML, '<li data-pm-context="[&quot;blockquote&quot;,null,&quot;bullet_list&quot;,null]"><p>o</p><p>b</p></li>')
+    ist(dom.innerHTML, '<li data-pm-slice="2 2 [&quot;blockquote&quot;,null,&quot;bullet_list&quot;,null]"><p>o</p><p>b</p></li>')
     ist(parseFromClipboard(view, text, dom.innerHTML, false, d.resolve(1)), d.slice(d.tag.a, d.tag.b, true), eq)
     ist(parseFromClipboard(view, text, dom.innerHTML, true, d.resolve(1)), new Slice(doc(p("o"), p("b")).content, 1, 1), eq)
+  })
+
+  it("preserves open nodes", () => {
+    let d = doc(blockquote(blockquote(p("foo"))))
+    let view = tempEditor({doc: d})
+    let slice = new Slice(Fragment.from(d.firstChild), 1, 1)
+    let html = serializeForClipboard(view, slice).dom.innerHTML
+    let parsed = parseFromClipboard(view, "-", html, false, d.resolve(1))
+    ist(parsed, slice, eq)
   })
 
   it("uses clipboardTextSerializer when given", () => {

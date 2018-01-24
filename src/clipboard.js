@@ -24,10 +24,8 @@ export function serializeForClipboard(view, slice) {
     firstChild = wrap.firstChild
   }
 
-  if (firstChild && firstChild.nodeType == 1) {
-    let singleNode = slice.openStart == 0 && slice.openEnd == 0 && slice.content.childCount == 1 && !slice.content.firstChild.isText
-    firstChild.setAttribute("data-pm-context", singleNode ? "none" : JSON.stringify(context))
-  }
+  if (firstChild && firstChild.nodeType == 1)
+    firstChild.setAttribute("data-pm-slice", `${openStart} ${openEnd} ${JSON.stringify(context)}`)
 
   let text = view.someProp("clipboardTextSerializer", f => f(slice)) ||
       slice.content.textBetween(0, slice.content.size, "\n\n")
@@ -61,13 +59,11 @@ export function parseFromClipboard(view, text, html, plainText, $context) {
     let parser = view.someProp("clipboardParser") || view.someProp("domParser") || DOMParser.fromSchema(view.state.schema)
     slice = parser.parseSlice(dom, {preserveWhitespace: true, context: $context})
   }
-  slice = closeIsolatingStart(slice)
-  let contextNode = dom && dom.querySelector("[data-pm-context]")
-  let context = contextNode && contextNode.getAttribute("data-pm-context")
-  if (context == "none")
-    slice = new Slice(slice.content, 0, 0)
-  else if (context)
-    slice = addContext(slice, context)
+  let contextNode = dom && dom.querySelector("[data-pm-slice]")
+  let sliceData = contextNode && /^(\d+) (\d+) (.*)/.exec(contextNode.getAttribute("data-pm-slice"))
+  if (sliceData)
+    slice = addContext(new Slice(slice.content, Math.min(slice.openStart, +sliceData[1]),
+                                 Math.min(slice.openEnd, +sliceData[2])), sliceData[3])
   else // HTML wasn't created by ProseMirror. Make sure top-level siblings are coherent
     slice = Slice.maxOpen(normalizeSiblings(slice.content, $context), false)
   view.someProp("transformPasted", f => { slice = f(slice) })
@@ -166,24 +162,4 @@ function addContext(slice, context) {
     openStart++; openEnd++
   }
   return new Slice(content, openStart, openEnd)
-}
-
-function closeIsolatingStart(slice) {
-  let closeTo = 0, frag = slice.content
-  for (let i = 1; i <= slice.openStart; i++) {
-    let node = frag.firstChild
-    if (node.type.spec.isolating) { closeTo = i; break }
-    frag = node.content
-  }
-
-  if (closeTo == 0) return slice
-  return new Slice(closeFragment(slice.content, closeTo, slice.openEnd), slice.openStart - closeTo, slice.openEnd)
-}
-
-function closeFragment(frag, n, openEnd) {
-  if (n == 0) return frag
-  let node = frag.firstChild
-  let content = closeFragment(node.content, n - 1, openEnd - 1)
-  let fill = node.contentMatchAt(0).fillBefore(node.content, openEnd <= 0)
-  return frag.replaceChild(0, node.copy(fill.append(content)))
 }
