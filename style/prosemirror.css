@@ -19,6 +19,7 @@
 
 .ProseMirror-hideselection *::selection { background: transparent; }
 .ProseMirror-hideselection *::-moz-selection { background: transparent; }
+.ProseMirror-hideselection { caret-color: transparent; }
 
 .ProseMirror-selectednode {
   outline: 2px solid #8cf;
