@@ -188,14 +188,14 @@ export function selectionToDOM(view, takeFocus) {
     selectCursorWrapper(view)
   } else {
     let {anchor, head} = sel, resetEditableFrom, resetEditableTo
-    if (browser.webkit && !(sel instanceof TextSelection)) {
+    if (brokenSelectBetweenUneditable && !(sel instanceof TextSelection)) {
       if (!sel.$from.parent.inlineContent)
         resetEditableFrom = temporarilyEditableNear(view, sel.from)
       if (!sel.empty && !sel.$from.parent.inlineContent)
         resetEditableTo = temporarilyEditableNear(view, sel.to)
     }
     view.docView.setSelection(anchor, head, view.root)
-    if (browser.webkit) {
+    if (brokenSelectBetweenUneditable) {
       if (resetEditableFrom) resetEditableFrom.contentEditable = "false"
       if (resetEditableTo) resetEditableTo.contentEditable = "false"
     }
@@ -214,6 +214,9 @@ export function selectionToDOM(view, takeFocus) {
 // Kludge to work around Webkit not allowing a selection to start/end
 // between non-editable block nodes. We briefly make something
 // editable, set the selection, then set it uneditable again.
+
+const brokenSelectBetweenUneditable = browser.safari || browser.chrome && browser.chrome_version < 63
+
 function temporarilyEditableNear(view, pos) {
   let {node, offset} = view.docView.domFromPos(pos)
   let after = offset < node.childNodes.length ? node.childNodes[offset] : null
