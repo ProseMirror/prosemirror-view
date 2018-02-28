@@ -515,10 +515,13 @@ editHandlers.drop = (view, e) => {
 
   let pos = tr.mapping.map(insertPos)
   let isNode = slice.openStart == 0 && slice.openEnd == 0 && slice.content.childCount == 1
+  let beforeInsert = tr.doc
   if (isNode)
     tr.replaceRangeWith(pos, pos, slice.content.firstChild)
   else
     tr.replaceRange(pos, pos, slice)
+  if (tr.doc.eq(beforeInsert)) return
+
   let $pos = tr.doc.resolve(pos)
   if (isNode && NodeSelection.isSelectable(slice.content.firstChild) &&
       $pos.nodeAfter && $pos.nodeAfter.sameMarkup(slice.content.firstChild))
