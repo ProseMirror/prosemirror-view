@@ -398,7 +398,7 @@ handlers.copy = editHandlers.cut = (view, e) => {
   } else {
     captureCopy(view, dom)
   }
-  if (cut) view.dispatch(view.state.tr.deleteSelection().scrollIntoView())
+  if (cut) view.dispatch(view.state.tr.deleteSelection().scrollIntoView().setMeta("uiEvent", "cut"))
 }
 
 function sliceSingleNode(slice) {
@@ -428,7 +428,7 @@ function doPaste(view, text, html, e) {
 
   let singleNode = sliceSingleNode(slice)
   let tr = singleNode ? view.state.tr.replaceSelectionWith(singleNode, view.shiftKey) : view.state.tr.replaceSelection(slice)
-  view.dispatch(tr.scrollIntoView().setMeta("paste", true))
+  view.dispatch(tr.scrollIntoView().setMeta("paste", true).setMeat("uiEvent", "paste"))
   return true
 }
 
@@ -526,7 +526,7 @@ editHandlers.drop = (view, e) => {
   else
     tr.setSelection(selectionBetween(view, $pos, tr.doc.resolve(tr.mapping.map(insertPos))))
   view.focus()
-  view.dispatch(tr)
+  view.dispatch(tr.setMeta("uiEvent", "drop"))
 }
 
 handlers.focus = view => {
