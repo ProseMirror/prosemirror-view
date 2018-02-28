@@ -469,7 +469,7 @@ handlers.dragstart = (view, e) => {
 
   let sel = view.state.selection
   let pos = sel.empty ? null : view.posAtCoords(eventCoords(e))
-  if (pos && pos.pos >= sel.from && pos.pos <= sel.to) {
+  if (pos && pos.pos >= sel.from && pos.pos <= (sel instanceof NodeSelection ? sel.to - 1: sel.to)) {
     // In selection
   } else if (mouseDown && mouseDown.mightDrag) {
     view.dispatch(view.state.tr.setSelection(NodeSelection.create(view.state.doc, mouseDown.mightDrag.pos)))
