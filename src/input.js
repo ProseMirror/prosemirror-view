@@ -428,7 +428,7 @@ function doPaste(view, text, html, e) {
 
   let singleNode = sliceSingleNode(slice)
   let tr = singleNode ? view.state.tr.replaceSelectionWith(singleNode, view.shiftKey) : view.state.tr.replaceSelection(slice)
-  view.dispatch(tr.scrollIntoView().setMeta("paste", true).setMeat("uiEvent", "paste"))
+  view.dispatch(tr.scrollIntoView().setMeta("paste", true).setMeta("uiEvent", "paste"))
   return true
 }
 
