@@ -169,7 +169,7 @@ export function selectionToDOM(view, takeFocus) {
   let sel = view.state.selection
   syncNodeSelection(view, sel)
 
-  if (!view.hasFocus()) {
+  if (view.editable && !view.hasFocus()) {
     if (!takeFocus) return
     // See https://bugzilla.mozilla.org/show_bug.cgi?id=921444
     if (browser.gecko && view.editable) {
@@ -177,6 +177,8 @@ export function selectionToDOM(view, takeFocus) {
       view.dom.focus()
       view.selectionReader.ignoreUpdates = false
     }
+  } else if (!view.editable && !hasSelection(view) && !takeFocus) {
+    return
   }
 
   let reader = view.selectionReader
@@ -291,6 +293,10 @@ export function selectionBetween(view, $anchor, $head, bias) {
 
 function hasFocusAndSelection(view) {
   if (view.editable && view.root.activeElement != view.dom) return false
+  return hasSelection(view)
+}
+
+function hasSelection(view) {
   let sel = view.root.getSelection()
   if (!sel.anchorNode) return false
   try {
