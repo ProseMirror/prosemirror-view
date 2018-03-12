@@ -284,6 +284,7 @@ class MouseDown {
       if (this.mightDrag.setUneditable) this.target.removeAttribute("contentEditable")
       this.view.domObserver.start()
     }
+    this.view.mouseDown = null
   }
 
   up(event) {
