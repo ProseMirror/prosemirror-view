@@ -1,4 +1,4 @@
-import {DOMSerializer, Fragment} from "prosemirror-model"
+import {DOMSerializer, Fragment, Mark} from "prosemirror-model"
 
 import {domIndex, isEquivalentPosition} from "./dom"
 import browser from "./browser"
@@ -564,9 +564,11 @@ class NodeViewDesc extends ViewDesc {
   // `this.children`.
   updateChildren(view) {
     let updater = new ViewTreeUpdater(this), inline = this.node.inlineContent
-    iterDeco(this.node, this.innerDeco, widget => {
-      if (widget.spec.isCursorWrapper)
+    iterDeco(this.node, this.innerDeco, (widget, i) => {
+      if (widget.spec.marks)
         updater.syncToMarks(widget.spec.marks, inline, view)
+      else if (widget.type.side >= 0)
+        updater.syncToMarks(i == this.node.childCount ? Mark.none : this.node.child(i).marks, inline, view)
       // If the next node is a desc matching this widget, reuse it,
       // otherwise insert the widget as a new view desc.
       updater.placeWidget(widget)
@@ -1021,6 +1023,8 @@ function preMatch(frag, descs) {
   return result
 }
 
+function compareSide(a, b) { return a.type.side - b.type.side }
+
 // : (ViewDesc, DecorationSet, (Decoration), (Node, [Decoration], DecorationSet, number))
 // This function abstracts iterating over the nodes and decorations in
 // a fragment. Calls `onNode` for each node, with its local and child
@@ -1045,10 +1049,10 @@ function iterDeco(parent, deco, onWidget, onNode) {
       while (decoIndex < locals.length && locals[decoIndex].to == offset)
         (widgets || (widgets = [widget])).push(locals[decoIndex++])
       if (widgets) {
-        widgets.sort((a, b) => a.type.side - b.type.side)
-        widgets.forEach(onWidget)
+        widgets.sort(compareSide)
+        for (let i = 0; i < widgets.length; i++) onWidget(widgets[i], parentIndex)
       } else {
-        onWidget(widget)
+        onWidget(widget, parentIndex)
       }
     }
 

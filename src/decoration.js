@@ -131,6 +131,13 @@ export class Decoration {
   //     with lower values appear first. The ordering of widgets with
   //     the same `side` value is unspecified.
   //
+  //     When `marks` is null, `side` also determines the marks that
+  //     the widget is wrapped in—those of the node before when
+  //     negative, those of the node after when positive.
+  //
+  //     marks:: ?[Mark]
+  //     The precise set of marks to draw around the widget.
+  //
   //     stopEvent:: ?(event: dom.Event) → bool
   //     Can be used to control which DOM events, when they bubble out
   //     of this widget, the editor view should ignore.

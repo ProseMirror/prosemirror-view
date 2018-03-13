@@ -1,4 +1,4 @@
-const {doc, p, hr, em, img, blockquote} = require("prosemirror-test-builder")
+const {doc, p, hr, em, strong, img, blockquote, schema} = require("prosemirror-test-builder")
 const {Plugin} = require("prosemirror-state")
 const {tempEditor} = require("./view")
 const {DecorationSet, Decoration} = require("../dist")
@@ -306,5 +306,27 @@ describe("Decoration drawing", () => {
     updateDeco(view, [Decoration.node(5, 6, {}, {name: "b"}),
                       Decoration.node(5, 6, {}, {name: "c"})], [a])
     ist(current, "b,c")
+  })
+
+  it("draws the specified marks around a widget", () => {
+    let view = tempEditor({
+      doc: doc(p("foobar")),
+      plugins: [decoPlugin([Decoration.widget(4, document.createElement("img"), {marks: [schema.mark("em")]})])]
+    })
+    ist(view.dom.querySelector("em img"))
+  })
+
+  it("draws widgets inside the marks for their side", () => {
+    let view = tempEditor({
+      doc: doc(p(em("foo"), strong("bar"))),
+      plugins: [decoPlugin([Decoration.widget(4, document.createElement("img"), {side: -1})]),
+                decoPlugin([Decoration.widget(4, document.createElement("br"))]),
+                decoPlugin([Decoration.widget(7, document.createElement("span"))], {side: 1})]
+    })
+    ist(view.dom.querySelector("em img"))
+    ist(!view.dom.querySelector("strong img"))
+    ist(view.dom.querySelector("strong br"))
+    ist(!view.dom.querySelector("em br"))
+    ist(!view.dom.querySelector("strong span"))
   })
 })
