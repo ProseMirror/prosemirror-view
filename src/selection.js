@@ -172,7 +172,7 @@ export function selectionToDOM(view, takeFocus) {
   if (view.editable && !view.hasFocus()) {
     if (!takeFocus) return
     // See https://bugzilla.mozilla.org/show_bug.cgi?id=921444
-    if (browser.gecko && view.editable) {
+    if (browser.gecko && browser.gecko_version <= 55) {
       view.selectionReader.ignoreUpdates = true
       view.dom.focus()
       view.selectionReader.ignoreUpdates = false
