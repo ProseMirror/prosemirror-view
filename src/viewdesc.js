@@ -717,7 +717,7 @@ class CustomNodeViewDesc extends NodeViewDesc {
     } else if (!this.contentDOM && !node.isLeaf) {
       return false
     } else {
-      return super.update(node, outerDeco, this.contentDOM ? this.innerDeco : innerDeco, view)
+      return super.update(node, outerDeco, innerDeco, view)
     }
   }
 

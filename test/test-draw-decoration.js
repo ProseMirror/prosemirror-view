@@ -329,4 +329,13 @@ describe("Decoration drawing", () => {
     ist(!view.dom.querySelector("em br"))
     ist(!view.dom.querySelector("strong span"))
   })
+
+  it("draws decorations inside node views", () => {
+    let view = tempEditor({
+      doc: doc(p("foo")),
+      nodeViews: {paragraph() { let p = document.createElement("p"); return {dom: p, contentDOM: p} }},
+      plugins: [decoPlugin([Decoration.widget(2, document.createElement("img"))])]
+    })
+    ist(view.dom.querySelector("img"))
+  })
 })
