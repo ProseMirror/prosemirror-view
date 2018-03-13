@@ -93,7 +93,7 @@ function skipIgnoredNodesLeft(view) {
       }
     }
   }
-  if (moveNode) setSel(sel, moveNode, moveOffset)
+  if (moveNode) setSel(view, sel, moveNode, moveOffset)
 }
 
 // Make sure the cursor isn't directly before one or more ignored
@@ -133,7 +133,7 @@ function skipIgnoredNodesRight(view) {
       }
     }
   }
-  if (moveNode) setSel(sel, moveNode, moveOffset)
+  if (moveNode) setSel(view, sel, moveNode, moveOffset)
 }
 
 function isBlockNode(dom) {
@@ -141,12 +141,13 @@ function isBlockNode(dom) {
   return desc && desc.node && desc.node.isBlock
 }
 
-function setSel(sel, node, offset) {
+function setSel(view, sel, node, offset) {
   let range = document.createRange()
   range.setEnd(node, offset)
   range.setStart(node, offset)
   sel.removeAllRanges()
   sel.addRange(range)
+  view.selectionReader.storeDOMState(view.selection)
 }
 
 // : (EditorState, number)
