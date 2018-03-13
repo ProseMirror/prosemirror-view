@@ -55,6 +55,7 @@ function isIgnorable(dom) {
 function skipIgnoredNodesLeft(view) {
   let sel = view.root.getSelection()
   let node = sel.anchorNode, offset = sel.anchorOffset
+  if (!node) return
   let moveNode, moveOffset
   for (;;) {
     if (offset > 0) {
@@ -99,7 +100,9 @@ function skipIgnoredNodesLeft(view) {
 // nodes.
 function skipIgnoredNodesRight(view) {
   let sel = view.root.getSelection()
-  let node = sel.anchorNode, offset = sel.anchorOffset, len = nodeLen(node)
+  let node = sel.anchorNode, offset = sel.anchorOffset
+  if (!node) return
+  let len = nodeLen(node)
   let moveNode, moveOffset
   for (;;) {
     if (offset < len) {
