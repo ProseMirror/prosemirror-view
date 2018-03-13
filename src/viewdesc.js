@@ -455,16 +455,17 @@ class CursorWrapperDesc extends WidgetViewDesc {
 // necessary.
 class MarkViewDesc extends ViewDesc {
   // : (ViewDesc, Mark, dom.Node)
-  constructor(parent, mark, dom) {
-    super(parent, [], dom, dom)
+  constructor(parent, mark, dom, contentDOM) {
+    super(parent, [], dom, contentDOM)
     this.mark = mark
   }
 
   static create(parent, mark, inline, view) {
     let custom = customNodeViews(view)[mark.type.name]
     let spec = custom && custom(mark, view)
-    let dom = spec && spec.dom || DOMSerializer.renderSpec(document, mark.type.spec.toDOM(mark, inline)).dom
-    return new MarkViewDesc(parent, mark, dom)
+    if (!spec || !spec.dom)
+      spec = DOMSerializer.renderSpec(document, mark.type.spec.toDOM(mark, inline))
+    return new MarkViewDesc(parent, mark, spec.dom, spec.contentDOM || spec.dom)
   }
 
   parseRule() { return {mark: this.mark.type.name, attrs: this.mark.attrs, contentElement: this.contentDOM} }
