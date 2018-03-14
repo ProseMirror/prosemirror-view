@@ -1,3 +1,27 @@
+## 1.2.0 (2018-03-14)
+
+### Bug fixes
+
+Fix a problem where updating the state of a non-editable view would not set the selection, causing problems when the DOM was updated in a way that disrupted the DOM selection.
+
+Fix an issue where, on IE and Chrome, starting a drag selection in a position that required a cursor wrapper (on a mark boundary) would sometimes fail to work.
+
+Fix crash in key handling when the editor is focused but there is no DOM selection.
+
+Fixes a bug that prevented decorations inside node views with a [`contentDOM` property](https://prosemirror.net/docs/ref/#view.NodeView.contentDOM) from being drawn.
+
+Fixes an issue where, on Firefox, depending on a race condition, the skipping over insignificant DOM nodes done at keypress was canceled again before the keypress took effect.
+
+Fixes an issue where an `:after` pseudo-element on a non-inclusive mark could block the cursor, making it impossible to arrow past it.
+
+### New features
+
+The DOM structure for marks is no longer constrained to a single node. [Mark views](https://prosemirror.net/docs/ref/#view.NodeView) can have a `contentDOM` property, and [mark spec](https://prosemirror.net/docs/ref/#model.MarkSpec) `toDOM` methods can return structures with holes.
+
+[Widget decorations](https://prosemirror.net/docs/ref/#view.Decoration^widget) are now wrapped in the marks of the node after them when their [`side` option](https://prosemirror.net/docs/ref/#view.Decoration^widget^spec.side) is >= 0.
+
+[Widget decorations](https://prosemirror.net/docs/ref/#view.Decoration^widget) may now specify a [`marks` option](https://prosemirror.net/docs/ref/#view.Decoration^widget^spec.marks) to set the precise set of marks they should be wrapped in.
+
 ## 1.1.1 (2018-03-01)
 
 ### Bug fixes
