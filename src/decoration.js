@@ -31,8 +31,9 @@ class WidgetType {
 
   eq(other) {
     return this == other ||
-      (other instanceof WidgetType && (this.widget == other.widget || this.spec.key) &&
-       compareObjs(this.spec, other.spec))
+      (other instanceof WidgetType &&
+       (this.spec.key && this.spec.key == other.spec.key ||
+        this.toDOM == other.toDOM && compareObjs(this.spec, other.spec)))
   }
 }
 
@@ -148,7 +149,10 @@ export class Decoration {
   //     compare the widget DOM node by identity. If you pass a key,
   //     that key will be compared instead, which can be useful when
   //     you generate decorations on the fly and don't want to store
-  //     and reuse DOM nodes.
+  //     and reuse DOM nodes. Make sure that any widgets with the same
+  //     key are interchangeable—if widgets differ in, for example,
+  //     the behavior of some event handler, they should get
+  //     different keys.
   static widget(pos, dom, spec) {
     return new Decoration(pos, pos, new WidgetType(dom, spec))
   }
