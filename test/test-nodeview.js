@@ -1,4 +1,4 @@
-const {doc, p, br} = require("prosemirror-test-builder")
+const {doc, p, br, blockquote} = require("prosemirror-test-builder")
 const {Plugin} = require("prosemirror-state")
 const {tempEditor} = require("./view")
 const {DecorationSet, Decoration} = require("../dist")
@@ -86,12 +86,16 @@ describe("nodeViews prop", () => {
 
   it("can query its own position", () => {
     let get, view = tempEditor({
-      doc: doc(p("foo", br)),
-      nodeViews: {hard_break(_n, _v, getPos) { get = getPos; return {}}}
+      doc: doc(blockquote(p("abc"), p("foo", br))),
+      nodeViews: {hard_break(_n, _v, getPos) {
+        ist(getPos(), 10)
+        get = getPos
+        return {}
+      }}
     })
-    ist(get(), 4)
+    ist(get(), 10)
     view.dispatch(view.state.tr.insertText("a"))
-    ist(get(), 5)
+    ist(get(), 11)
   })
 
   it("has access to outer decorations", () => {

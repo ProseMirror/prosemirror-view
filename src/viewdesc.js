@@ -500,13 +500,13 @@ class MarkViewDesc extends ViewDesc {
 // they populate their child array themselves.
 class NodeViewDesc extends ViewDesc {
   // : (?ViewDesc, Node, [Decoration], DecorationSet, dom.Node, ?dom.Node, EditorView)
-  constructor(parent, node, outerDeco, innerDeco, dom, contentDOM, nodeDOM, view) {
+  constructor(parent, node, outerDeco, innerDeco, dom, contentDOM, nodeDOM, view, pos) {
     super(parent, node.isLeaf ? nothing : [], dom, contentDOM)
     this.nodeDOM = nodeDOM
     this.node = node
     this.outerDeco = outerDeco
     this.innerDeco = innerDeco
-    if (contentDOM) this.updateChildren(view)
+    if (contentDOM) this.updateChildren(view, pos)
   }
 
   // By default, a node is rendered using the `toDOM` method from the
@@ -518,12 +518,13 @@ class NodeViewDesc extends ViewDesc {
   // since it'd require exposing a whole slew of finnicky
   // implementation details to the user code that they probably will
   // never need.)
-  static create(parent, node, outerDeco, innerDeco, view) {
+  static create(parent, node, outerDeco, innerDeco, view, pos) {
     let custom = customNodeViews(view)[node.type.name], descObj
     let spec = custom && custom(node, view, () => {
       // (This is a function that allows the custom view to find its
       // own position)
-      if (descObj && descObj.parent) return descObj.parent.posBeforeChild(descObj)
+      if (!descObj) return pos
+      if (descObj.parent) return descObj.parent.posBeforeChild(descObj)
     }, outerDeco)
 
     let dom = spec && spec.dom, contentDOM = spec && spec.contentDOM
@@ -546,7 +547,7 @@ class NodeViewDesc extends ViewDesc {
     else if (node.isText)
       return new TextViewDesc(parent, node, outerDeco, innerDeco, dom, nodeDOM, view)
     else
-      return new NodeViewDesc(parent, node, outerDeco, innerDeco, dom, contentDOM, nodeDOM, view)
+      return new NodeViewDesc(parent, node, outerDeco, innerDeco, dom, contentDOM, nodeDOM, view, pos + 1)
   }
 
   parseRule() {
@@ -573,7 +574,7 @@ class NodeViewDesc extends ViewDesc {
   // decorations, possibly introducing nesting for marks. Then, in a
   // separate step, syncs the DOM inside `this.contentDOM` to
   // `this.children`.
-  updateChildren(view) {
+  updateChildren(view, pos) {
     let updater = new ViewTreeUpdater(this), inline = this.node.inlineContent
     iterDeco(this.node, this.innerDeco, (widget, i) => {
       if (widget.spec.marks)
@@ -592,7 +593,8 @@ class NodeViewDesc extends ViewDesc {
         // Or try updating the next desc to reflect this node.
         updater.updateNextNode(child, outerDeco, innerDeco, view, i) ||
         // Or just add it as a new desc.
-        updater.addNode(child, outerDeco, innerDeco, view)
+        updater.addNode(child, outerDeco, innerDeco, view, pos)
+      pos += child.nodeSize
     })
     // Drop all remaining descs after the current position.
     updater.syncToMarks(nothing, inline, view)
@@ -622,7 +624,7 @@ class NodeViewDesc extends ViewDesc {
     this.updateOuterDeco(outerDeco)
     this.node = node
     this.innerDeco = innerDeco
-    if (this.contentDOM) this.updateChildren(view)
+    if (this.contentDOM) this.updateChildren(view, this.posAtStart)
     this.dirty = NOT_DIRTY
   }
 
@@ -655,7 +657,7 @@ class NodeViewDesc extends ViewDesc {
 // and used by the view class.
 export function docViewDesc(doc, outerDeco, innerDeco, dom, view) {
   applyOuterDeco(dom, outerDeco, doc, true)
-  return new NodeViewDesc(null, doc, outerDeco, innerDeco, dom, dom, dom, view)
+  return new NodeViewDesc(null, doc, outerDeco, innerDeco, dom, dom, dom, view, 0)
 }
 
 class TextViewDesc extends NodeViewDesc {
@@ -982,8 +984,8 @@ class ViewTreeUpdater {
 
   // : (Node, [Decoration], DecorationSet, EditorView)
   // Insert the node as a newly created node desc.
-  addNode(node, outerDeco, innerDeco, view) {
-    this.top.children.splice(this.index++, 0, NodeViewDesc.create(this.top, node, outerDeco, innerDeco, view))
+  addNode(node, outerDeco, innerDeco, view, pos) {
+    this.top.children.splice(this.index++, 0, NodeViewDesc.create(this.top, node, outerDeco, innerDeco, view, pos))
     this.changed = true
   }
 
