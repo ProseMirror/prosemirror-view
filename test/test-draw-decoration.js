@@ -354,6 +354,21 @@ describe("Decoration drawing", () => {
     ist(view.dom.textContent, "hi!")
   })
 
+  it("supports widgets querying their own position", () => {
+    let get
+    tempEditor({
+      doc: doc(p("hi")),
+      decorations(state) {
+        return DecorationSet.create(state.doc, [Decoration.widget(3, (_view, getPos) => {
+          ist(getPos(), 3)
+          get = getPos
+          return document.createElement("button")
+        })])
+      }
+    })
+    ist(get(), 3)
+  })
+
   it("doesn't redraw widgets with matching keys", () => {
     let view = tempEditor({
       doc: doc(p("hi")),

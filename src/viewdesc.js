@@ -399,9 +399,12 @@ const nothing = []
 // drawn between the document nodes.
 class WidgetViewDesc extends ViewDesc {
   // : (ViewDesc, Decoration)
-  constructor(parent, widget, view) {
+  constructor(parent, widget, view, pos) {
     let self, dom = widget.type.toDOM
-    if (typeof dom == "function") dom = dom(view)
+    if (typeof dom == "function") dom = dom(view, () => {
+      if (!self) return pos
+      if (self.parent) return self.parent.posBeforeChild(self)
+    })
     if (!widget.type.spec.raw) {
       if (dom.nodeType != 1) {
         let wrap = document.createElement("span")
@@ -413,6 +416,7 @@ class WidgetViewDesc extends ViewDesc {
     }
     super(parent, nothing, dom, null)
     this.widget = widget
+    self = this
   }
 
   get beforePosition() {
@@ -583,7 +587,7 @@ class NodeViewDesc extends ViewDesc {
         updater.syncToMarks(i == this.node.childCount ? Mark.none : this.node.child(i).marks, inline, view)
       // If the next node is a desc matching this widget, reuse it,
       // otherwise insert the widget as a new view desc.
-      updater.placeWidget(view, widget)
+      updater.placeWidget(widget, view, pos)
     }, (child, outerDeco, innerDeco, i) => {
       // Make sure the wrapping mark descs match the node's marks.
       updater.syncToMarks(child.marks, inline, view)
@@ -989,11 +993,11 @@ class ViewTreeUpdater {
     this.changed = true
   }
 
-  placeWidget(view, widget) {
+  placeWidget(widget, view, pos) {
     if (this.index < this.top.children.length && this.top.children[this.index].matchesWidget(widget)) {
       this.index++
     } else {
-      let desc = new (widget.spec.isCursorWrapper ? CursorWrapperDesc : WidgetViewDesc)(this.top, widget, view)
+      let desc = new (widget.spec.isCursorWrapper ? CursorWrapperDesc : WidgetViewDesc)(this.top, widget, view, pos)
       this.top.children.splice(this.index++, 0, desc)
       this.changed = true
     }

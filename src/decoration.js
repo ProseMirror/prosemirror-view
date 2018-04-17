@@ -103,12 +103,13 @@ export class Decoration {
     return this.type.map(mapping, this, offset, oldOffset)
   }
 
-  // :: (number, (view: EditorView) → dom.Node | dom.Node, ?Object) → Decoration
+  // :: (number, (view: EditorView, getPos: () → number) → dom.Node | dom.Node, ?Object) → Decoration
   // Creates a widget decoration, which is a DOM node that's shown in
   // the document at the given position. It is recommended that you
   // delay rendering the widget by passing a function that will be
   // called when the widget is actually drawn in a view, but you can
-  // also directly pass a DOM node.
+  // also directly pass a DOM node. `getPos` can be used to find the
+  // widget's current document position.
   //
   //   spec::- These options are supported:
   //
