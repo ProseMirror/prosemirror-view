@@ -370,14 +370,15 @@ function updateCursorWrapper(view) {
   if ($pos && !(browser.ie && view.mouseDown)) {
     let visible = view.state.selection.visible
     // Needs a cursor wrapper
-    let marks = view.state.storedMarks || $pos.marks()
-    let spec = {isCursorWrapper: true, marks, raw: true, visible}
-    if (!view.cursorWrapper || !Mark.sameSet(view.cursorWrapper.spec.marks, marks) ||
-        view.cursorWrapper.type.widget.textContent != "\ufeff" ||
-        view.cursorWrapper.spec.visible != visible)
-      view.cursorWrapper = Decoration.widget($pos.pos, cursorWrapperDOM(visible), spec)
-    else if (view.cursorWrapper.pos != $pos.pos)
-      view.cursorWrapper = Decoration.widget($pos.pos, view.cursorWrapper.type.widget, spec)
+    let marks = view.state.storedMarks || $pos.marks(), dom
+    if (!view.cursorWrapper || !Mark.sameSet(view.cursorWrapper.deco.spec.marks, marks) ||
+        view.cursorWrapper.dom.textContent != "\ufeff" ||
+        view.cursorWrapper.deco.spec.visible != visible)
+      dom = cursorWrapperDOM(visible)
+    else if (view.cursorWrapper.deco.pos != $pos.pos)
+      dom = view.cursorWrapper.dom
+    if (dom)
+      view.cursorWrapper = {dom, deco: Decoration.widget($pos.pos, dom, {isCursorWrapper: true, marks, raw: true, visible})}
   } else {
     view.cursorWrapper = null
   }

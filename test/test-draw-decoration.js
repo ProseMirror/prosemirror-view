@@ -338,4 +338,44 @@ describe("Decoration drawing", () => {
     })
     ist(view.dom.querySelector("img"))
   })
+
+  it("can delay widget drawing to render time", () => {
+    let view = tempEditor({
+      doc: doc(p("hi")),
+      decorations(state) {
+        return DecorationSet.create(state.doc, [Decoration.widget(3, view => {
+          ist(view.state, state)
+          let elt = document.createElement("span")
+          elt.textContent = "!"
+          return elt
+        })])
+      }
+    })
+    ist(view.dom.textContent, "hi!")
+  })
+
+  it("doesn't redraw widgets with matching keys", () => {
+    let view = tempEditor({
+      doc: doc(p("hi")),
+      decorations(state) {
+        return DecorationSet.create(state.doc, [Decoration.widget(2, document.createElement("button"), {key: "myButton"})])
+      }
+    })
+    let widgetDOM = view.dom.querySelector("button")
+    view.dispatch(view.state.tr.insertText("!", 2, 2))
+    ist(view.dom.querySelector("button"), widgetDOM)
+  })
+
+  it("doesn't redraw widgets with identical specs", () => {
+    let toDOM = () => document.createElement("button")
+    let view = tempEditor({
+      doc: doc(p("hi")),
+      decorations(state) {
+        return DecorationSet.create(state.doc, [Decoration.widget(2, toDOM, {side: 1})])
+      }
+    })
+    let widgetDOM = view.dom.querySelector("button")
+    view.dispatch(view.state.tr.insertText("!", 2, 2))
+    ist(view.dom.querySelector("button"), widgetDOM)
+  })
 })

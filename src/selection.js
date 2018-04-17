@@ -250,7 +250,7 @@ function removeClassOnSelectionChange(view) {
 
 function selectCursorWrapper(view) {
   let domSel = view.root.getSelection(), range = document.createRange()
-  let node = view.cursorWrapper.type.widget
+  let node = view.cursorWrapper.dom
   range.setEnd(node, node.childNodes.length)
   range.collapse(false)
   domSel.removeAllRanges()

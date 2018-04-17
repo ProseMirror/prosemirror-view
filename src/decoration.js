@@ -6,20 +6,10 @@ function compareObjs(a, b) {
 }
 
 class WidgetType {
-  constructor(widget, spec) {
+  constructor(toDOM, spec) {
     this.spec = spec || noSpec
     this.side = this.spec.side || 0
-
-    if (!this.spec.raw) {
-      if (widget.nodeType != 1) {
-        let wrap = document.createElement("span")
-        wrap.appendChild(widget)
-        widget = wrap
-      }
-      widget.contentEditable = false
-      widget.classList.add("ProseMirror-widget")
-    }
-    this.widget = widget
+    this.toDOM = toDOM
   }
 
   map(mapping, span, offset, oldOffset) {
@@ -113,9 +103,12 @@ export class Decoration {
     return this.type.map(mapping, this, offset, oldOffset)
   }
 
-  // :: (number, dom.Node, ?Object) → Decoration
+  // :: (number, (view: EditorView) → dom.Node | dom.Node, ?Object) → Decoration
   // Creates a widget decoration, which is a DOM node that's shown in
-  // the document at the given position.
+  // the document at the given position. It is recommended that you
+  // delay rendering the widget by passing a function that will be
+  // called when the widget is actually drawn in a view, but you can
+  // also directly pass a DOM node.
   //
   //   spec::- These options are supported:
   //
@@ -153,8 +146,8 @@ export class Decoration {
   //     key are interchangeable—if widgets differ in, for example,
   //     the behavior of some event handler, they should get
   //     different keys.
-  static widget(pos, dom, spec) {
-    return new Decoration(pos, pos, new WidgetType(dom, spec))
+  static widget(pos, toDOM, spec) {
+    return new Decoration(pos, pos, new WidgetType(toDOM, spec))
   }
 
   // :: (number, number, DecorationAttrs, ?Object) → Decoration
@@ -665,6 +658,6 @@ export function viewDecorations(view) {
     if (result && result != empty) found.push(result)
   })
   if (view.cursorWrapper)
-    found.push(DecorationSet.create(view.state.doc, [view.cursorWrapper]))
+    found.push(DecorationSet.create(view.state.doc, [view.cursorWrapper.deco]))
   return DecorationGroup.from(found)
 }
