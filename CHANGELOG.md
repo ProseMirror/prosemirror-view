@@ -1,3 +1,23 @@
+## 1.3.0 (2018-04-24)
+
+### Bug fixes
+
+Fix mouse-selecting (in IE and Edge) from the end of links and other positions that cause a cursor wrapper.
+
+[Widget decorations](https://prosemirror.net/docs/ref/#view.Decoration^widget) with the same [key](https://prosemirror.net/docs/ref/#view.Decoration^widget^spec.key) are now considered equivalent, even if their other spec fields differ.
+
+### New features
+
+The new [`EditorView.posAtDOM` method](https://prosemirror.net/docs/ref/#view.EditorView.posAtDOM) can be used to find the document position corresponding to a given DOM position.
+
+The new [`EditorView.nodeDOM` method](https://prosemirror.net/docs/ref/#view.EditorView.nodeDOM) gives you the DOM node that is used to represent a specific node in the document.
+
+[`Decoration.widget`](https://prosemirror.net/docs/ref/#view.Decoration^widget) now accepts a function as second argument, which can be used to delay rendering of the widget until the document is drawn (at which point a reference to the view is available).
+
+The `getPos` function passed to a [node view constructor](https://prosemirror.net/docs/ref/#view.editorProps.nodeViews) can now be called immediately (it used to return undefined until rendering had finished).
+
+The function used to render a [widget](https://prosemirror.net/docs/ref/#view.Decoration^widget) is now passed a `getPos` method that event handlers can use to figure out where in the DOM the widget is.
+
 ## 1.2.0 (2018-03-14)
 
 ### Bug fixes
