@@ -1,4 +1,4 @@
-const {schema, doc, p, strong} = require("prosemirror-test-builder")
+const {schema, doc, ul, li, p, strong, hr} = require("prosemirror-test-builder")
 const {EditorState} = require("prosemirror-state")
 const {Schema} = require("prosemirror-model")
 const {EditorView} = require("../dist")
@@ -53,5 +53,34 @@ describe("EditorView", () => {
                            handleScrollToSelection() { called++; return false }})
     view.dispatch(view.state.tr.scrollIntoView())
     ist(called, 1)
+  })
+
+  it("can be queried for the DOM position at a doc position", () => {
+    let view = tempEditor({doc: doc(ul(li(p(strong("foo")))))})
+    let inText = view.domAtPos(4)
+    ist(inText.offset, 1)
+    ist(inText.node.nodeValue, "foo")
+    let beforeLI = view.domAtPos(1)
+    ist(beforeLI.offset, 0)
+    ist(beforeLI.node.nodeName, "UL")
+    let afterP = view.domAtPos(7)
+    ist(afterP.offset, 1)
+    ist(afterP.node.nodeName, "LI")
+  })
+
+  it("can be queried for a node's DOM representation", () => {
+    let view = tempEditor({doc: doc(p("foo"), hr)})
+    ist(view.nodeDOM(0).nodeName, "P")
+    ist(view.nodeDOM(5).nodeName, "HR")
+    ist(view.nodeDOM(3), null)
+  })
+
+  it("can map DOM positions to doc positions", () => {
+    let view = tempEditor({doc: doc(p("foo"), hr)})
+    ist(view.posAtDOM(view.dom.firstChild.firstChild, 2), 3)
+    ist(view.posAtDOM(view.dom, 1), 5)
+    ist(view.posAtDOM(view.dom, 2), 6)
+    ist(view.posAtDOM(view.dom.lastChild, 0, -1), 5)
+    ist(view.posAtDOM(view.dom.lastChild, 0, 1), 6)
   })
 })

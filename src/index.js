@@ -253,6 +253,39 @@ export class EditorView {
     return this.docView.domFromPos(pos)
   }
 
+  // :: (number) → ?dom.Node
+  // Find the DOM node that represents the document node after the
+  // given position. May return `null` when the position doesn't point
+  // in front of a node or if the node is inside an opaque node view.
+  //
+  // This is intended to be able to call things like
+  // `getBoundingClientRect` on that DOM node. Do **not** mutate the
+  // editor DOM directly, or add styling this way, since that will be
+  // immediately overriden by the editor as it redraws the node.
+  nodeDOM(pos) {
+    if (this.inDOMChange)
+      pos = this.inDOMChange.mapping.invert().map(pos)
+    let desc = this.docView.descAt(pos)
+    return desc ? desc.nodeDOM : null
+  }
+
+  // :: (dom.Node, number, ?number) → number
+  // Find the document position that corresponds to a given DOM
+  // position. (Whenever possible, it is preferable to inspect the
+  // document structure directly, rather than poking around in the
+  // DOM, but sometimes—for example when interpreting an event
+  // target—you don't have a choice.)
+  //
+  // The `bias` parameter can be used to influence which side of a DOM
+  // node to use when the position is inside a leaf node.
+  posAtDOM(node, offset, bias = -1) {
+    let pos = this.docView.posFromDOM(node, offset, bias)
+    if (pos == null) throw new RangeError("DOM position not inside the editor")
+    if (this.inDOMChange)
+      pos = this.inDOMChange.mapping.map(pos)
+    return pos
+  }
+
   // :: (union<"up", "down", "left", "right", "forward", "backward">, ?EditorState) → bool
   // Find out whether the selection is at the end of a textblock when
   // moving in a given direction. When, for example, given `"left"`,
