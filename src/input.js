@@ -5,7 +5,7 @@ import {captureKeyDown} from "./capturekeys"
 import {DOMChange} from "./domchange"
 import {parseFromClipboard, serializeForClipboard} from "./clipboard"
 import {DOMObserver} from "./domobserver"
-import {selectionBetween} from "./selection"
+import {selectionBetween, needsCursorWrapper} from "./selection"
 
 // A collection of DOM events that occur within the editor, and callback functions
 // to invoke when the event fires.
@@ -294,6 +294,8 @@ class MouseDown {
       return
 
     if (this.allowDefault) {
+      // Force a cursor wrapper redraw if this was suppressed (to avoid an issue with IE drag-selection)
+      if (browser.ie && needsCursorWrapper(this.view.state)) this.view.updateState(this.view.state)
       this.view.selectionReader.poll("pointer")
     } else if (handleSingleClick(this.view, this.pos.pos, this.pos.inside, event, this.selectNode)) {
       event.preventDefault()

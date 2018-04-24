@@ -4,8 +4,9 @@ import {NodeSelection} from "prosemirror-state"
 import {scrollRectIntoView, posAtCoords, coordsAtPos, endOfTextblock, storeScrollPos, resetScrollPos} from "./domcoords"
 import {docViewDesc} from "./viewdesc"
 import {initInput, destroyInput, dispatchEvent, ensureListeners} from "./input"
-import {SelectionReader, selectionToDOM} from "./selection"
+import {SelectionReader, selectionToDOM, needsCursorWrapper} from "./selection"
 import {Decoration, viewDecorations} from "./decoration"
+import browser from "./browser"
 
 export {Decoration, DecorationSet} from "./decoration"
 
@@ -319,10 +320,6 @@ function computeDocDeco(view) {
   return [Decoration.node(0, view.state.doc.content.size, attrs)]
 }
 
-function nonInclusiveMark(mark) {
-  return mark.type.spec.inclusive === false
-}
-
 function cursorWrapperDOM(visible) {
   let span = document.createElement("span")
   span.textContent = "\ufeff" // zero-width non-breaking space
@@ -334,12 +331,11 @@ function cursorWrapperDOM(visible) {
 }
 
 function updateCursorWrapper(view) {
-  let {$head, $anchor, visible} = view.state.selection
-  let $pos = $head.pos == $anchor.pos && (!visible || $head.parent.inlineContent) ? $head : null
-  if ($pos && (!visible ||
-               view.state.storedMarks ||
-               $pos.parent.content.length == 0 ||
-               $pos.parentOffset && !$pos.textOffset && $pos.nodeBefore.marks.some(nonInclusiveMark))) {
+  let $pos = needsCursorWrapper(view.state)
+  // On IE/Edge, moving the DOM selection will abort a mouse drag, so
+  // there we delay the creation of the wrapper when the mouse is down.
+  if ($pos && !(browser.ie && view.mouseDown)) {
+    let visible = view.state.selection.visible
     // Needs a cursor wrapper
     let marks = view.state.storedMarks || $pos.marks()
     let spec = {isCursorWrapper: true, marks, raw: true, visible}

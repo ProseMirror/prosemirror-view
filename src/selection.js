@@ -309,3 +309,17 @@ function hasSelection(view) {
     return false
   }
 }
+
+function nonInclusiveMark(mark) {
+  return mark.type.spec.inclusive === false
+}
+
+export function needsCursorWrapper(state) {
+  let {$head, $anchor, visible} = state.selection
+  let $pos = $head.pos == $anchor.pos && (!visible || $head.parent.inlineContent) ? $head : null
+  if ($pos && (!visible || state.storedMarks || $pos.parent.content.length == 0 ||
+               $pos.parentOffset && !$pos.textOffset && $pos.nodeBefore.marks.some(nonInclusiveMark)))
+    return $pos
+  else
+    return null
+}
