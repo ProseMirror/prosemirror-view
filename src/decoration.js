@@ -103,7 +103,7 @@ export class Decoration {
     return this.type.map(mapping, this, offset, oldOffset)
   }
 
-  // :: (number, (view: EditorView, getPos: () → number) → dom.Node | dom.Node, ?Object) → Decoration
+  // :: (number, union<(view: EditorView, getPos: () → number) → dom.Node, dom.Node>, ?Object) → Decoration
   // Creates a widget decoration, which is a DOM node that's shown in
   // the document at the given position. It is recommended that you
   // delay rendering the widget by passing a function that will be
