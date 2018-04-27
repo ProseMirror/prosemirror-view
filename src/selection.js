@@ -3,9 +3,8 @@ import {TextSelection, NodeSelection} from "prosemirror-state"
 import browser from "./browser"
 import {selectionCollapsed} from "./dom"
 
-// Track the state of the current editor selection. Keeps the editor
-// selection in sync with the DOM selection by polling for changes,
-// as there is no DOM event for DOM selection changes.
+// Track the state of the DOM selection, creating transactions to
+// update the selection state when necessary.
 export class SelectionReader {
   constructor(view) {
     this.view = view
