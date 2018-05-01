@@ -1,7 +1,7 @@
 const result = {}
 export default result
 
-if (typeof navigator != "undefined") {
+if (typeof navigator != "undefined" && typeof document != "undefined") {
   const ie_edge = /Edge\/(\d+)/.exec(navigator.userAgent)
   const ie_upto10 = /MSIE \d/.test(navigator.userAgent)
   const ie_11up = /Trident\/(?:[7-9]|\d{2,})\..*rv:(\d+)/.exec(navigator.userAgent)
