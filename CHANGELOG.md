@@ -1,3 +1,11 @@
+## 1.3.1 (2018-06-08)
+
+### Bug fixes
+
+The package can now be loaded in a web worker context (where `navigator` is defined but `document` isn't) without crashing.
+
+Dropping something like a list item into a textblock will no longer split the textblock.
+
 ## 1.3.0 (2018-04-24)
 
 ### Bug fixes
