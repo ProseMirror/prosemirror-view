@@ -1,6 +1,6 @@
 import {Selection, NodeSelection, TextSelection} from "prosemirror-state"
 import browser from "./browser"
-import {domIndex} from "./dom"
+import {domIndex, selectionCollapsed} from "./dom"
 
 function moveSelectionBlock(state, dir) {
   let {$anchor, $head} = state.selection
@@ -54,7 +54,7 @@ function isIgnorable(dom) {
 // nodes, which will confuse the browser's cursor motion logic.
 function skipIgnoredNodesLeft(view) {
   let sel = view.root.getSelection()
-  let node = sel.anchorNode, offset = sel.anchorOffset
+  let node = sel.focusNode, offset = sel.focusOffset
   if (!node) return
   let moveNode, moveOffset, force = false
   for (;;) {
@@ -96,15 +96,15 @@ function skipIgnoredNodesLeft(view) {
       }
     }
   }
-  if (force) setSel(view, sel, node, offset)
-  else if (moveNode) setSel(view, sel, moveNode, moveOffset)
+  if (force) setSelFocus(view, sel, node, offset)
+  else if (moveNode) setSelFocus(view, sel, moveNode, moveOffset)
 }
 
 // Make sure the cursor isn't directly before one or more ignored
 // nodes.
 function skipIgnoredNodesRight(view) {
   let sel = view.root.getSelection()
-  let node = sel.anchorNode, offset = sel.anchorOffset
+  let node = sel.focusNode, offset = sel.focusOffset
   if (!node) return
   let len = nodeLen(node)
   let moveNode, moveOffset
@@ -137,7 +137,7 @@ function skipIgnoredNodesRight(view) {
       }
     }
   }
-  if (moveNode) setSel(view, sel, moveNode, moveOffset)
+  if (moveNode) setSelFocus(view, sel, moveNode, moveOffset)
 }
 
 function isBlockNode(dom) {
@@ -145,12 +145,16 @@ function isBlockNode(dom) {
   return desc && desc.node && desc.node.isBlock
 }
 
-function setSel(view, sel, node, offset) {
-  let range = document.createRange()
-  range.setEnd(node, offset)
-  range.setStart(node, offset)
-  sel.removeAllRanges()
-  sel.addRange(range)
+function setSelFocus(view, sel, node, offset) {
+  if (selectionCollapsed(sel)) {
+    let range = document.createRange()
+    range.setEnd(node, offset)
+    range.setStart(node, offset)
+    sel.removeAllRanges()
+    sel.addRange(range)
+  } else if (sel.extend) {
+    sel.extend(node, offset)
+  }
   view.selectionReader.storeDOMState(view.selection)
 }
 
