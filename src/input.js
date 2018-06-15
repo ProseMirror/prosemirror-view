@@ -71,7 +71,10 @@ export function dispatchEvent(view, event) {
 
 editHandlers.keydown = (view, event) => {
   if (event.keyCode == 16) view.shiftKey = true
-  if (view.inDOMChange) return
+  if (view.inDOMChange) {
+    if (view.inDOMChange.composing) return
+    view.inDOMChange.finish()
+  }
   view.lastKeyCode = event.keyCode
   view.lastKeyCodeTime = Date.now()
   if (view.someProp("handleKeyDown", f => f(view, event)) || captureKeyDown(view, event))
