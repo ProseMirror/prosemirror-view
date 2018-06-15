@@ -1,3 +1,13 @@
+## 1.3.3 (2018-06-15)
+
+### Bug fixes
+
+Fix arrow-left cursor motion from cursor wrapper (for example after a link).
+
+Fix selection glitches when shift-selecting around widget decorations.
+
+Fix issue where a parsing a code block from the editor DOM might drop newlines in the code.
+
 ## 1.3.2 (2018-06-15)
 
 ### Bug fixes
