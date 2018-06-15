@@ -1,3 +1,9 @@
+## 1.3.2 (2018-06-15)
+
+### Bug fixes
+
+[`handleKeyDown`](https://prosemirror.net/docs/ref/#view.EditorProps.handleKeyDown) will now get notified of key events happening directly after a composition ends.
+
 ## 1.3.1 (2018-06-08)
 
 ### Bug fixes
