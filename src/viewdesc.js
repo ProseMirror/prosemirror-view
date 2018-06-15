@@ -559,10 +559,11 @@ class NodeViewDesc extends ViewDesc {
     // attrs means that if the user somehow manages to change the
     // attrs in the dom, that won't be picked up. Not entirely sure
     // whether this is a problem
-    if (this.contentDOM && !this.contentLost)
-      return {node: this.node.type.name, attrs: this.node.attrs, contentElement: this.contentDOM}
-    else
-      return {node: this.node.type.name, attrs: this.node.attrs, getContent: () => this.contentDOM ? Fragment.empty : this.node.content}
+    let rule = {node: this.node.type.name, attrs: this.node.attrs}
+    if (this.node.type.spec.code) rule.preserveWhitespace = "full"
+    if (this.contentDOM && !this.contentLost) rule.contentElement = this.contentDOM
+    else rule.getContent = () => this.contentDOM ? Fragment.empty : this.node.content
+    return rule
   }
 
   matchesNode(node, outerDeco, innerDeco) {
