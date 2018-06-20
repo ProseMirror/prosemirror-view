@@ -387,7 +387,8 @@ function captureCopy(view, dom) {
 // there, they just don't work, and they are hard to test.
 // FIXME when Mobile Safari fixes this, change this to a version
 // range test
-const brokenClipboardAPI = (browser.ie && browser.ie_version < 15) || browser.ios
+const brokenClipboardAPI = (browser.ie && browser.ie_version < 15) ||
+      (browser.ios && browser.safari_version < 11)
 
 handlers.copy = editHandlers.cut = (view, e) => {
   let sel = view.state.selection, cut = e.type == "cut"
