@@ -1,4 +1,5 @@
 import {Selection, NodeSelection, TextSelection} from "prosemirror-state"
+import {dropPoint} from "prosemirror-transform"
 
 import browser from "./browser"
 import {captureKeyDown} from "./capturekeys"
@@ -452,23 +453,6 @@ class Dragging {
   }
 }
 
-function dropPos(slice, $pos) {
-  if (!slice || !slice.content.size) return $pos.pos
-  let content = slice.content
-  for (let i = 0; i < slice.openStart; i++) content = content.firstChild.content
-  for (let pass = 1; pass <= (slice.openStart == 0 && slice.length ? 2 : 1); pass++) {
-    for (let d = $pos.depth; d >= 0; d--) {
-      let bias = d == $pos.depth ? 0 : $pos.pos <= ($pos.start(d + 1) + $pos.end(d + 1)) / 2 ? -1 : 1
-      let insertPos = $pos.index(d) + (bias > 0 ? 1 : 0)
-      if (pass == 1
-          ? $pos.node(d).canReplace(insertPos, insertPos, content)
-          : $pos.node(d).contentMatchAt(insertPos).findWrapping(content.firstChild))
-        return bias == 0 ? $pos.pos : bias < 0 ? $pos.before(d + 1) : $pos.after(d + 1)
-    }
-  }
-  return $pos.pos
-}
-
 const dragCopyModifier = browser.mac ? "altKey" : "ctrlKey"
 
 handlers.dragstart = (view, e) => {
@@ -517,7 +501,8 @@ editHandlers.drop = (view, e) => {
 
   e.preventDefault()
   if (view.someProp("handleDrop", f => f(view, e, slice, dragging && dragging.move))) return
-  let insertPos = dropPos(slice, view.state.doc.resolve($mouse.pos))
+  let insertPos = slice ? dropPoint(view.state.doc, $mouse.pos, slice) : $mouse.pos
+  if (insertPos == null) insertPos = $mouse.pos
 
   let tr = view.state.tr
   if (dragging && dragging.move) tr.deleteSelection()

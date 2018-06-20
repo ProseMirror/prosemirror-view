@@ -19,7 +19,7 @@
   "dependencies": {
     "prosemirror-model": "^1.1.0",
     "prosemirror-state": "^1.0.0",
-    "prosemirror-transform": "^1.0.0"
+    "prosemirror-transform": "^1.1.0"
   },
   "devDependencies": {
     "ist": "^1.0.0",
