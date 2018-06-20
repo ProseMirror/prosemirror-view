@@ -1,3 +1,9 @@
+## 1.3.5 (2018-06-20)
+
+### Bug fixes
+
+Use shared implementation of [`dropPoint`](https://prosemirror.net/docs/ref/#transform.dropPoint) to handle finding a drop position.
+
 ## 1.3.4 (2018-06-20)
 
 ### Bug fixes
