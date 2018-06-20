@@ -1,3 +1,9 @@
+## 1.3.4 (2018-06-20)
+
+### Bug fixes
+
+Enable use of browser clipboard API on Mobile Safari version 11 and up, which makes cut work on that platform and should generally improve clipboard handling.
+
 ## 1.3.3 (2018-06-15)
 
 ### Bug fixes
