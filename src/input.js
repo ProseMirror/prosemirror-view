@@ -385,8 +385,6 @@ function captureCopy(view, dom) {
 // This is very crude, but unfortunately both these browsers _pretend_
 // that they have a clipboard API—all the objects and methods are
 // there, they just don't work, and they are hard to test.
-// FIXME when Mobile Safari fixes this, change this to a version
-// range test
 const brokenClipboardAPI = (browser.ie && browser.ie_version < 15) ||
       (browser.ios && browser.safari_version < 11)
 
