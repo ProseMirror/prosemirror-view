@@ -1,3 +1,9 @@
+## 1.3.6 (2018-06-21)
+
+### Bug fixes
+
+Make sure Safari version detection for clipboard support also works in iOS webview.
+
 ## 1.3.5 (2018-06-20)
 
 ### Bug fixes
