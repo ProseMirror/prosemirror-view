@@ -17,5 +17,5 @@ if (typeof navigator != "undefined" && typeof document != "undefined") {
   result.ios = !ie && /AppleWebKit/.test(navigator.userAgent) && /Mobile\/\w+/.test(navigator.userAgent)
   result.webkit = !ie && 'WebkitAppearance' in document.documentElement.style
   result.safari = /Apple Computer/.test(navigator.vendor)
-  result.safari_version = result.safari && +(/\bVersion\/(\d+)/.exec(navigator.userAgent) || [0, 0])[1]
+  result.webkit_version = result.webkit && +(/\bAppleWebKit\/(\d+)/.exec(navigator.userAgent) || [0, 0])[1]
 }
