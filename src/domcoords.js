@@ -10,7 +10,7 @@ export function scrollRectIntoView(view, rect) {
   let doc = view.dom.ownerDocument, win = doc.defaultView
   if (scrollMargin == null) scrollMargin = 5
   for (let parent = view.dom;; parent = parentNode(parent)) {
-    if (!parent) break
+    if (!parent || parent.nodeType != 1) break
     let atBody = parent == doc.body
     let bounding = atBody ? windowRect(win) : parent.getBoundingClientRect()
     let moveX = 0, moveY = 0
