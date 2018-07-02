@@ -11,8 +11,8 @@ export function scrollRectIntoView(view, rect) {
   if (scrollMargin == null) scrollMargin = 5
   for (let parent = view.dom;; parent = parentNode(parent)) {
     if (!parent) break
-    let atBody = parent == doc.body
-    let bounding = atBody ? windowRect(win) : parent.getBoundingClientRect()
+    let atTop = parent == doc.body || parent.nodeType != 1
+    let bounding = atTop ? windowRect(win) : parent.getBoundingClientRect()
     let moveX = 0, moveY = 0
     if (rect.top < bounding.top + scrollThreshold)
       moveY = -(bounding.top - rect.top + scrollMargin)
@@ -23,14 +23,14 @@ export function scrollRectIntoView(view, rect) {
     else if (rect.right > bounding.right - scrollThreshold)
       moveX = rect.right - bounding.right + scrollMargin
     if (moveX || moveY) {
-      if (atBody) {
+      if (atTop) {
         win.scrollBy(moveX, moveY)
       } else {
         if (moveY) parent.scrollTop += moveY
         if (moveX) parent.scrollLeft += moveX
       }
     }
-    if (atBody) break
+    if (atTop) break
   }
 }
 
