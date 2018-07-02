@@ -1,3 +1,9 @@
+## 1.3.7 (2018-07-02)
+
+### Bug fixes
+
+Fix a crash when scrolling things into view when the editor isn't a child of `document.body`.
+
 ## 1.3.6 (2018-06-21)
 
 ### Bug fixes
