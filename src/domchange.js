@@ -247,8 +247,13 @@ function readDOMChange(view, mapping, oldState, range, allowTypeOver) {
   // Same for backspace
   if (oldState.selection.anchor > change.start &&
       looksLikeJoin(doc, change.start, change.endA, $from, $to) &&
-      view.someProp("handleKeyDown", f => f(view, keyEvent(8, "Backspace"))))
+      view.someProp("handleKeyDown", f => f(view, keyEvent(8, "Backspace")))) {
+    if (browser.android && browser.chrome) { // #820
+      view.selectionReader.suppressUpdates = true
+      setTimeout(() => view.selectionReader.suppressUpdates = false, 50)
+    }
     return
+  }
 
   let from = mapping.map(change.start), to = mapping.map(change.endA, -1)
 

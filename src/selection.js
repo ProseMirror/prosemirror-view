@@ -13,6 +13,7 @@ export class SelectionReader {
     this.lastAnchorNode = this.lastHeadNode = this.lastAnchorOffset = this.lastHeadOffset = null
     this.lastSelection = view.state.selection
     this.ignoreUpdates = false
+    this.suppressUpdates = false
     this.poller = poller(this)
 
     view.dom.addEventListener("focus", () => this.poller.start(hasFocusAndSelection(this.view)))
@@ -50,11 +51,12 @@ export class SelectionReader {
     this.lastAnchorNode = this.lastSelection = null
   }
 
-  // : (?string) → bool
+  // : (?string)
   // When the DOM selection changes in a notable manner, modify the
   // current selection state to match.
   readFromDOM(origin) {
     if (this.ignoreUpdates || !this.domChanged() || !hasFocusAndSelection(this.view)) return
+    if (this.suppressUpdates) return selectionToDOM(this.view)
     if (!this.view.inDOMChange) this.view.domObserver.flush()
     if (this.view.inDOMChange) return
 
