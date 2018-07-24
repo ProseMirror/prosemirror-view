@@ -278,6 +278,13 @@ describe("Decoration drawing", () => {
     ist(!para.title)
   })
 
+  it("updates decorated nodes even if a widget is added before them", () => {
+    let view = tempEditor({doc: doc(p("a"), p("b")), plugins: [decoPlugin([])]})
+    let lastP = view.dom.querySelectorAll("p")[1]
+    updateDeco(view, [make("3-widget"), Decoration.node(3, 6, {style: "color: red"})])
+    ist(lastP.style.color, "red")
+  })
+
   it("can add and remove inline style", () => {
     let deco = Decoration.inline(1, 6, {style: "color: rgba(0,10,200,.4); text-decoration: underline"})
     let view = tempEditor({doc: doc(p("al", img, "lo")),
