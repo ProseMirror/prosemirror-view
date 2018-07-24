@@ -1,3 +1,9 @@
+## 1.3.8 (2018-07-24)
+
+### Bug fixes
+
+Fix an issue where Chrome Android would move the cursor forward by one after backspace-joining two paragraphs.
+
 ## 1.3.7 (2018-07-02)
 
 ### Bug fixes
