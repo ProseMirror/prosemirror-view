@@ -330,7 +330,7 @@ export class EditorView {
   // easily passed around.
   dispatch(tr) {
     let dispatchTransaction = this._props.dispatchTransaction
-    if (dispatchTransaction) dispatchTransaction(tr)
+    if (dispatchTransaction) dispatchTransaction.call(this, tr)
     else this.updateState(this.state.apply(tr))
   }
 }
@@ -561,4 +561,5 @@ function getEditable(view) {
 //   make sure this ends up calling the view's
 //   [`updateState`](#view.EditorView.updateState) method with a new
 //   state that has the transaction
-//   [applied](#state.EditorState.apply).
+//   [applied](#state.EditorState.apply). The callback will be bound to have
+//   the view instance as its `this` binding.
