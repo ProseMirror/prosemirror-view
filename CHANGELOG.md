@@ -1,3 +1,9 @@
+## 1.4.0 (2018-07-26)
+
+### New features
+
+The `dispatchTransaction` prop is now called with `this` bound to the editor view.
+
 ## 1.3.8 (2018-07-24)
 
 ### Bug fixes
