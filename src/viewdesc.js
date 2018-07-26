@@ -555,6 +555,8 @@ class NodeViewDesc extends ViewDesc {
   }
 
   parseRule() {
+    // Experimental kludge to allow opt-in re-parsing of nodes
+    if (this.node.type.spec.reparseInView) return null
     // FIXME the assumption that this can always return the current
     // attrs means that if the user somehow manages to change the
     // attrs in the dom, that won't be picked up. Not entirely sure
