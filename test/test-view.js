@@ -83,4 +83,17 @@ describe("EditorView", () => {
     ist(view.posAtDOM(view.dom.lastChild, 0, -1), 5)
     ist(view.posAtDOM(view.dom.lastChild, 0, 1), 6)
   })
+
+  it("binds this to itself in dispatchTransaction prop", () => {
+    const dom = document.createElement("div");
+    let thisBinding;
+    let view = new EditorView(dom, {
+      state: EditorState.create({doc: doc(p("hi"))}),
+      dispatchTransaction: function() {
+        thisBinding = this
+      }
+    })
+    view.dispatch(view.state.tr.insertText("x"))
+    ist(view, thisBinding)
+  })
 })
