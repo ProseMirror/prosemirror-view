@@ -1,5 +1,5 @@
 const {schema, doc, ul, li, p, strong, hr} = require("prosemirror-test-builder")
-const {EditorState} = require("prosemirror-state")
+const {EditorState, Plugin} = require("prosemirror-state")
 const {Schema} = require("prosemirror-model")
 const {EditorView} = require("../dist")
 const {tempEditor} = require("./view")
@@ -95,5 +95,26 @@ describe("EditorView", () => {
     })
     view.dispatch(view.state.tr.insertText("x"))
     ist(view, thisBinding)
+  })
+
+  it("allows node views to dispatch transactions during init", () => {
+    const dom = document.createElement("div");
+    let thisBinding;
+    let view = new EditorView(dom, {
+      state: EditorState.create({
+        doc: doc(p("a")),
+        plugins: [new Plugin({
+          props: {
+            nodeViews: {
+              paragraph: (node, view) => {
+                view.dispatch(view.state.tr.insertText("x"));
+                return {};
+              }
+            }
+          }
+        })]
+      })
+    })
+    ist(view.state.doc.eq(doc(p("xa"))), true)
   })
 })

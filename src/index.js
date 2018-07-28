@@ -34,6 +34,9 @@ export class EditorView {
     this._root = null
     this.focused = false
 
+    this.initialized = false;
+    this.transactionQueue = [];
+
     // :: dom.Element
     // An editable DOM node containing the document. (You probably
     // should not directly interfere with its content.)
@@ -61,6 +64,7 @@ export class EditorView {
 
     this.pluginViews = []
     this.updatePluginViews()
+    this.runTransactionQueue()
   }
 
   // :: DirectEditorProps
@@ -330,8 +334,18 @@ export class EditorView {
   // easily passed around.
   dispatch(tr) {
     let dispatchTransaction = this._props.dispatchTransaction
+    if (!this.initialized) {
+      this.transactionQueue.push(tr)
+      return
+    }
     if (dispatchTransaction) dispatchTransaction.call(this, tr)
     else this.updateState(this.state.apply(tr))
+  }
+
+  runTransactionQueue() {
+    this.initialized = true
+    this.transactionQueue.forEach(this.dispatch)
+    this.transactionQueue = []
   }
 }
 
