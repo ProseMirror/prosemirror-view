@@ -1,3 +1,9 @@
+## 1.4.1 (2018-08-02)
+
+### Bug fixes
+
+Fixes an issue where backspacing out the last character between the start of a textblock and a widget in Chrome would insert a random hard break.
+
 ## 1.4.0 (2018-07-26)
 
 ### New features
