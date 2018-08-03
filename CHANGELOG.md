@@ -1,3 +1,9 @@
+## 1.4.2 (2018-08-03)
+
+### Bug fixes
+
+Fix an issue where reading the selection from the DOM might crash in non-editable mode.
+
 ## 1.4.1 (2018-08-02)
 
 ### Bug fixes
