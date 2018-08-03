@@ -61,7 +61,7 @@ export class SelectionReader {
     if (this.view.inDOMChange) return
 
     let domSel = this.view.root.getSelection(), doc = this.view.state.doc
-    let nearestDesc = this.view.docView.nearestDesc(domSel.focusNode), inWidget = nearestDesc.size == 0
+    let nearestDesc = this.view.docView.nearestDesc(domSel.focusNode), inWidget = nearestDesc && nearestDesc.size == 0
     let head = this.view.docView.posFromDOM(domSel.focusNode, domSel.focusOffset)
     let $head = doc.resolve(head), $anchor, selection
     if (selectionCollapsed(domSel)) {
