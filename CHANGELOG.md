@@ -1,3 +1,9 @@
+## 1.4.3 (2018-08-12)
+
+### Bug fixes
+
+Fix an issue where the editor got stuck believing shift was down (and hence pasting as plain text) when it was unfocused with shift held down.
+
 ## 1.4.2 (2018-08-03)
 
 ### Bug fixes
