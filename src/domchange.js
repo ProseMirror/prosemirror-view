@@ -118,9 +118,15 @@ function parseBetween(view, oldState, range) {
     if (!selectionCollapsed(domSel))
       find.push({node: domSel.focusNode, offset: domSel.focusOffset})
   }
-  // Work around issue in Chrome where backspacing sometimes replaces the deleted content with a random BR node
-  if (browser.chrome && view.lastKeyCode === 8 && toOffset > fromOffset &&
-      parent.childNodes[toOffset - 1].nodeType == "BR" && !parent.childNodes[toOffset - 1].pmViewDesc) toOffset--
+  // Work around issue in Chrome where backspacing sometimes replaces
+  // the deleted content with a random BR node (issues #799, #831)
+  if (browser.chrome && view.lastKeyCode === 8) {
+    for (let off = toOffset; off > fromOffset; off--) {
+      let node = parent.childNodes[off - 1], desc = node.pmViewDesc
+      if (node.nodeType == "BR" && !desc) { toOffset = off; break }
+      if (!desc || desc.size) break
+    }
+  }
   let startDoc = oldState.doc
   let parser = view.someProp("domParser") || DOMParser.fromSchema(view.state.schema)
   let $from = startDoc.resolve(from)

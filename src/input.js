@@ -71,7 +71,7 @@ export function dispatchEvent(view, event) {
 }
 
 editHandlers.keydown = (view, event) => {
-  if (event.keyCode == 16) view.shiftKey = true
+  view.shiftKey = event.keyCode == 16 || event.shiftKey
   if (view.inDOMChange) {
     if (view.inDOMChange.composing) return
     view.inDOMChange.finish()
@@ -219,6 +219,7 @@ function forceDOMFlush(view) {
 const selectNodeModifier = browser.mac ? "metaKey" : "ctrlKey"
 
 handlers.mousedown = (view, event) => {
+  view.shiftKey = event.shiftKey
   let flushed = forceDOMFlush(view)
   let now = Date.now(), type
   if (now - lastClick.time >= 500 || !isNear(event, lastClick) || event[selectNodeModifier]) type = "singleClick"
