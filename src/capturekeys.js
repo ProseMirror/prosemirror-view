@@ -57,6 +57,10 @@ function skipIgnoredNodesLeft(view) {
   let node = sel.focusNode, offset = sel.focusOffset
   if (!node) return
   let moveNode, moveOffset, force = false
+  // Gecko will do odd things when the selection is directly in front
+  // of a non-editable node, so in that case, move it into the next
+  // node if possible. Issue prosemirror/prosemirror#832.
+  if (browser.gecko && node.nodeType == 1 && offset < nodeLen(node) && isIgnorable(node.childNodes[offset])) force = true
   for (;;) {
     if (offset > 0) {
       if (node.nodeType != 1) {
