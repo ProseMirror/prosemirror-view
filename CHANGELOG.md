@@ -1,3 +1,11 @@
+## 1.4.4 (2018-08-13)
+
+### Bug fixes
+
+Fix an issue where a non-empty DOM selection could stick around even though the state's selection is empty.
+
+Fix an issue where Firefox would create an extra cursor position when arrow-keying through a widget.
+
 ## 1.4.3 (2018-08-12)
 
 ### Bug fixes
