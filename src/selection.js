@@ -80,7 +80,8 @@ export class SelectionReader {
       selection = selectionBetween(this.view, $anchor, $head, bias)
     }
     let preserve = !inWidget && head == selection.head && $anchor.pos == selection.anchor &&
-        (!this.view.cursorWrapper || domSel.isCollapsed && origin != "pointer")
+        (!this.view.cursorWrapper || domSel.isCollapsed && origin != "pointer") &&
+        domSel.isCollapsed == selection.empty
     if (preserve) this.storeDOMState(selection)
     if (!this.view.state.selection.eq(selection)) {
       let tr = this.view.state.tr.setSelection(selection)
