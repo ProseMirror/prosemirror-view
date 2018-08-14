@@ -85,8 +85,8 @@ describe("EditorView", () => {
   })
 
   it("binds this to itself in dispatchTransaction prop", () => {
-    const dom = document.createElement("div");
-    let thisBinding;
+    const dom = document.createElement("div")
+    let thisBinding
     let view = new EditorView(dom, {
       state: EditorState.create({doc: doc(p("hi"))}),
       dispatchTransaction: function() {
