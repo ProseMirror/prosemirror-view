@@ -1,3 +1,9 @@
+## 1.5.0 (2018-08-21)
+
+### New features
+
+Mark views are now passed a boolean that indicates whether the mark's content is inline as third argument.
+
 ## 1.4.4 (2018-08-13)
 
 ### Bug fixes
