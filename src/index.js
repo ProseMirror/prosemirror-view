@@ -498,9 +498,11 @@ function getEditable(view) {
 //   Allows you to pass custom rendering and behavior logic for nodes
 //   and marks. Should map node and mark names to constructor
 //   functions that produce a [`NodeView`](#view.NodeView) object
-//   implementing the node's display behavior. `getPos` is a function
-//   that can be called to get the node's current position, which can
-//   be useful when creating transactions to update it.
+//   implementing the node's display behavior. For nodes, the third
+//   argument `getPos` is a function that can be called to get the
+//   node's current position, which can be useful when creating
+//   transactions to update it. For marks, the third argument is a
+//   boolean that indicates whether the mark's content is inline.
 //
 //   `decorations` is an array of node or inline decorations that are
 //   active around the node. They are automatically drawn in the
