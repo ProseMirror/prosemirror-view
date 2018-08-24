@@ -1,3 +1,9 @@
+## 1.5.1 (2018-08-24)
+
+### Bug fixes
+
+Fix issue where some DOM selections would cause a non-editable view to crash when reading the selection.
+
 ## 1.5.0 (2018-08-21)
 
 ### New features
