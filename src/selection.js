@@ -302,7 +302,8 @@ function hasSelection(view) {
     // Firefox will raise 'permission denied' errors when accessing
     // properties of `sel.anchorNode` when it's in a generated CSS
     // element.
-    return view.dom.contains(sel.anchorNode.nodeType == 3 ? sel.anchorNode.parentNode : sel.anchorNode)
+    return view.dom.contains(sel.anchorNode.nodeType == 3 ? sel.anchorNode.parentNode : sel.anchorNode) &&
+      (view.editable || view.dom.contains(sel.focusNode.nodeType == 3 ? sel.focusNode.parentNode : sel.focusNode))
   } catch(_) {
     return false
   }
