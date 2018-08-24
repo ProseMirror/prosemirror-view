@@ -34,7 +34,8 @@ function scanFor(node, off, targetNode, targetOff, dir) {
     if (node == targetNode && off == targetOff) return true
     if (off == (dir < 0 ? 0 : nodeSize(node)) || node.nodeType == 3 && node.nodeValue == "\ufeff") {
       let parent = node.parentNode
-      if (parent.nodeType != 1 || hasBlockDesc(node) || atomElements.test(node.nodeName)) return false
+      if (parent.nodeType != 1 || hasBlockDesc(node) || atomElements.test(node.nodeName) || node.contentEditable == "false")
+        return false
       off = domIndex(node) + (dir < 0 ? 0 : 1)
       node = parent
     } else if (node.nodeType == 1) {
