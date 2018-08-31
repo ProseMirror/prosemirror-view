@@ -55,12 +55,12 @@ export function parseFromClipboard(view, text, html, plainText, $context) {
     dom = readHTML(html)
   }
 
-  if (!slice) {
-    let parser = view.someProp("clipboardParser") || view.someProp("domParser") || DOMParser.fromSchema(view.state.schema)
-    slice = parser.parseSlice(dom, {preserveWhitespace: true, context: $context})
-  }
   let contextNode = dom && dom.querySelector("[data-pm-slice]")
   let sliceData = contextNode && /^(\d+) (\d+) (.*)/.exec(contextNode.getAttribute("data-pm-slice"))
+  if (!slice) {
+    let parser = view.someProp("clipboardParser") || view.someProp("domParser") || DOMParser.fromSchema(view.state.schema)
+    slice = parser.parseSlice(dom, {preserveWhitespace: !!sliceData, context: $context})
+  }
   if (sliceData)
     slice = addContext(new Slice(slice.content, Math.min(slice.openStart, +sliceData[1]),
                                  Math.min(slice.openEnd, +sliceData[2])), sliceData[3])
