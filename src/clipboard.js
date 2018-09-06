@@ -38,7 +38,8 @@ export function serializeForClipboard(view, slice) {
 export function parseFromClipboard(view, text, html, plainText, $context) {
   let dom, inCode = $context.parent.type.spec.code, slice
   if (!html && !text) return null
-  if ((plainText || inCode || !html) && text) {
+  let asText = text && (plainText || inCode || !html)
+  if (asText) {
     view.someProp("transformPastedText", f => { text = f(text) })
     if (inCode) return new Slice(Fragment.from(view.state.schema.text(text)), 0, 0)
     let parsed = view.someProp("clipboardTextParser", f => f(text, $context))
@@ -59,7 +60,7 @@ export function parseFromClipboard(view, text, html, plainText, $context) {
   let sliceData = contextNode && /^(\d+) (\d+) (.*)/.exec(contextNode.getAttribute("data-pm-slice"))
   if (!slice) {
     let parser = view.someProp("clipboardParser") || view.someProp("domParser") || DOMParser.fromSchema(view.state.schema)
-    slice = parser.parseSlice(dom, {preserveWhitespace: !!sliceData, context: $context})
+    slice = parser.parseSlice(dom, {preserveWhitespace: !!(asText || sliceData), context: $context})
   }
   if (sliceData)
     slice = addContext(new Slice(slice.content, Math.min(slice.openStart, +sliceData[1]),

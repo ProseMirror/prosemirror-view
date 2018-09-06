@@ -108,7 +108,7 @@ editHandlers.keypress = (view, event) => {
 
 function eventCoords(event) { return {left: event.clientX, top: event.clientY} }
 
-let lastClick = {time: 0, x: 0, y: 0}, oneButLastClick = lastClick
+let lastClick = {time: 0, x: 0, y: 0, type: ""}
 
 function isNear(event, click) {
   let dx = click.x - event.clientX, dy = click.y - event.clientY
@@ -221,12 +221,12 @@ const selectNodeModifier = browser.mac ? "metaKey" : "ctrlKey"
 handlers.mousedown = (view, event) => {
   view.shiftKey = event.shiftKey
   let flushed = forceDOMFlush(view)
-  let now = Date.now(), type
-  if (now - lastClick.time >= 500 || !isNear(event, lastClick) || event[selectNodeModifier]) type = "singleClick"
-  else if (now - oneButLastClick.time >= 600 || !isNear(event, oneButLastClick)) type = "doubleClick"
-  else type = "tripleClick"
-  oneButLastClick = lastClick
-  lastClick = {time: now, x: event.clientX, y: event.clientY}
+  let now = Date.now(), type = "singleClick"
+  if (now - lastClick.time < 500 && isNear(event, lastClick) && !event[selectNodeModifier]) {
+    if (lastClick.type == "singleClick") type = "doubleClick"
+    else if (lastClick.type == "doubleClick") type = "tripleClick"
+  }
+  lastClick = {time: now, x: event.clientX, y: event.clientY, type}
 
   let pos = view.posAtCoords(eventCoords(event))
   if (!pos) return
