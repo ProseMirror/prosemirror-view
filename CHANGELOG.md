@@ -1,3 +1,13 @@
+## 1.5.2 (2018-09-07)
+
+### Bug fixes
+
+Improves selection management around widgets with no actual HTML content (possibly drawn using CSS pseudo elements).
+
+Fix extra whitespace in pasted HTML caused by previously-collapsed spacing.
+
+Slow triple-clicks are no longer treated as two double-clicks in a row.
+
 ## 1.5.1 (2018-08-24)
 
 ### Bug fixes
