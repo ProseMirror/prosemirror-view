@@ -81,7 +81,7 @@ editHandlers.keydown = (view, event) => {
   if (view.someProp("handleKeyDown", f => f(view, event)) || captureKeyDown(view, event))
     event.preventDefault()
   else
-    view.selectionReader.poll()
+    view.selectionReader.poll("key")
 }
 
 editHandlers.keyup = (view, e) => {

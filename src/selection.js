@@ -82,6 +82,7 @@ export class SelectionReader {
     if (!this.view.state.selection.eq(selection)) {
       let tr = this.view.state.tr.setSelection(selection)
       if (origin == "pointer") tr.setMeta("pointer", true)
+      else if (origin == "key") tr.scrollIntoView()
       this.view.dispatch(tr)
     } else {
       selectionToDOM(this.view)
