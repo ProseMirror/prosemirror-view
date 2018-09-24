@@ -1,3 +1,9 @@
+## 1.5.3 (2018-09-24)
+
+### Bug fixes
+
+The cursor is now scrolled into view after keyboard driven selection changes even when they were handled by the browser.
+
 ## 1.5.2 (2018-09-07)
 
 ### Bug fixes
