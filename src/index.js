@@ -141,7 +141,16 @@ export class EditorView {
         {} // Handled
       else if (state.selection instanceof NodeSelection)
         scrollRectIntoView(this, this.docView.domAfterPos(state.selection.from).getBoundingClientRect())
-      else
+      else if (state.selection.from != state.selection.to) {
+        const fromCoords = this.coordsAtPos(state.selection.from);
+        const toCoords = this.coordsAtPos(state.selection.to);
+        scrollRectIntoView(this, {
+          top: fromCoords.top,
+          bottom: toCoords.bottom,
+          left: fromCoords.left,
+          right: toCoords.right
+        });
+      } else
         scrollRectIntoView(this, this.coordsAtPos(state.selection.head))
     } else if (oldScrollPos) {
       resetScrollPos(oldScrollPos)
@@ -540,12 +549,12 @@ function getEditable(view) {
 //   the value provided first (as in
 //   [`someProp`](#view.EditorView.someProp)) will be used.
 //
-//   scrollThreshold:: ?number
+//   scrollThreshold:: ?number | {top: number, right: number, bottom: number, left: number}
 //   Determines the distance (in pixels) between the cursor and the
 //   end of the visible viewport at which point, when scrolling the
 //   cursor into view, scrolling takes place. Defaults to 0.
 //
-//   scrollMargin:: ?number
+//   scrollMargin:: ?number | {top: number, right: number, bottom: number, left: number}
 //   Determines the extra space (in pixels) that is left above or
 //   below the cursor when it is scrolled into view. Defaults to 5.
 

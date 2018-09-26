@@ -6,22 +6,27 @@ function windowRect(win) {
 }
 
 export function scrollRectIntoView(view, rect) {
-  let scrollThreshold = view.someProp("scrollThreshold") || 0, scrollMargin = view.someProp("scrollMargin")
+  let scrollThreshold = view.someProp("scrollThreshold") || 0, scrollMargin = view.someProp("scrollMargin") || 5
+  if (Number.isInteger(scrollThreshold))
+    scrollThreshold = {top: scrollThreshold, right: scrollThreshold, bottom: scrollThreshold, left: scrollThreshold}
+  if (Number.isInteger(scrollMargin))
+    scrollMargin = {top: scrollMargin, right: scrollMargin, bottom: scrollMargin, left: scrollMargin}
+
   let doc = view.dom.ownerDocument, win = doc.defaultView
-  if (scrollMargin == null) scrollMargin = 5
-  for (let parent = view.dom;; parent = parentNode(parent)) {
+  let ref = parentNode(view.docView.domFromPos(view.state.selection.head).node)
+  for (let parent = ref;; parent = parentNode(parent)) {
     if (!parent) break
     let atTop = parent == doc.body || parent.nodeType != 1
     let bounding = atTop ? windowRect(win) : parent.getBoundingClientRect()
     let moveX = 0, moveY = 0
-    if (rect.top < bounding.top + scrollThreshold)
-      moveY = -(bounding.top - rect.top + scrollMargin)
-    else if (rect.bottom > bounding.bottom - scrollThreshold)
-      moveY = rect.bottom - bounding.bottom + scrollMargin
-    if (rect.left < bounding.left + scrollThreshold)
-      moveX = -(bounding.left - rect.left + scrollMargin)
-    else if (rect.right > bounding.right - scrollThreshold)
-      moveX = rect.right - bounding.right + scrollMargin
+    if (rect.top < bounding.top + scrollThreshold.top)
+      moveY = -(bounding.top - rect.top + scrollMargin.top)
+    else if (rect.bottom > bounding.bottom - scrollThreshold.bottom)
+      moveY = rect.bottom - bounding.bottom + scrollMargin.bottom
+    if (rect.left < bounding.left + scrollThreshold.left)
+      moveX = -(bounding.left - rect.left + scrollMargin.left)
+    else if (rect.right > bounding.right - scrollThreshold.right)
+      moveX = rect.right - bounding.right + scrollMargin.right
     if (moveX || moveY) {
       if (atTop) {
         win.scrollBy(moveX, moveY)
