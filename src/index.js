@@ -141,16 +141,7 @@ export class EditorView {
         {} // Handled
       else if (state.selection instanceof NodeSelection)
         scrollRectIntoView(this, this.docView.domAfterPos(state.selection.from).getBoundingClientRect())
-      else if (state.selection.from != state.selection.to) {
-        const fromCoords = this.coordsAtPos(state.selection.from);
-        const toCoords = this.coordsAtPos(state.selection.to);
-        scrollRectIntoView(this, {
-          top: fromCoords.top,
-          bottom: toCoords.bottom,
-          left: fromCoords.left,
-          right: toCoords.right
-        });
-      } else
+      else
         scrollRectIntoView(this, this.coordsAtPos(state.selection.head))
     } else if (oldScrollPos) {
       resetScrollPos(oldScrollPos)
