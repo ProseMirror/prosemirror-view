@@ -218,6 +218,14 @@ describe("DecorationSet", () => {
       let tr = new Transform(d).join(16)
       ist(set.map(tr.mapping, tr.doc).find().map(d => d.from).join(), "16")
     })
+
+    it("properly maps decorations after deleted siblings", () => {
+      let d = doc(blockquote(blockquote(blockquote(p()), blockquote(p())),
+                             blockquote(blockquote(p()), blockquote(p()))))
+      let set = build(d, {pos: 14})
+      let tr = new Transform(d).delete(2, 6).delete(8, 12)
+      ist(set.map(tr.mapping, tr.doc).find().length, 0)
+    })
   })
 
   describe("add", () => {

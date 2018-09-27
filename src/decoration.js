@@ -504,8 +504,8 @@ function mapChildren(oldChildren, newLocal, mapping, node, offset, oldOffset, op
         children[i + 1] = toLocal
         children[i + 2] = mapped
       } else {
-        children.splice(i, 3)
-        i -= 3
+        children[i + 1] = -2
+        mustRebuild = true
       }
     } else {
       mustRebuild = true
@@ -514,11 +514,11 @@ function mapChildren(oldChildren, newLocal, mapping, node, offset, oldOffset, op
 
   // Remaining children must be collected and rebuilt into the appropriate structure
   if (mustRebuild) {
-    let decorations = mapAndGatherRemainingDecorations(children, newLocal ? moveSpans(newLocal, offset) : [], mapping,
+    let decorations = mapAndGatherRemainingDecorations(children, oldChildren, newLocal ? moveSpans(newLocal, offset) : [], mapping,
                                                        offset, oldOffset, options)
     let built = buildTree(decorations, node, 0, options)
     newLocal = built.local
-    for (let i = 0; i < children.length; i += 3) if (children[i + 1] == -1) {
+    for (let i = 0; i < children.length; i += 3) if (children[i + 1] < 0) {
       children.splice(i, 3)
       i -= 3
     }
@@ -542,7 +542,7 @@ function moveSpans(spans, offset) {
   return result
 }
 
-function mapAndGatherRemainingDecorations(children, decorations, mapping, offset, oldOffset, options) {
+function mapAndGatherRemainingDecorations(children, oldChildren, decorations, mapping, offset, oldOffset, options) {
   // Gather all decorations from the remaining marked children
   function gather(set, oldOffset) {
     for (let i = 0; i < set.local.length; i++) {
@@ -554,7 +554,7 @@ function mapAndGatherRemainingDecorations(children, decorations, mapping, offset
       gather(set.children[i + 2], set.children[i] + oldOffset + 1)
   }
   for (let i = 0; i < children.length; i += 3) if (children[i + 1] == -1)
-    gather(children[i + 2], children[i] + oldOffset + 1)
+    gather(children[i + 2], oldChildren[i] + oldOffset + 1)
 
   return decorations
 }
