@@ -9,12 +9,12 @@ function getSide(value, side) {
   return typeof value == "number" ? value : value[side]
 }
 
-export function scrollRectIntoView(view, rect) {
+export function scrollRectIntoView(view, rect, startDOM) {
   let scrollThreshold = view.someProp("scrollThreshold") || 0, scrollMargin = view.someProp("scrollMargin") || 5
   let doc = view.dom.ownerDocument, win = doc.defaultView
-  let ref = parentNode(view.docView.domFromPos(view.state.selection.head).node)
-  for (let parent = ref;; parent = parentNode(parent)) {
+  for (let parent = startDOM || view.dom;; parent = parentNode(parent)) {
     if (!parent) break
+    if (parent.nodeType != 1) continue
     let atTop = parent == doc.body || parent.nodeType != 1
     let bounding = atTop ? windowRect(win) : parent.getBoundingClientRect()
     let moveX = 0, moveY = 0

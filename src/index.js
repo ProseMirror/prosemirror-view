@@ -137,12 +137,13 @@ export class EditorView {
     if (scroll == "reset") {
       this.dom.scrollTop = 0
     } else if (scroll == "to selection") {
+      let startDOM = this.root.getSelection().focusNode
       if (this.someProp("handleScrollToSelection", f => f(this)))
         {} // Handled
       else if (state.selection instanceof NodeSelection)
-        scrollRectIntoView(this, this.docView.domAfterPos(state.selection.from).getBoundingClientRect())
+        scrollRectIntoView(this, this.docView.domAfterPos(state.selection.from).getBoundingClientRect(), startDOM)
       else
-        scrollRectIntoView(this, this.coordsAtPos(state.selection.head))
+        scrollRectIntoView(this, this.coordsAtPos(state.selection.head), startDOM)
     } else if (oldScrollPos) {
       resetScrollPos(oldScrollPos)
     }
