@@ -1,3 +1,15 @@
+## 1.6.0 (2018-09-27)
+
+### Bug fixes
+
+Fixes a corner case in which DecorationSet.map would map decorations to incorrect new positions.
+
+When the editor contains scrollable elements, scrolling the cursor into view also scrolls those.
+
+### New features
+
+The `scrollMargin` and `scrollThreshold` props may now hold `{left, right, top, bottom}` objects to set different margins and thresholds for different sides. Make scrolling from a given start node more robust
+
 ## 1.5.3 (2018-09-24)
 
 ### Bug fixes
