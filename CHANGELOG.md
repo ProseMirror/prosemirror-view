@@ -1,3 +1,9 @@
+## 1.6.1 (2018-10-01)
+
+### Bug fixes
+
+Fixes situation where a vertical [`endOfTextblock`](https://prosemirror.net/docs/ref/#view.EditorView.endOfTextblock) query could get confused by nearby widgets or complex parent node representation.
+
 ## 1.6.0 (2018-09-27)
 
 ### Bug fixes
