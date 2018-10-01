@@ -263,7 +263,12 @@ function endOfTextblockVertical(view, state, dir) {
   let $pos = dir == "up" ? sel.$anchor.min(sel.$head) : sel.$anchor.max(sel.$head)
   if (!$pos.depth) return false
   return withFlushedState(view, state, () => {
-    let dom = view.docView.domAfterPos($pos.before())
+    let {node: dom} = view.docView.domFromPos($pos.pos)
+    for (;;) {
+      let nearest = view.docView.nearestDesc(dom, true)
+      if (!nearest || nearest.node.isBlock) break
+      dom = nearest.dom.parentNode
+    }
     let coords = coordsAtPos(view, $pos.pos)
     for (let child = dom.firstChild; child; child = child.nextSibling) {
       let boxes
