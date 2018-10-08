@@ -1,3 +1,9 @@
+## 1.6.2 (2018-10-08)
+
+### Bug fixes
+
+Fixes an issue where event handlers were leaked when destroying an editor
+
 ## 1.6.1 (2018-10-01)
 
 ### Bug fixes
