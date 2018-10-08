@@ -15,14 +15,21 @@ export class SelectionReader {
     this.ignoreUpdates = false
     this.suppressUpdates = false
     this.poller = poller(this)
+    
+    this.focusFunc = (() => this.poller.start(hasFocusAndSelection(this.view))).bind(this)
+    this.blurFunc = this.poller.stop
 
-    view.dom.addEventListener("focus", () => this.poller.start(hasFocusAndSelection(this.view)))
-    view.dom.addEventListener("blur", () => this.poller.stop())
+    view.dom.addEventListener("focus", this.focusFunc)
+    view.dom.addEventListener("blur", this.blurFunc)
 
     if (!view.editable) this.poller.start(false)
   }
 
-  destroy() { this.poller.stop() }
+  destroy() {
+    this.view.dom.removeEventListener("focus", this.focusFunc)
+    this.view.dom.removeEventListener("blur", this.blurFunc)
+    this.poller.stop()
+  }
 
   poll(origin) { this.poller.poll(origin) }
 
