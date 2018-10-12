@@ -1,3 +1,9 @@
+## 1.6.3 (2018-10-12)
+
+### Bug fixes
+
+The editor will no longer try to handle file paste events with the old-browser compatibility kludge (which might cause scrolling and focus flickering).
+
 ## 1.6.2 (2018-10-08)
 
 ### Bug fixes
