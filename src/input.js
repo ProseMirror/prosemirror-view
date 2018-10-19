@@ -441,9 +441,7 @@ function doPaste(view, text, html, e) {
 
 editHandlers.paste = (view, e) => {
   let data = brokenClipboardAPI ? null : e.clipboardData
-  if (data && data.files.length > 0) // Ignore file pastes
-    e.preventDefault()
-  else if (data && doPaste(view, data.getData("text/plain"), data.getData("text/html"), e))
+  if (data && (doPaste(view, data.getData("text/plain"), data.getData("text/html"), e) || data.files.length > 0))
     e.preventDefault()
   else
     capturePaste(view, e)
