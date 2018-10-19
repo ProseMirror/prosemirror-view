@@ -1,3 +1,9 @@
+## 1.6.4 (2018-10-19)
+
+### Bug fixes
+
+Fix pasting when both text and files are present on the clipboard.
+
 ## 1.6.3 (2018-10-12)
 
 ### Bug fixes
