@@ -156,10 +156,12 @@ function ruleFromNode(parser, context) {
     if (desc) {
       return desc.parseRule()
     } else if (dom.nodeName == "BR" && dom.parentNode) {
-      // Safari replaces the list item with a BR directly in the list node (?!) if you delete the last character in a list item (#708)
+      // Safari replaces the list item or table cell with a BR
+      // directly in the list node (?!) if you delete the last
+      // character in a list item or table cell (#708, #862)
       if (browser.safari && /^(ul|ol)$/i.test(dom.parentNode.nodeName))
         return parser.matchTag(document.createElement("li"), context)
-      else if (dom.parentNode.lastChild == dom)
+      else if (dom.parentNode.lastChild == dom || browser.safari && /^(tr|table)$/i.test(dom.parentNode.nodeName))
         return {ignore: true}
     }
   }

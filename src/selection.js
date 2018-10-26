@@ -15,7 +15,7 @@ export class SelectionReader {
     this.ignoreUpdates = false
     this.suppressUpdates = false
     this.poller = poller(this)
-    
+
     this.focusFunc = (() => this.poller.start(hasFocusAndSelection(this.view))).bind(this)
     this.blurFunc = this.poller.stop
 
