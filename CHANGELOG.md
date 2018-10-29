@@ -1,3 +1,9 @@
+## 1.6.5 (2018-10-29)
+
+### Bug fixes
+
+Work around Safari issue where deleting the last bit of text in a table cell creates weird HTML with a BR in a table row.
+
 ## 1.6.4 (2018-10-19)
 
 ### Bug fixes
