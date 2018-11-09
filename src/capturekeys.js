@@ -200,6 +200,27 @@ function stopNativeHorizontalDelete(view, dir) {
   return false
 }
 
+function switchEditable(view, node, state) {
+  view.domObserver.stop()
+  node.contentEditable = state
+  view.domObserver.start()
+}
+
+// Issue #867 / https://bugs.chromium.org/p/chromium/issues/detail?id=903821
+// In which Chrome does really wrong things when the down arrow is
+// pressed when the cursor is directly at the start of a textblock and
+// has an uneditable node after it
+function chromeDownArrowBug(view) {
+  if (!browser.chrome || view.state.selection.$head.parentOffset > 0) return
+  let {focusNode, focusOffset} = view.root.getSelection()
+  if (focusNode && focusNode.nodeType == 1 && focusOffset == 0 &&
+      focusNode.firstChild && focusNode.firstChild.contentEditable == "false") {
+    let child = focusNode.firstChild
+    switchEditable(view, child, true)
+    setTimeout(() => switchEditable(view, child, false), 20)
+  }
+}
+
 // A backdrop key mapping used to make sure we always suppress keys
 // that have a dangerous default effect, even if the commands they are
 // bound to return false, and to make sure that cursor-motion keys
@@ -231,7 +252,7 @@ export function captureKeyDown(view, event) {
   } else if (code == 38) { // Up arrow
     return selectVertically(view, -1) || skipIgnoredNodesLeft(view)
   } else if (code == 40) { // Down arrow
-    return selectVertically(view, 1) || skipIgnoredNodesRight(view)
+    return chromeDownArrowBug(view) || selectVertically(view, 1) || skipIgnoredNodesRight(view)
   } else if (mods == (browser.mac ? "m" : "c") &&
              (code == 66 || code == 73 || code == 89 || code == 90)) { // Mod-[biyz]
     return true
