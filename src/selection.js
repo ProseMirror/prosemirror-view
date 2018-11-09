@@ -172,7 +172,7 @@ function poller(reader) {
   return new ("onselectionchange" in document ? SelectionChangePoller : TimeoutPoller)(reader)
 }
 
-export function selectionToDOM(view, takeFocus) {
+export function selectionToDOM(view, takeFocus, force) {
   let sel = view.state.selection
   syncNodeSelection(view, sel)
 
@@ -203,7 +203,7 @@ export function selectionToDOM(view, takeFocus) {
       if (!sel.empty && !sel.$from.parent.inlineContent)
         resetEditableTo = temporarilyEditableNear(view, sel.to)
     }
-    view.docView.setSelection(anchor, head, view.root)
+    view.docView.setSelection(anchor, head, view.root, force)
     if (brokenSelectBetweenUneditable) {
       if (resetEditableFrom) resetEditableFrom.contentEditable = "false"
       if (resetEditableTo) resetEditableTo.contentEditable = "false"

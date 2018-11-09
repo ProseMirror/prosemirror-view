@@ -327,19 +327,20 @@ class ViewDesc {
   // custom things with the selection. Note that this falls apart when
   // a selection starts in such a node and ends in another, in which
   // case we just use whatever domFromPos produces as a best effort.
-  setSelection(anchor, head, root) {
+  setSelection(anchor, head, root, force) {
     // If the selection falls entirely in a child, give it to that child
     let from = Math.min(anchor, head), to = Math.max(anchor, head)
     for (let i = 0, offset = 0; i < this.children.length; i++) {
       let child = this.children[i], end = offset + child.size
       if (from > offset && to < end)
-        return child.setSelection(anchor - offset - child.border, head - offset - child.border, root)
+        return child.setSelection(anchor - offset - child.border, head - offset - child.border, root, force)
       offset = end
     }
 
     let anchorDOM = this.domFromPos(anchor), headDOM = this.domFromPos(head)
     let domSel = root.getSelection(), range = document.createRange()
-    if (isEquivalentPosition(anchorDOM.node, anchorDOM.offset, domSel.anchorNode, domSel.anchorOffset) &&
+    if (!force &&
+        isEquivalentPosition(anchorDOM.node, anchorDOM.offset, domSel.anchorNode, domSel.anchorOffset) &&
         isEquivalentPosition(headDOM.node, headDOM.offset, domSel.focusNode, domSel.focusOffset))
       return
 
@@ -749,8 +750,9 @@ class CustomNodeViewDesc extends NodeViewDesc {
     this.spec.deselectNode ? this.spec.deselectNode() : super.deselectNode()
   }
 
-  setSelection(anchor, head, root) {
-    this.spec.setSelection ? this.spec.setSelection(anchor, head, root) : super.setSelection(anchor, head, root)
+  setSelection(anchor, head, root, force) {
+    this.spec.setSelection ? this.spec.setSelection(anchor, head, root)
+      : super.setSelection(anchor, head, root, force)
   }
 
   destroy() {

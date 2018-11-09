@@ -120,14 +120,22 @@ export class EditorView {
 
     if (updateSel) {
       this.domObserver.stop()
+      let forceSelUpdate = false
       if (updateDoc) {
+        // Work around an issue in Chrome where changing the DOM
+        // around the active selection puts it into a broken state
+        // where the thing the user sees differs from the selection
+        // reported by the Selection object (#710)
+        let startSelContext = browser.chrome && selectionContext(this.root)
         if (!this.docView.update(state.doc, outerDeco, innerDeco, this)) {
           this.docView.destroy()
           this.docView = docViewDesc(state.doc, outerDeco, innerDeco, this.dom, this)
         }
         this.selectionReader.clearDOMState()
+        if (startSelContext)
+          forceSelUpdate = needChromeSelectionForce(startSelContext, this.root)
       }
-      selectionToDOM(this)
+      selectionToDOM(this, false, forceSelUpdate)
       this.domObserver.start()
     }
 
@@ -387,6 +395,21 @@ function updateCursorWrapper(view) {
 
 function getEditable(view) {
   return !view.someProp("editable", value => value(view.state) === false)
+}
+
+function selectionContext(root) {
+  let {focusOffset: offset, focusNode: node} = root.getSelection()
+  if (!node || node.nodeType == 3) return null
+  return [node, offset,
+          node.nodeType == 1 ? node.childNodes[offset - 1] : null,
+          node.nodeType == 1 ? node.childNodes[offset] : null]
+}
+
+function needChromeSelectionForce(context, root) {
+  let newContext = selectionContext(root)
+  if (!newContext || newContext[0].nodeType == 3) return false
+  for (let i = 0; i < context.length; i++) if (newContext[i] != context[i]) return true
+  return false
 }
 
 // EditorProps:: interface
