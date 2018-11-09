@@ -1,4 +1,4 @@
-const {doc, pre, h1, p} = require("prosemirror-test-builder")
+const {doc, pre, h1, p, hr} = require("prosemirror-test-builder")
 const {Plugin} = require("prosemirror-state")
 const {tempEditor} = require("./view")
 const ist = require("ist")
@@ -109,5 +109,15 @@ describe("EditorView draw", () => {
     view.dispatch(view.state.tr.insertText("u"))
     view.destroy()
     ist(events.join(" "), "create update destroy")
+  })
+
+  it("redraws changed node views", () => {
+    let view = tempEditor({doc: doc(p("foo"), hr)})
+    ist(view.dom.querySelector("hr"))
+    view.setProps({nodeViews: {horizontal_rule: () => {
+      return {dom: document.createElement("var")}
+    }}})
+    ist(!view.dom.querySelector("hr"))
+    ist(view.dom.querySelector("var"))
   })
 })

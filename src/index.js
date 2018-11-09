@@ -45,8 +45,10 @@ export class EditorView {
     }
 
     this.editable = getEditable(this)
+    this.redraw = false
     this.cursorWrapper = null
     updateCursorWrapper(this)
+    this.nodeViews = buildNodeViews(this)
     this.docView = docViewDesc(this.state.doc, computeDocDeco(this), viewDecorations(this), this.dom, this)
 
     this.lastSelectedViewDesc = null
@@ -81,6 +83,11 @@ export class EditorView {
   update(props) {
     if (props.handleDOMEvents != this._props.handleDOMEvents) ensureListeners(this)
     this._props = props
+    let nodeViews = buildNodeViews(this)
+    if (changedNodeViews(nodeViews, this.nodeViews)) {
+      this.nodeViews = nodeViews
+      this.redraw = true
+    }
     this.updateState(props.state)
   }
 
@@ -114,7 +121,7 @@ export class EditorView {
 
     let scroll = prev.config != state.config ? "reset"
         : state.scrollToSelection > prev.scrollToSelection ? "to selection" : "preserve"
-    let updateDoc = !this.docView.matchesNode(state.doc, outerDeco, innerDeco)
+    let updateDoc = this.redraw || !this.docView.matchesNode(state.doc, outerDeco, innerDeco)
     let updateSel = updateDoc || !state.selection.eq(prev.selection) || this.selectionReader.domChanged()
     let oldScrollPos = scroll == "preserve" && updateSel && storeScrollPos(this)
 
@@ -127,9 +134,10 @@ export class EditorView {
         // where the thing the user sees differs from the selection
         // reported by the Selection object (#710)
         let startSelContext = browser.chrome && selectionContext(this.root)
-        if (!this.docView.update(state.doc, outerDeco, innerDeco, this)) {
+        if (this.redraw || !this.docView.update(state.doc, outerDeco, innerDeco, this)) {
           this.docView.destroy()
           this.docView = docViewDesc(state.doc, outerDeco, innerDeco, this.dom, this)
+          this.redraw = false
         }
         this.selectionReader.clearDOMState()
         if (startSelContext)
@@ -410,6 +418,25 @@ function needChromeSelectionForce(context, root) {
   if (!newContext || newContext[0].nodeType == 3) return false
   for (let i = 0; i < context.length; i++) if (newContext[i] != context[i]) return true
   return false
+}
+
+function buildNodeViews(view) {
+  let result = {}
+  view.someProp("nodeViews", obj => {
+    for (let prop in obj) if (!Object.prototype.hasOwnProperty.call(result, prop))
+      result[prop] = obj[prop]
+  })
+  return result
+}
+
+function changedNodeViews(a, b) {
+  let nA = 0, nB = 0
+  for (let prop in a) {
+    if (a[prop] != b[prop]) return true
+    nA++
+  }
+  for (let _ in b) nB++
+  return nA != nB
 }
 
 // EditorProps:: interface

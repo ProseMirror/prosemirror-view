@@ -477,7 +477,7 @@ class MarkViewDesc extends ViewDesc {
   }
 
   static create(parent, mark, inline, view) {
-    let custom = customNodeViews(view)[mark.type.name]
+    let custom = view.nodeViews[mark.type.name]
     let spec = custom && custom(mark, view, inline)
     if (!spec || !spec.dom)
       spec = DOMSerializer.renderSpec(document, mark.type.spec.toDOM(mark, inline))
@@ -524,7 +524,7 @@ class NodeViewDesc extends ViewDesc {
   // implementation details to the user code that they probably will
   // never need.)
   static create(parent, node, outerDeco, innerDeco, view, pos) {
-    let custom = customNodeViews(view)[node.type.name], descObj
+    let custom = view.nodeViews[node.type.name], descObj
     let spec = custom && custom(node, view, () => {
       // (This is a function that allows the custom view to find its
       // own position)
@@ -1106,23 +1106,6 @@ function iterDeco(parent, deco, onWidget, onNode) {
     onNode(child, active.length ? active.slice() : nothing, deco.forChild(offset, child), parentIndex - 1)
     offset = end
   }
-}
-
-// Pre-calculate and cache the set of custom view specs for a given
-// prop object.
-let cachedCustomViews, cachedCustomFor
-function customNodeViews(view) {
-  if (cachedCustomFor == view._props) return cachedCustomViews
-  cachedCustomFor = view._props
-  return cachedCustomViews = buildCustomViews(view)
-}
-function buildCustomViews(view) {
-  let result = {}
-  view.someProp("nodeViews", obj => {
-    for (let prop in obj) if (!Object.prototype.hasOwnProperty.call(result, prop))
-      result[prop] = obj[prop]
-  })
-  return result
 }
 
 // List markers in Mobile Safari will mysteriously disappear
