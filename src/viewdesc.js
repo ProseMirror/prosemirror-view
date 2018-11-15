@@ -664,7 +664,10 @@ class NodeViewDesc extends ViewDesc {
 // Create a view desc for the top-level document node, to be exported
 // and used by the view class.
 export function docViewDesc(doc, outerDeco, innerDeco, dom, view) {
+  let custom = view.nodeViews[doc.type.name]
+	let spec = custom && custom(doc, view, () => { return 0; }, outerDeco)
   applyOuterDeco(dom, outerDeco, doc)
+  if (spec) return new CustomNodeViewDesc(null, doc, outerDeco, innerDeco, dom, dom, dom, spec, view)
   return new NodeViewDesc(null, doc, outerDeco, innerDeco, dom, dom, dom, view, 0)
 }
 
