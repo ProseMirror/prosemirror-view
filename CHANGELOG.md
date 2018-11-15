@@ -1,3 +1,15 @@
+## 1.6.6 (2018-11-15)
+
+### Bug fixes
+
+Work around a Chrome bug where programmatic changes near the cursor sometimes cause the visible and reported selection to disagree.
+
+Changing the `nodeView` prop will no longer leave outdated node views in the DOM.
+
+Work around an issue where Chrome unfocuses the editor or scrolls way down when pressing down arrow with the cursor between the start of a textblock and an uneditable element.
+
+Fix a bug where mapping decoration sets through changes that changed the structure of decorated subtrees sometimes produced corrupted output.
+
 ## 1.6.5 (2018-10-29)
 
 ### Bug fixes
