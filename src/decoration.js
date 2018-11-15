@@ -160,7 +160,7 @@ export class Decoration {
   //     inclusiveStart:: ?bool
   //     Determines how the left side of the decoration is
   //     [mapped](#transform.Position_Mapping) when content is
-  //     inserted directly at that positon. By default, the decoration
+  //     inserted directly at that position. By default, the decoration
   //     won't include the new content, but you can set this to `true`
   //     to make it inclusive.
   //
