@@ -1,3 +1,9 @@
+## 1.6.7 (2018-11-26)
+
+### Bug fixes
+
+Avoids redrawing of content with marks when other content in front of it is deleted.
+
 ## 1.6.6 (2018-11-15)
 
 ### Bug fixes
