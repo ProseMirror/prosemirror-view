@@ -942,9 +942,16 @@ class ViewTreeUpdater {
     }
     while (depth < marks.length) {
       this.stack.push(this.top, this.index + 1)
-      if (this.index < this.top.children.length &&
-          (next = this.top.children[this.index]).matchesMark(marks[depth])) {
-        this.top = next
+      let found = -1
+      for (let i = this.index; i < Math.min(this.index + 3, this.top.children.length); i++) {
+        if (this.top.children[i].matchesMark(marks[depth])) { found = i; break }
+      }
+      if (found > -1) {
+        if (found > this.index) {
+          this.changed = true
+          this.top.children.splice(this.index, found - this.index)
+        }
+        this.top = this.top.children[this.index]
       } else {
         let markDesc = MarkViewDesc.create(this.top, marks[depth], inline, view)
         this.top.children.splice(this.index, 0, markDesc)
