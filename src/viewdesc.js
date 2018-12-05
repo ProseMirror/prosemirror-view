@@ -928,7 +928,7 @@ class ViewTreeUpdater {
   // marks, reusing existing mark descs when possible.
   syncToMarks(marks, inline, view) {
     let keep = 0, depth = this.stack.length >> 1
-    let maxKeep = Math.min(depth, marks.length), next
+    let maxKeep = Math.min(depth, marks.length)
     while (keep < maxKeep &&
            (keep == depth - 1 ? this.top : this.stack[(keep + 1) << 1]).matchesMark(marks[keep]))
       keep++
