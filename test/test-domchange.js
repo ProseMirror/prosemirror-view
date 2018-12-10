@@ -1,6 +1,6 @@
 const ist = require("ist")
 const {eq, doc, p, pre, h1, a, em, img: img_, br, strong, blockquote} = require("prosemirror-test-builder")
-const {EditorState} = require("prosemirror-state")
+const {EditorState, TextSelection} = require("prosemirror-state")
 const {tempEditor, findTextNode} = require("./view")
 
 const img = img_({src: "data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw=="})
@@ -425,5 +425,30 @@ describe("DOM change", () => {
     ist(steps.length, 1)
     ist(steps[0].from, 3)
     ist(steps[0].to, 5)
+  })
+
+  it("creates a step that covers the entire selection for partially-matching replacement", () => {
+    let steps, view = tempEditor({
+      doc: doc(p("one <a>two<b> three")),
+      dispatchTransaction(tr) {
+        steps = tr.steps
+        view.updateState(view.state.apply(tr))
+      }
+    })
+
+    findTextNode(view.dom, "one two three").nodeValue = "one t three"
+    flush(view)
+    ist(steps.length, 1)
+    ist(steps[0].from, 5)
+    ist(steps[0].to, 8)
+    ist(steps[0].slice.content.toString(), '<"t">')
+
+    view.dispatch(view.state.tr.setSelection(TextSelection.create(view.state.doc, 7, 12)))
+    findTextNode(view.dom, "one t three").nodeValue = "one t e"
+    flush(view)
+    ist(steps.length, 1)
+    ist(steps[0].from, 7)
+    ist(steps[0].to, 12)
+    ist(steps[0].slice.content.toString(), '<"e">')
   })
 })

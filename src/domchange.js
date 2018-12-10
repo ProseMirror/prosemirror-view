@@ -244,6 +244,19 @@ function readDOMChange(view, mapping, oldState, range, allowTypeOver) {
     }
     return
   }
+  // Handle the case where overwriting a selection by typing matches
+  // the start or end of the selected content, creating a change
+  // that's smaller than what was actually overwritten.
+  if (oldState.selection.from < oldState.selection.to &&
+      change.start == change.endB &&
+      oldState.selection instanceof TextSelection) {
+    if (change.start > oldState.selection.from && change.start <= oldState.selection.from + 2) {
+      change.start = oldState.selection.from
+    } else if (change.endA < oldState.selection.to && change.endA >= oldState.selection.to - 2) {
+      change.endB += (oldState.selection.to - change.endA)
+      change.endA = oldState.selection.to
+    }
+  }
 
   let $from = parse.doc.resolveNoCache(change.start - parse.from)
   let $to = parse.doc.resolveNoCache(change.endB - parse.from)
