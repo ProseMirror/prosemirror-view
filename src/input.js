@@ -259,7 +259,11 @@ class MouseDown {
     }
 
     this.mightDrag = null
-    this.target = flushed ? null : event.target
+
+    const target = flushed ? null : event.target
+    const targetDesc = target ? view.docView.nearestDesc(target, true) : null
+    this.target = targetDesc ? targetDesc.dom : null
+
     if (targetNode.type.spec.draggable && targetNode.type.spec.selectable !== false ||
         view.state.selection instanceof NodeSelection && targetPos == view.state.selection.from)
       this.mightDrag = {node: targetNode,
