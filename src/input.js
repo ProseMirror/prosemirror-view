@@ -308,7 +308,15 @@ class MouseDown {
       this.view.selectionReader.poll("pointer")
     } else if (handleSingleClick(this.view, this.pos.pos, this.pos.inside, event, this.selectNode)) {
       event.preventDefault()
-    } else if (this.flushed) {
+    } else if (this.flushed ||
+               // Chrome will sometimes treat a node selection as a
+               // cursor, but still report that the node is selected
+               // when asked through getSelection. You'll then get a
+               // situation where clicking at the point where that
+               // (hidden) cursor is doesn't change the selection, and
+               // thus doesn't get a reaction from ProseMirror. This
+               // works around that.
+               (browser.chrome && !(this.view.state.selection instanceof TextSelection))) {
       updateSelection(this.view, Selection.near(this.view.state.doc.resolve(this.pos.pos)), "pointer")
       event.preventDefault()
     } else {
