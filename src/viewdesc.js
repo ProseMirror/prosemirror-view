@@ -548,7 +548,8 @@ class NodeViewDesc extends ViewDesc {
     dom = applyOuterDeco(dom, outerDeco, node)
 
     if (spec)
-      return descObj = new CustomNodeViewDesc(parent, node, outerDeco, innerDeco, dom, contentDOM, nodeDOM, spec, view)
+      return descObj = new CustomNodeViewDesc(parent, node, outerDeco, innerDeco, dom, contentDOM, nodeDOM,
+                                              spec, view, pos + 1)
     else if (node.isText)
       return new TextViewDesc(parent, node, outerDeco, innerDeco, dom, nodeDOM, view)
     else
@@ -721,8 +722,8 @@ class BRHackViewDesc extends ViewDesc {
 // customized.
 class CustomNodeViewDesc extends NodeViewDesc {
   // : (?ViewDesc, Node, [Decoration], DecorationSet, dom.Node, ?dom.Node, NodeView, EditorView)
-  constructor(parent, node, outerDeco, innerDeco, dom, contentDOM, nodeDOM, spec, view) {
-    super(parent, node, outerDeco, innerDeco, dom, contentDOM, nodeDOM, view)
+  constructor(parent, node, outerDeco, innerDeco, dom, contentDOM, nodeDOM, spec, view, pos) {
+    super(parent, node, outerDeco, innerDeco, dom, contentDOM, nodeDOM, view, pos)
     this.spec = spec
   }
 
