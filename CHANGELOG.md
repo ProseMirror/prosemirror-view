@@ -1,3 +1,17 @@
+## 1.6.8 (2019-01-03)
+
+### Bug fixes
+
+When replacing a selection by typing over it with a letter that matches its start or end, the editor now generates a step that covers the whole replacement.
+
+Fixes dragging a node when the mouse is in a child DOM element that doesn't represent a document node. Work around Chrome bug in selection management
+
+Fixes an issue in Chrome where clicking at the start of a textblock after a selected node would sometimes not move the cursor there.
+
+Fix issue where a node view's `getPos` callback could sometimes return `NaN`.
+
+Fix an issue where deleting more than 5 nodes might cause the nodes after that to be needlessly redrawn.
+
 ## 1.6.7 (2018-11-26)
 
 ### Bug fixes
