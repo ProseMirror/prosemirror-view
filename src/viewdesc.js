@@ -968,16 +968,22 @@ class ViewTreeUpdater {
   // Try to find a node desc matching the given data. Skip over it and
   // return true when successful.
   findNodeMatch(node, outerDeco, innerDeco, index) {
-    for (let i = this.index, children = this.top.children, e = Math.min(children.length, i + 5); i < e; i++) {
-      let child = children[i], preMatched
-      if (child.matchesNode(node, outerDeco, innerDeco) &&
-          ((preMatched = this.preMatched.indexOf(child)) == -1 || preMatched == index)) {
-        this.destroyBetween(this.index, i)
-        this.index++
-        return true
+    let found = -1, preMatch = this.preMatched[index], children = this.top.children
+    if (preMatch && preMatch.matchesNode(node, outerDeco, innerDeco)) {
+      found = children.indexOf(preMatch)
+    } else {
+      for (let i = this.index, e = Math.min(children.length, i + 5); i < e; i++) {
+        let child = children[i]
+        if (child.matchesNode(node, outerDeco, innerDeco) && this.preMatched.indexOf(child) < 0) {
+          found = i
+          break
+        }
       }
     }
-    return false
+    if (found < 0) return false
+    this.destroyBetween(this.index, found)
+    this.index++
+    return true
   }
 
   // : (Node, [Decoration], DecorationSet, EditorView, Fragment, number) → bool

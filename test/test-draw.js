@@ -51,6 +51,13 @@ describe("EditorView draw", () => {
     ist(view.dom.querySelector("pre"), oldPre)
   })
 
+  it("doesn't redraw after a big deletion", () => {
+    let view = tempEditor({doc: doc(p(), p(), p(), p(), p(), p(), p(), p(), h1("!"), p(), p())})
+    let oldH = view.dom.querySelector("h1")
+    view.dispatch(view.state.tr.delete(2, 14))
+    ist(view.dom.querySelector("h1"), oldH)
+  })
+
   it("adds classes from the attributes prop", () => {
     let view = tempEditor({doc: doc(p()), attributes: {class: "foo bar"}})
     ist(view.dom.classList.contains("foo"))
