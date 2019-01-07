@@ -471,9 +471,10 @@ class CursorWrapperDesc extends WidgetViewDesc {
 // necessary.
 class MarkViewDesc extends ViewDesc {
   // : (ViewDesc, Mark, dom.Node)
-  constructor(parent, mark, dom, contentDOM) {
+  constructor(parent, mark, dom, contentDOM, disableWrapping) {
     super(parent, [], dom, contentDOM)
     this.mark = mark
+    this.disableWrapping = disableWrapping
   }
 
   static create(parent, mark, inline, view) {
@@ -481,12 +482,15 @@ class MarkViewDesc extends ViewDesc {
     let spec = custom && custom(mark, view, inline)
     if (!spec || !spec.dom)
       spec = DOMSerializer.renderSpec(document, mark.type.spec.toDOM(mark, inline))
-    return new MarkViewDesc(parent, mark, spec.dom, spec.contentDOM || spec.dom)
+    return new MarkViewDesc(parent, mark, spec.dom, spec.contentDOM || spec.dom, spec.disableWrapping)
   }
 
   parseRule() { return {mark: this.mark.type.name, attrs: this.mark.attrs, contentElement: this.contentDOM} }
 
-  matchesMark(mark) { return this.dirty != NODE_DIRTY && this.mark.eq(mark) }
+  matchesMark(mark) { 
+    let disableWrapping = this.contentDOM && this.disableWrapping
+    return this.dirty != NODE_DIRTY && !disableWrapping && this.mark.eq(mark) 
+  }
 
   markDirty(from, to) {
     super.markDirty(from, to)
