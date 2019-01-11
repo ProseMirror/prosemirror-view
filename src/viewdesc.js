@@ -654,11 +654,13 @@ class NodeViewDesc extends ViewDesc {
   // Mark this node as being the selected node.
   selectNode() {
     this.nodeDOM.classList.add("ProseMirror-selectednode")
+    if (this.contentDOM || !this.node.type.spec.draggable) this.dom.draggable = true
   }
 
   // Remove selected node marking from this node.
   deselectNode() {
     this.nodeDOM.classList.remove("ProseMirror-selectednode")
+    if (this.contentDOM || !this.node.type.spec.draggable) this.dom.draggable = false
   }
 }
 
