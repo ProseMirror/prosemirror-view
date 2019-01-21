@@ -486,9 +486,7 @@ class MarkViewDesc extends ViewDesc {
 
   parseRule() { return {mark: this.mark.type.name, attrs: this.mark.attrs, contentElement: this.contentDOM} }
 
-  matchesMark(mark) { 
-    return this.dirty != NODE_DIRTY && mark.type.spec.spanning !== false && this.mark.eq(mark) 
-  }
+  matchesMark(mark) { return this.dirty != NODE_DIRTY && this.mark.eq(mark) }
 
   markDirty(from, to) {
     super.markDirty(from, to)
@@ -933,7 +931,7 @@ class ViewTreeUpdater {
     let keep = 0, depth = this.stack.length >> 1
     let maxKeep = Math.min(depth, marks.length)
     while (keep < maxKeep &&
-           (keep == depth - 1 ? this.top : this.stack[(keep + 1) << 1]).matchesMark(marks[keep]))
+           (keep == depth - 1 ? this.top : this.stack[(keep + 1) << 1]).matchesMark(marks[keep]) && marks[keep].type.spec.spanning !== false)
       keep++
 
     while (keep < depth) {
