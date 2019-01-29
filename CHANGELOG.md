@@ -1,3 +1,13 @@
+## 1.7.0 (2019-01-29)
+
+### Bug fixes
+
+Fix an issue where node selections on uneditable nodes couldn't be copied or cut on Chrome.
+
+### New features
+
+The editable view now recognizes the [`spanning`](https://prosemirror.net/docs/ref/#model.MarkSpec.spanning) mark property.
+
 ## 1.6.8 (2019-01-03)
 
 ### Bug fixes
