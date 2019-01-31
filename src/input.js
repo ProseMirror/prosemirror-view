@@ -74,6 +74,7 @@ editHandlers.keydown = (view, event) => {
   view.shiftKey = event.keyCode == 16 || event.shiftKey
   if (view.inDOMChange) {
     if (view.inDOMChange.composing) return
+    if (view.inDOMChange.ignoreKeyDownOnCompositionEnd(event)) return
     view.inDOMChange.finish()
   }
   view.lastKeyCode = event.keyCode
@@ -367,7 +368,7 @@ editHandlers.compositionend = (view, e) => {
     else return
   }
 
-  view.inDOMChange.compositionEnd()
+  view.inDOMChange.compositionEnd(e)
 }
 
 editHandlers.input = view => {

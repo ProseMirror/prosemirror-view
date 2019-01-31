@@ -12,6 +12,7 @@ export class DOMChange {
     this.view = view
     this.state = view.state
     this.composing = composing
+    this.compositionEndedAt = null
     this.from = this.to = null
     this.typeOver = false
     this.timeout = composing ? null : setTimeout(() => this.finish(), DOMChange.commitTimeout)
@@ -82,11 +83,30 @@ export class DOMChange {
     this.view.inDOMChange = null
   }
 
-  compositionEnd() {
+  compositionEnd(event) {
     if (this.composing) {
       this.composing = false
+      if (event) this.compositionEndedAt = event.timeStamp
       this.timeout = setTimeout(() => this.finish(), 50)
     }
+  }
+
+  ignoreKeyDownOnCompositionEnd(event) {
+    // See https://www.stum.de/2016/06/24/handling-ime-events-in-javascript/.
+    // On Japanese input method editors (IMEs), the Enter key is used to confirm character
+    // selection. On Safari, when Enter is pressed, compositionend and keydown events are
+    // emitted. The keydown event triggers newline insertion, which we don't want.
+    // This method returns true if the keydown event should be ignored.
+    // We only ignore it once, as pressing Enter a second time *should* insert a newline.
+    // Furthermore, the keydown event timestamp must be close to the compositionEndedAt timestamp.
+    // This guards against the case where compositionend is triggered without the keyboard
+    // (e.g. character confirmation may be done with the mouse), and keydown is triggered
+    // afterwards- we wouldn't want to ignore the keydown event in this case.
+    if (browser.safari && this.compositionEndedAt !== null && Math.abs(event.timeStamp - this.compositionEndedAt) < 500) {
+      this.compositionEndedAt = null
+      return true
+    }
+    return false
   }
 
   static start(view, composing) {
@@ -94,6 +114,7 @@ export class DOMChange {
       if (composing) {
         clearTimeout(view.inDOMChange.timeout)
         view.inDOMChange.composing = true
+        view.inDOMChange.compositionEndedAt = null
       }
     } else {
       view.inDOMChange = new DOMChange(view, composing)
