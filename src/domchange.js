@@ -102,11 +102,9 @@ export class DOMChange {
     // This guards against the case where compositionend is triggered without the keyboard
     // (e.g. character confirmation may be done with the mouse), and keydown is triggered
     // afterwards- we wouldn't want to ignore the keydown event in this case.
-    if (this.compositionEndedAt !== null) {
-      if (Math.abs(event.timeStamp - this.compositionEndedAt) < 200) {
-        this.compositionEndedAt = null
-        return true
-      }
+    if (browser.safari && this.compositionEndedAt !== null && Math.abs(event.timeStamp - this.compositionEndedAt) < 500) {
+      this.compositionEndedAt = null
+      return true
     }
     return false
   }
