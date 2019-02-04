@@ -1,3 +1,9 @@
+## 1.7.1 (2019-02-04)
+
+### Bug fixes
+
+Fix an issue on Safari where an Enter key events that was part of a composition is interpreted as stand-alone Enter press.
+
 ## 1.7.0 (2019-01-29)
 
 ### Bug fixes
