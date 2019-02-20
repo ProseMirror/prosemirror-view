@@ -14,10 +14,10 @@ function apply(view, sel) {
   return true
 }
 
-function selectHorizontally(view, dir) {
+function selectHorizontally(view, dir, mods) {
   let sel = view.state.selection
   if (sel instanceof TextSelection) {
-    if (!sel.empty) {
+    if (!sel.empty || mods.indexOf("s") > -1) {
       return false
     } else if (view.endOfTextblock(dir > 0 ? "right" : "left")) {
       let next = moveSelectionBlock(view.state, dir)
@@ -166,9 +166,9 @@ function setSelFocus(view, sel, node, offset) {
 // Check whether vertical selection motion would involve node
 // selections. If so, apply it (if not, the result is left to the
 // browser)
-function selectVertically(view, dir) {
+function selectVertically(view, dir, mods) {
   let sel = view.state.selection
-  if (sel instanceof TextSelection && !sel.empty) return false
+  if (sel instanceof TextSelection && !sel.empty || mods.indexOf("s") > -1) return false
   let {$from, $to} = sel
 
   if (!$from.parent.inlineContent || view.endOfTextblock(dir < 0 ? "up" : "down")) {
@@ -246,13 +246,13 @@ export function captureKeyDown(view, event) {
   } else if (code == 13 || code == 27) { // Enter, Esc
     return true
   } else if (code == 37) { // Left arrow
-    return selectHorizontally(view, -1) || skipIgnoredNodesLeft(view)
+    return selectHorizontally(view, -1, mods) || skipIgnoredNodesLeft(view)
   } else if (code == 39) { // Right arrow
-    return selectHorizontally(view, 1) || skipIgnoredNodesRight(view)
+    return selectHorizontally(view, 1, mods) || skipIgnoredNodesRight(view)
   } else if (code == 38) { // Up arrow
-    return selectVertically(view, -1) || skipIgnoredNodesLeft(view)
+    return selectVertically(view, -1, mods) || skipIgnoredNodesLeft(view)
   } else if (code == 40) { // Down arrow
-    return chromeDownArrowBug(view) || selectVertically(view, 1) || skipIgnoredNodesRight(view)
+    return chromeDownArrowBug(view) || selectVertically(view, 1, mods) || skipIgnoredNodesRight(view)
   } else if (mods == (browser.mac ? "m" : "c") &&
              (code == 66 || code == 73 || code == 89 || code == 90)) { // Mod-[biyz]
     return true
