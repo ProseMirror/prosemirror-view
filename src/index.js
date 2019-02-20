@@ -591,12 +591,12 @@ function changedNodeViews(a, b) {
 //   the value provided first (as in
 //   [`someProp`](#view.EditorView.someProp)) will be used.
 //
-//   scrollThreshold:: ?number | {top: number, right: number, bottom: number, left: number}
+//   scrollThreshold:: ?union<number, {top: number, right: number, bottom: number, left: number}>
 //   Determines the distance (in pixels) between the cursor and the
 //   end of the visible viewport at which point, when scrolling the
 //   cursor into view, scrolling takes place. Defaults to 0.
 //
-//   scrollMargin:: ?number | {top: number, right: number, bottom: number, left: number}
+//   scrollMargin:: ?union<number, {top: number, right: number, bottom: number, left: number}>
 //   Determines the extra space (in pixels) that is left above or
 //   below the cursor when it is scrolled into view. Defaults to 5.
 
