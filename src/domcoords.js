@@ -261,7 +261,6 @@ function withFlushedState(view, state, f) {
 function endOfTextblockVertical(view, state, dir) {
   let sel = state.selection
   let $pos = dir == "up" ? sel.$anchor.min(sel.$head) : sel.$anchor.max(sel.$head)
-  if (!$pos.depth) return false
   return withFlushedState(view, state, () => {
     let {node: dom} = view.docView.domFromPos($pos.pos)
     for (;;) {
@@ -289,7 +288,7 @@ const maybeRTL = /[\u0590-\u08ac]/
 
 function endOfTextblockHorizontal(view, state, dir) {
   let {$head} = state.selection
-  if (!$head.parent.isTextblock || !$head.depth) return false
+  if (!$head.parent.isTextblock) return false
   let offset = $head.parentOffset, atStart = !offset, atEnd = offset == $head.parent.content.size
   let sel = getSelection()
   // If the textblock is all LTR, or the browser doesn't support
@@ -305,7 +304,7 @@ function endOfTextblockHorizontal(view, state, dir) {
     // the document).
     let oldRange = sel.getRangeAt(0), oldNode = sel.focusNode, oldOff = sel.focusOffset
     sel.modify("move", dir, "character")
-    let parentDOM = view.docView.domAfterPos($head.before())
+    let parentDOM = $head.depth ? view.docView.domAfterPos($head.before()) : view.dom
     let result = !parentDOM.contains(sel.focusNode.nodeType == 1 ? sel.focusNode : sel.focusNode.parentNode) ||
         (oldNode == sel.focusNode && oldOff == sel.focusOffset)
     // Restore the previous selection
