@@ -1,7 +1,8 @@
-const {schema, doc, p} = require("prosemirror-test-builder")
+const {schema, doc, p, a} = require("prosemirror-test-builder")
 const ist = require("ist")
 const {tempEditor} = require("./view")
 const {Decoration, DecorationSet} = require("../dist")
+const {TextSelection} = require("prosemirror-state")
 
 describe("EditorView.endOfTextblock", () => {
   it("works at the left side of a textblock", () => {
@@ -60,6 +61,19 @@ describe("EditorView.endOfTextblock", () => {
     let view = tempEditor({doc: doc(p("foo <a>" + new Array(100).join("foo ")))})
     ist(view.endOfTextblock("up"))
     ist(!view.endOfTextblock("down"))
+  })
+
+  it("works for virtual motion when in a mark", () => {
+    let view = tempEditor({doc: doc(p(a("fo<a>o "), new Array(50).join("foo "), a("fo<b>o "),
+                                      new Array(50).join("foo "), a("fo<c>o")))})
+    ist(view.endOfTextblock("up"))
+    ist(!view.endOfTextblock("down"))
+    view.dispatch(view.state.tr.setSelection(TextSelection.create(view.state.doc, view.state.doc.tag.b)))
+    ist(!view.endOfTextblock("up"))
+    ist(!view.endOfTextblock("down"))
+    view.dispatch(view.state.tr.setSelection(TextSelection.create(view.state.doc, view.state.doc.tag.c)))
+    ist(!view.endOfTextblock("up"))
+    ist(view.endOfTextblock("down"))
   })
 
   // Bidi functionality only works when the browser has Selection.modify

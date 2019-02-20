@@ -265,7 +265,7 @@ function endOfTextblockVertical(view, state, dir) {
     let {node: dom} = view.docView.domFromPos($pos.pos)
     for (;;) {
       let nearest = view.docView.nearestDesc(dom, true)
-      if (!nearest || nearest.node.isBlock) break
+      if (!nearest || nearest.node.isBlock) { dom = nearest.dom; break }
       dom = nearest.dom.parentNode
     }
     let coords = coordsAtPos(view, $pos.pos)
