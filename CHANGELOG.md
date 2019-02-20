@@ -1,3 +1,9 @@
+## 1.7.2 (2019-02-20)
+
+### Bug fixes
+
+Pressing shift-left/right next to a selectable node no longer selects the node instead of creating a text selection across it.
+
 ## 1.7.1 (2019-02-04)
 
 ### Bug fixes
