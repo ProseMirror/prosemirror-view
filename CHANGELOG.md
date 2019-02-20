@@ -1,3 +1,9 @@
+## 1.7.3 (2019-02-20)
+
+### Bug fixes
+
+[`endOfTextblock`](https://prosemirror.net/docs/ref/#view.EditorView.endOfTextblock) now works on textblocks that are the editor's top-level node.
+
 ## 1.7.2 (2019-02-20)
 
 ### Bug fixes
