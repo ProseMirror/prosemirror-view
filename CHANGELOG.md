@@ -1,3 +1,13 @@
+## 1.8.0 (2019-02-21)
+
+### Bug fixes
+
+Fix a bug where [`endOfTextblock`](https://prosemirror.net/docs/ref/#view.EditorView.endOfTextblock) spuriously returns true when the cursor is in a mark.
+
+### New features
+
+[`posAtCoords`](https://prosemirror.net/docs/ref/#view.EditorView.posAtCoords) will no longer return `null` when called with coordinates outside the browser's viewport. (It _will_ still return null for coordinates outside of the editor's bounding box.)
+
 ## 1.7.3 (2019-02-20)
 
 ### Bug fixes
