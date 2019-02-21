@@ -120,11 +120,15 @@ function findOffsetInText(node, coords) {
     range.setStart(node, i)
     let rect = singleRect(range, 1)
     if (rect.top == rect.bottom) continue
-    if (rect.left - 1 <= coords.left && rect.right + 1 >= coords.left &&
-        rect.top - 1 <= coords.top && rect.bottom + 1 >= coords.top)
+    if (inRect(coords, rect))
       return {node, offset: i + (coords.left >= (rect.left + rect.right) / 2 ? 1 : 0)}
   }
   return {node, offset: 0}
+}
+
+function inRect(coords, rect) {
+  return coords.left >= rect.left - 1 && coords.left <= rect.right + 1&&
+    coords.top >= rect.top - 1 && coords.top <= rect.bottom + 1
 }
 
 function targetKludge(dom, coords) {
@@ -135,8 +139,6 @@ function targetKludge(dom, coords) {
 }
 
 function posFromElement(view, elt, coords) {
-  if (!view.dom.contains(elt.nodeType != 1 ? elt.parentNode : elt)) return null
-
   let {node, offset} = findOffsetInNode(elt, coords), bias = -1
   if (node.nodeType == 1 && !node.firstChild) {
     let rect = node.getBoundingClientRect()
@@ -168,6 +170,22 @@ function posFromCaret(view, node, offset, coords) {
   return outside > -1 ? outside : view.docView.posFromDOM(node, offset)
 }
 
+function elementFromPoint(element, coords, box) {
+  let len = element.childNodes.length
+  if (len) for (let startI = Math.max(0, Math.floor(len * (coords.top - box.top) / (box.bottom - box.top)) - 2), i = startI;;) {
+    let child = element.childNodes[i]
+    if (child.nodeType == 1) {
+      let rects = child.getClientRects()
+      for (let j = 0; j < rects.length; j++) {
+        let rect = rects[j]
+        if (inRect(coords, rect)) return elementFromPoint(child, coords, rect)
+      }
+      if ((i = (i + 1) % len) == startI) break
+    }
+  }
+  return element
+}
+
 // Given an x,y position on the editor, get the position in the document.
 export function posAtCoords(view, coords) {
   let root = view.root, node, offset
@@ -181,7 +199,12 @@ export function posAtCoords(view, coords) {
   }
 
   let elt = root.elementFromPoint(coords.left, coords.top + 1), pos
-  if (!elt) return null
+  if (!elt || !view.dom.contains(elt.nodeType != 1 ? elt.parentNode : elt)) {
+    let box = view.dom.getBoundingClientRect()
+    if (!inRect(coords, box)) return null
+    elt = elementFromPoint(view.dom, coords, box)
+    if (!elt) return null
+  }
   elt = targetKludge(elt, coords)
   if (node) {
     // Suspiciously specific kludge to work around caret*FromPoint
@@ -190,15 +213,12 @@ export function posAtCoords(view, coords) {
         coords.top > node.lastChild.getBoundingClientRect().bottom)
       pos = view.state.doc.content.size
     // Ignore positions directly after a BR, since caret*FromPoint
-    // 'round up' positions that would be more accurately places
+    // 'round up' positions that would be more accurately placed
     // before the BR node.
     else if (offset == 0 || node.nodeType != 1 || node.childNodes[offset - 1].nodeName != "BR")
       pos = posFromCaret(view, node, offset, coords)
   }
-  if (pos == null) {
-    pos = posFromElement(view, elt, coords)
-    if (pos == null) return null
-  }
+  if (pos == null) pos = posFromElement(view, elt, coords)
 
   let desc = view.docView.nearestDesc(elt, true)
   return {pos, inside: desc ? desc.posAtStart - desc.border : -1}

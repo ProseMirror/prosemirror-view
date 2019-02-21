@@ -235,8 +235,8 @@ export class EditorView {
   // :: ({left: number, top: number}) → ?{pos: number, inside: number}
   // Given a pair of viewport coordinates, return the document
   // position that corresponds to them. May return null if the given
-  // coordinates aren't inside of the visible editor. When an object
-  // is returned, its `pos` property is the position nearest to the
+  // coordinates aren't inside of the editor. When an object is
+  // returned, its `pos` property is the position nearest to the
   // coordinates, and its `inside` property holds the position of the
   // inner node that the position falls inside of, or -1 if it is at
   // the top level, not in any node.
