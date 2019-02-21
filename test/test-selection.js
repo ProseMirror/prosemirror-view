@@ -134,7 +134,7 @@ describe("EditorView", () => {
       setTimeout(() => {
         allPositions(view.state.doc).forEach(pos => {
           let coords = view.coordsAtPos(pos)
-          let found = view.posAtCoords(coords).pos
+          let found = view.posAtCoords({top: coords.top + 1, left: coords.left}).pos
           ist(found, pos)
           setSel(view, pos)
         })
