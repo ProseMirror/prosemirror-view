@@ -1070,15 +1070,15 @@ function preMatch(frag, descs) {
 
 function compareSide(a, b) { return a.type.side - b.type.side }
 
-// : (ViewDesc, DecorationSet, (Decoration), (Node, [Decoration], DecorationSet, number))
+// : (ViewDesc, DecorationSet, (Decoration, number), (Node, [Decoration], DecorationSet, number))
 // This function abstracts iterating over the nodes and decorations in
 // a fragment. Calls `onNode` for each node, with its local and child
 // decorations. Splits text nodes when there is a decoration starting
 // or ending inside of them. Calls `onWidget` for each widget.
-function iterDeco(parent, deco, onWidget, onNode) {
+function iterDeco(parent, deco, onWidget, onNode, gapFrom, gapTo, onGap) {
   let locals = deco.locals(parent), offset = 0
   // Simple, cheap variant for when there are no local decorations
-  if (locals.length == 0) {
+  if (locals.length == 0 && !onGap) {
     for (let i = 0; i < parent.childCount; i++) {
       let child = parent.child(i)
       onNode(child, locals, deco.forChild(offset, child), i)
@@ -1102,7 +1102,11 @@ function iterDeco(parent, deco, onWidget, onNode) {
     }
 
     let child, index
-    if (restNode) {
+    if (onGap && gapFrom == offset) {
+      onGap()
+      offset = gapTo
+      while (decoIndex < locals.length && locals[decoIndex].to < offset) decoIndex++
+    } else if (restNode) {
       index = -1
       child = restNode
       restNode = null
@@ -1119,6 +1123,7 @@ function iterDeco(parent, deco, onWidget, onNode) {
     let end = offset + child.nodeSize
     if (child.isText) {
       let cutAt = end
+      if (onGap && gapTo > offset && gapTo < cutAt) cutAt = gapTo
       if (decoIndex < locals.length && locals[decoIndex].from < cutAt) cutAt = locals[decoIndex].from
       for (let i = 0; i < active.length; i++) if (active[i].to < cutAt) cutAt = active[i].to
       if (cutAt < end) {
