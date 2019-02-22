@@ -159,7 +159,7 @@ function setSelFocus(view, sel, node, offset) {
   } else if (sel.extend) {
     sel.extend(node, offset)
   }
-  view.domObserver.ignoreCurSelection()
+  view.domObserver.setCurSelection()
 }
 
 // : (EditorState, number)

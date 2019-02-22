@@ -246,12 +246,7 @@ export class EditorView {
   // inner node that the position falls inside of, or -1 if it is at
   // the top level, not in any node.
   posAtCoords(coords) {
-    let pos = posAtCoords(this, coords)
-    if (this.inDOMChange && pos) {
-      pos.pos = this.inDOMChange.mapping.map(pos.pos)
-      if (pos.inside != -1) pos.inside = this.inDOMChange.mapping.map(pos.inside)
-    }
-    return pos
+    return posAtCoords(this, coords)
   }
 
   // :: (number) → {left: number, right: number, top: number, bottom: number}
@@ -259,8 +254,6 @@ export class EditorView {
   // and `right` will be the same number, as this returns a flat
   // cursor-ish rectangle.
   coordsAtPos(pos) {
-    if (this.inDOMChange)
-      pos = this.inDOMChange.mapping.invert().map(pos)
     return coordsAtPos(this, pos)
   }
 
@@ -270,8 +263,6 @@ export class EditorView {
   // internal DOM, only inspect it (and even that is usually not
   // necessary).
   domAtPos(pos) {
-    if (this.inDOMChange)
-      pos = this.inDOMChange.mapping.invert().map(pos)
     return this.docView.domFromPos(pos)
   }
 
@@ -285,8 +276,6 @@ export class EditorView {
   // editor DOM directly, or add styling this way, since that will be
   // immediately overriden by the editor as it redraws the node.
   nodeDOM(pos) {
-    if (this.inDOMChange)
-      pos = this.inDOMChange.mapping.invert().map(pos)
     let desc = this.docView.descAt(pos)
     return desc ? desc.nodeDOM : null
   }
@@ -303,8 +292,6 @@ export class EditorView {
   posAtDOM(node, offset, bias = -1) {
     let pos = this.docView.posFromDOM(node, offset, bias)
     if (pos == null) throw new RangeError("DOM position not inside the editor")
-    if (this.inDOMChange)
-      pos = this.inDOMChange.mapping.map(pos)
     return pos
   }
 

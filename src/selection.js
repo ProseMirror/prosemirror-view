@@ -67,8 +67,8 @@ export function selectionToDOM(view, takeFocus, force) {
     }
   }
 
+  view.domObserver.setCurSelection()
   view.domObserver.connectSelection()
-  view.domObserver.ignoreCurSelection()
 }
 
 // Kludge to work around Webkit not allowing a selection to start/end

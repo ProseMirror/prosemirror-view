@@ -15,7 +15,6 @@ function setSel(aNode, aOff, fNode, fOff) {
 
 function flush(view) {
   view.domObserver.flush()
-  if (view.inDOMChange) view.inDOMChange.finish()
 }
 
 describe("DOM change", () => {
@@ -248,16 +247,6 @@ describe("DOM change", () => {
     ist(view.dom.textContent, "foobar")
   })
 
-  it("maps through concurrent changes", () => {
-    let view = tempEditor({doc: doc(p("one two three"))})
-    findTextNode(view.dom, "one two three").nodeValue = "one two THREE"
-    view.dispatchEvent({type: "input"})
-    view.dispatch(view.state.tr.insertText("ONE AND A HALF", 1, 4))
-    flush(view)
-    ist(view.dom.textContent, "ONE AND A HALF two THREE")
-    ist(view.state.doc, doc(p("ONE AND A HALF two THREE")), eq)
-  })
-
   it("aborts when an incompatible state is set", () => {
     let view = tempEditor({doc: doc(p("abcde"))})
     findTextNode(view.dom, "abcde").nodeValue = "xabcde"
@@ -268,12 +257,14 @@ describe("DOM change", () => {
   })
 
   it("recognizes a mark change as such", () => {
-    let view = tempEditor({doc: doc(p("one"))})
+    let view = tempEditor({doc: doc(p("one")), dispatchTransaction(tr) {
+      ist(tr.steps.length, 1)
+      ist(tr.steps[0].toJSON().stepType, "addMark")
+      view.updateState(view.state.apply(tr))
+    }})
     view.dom.querySelector("p").innerHTML = "<b>one</b>"
-    view.dispatchEvent({type: "input"})
-    view.dispatch(view.state.tr.insertText("X", 2, 2))
     flush(view)
-    ist(view.state.doc, doc(p(strong("oXne"))), eq)
+    ist(view.state.doc, doc(p(strong("one"))), eq)
   })
 
   it("preserves marks on deletion", () => {

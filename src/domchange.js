@@ -1,95 +1,11 @@
 import {Fragment, DOMParser} from "prosemirror-model"
 import {Selection, TextSelection} from "prosemirror-state"
-import {Mapping} from "prosemirror-transform"
 
-import {TrackMappings} from "./trackmappings"
-import {selectionBetween} from "./selection"
+import {selectionBetween, selectionFromDOM} from "./selection"
 import {selectionCollapsed, keyEvent} from "./dom"
 import browser from "./browser"
 
-export class DOMChange {
-  constructor(view, composing) {
-    this.view = view
-    this.state = view.state
-    this.composing = composing
-    this.compositionEndedAt = null
-    this.from = this.to = null
-    this.typeOver = false
-    this.timeout = composing ? null : setTimeout(() => this.finish(), DOMChange.commitTimeout)
-    this.trackMappings = new TrackMappings(view.state)
-
-    // If there have been changes since this DOM update started, we must
-    // map our start and end positions, as well as the new selection
-    // positions, through them. This tracks that mapping.
-    this.mapping = new Mapping
-    this.mappingTo = view.state
-  }
-
-  addRange(from, to) {
-    if (this.from == null) {
-      this.from = from
-      this.to = to
-    } else {
-      this.from = Math.min(from, this.from)
-      this.to = Math.max(to, this.to)
-    }
-  }
-
-  changedRange() {
-    if (this.from == null) return rangeAroundSelection(this.state.selection)
-    let $from = this.state.doc.resolve(Math.min(this.from, this.state.selection.from)), $to = this.state.doc.resolve(this.to)
-    let shared = $from.sharedDepth(this.to)
-    return {from: $from.before(shared + 1), to: $to.after(shared + 1)}
-  }
-
-  markDirty(range) {
-    if (this.from == null) this.view.docView.markDirty((range = range || this.changedRange()).from, range.to)
-    else this.view.docView.markDirty(this.from, this.to)
-  }
-
-  stateUpdated(state) {
-    if (this.trackMappings.getMapping(state, this.mapping)) {
-      this.trackMappings.destroy()
-      this.trackMappings = new TrackMappings(state)
-      this.mappingTo = state
-      return true
-    } else {
-      this.markDirty()
-      this.destroy()
-      return false
-    }
-  }
-
-  finish(force) {
-    clearTimeout(this.timeout)
-    if (this.composing && !force) return
-    let range = this.changedRange()
-    this.markDirty(range)
-
-    this.destroy()
-    let sel = this.state.selection, allowTypeOver = this.typeOver && sel instanceof TextSelection &&
-        !sel.empty && sel.$head.sameParent(sel.$anchor)
-    readDOMChange(this.view, this.mapping, this.state, range, allowTypeOver)
-
-    // If the reading didn't result in a view update, force one by
-    // resetting the view to its current state.
-    if (this.view.docView.dirty) this.view.updateState(this.view.state)
-  }
-
-  destroy() {
-    clearTimeout(this.timeout)
-    this.trackMappings.destroy()
-    this.view.inDOMChange = null
-  }
-
-  compositionEnd(event) {
-    if (this.composing) {
-      this.composing = false
-      if (event) this.compositionEndedAt = event.timeStamp
-      this.timeout = setTimeout(() => this.finish(), 50)
-    }
-  }
-
+/* FIXME include this in new composition impl
   ignoreKeyDownOnCompositionEnd(event) {
     // See https://www.stum.de/2016/06/24/handling-ime-events-in-javascript/.
     // On Japanese input method editors (IMEs), the Enter key is used to confirm character
@@ -107,21 +23,7 @@ export class DOMChange {
     }
     return false
   }
-
-  static start(view, composing) {
-    if (view.inDOMChange) {
-      if (composing) {
-        clearTimeout(view.inDOMChange.timeout)
-        view.inDOMChange.composing = true
-        view.inDOMChange.compositionEndedAt = null
-      }
-    } else {
-      view.inDOMChange = new DOMChange(view, composing)
-    }
-    return view.inDOMChange
-  }
-}
-DOMChange.commitTimeout = 20
+*/
 
 // Note that all referencing and parsing is done with the
 // start-of-operation selection and document, since that's the one
@@ -129,8 +31,8 @@ DOMChange.commitTimeout = 20
 // the modification is mapped over those before it is applied, in
 // readDOMChange.
 
-function parseBetween(view, oldState, range) {
-  let {node: parent, fromOffset, toOffset, from, to} = view.docView.parseRange(range.from, range.to)
+function parseBetween(view, from_, to_) {
+  let {node: parent, fromOffset, toOffset, from, to} = view.docView.parseRange(from_, to_)
 
   let domSel = view.root.getSelection(), find = null, anchor = domSel.anchorNode
   if (anchor && view.dom.contains(anchor.nodeType == 1 ? anchor : anchor.parentNode)) {
@@ -147,7 +49,7 @@ function parseBetween(view, oldState, range) {
       if (!desc || desc.size) break
     }
   }
-  let startDoc = oldState.doc
+  let startDoc = view.state.doc
   let parser = view.someProp("domParser") || DOMParser.fromSchema(view.state.schema)
   let $from = startDoc.resolve(from)
   let sel = null, doc = parser.parse(parent, {
@@ -187,60 +89,37 @@ function ruleFromNode(parser, context) {
   }
 }
 
-function isAtEnd($pos, depth) {
-  for (let i = depth || 0; i < $pos.depth; i++)
-    if ($pos.index(i) + 1 < $pos.node(i).childCount) return false
-  return $pos.parentOffset == $pos.parent.content.size
-}
-function isAtStart($pos, depth) {
-  for (let i = depth || 0; i < $pos.depth; i++)
-    if ($pos.index(0) > 0) return false
-  return $pos.parentOffset == 0
-}
-
-function rangeAroundSelection(selection) {
-  // Intentionally uses $head/$anchor because those will correspond to the DOM selection
-  let $from = selection.$anchor.min(selection.$head), $to = selection.$anchor.max(selection.$head)
-
-  if ($from.sameParent($to) && $from.parent.inlineContent && $from.parentOffset && $to.parentOffset < $to.parent.content.size) {
-    let startOff = Math.max(0, $from.parentOffset)
-    let size = $from.parent.content.size
-    let endOff = Math.min(size, $to.parentOffset)
-
-    if (startOff > 0)
-      startOff = $from.parent.childBefore(startOff).offset
-    if (endOff < size) {
-      let after = $from.parent.childAfter(endOff)
-      endOff = after.offset + after.node.nodeSize
+export function readDOMChange(view, from, to, typeOver) {
+  if (from < 0) {
+    let origin = view.lastSelectionTime > Date.now() - 50 ? view.lastSelectionOrigin : null
+    let newSel = selectionFromDOM(view, origin)
+    if (!view.state.selection.eq(newSel)) {
+      let tr = view.state.tr.setSelection(newSel)
+      if (origin == "pointer") tr.setMeta("pointer", true)
+      else if (origin == "key") tr.scrollIntoView()
+      view.dispatch(tr)
     }
-    let nodeStart = $from.start()
-    return {from: nodeStart + startOff, to: nodeStart + endOff}
-  } else {
-    for (let depth = 0;; depth++) {
-      let fromStart = isAtStart($from, depth + 1), toEnd = isAtEnd($to, depth + 1)
-      if (fromStart || toEnd || $from.index(depth) != $to.index(depth) || $to.node(depth).isTextblock) {
-        let from = $from.before(depth + 1), to = $to.after(depth + 1)
-        if (fromStart && $from.index(depth) > 0)
-          from -= $from.node(depth).child($from.index(depth) - 1).nodeSize
-        if (toEnd && $to.index(depth) + 1 < $to.node(depth).childCount)
-          to += $to.node(depth).child($to.index(depth) + 1).nodeSize
-        return {from, to}
-      }
-    }
+    return
   }
-}
 
-function readDOMChange(view, mapping, oldState, range, allowTypeOver) {
-  let parse = parseBetween(view, oldState, range)
+  let $before = view.state.doc.resolve(from)
+  let shared = $before.sharedDepth(to)
+  from = $before.before(shared + 1)
+  to = view.state.doc.resolve(to).after(shared + 1)
 
-  let doc = oldState.doc, compare = doc.slice(parse.from, parse.to)
+  let sel = view.state.selection
+  let allowTypeOver = typeOver && sel instanceof TextSelection && !sel.empty && sel.$head.sameParent(sel.$anchor)
+
+  let parse = parseBetween(view, from, to)
+
+  let doc = view.state.doc, compare = doc.slice(parse.from, parse.to)
   let preferredPos, preferredSide
   // Prefer anchoring to end when Backspace is pressed
   if (view.lastKeyCode === 8 && Date.now() - 100 < view.lastKeyCodeTime) {
-    preferredPos = oldState.selection.to
+    preferredPos = view.state.selection.to
     preferredSide = "end"
   } else {
-    preferredPos = oldState.selection.from
+    preferredPos = view.state.selection.from
     preferredSide = "start"
   }
   view.lastKeyCode = null
@@ -251,7 +130,7 @@ function readDOMChange(view, mapping, oldState, range, allowTypeOver) {
       let state = view.state, sel = state.selection
       view.dispatch(state.tr.replaceSelectionWith(state.schema.text(state.doc.textBetween(sel.from, sel.to)), true).scrollIntoView())
     } else if (parse.sel) {
-      let sel = resolveSelection(view, view.state.doc, mapping, parse.sel)
+      let sel = resolveSelection(view, view.state.doc, parse.sel)
       if (sel && !sel.eq(view.state.selection)) view.dispatch(view.state.tr.setSelection(sel))
     }
     return
@@ -260,14 +139,14 @@ function readDOMChange(view, mapping, oldState, range, allowTypeOver) {
   // Handle the case where overwriting a selection by typing matches
   // the start or end of the selected content, creating a change
   // that's smaller than what was actually overwritten.
-  if (oldState.selection.from < oldState.selection.to &&
+  if (view.state.selection.from < view.state.selection.to &&
       change.start == change.endB &&
-      oldState.selection instanceof TextSelection) {
-    if (change.start > oldState.selection.from && change.start <= oldState.selection.from + 2) {
-      change.start = oldState.selection.from
-    } else if (change.endA < oldState.selection.to && change.endA >= oldState.selection.to - 2) {
-      change.endB += (oldState.selection.to - change.endA)
-      change.endA = oldState.selection.to
+      view.state.selection instanceof TextSelection) {
+    if (change.start > view.state.selection.from && change.start <= view.state.selection.from + 2) {
+      change.start = view.state.selection.from
+    } else if (change.endA < view.state.selection.to && change.endA >= view.state.selection.to - 2) {
+      change.endB += (view.state.selection.to - change.endA)
+      change.endA = view.state.selection.to
     }
   }
 
@@ -282,7 +161,7 @@ function readDOMChange(view, mapping, oldState, range, allowTypeOver) {
       view.someProp("handleKeyDown", f => f(view, keyEvent(13, "Enter"))))
     return
   // Same for backspace
-  if (oldState.selection.anchor > change.start &&
+  if (view.state.selection.anchor > change.start &&
       looksLikeJoin(doc, change.start, change.endA, $from, $to) &&
       view.someProp("handleKeyDown", f => f(view, keyEvent(8, "Backspace")))) {
     if (browser.android && browser.chrome) { // #820
@@ -292,12 +171,12 @@ function readDOMChange(view, mapping, oldState, range, allowTypeOver) {
     return
   }
 
-  let from = mapping.map(change.start), to = Math.max(from, mapping.map(change.endA, -1))
+  let chFrom = change.start, chTo = change.endA
 
   let tr, storedMarks, markChange, $from1
   if ($from.sameParent($to) && $from.parent.inlineContent) {
     if ($from.pos == $to.pos) { // Deletion
-      tr = view.state.tr.delete(from, to)
+      tr = view.state.tr.delete(chFrom, chTo)
       storedMarks = doc.resolve(change.start).marksAcross(doc.resolve(change.endA))
     } else if ( // Adding or removing a mark
       change.endA == change.endB && ($from1 = doc.resolve(change.start)) &&
@@ -305,30 +184,29 @@ function readDOMChange(view, mapping, oldState, range, allowTypeOver) {
                                  $from1.parent.content.cut($from1.parentOffset, change.endA - $from1.start())))
     ) {
       tr = view.state.tr
-      if (markChange.type == "add") tr.addMark(from, to, markChange.mark)
-      else tr.removeMark(from, to, markChange.mark)
+      if (markChange.type == "add") tr.addMark(chFrom, chTo, markChange.mark)
+      else tr.removeMark(chFrom, chTo, markChange.mark)
     } else if ($from.parent.child($from.index()).isText && $from.index() == $to.index() - ($to.textOffset ? 0 : 1)) {
       // Both positions in the same text node -- simply insert text
       let text = $from.parent.textBetween($from.parentOffset, $to.parentOffset)
-      if (view.someProp("handleTextInput", f => f(view, from, to, text))) return
-      tr = view.state.tr.insertText(text, from, to)
+      if (view.someProp("handleTextInput", f => f(view, chFrom, chTo, text))) return
+      tr = view.state.tr.insertText(text, chFrom, chTo)
     }
   }
 
   if (!tr)
-    tr = view.state.tr.replace(from, to, parse.doc.slice(change.start - parse.from, change.endB - parse.from))
+    tr = view.state.tr.replace(chFrom, chTo, parse.doc.slice(change.start - parse.from, change.endB - parse.from))
   if (parse.sel) {
-    let sel = resolveSelection(view, tr.doc, mapping, parse.sel)
+    let sel = resolveSelection(view, tr.doc, parse.sel)
     if (sel) tr.setSelection(sel)
   }
   if (storedMarks) tr.ensureMarks(storedMarks)
   view.dispatch(tr.scrollIntoView())
 }
 
-function resolveSelection(view, doc, mapping, parsedSel) {
+function resolveSelection(view, doc, parsedSel) {
   if (Math.max(parsedSel.anchor, parsedSel.head) > doc.content.size) return null
-  return selectionBetween(view, doc.resolve(mapping.map(parsedSel.anchor)),
-                          doc.resolve(mapping.map(parsedSel.head)))
+  return selectionBetween(view, doc.resolve(parsedSel.anchor), doc.resolve(parsedSel.head))
 }
 
 // : (Fragment, Fragment) → ?{mark: Mark, type: string}

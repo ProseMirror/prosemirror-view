@@ -311,7 +311,7 @@ function flattenH(rect, top) {
 
 function withFlushedState(view, state, f) {
   let viewState = view.state, active = view.root.activeElement
-  if (viewState != state || !view.inDOMChange) view.updateState(state)
+  if (viewState != state) view.updateState(state)
   if (active != view.dom) view.focus()
   try {
     return f()

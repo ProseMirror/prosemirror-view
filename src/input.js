@@ -4,10 +4,10 @@ import {Slice} from "prosemirror-model"
 
 import browser from "./browser"
 import {captureKeyDown} from "./capturekeys"
-import {DOMChange} from "./domchange"
+import {readDOMChange} from "./domchange"
 import {parseFromClipboard, serializeForClipboard} from "./clipboard"
 import {DOMObserver} from "./domobserver"
-import {selectionFromDOM, selectionToDOM, selectionBetween, needsCursorWrapper} from "./selection"
+import {selectionBetween, needsCursorWrapper} from "./selection"
 import {keyEvent} from "./dom"
 
 // A collection of DOM events that occur within the editor, and callback functions
@@ -17,32 +17,12 @@ const handlers = {}, editHandlers = {}
 export function initInput(view) {
   view.shiftKey = false
   view.mouseDown = null
-  view.inDOMChange = null
   view.lastKeyCode = null
   view.lastKeyCodeTime = 0
   view.lastClick = {time: 0, x: 0, y: 0, type: ""}
   view.lastSelectionOrigin = null
   view.lastSelectionTime = 0
-  view.domObserver = new DOMObserver(view, (from, to, typeOver) => {
-    // FIXME unify these into a single piece of code
-    if (from > -1) {
-      let ch = DOMChange.start(view)
-      ch.addRange(from, to)
-      ch.typeOver = typeOver
-      ch.finish()
-    } else {
-      let origin = view.lastSelectionTime > Date.now() - 50 ? view.lastSelectionOrigin : null
-      let newSel = selectionFromDOM(view, origin)
-      if (!view.state.selection.eq(newSel)) {
-        let tr = view.state.tr.setSelection(newSel)
-        if (origin == "pointer") tr.setMeta("pointer", true)
-        else if (origin == "key") tr.scrollIntoView()
-        view.dispatch(tr)
-      } else {
-        selectionToDOM(view)
-      }
-    }
-  })
+  view.domObserver = new DOMObserver(view, (from, to, typeOver) => readDOMChange(view, from, to, typeOver))
   view.domObserver.start()
   // Used by hacks like the beforeinput handler to check whether anything happened in the DOM
   view.domChangeCount = 0
@@ -66,7 +46,6 @@ function setSelectionOrigin(view, origin) {
 
 export function destroyInput(view) {
   view.domObserver.stop()
-  if (view.inDOMChange) view.inDOMChange.destroy()
   for (let type in view.eventHandlers)
     view.dom.removeEventListener(type, view.eventHandlers[type])
 }
@@ -103,11 +82,7 @@ export function dispatchEvent(view, event) {
 
 editHandlers.keydown = (view, event) => {
   view.shiftKey = event.keyCode == 16 || event.shiftKey
-  if (view.inDOMChange) {
-    if (view.inDOMChange.composing) return
-    if (view.inDOMChange.ignoreKeyDownOnCompositionEnd(event)) return
-    view.inDOMChange.finish()
-  }
+  // FIXME ignore keys during and directly after composition
   view.lastKeyCode = event.keyCode
   view.lastKeyCodeTime = Date.now()
   if (view.someProp("handleKeyDown", f => f(view, event)) || captureKeyDown(view, event))
@@ -121,8 +96,8 @@ editHandlers.keyup = (view, e) => {
 }
 
 editHandlers.keypress = (view, event) => {
-  if (view.inDOMChange || !event.charCode ||
-      event.ctrlKey && !event.altKey || browser.mac && event.metaKey) return
+  // FIXME ignore keys during and directly after composition
+  if (!event.charCode || event.ctrlKey && !event.altKey || browser.mac && event.metaKey) return
 
   if (view.someProp("handleKeyPress", f => f(view, event))) {
     event.preventDefault()
@@ -240,10 +215,9 @@ function defaultTripleClick(view, inside) {
   }
 }
 
-function forceDOMFlush(view) {
-  if (!view.inDOMChange) return false
-  view.inDOMChange.finish(true)
-  return true
+function forceDOMFlush(_view) {
+  // FIXME flush composition, when implemented
+  return false
 }
 
 const selectNodeModifier = browser.mac ? "metaKey" : "ctrlKey"
@@ -384,6 +358,7 @@ handlers.contextmenu = view => forceDOMFlush(view)
 // plain wrong. Instead, when a composition ends, we parse the dom
 // around the original selection, and derive an update from that.
 
+/* FIXME reimplement
 editHandlers.compositionstart = editHandlers.compositionupdate = view => {
   DOMChange.start(view, true)
 }
@@ -400,11 +375,7 @@ editHandlers.compositionend = (view, e) => {
 
   view.inDOMChange.compositionEnd(e)
 }
-
-editHandlers.input = view => {
-  let change = DOMChange.start(view)
-  if (!change.composing) change.finish()
-}
+*/
 
 function captureCopy(view, dom) {
   // The extra wrapper is somehow necessary on IE/Edge to prevent the

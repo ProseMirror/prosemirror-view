@@ -28,7 +28,7 @@ export class DOMObserver {
     this.handleDOMChange = handleDOMChange
     this.observer = window.MutationObserver &&
       new window.MutationObserver(mutations => this.flush(mutations))
-    this.ignoreSelection = new SelectionState
+    this.currentSelection = new SelectionState
     this.charDataQueue = []
     if (useCharData) {
       this.onCharData = e => {
@@ -67,8 +67,8 @@ export class DOMObserver {
     this.flush()
   }
 
-  ignoreCurSelection() {
-    this.ignoreSelection.set(this.view.root.getSelection())
+  setCurSelection() {
+    this.currentSelection.set(this.view.root.getSelection())
   }
 
   flush(mutations) {
@@ -79,7 +79,7 @@ export class DOMObserver {
     }
 
     let sel = this.view.root.getSelection()
-    let newSel = !this.ignoreSelection.eq(sel) && hasSelection(this.view)
+    let newSel = !this.currentSelection.eq(sel) && hasSelection(this.view)
 
     let from = -1, to = -1, typeOver = false
     if (this.view.editable) {
@@ -93,8 +93,10 @@ export class DOMObserver {
       }
     }
     if (from > -1 || newSel) {
-      if (newSel) this.ignoreSelection.set(sel)
+      if (from > -1) this.view.docView.markDirty(from, to)
       this.handleDOMChange(from, to, typeOver)
+      if (this.view.docView.dirty) this.view.updateState(this.view.state)
+      else if (!this.currentSelection.eq(sel)) selectionToDOM(this.view)
     }
   }
 
