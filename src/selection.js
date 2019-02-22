@@ -14,7 +14,7 @@ export class SelectionReader {
     this.lastSelection = view.state.selection
     this.ignoreUpdates = false
     this.suppressUpdates = false
-    this.poller = poller(this)
+    this.poller = new SelectionChangePoller(this)
 
     this.focusFunc = (() => this.poller.start(hasFocusAndSelection(this.view))).bind(this)
     this.blurFunc = this.poller.stop
@@ -97,9 +97,6 @@ export class SelectionReader {
   }
 }
 
-// There's two polling models. On browsers that support the
-// selectionchange event (everything except Firefox < 52, basically), we
-// register a listener for that whenever the editor is focused.
 class SelectionChangePoller {
   constructor(reader) {
     this.listening = false
@@ -131,45 +128,6 @@ class SelectionChangePoller {
       this.listening = false
     }
   }
-}
-
-// On Browsers that don't support the selectionchange event,
-// we use timeout-based polling.
-class TimeoutPoller {
-  constructor(reader) {
-    // The timeout ID for the poller when active.
-    this.polling = null
-    this.reader = reader
-    this.pollFunc = this.doPoll.bind(this, null)
-  }
-
-  doPoll(origin) {
-    let view = this.reader.view
-    if (view.focused || !view.editable) {
-      this.reader.readFromDOM(origin)
-      this.polling = setTimeout(this.pollFunc, 100)
-    } else {
-      this.polling = null
-    }
-  }
-
-  poll(origin) {
-    clearTimeout(this.polling)
-    this.polling = setTimeout(origin ? this.doPoll.bind(this, origin) : this.pollFunc, 0)
-  }
-
-  start() {
-    if (this.polling == null) this.poll()
-  }
-
-  stop() {
-    clearTimeout(this.polling)
-    this.polling = null
-  }
-}
-
-function poller(reader) {
-  return new ("onselectionchange" in document ? SelectionChangePoller : TimeoutPoller)(reader)
 }
 
 export function selectionToDOM(view, takeFocus, force) {
