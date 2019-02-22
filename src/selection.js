@@ -3,131 +3,27 @@ import {TextSelection, NodeSelection} from "prosemirror-state"
 import browser from "./browser"
 import {selectionCollapsed, isEquivalentPosition} from "./dom"
 
-// Track the state of the DOM selection, creating transactions to
-// update the selection state when necessary.
-export class SelectionReader {
-  constructor(view) {
-    this.view = view
-
-    // Track the state of the DOM selection.
-    this.lastAnchorNode = this.lastHeadNode = this.lastAnchorOffset = this.lastHeadOffset = null
-    this.lastSelection = view.state.selection
-    this.ignoreUpdates = false
-    this.suppressUpdates = false
-    this.poller = new SelectionChangePoller(this)
-
-    this.focusFunc = (() => this.poller.start(hasFocusAndSelection(this.view))).bind(this)
-    this.blurFunc = this.poller.stop
-
-    view.dom.addEventListener("focus", this.focusFunc)
-    view.dom.addEventListener("blur", this.blurFunc)
-
-    if (!view.editable) this.poller.start(false)
-  }
-
-  destroy() {
-    this.view.dom.removeEventListener("focus", this.focusFunc)
-    this.view.dom.removeEventListener("blur", this.blurFunc)
-    this.poller.stop()
-  }
-
-  poll(origin) { this.poller.poll(origin) }
-
-  editableChanged() {
-    if (!this.view.editable) this.poller.start()
-    else if (!hasFocusAndSelection(this.view)) this.poller.stop()
-  }
-
-  // : () → bool
-  // Whether the DOM selection has changed from the last known state.
-  domChanged() {
-    let sel = this.view.root.getSelection()
-    return sel.anchorNode != this.lastAnchorNode || sel.anchorOffset != this.lastAnchorOffset ||
-      sel.focusNode != this.lastHeadNode || sel.focusOffset != this.lastHeadOffset
-  }
-
-  // Store the current state of the DOM selection.
-  storeDOMState(selection) {
-    let sel = this.view.root.getSelection()
-    this.lastAnchorNode = sel.anchorNode; this.lastAnchorOffset = sel.anchorOffset
-    this.lastHeadNode = sel.focusNode; this.lastHeadOffset = sel.focusOffset
-    this.lastSelection = selection
-  }
-
-  clearDOMState() {
-    this.lastAnchorNode = this.lastSelection = null
-  }
-
-  // : (?string)
-  // When the DOM selection changes in a notable manner, modify the
-  // current selection state to match.
-  readFromDOM(origin) {
-    if (this.ignoreUpdates || !this.domChanged() || !hasFocusAndSelection(this.view)) return
-    if (this.suppressUpdates) return selectionToDOM(this.view)
-    if (!this.view.inDOMChange) this.view.domObserver.flush()
-    if (this.view.inDOMChange) return
-
-    let domSel = this.view.root.getSelection(), doc = this.view.state.doc
-    let nearestDesc = this.view.docView.nearestDesc(domSel.focusNode), inWidget = nearestDesc && nearestDesc.size == 0
-    let head = this.view.docView.posFromDOM(domSel.focusNode, domSel.focusOffset)
-    let $head = doc.resolve(head), $anchor, selection
-    if (selectionCollapsed(domSel)) {
-      $anchor = $head
-      while (nearestDesc && !nearestDesc.node) nearestDesc = nearestDesc.parent
-      if (nearestDesc && nearestDesc.node.isAtom && NodeSelection.isSelectable(nearestDesc.node) && nearestDesc.parent) {
-        let pos = nearestDesc.posBefore
-        selection = new NodeSelection(head == pos ? $head : doc.resolve(pos))
-      }
-    } else {
-      $anchor = doc.resolve(this.view.docView.posFromDOM(domSel.anchorNode, domSel.anchorOffset))
+export function selectionFromDOM(view, origin) {
+  let domSel = view.root.getSelection(), doc = view.state.doc
+  let nearestDesc = view.docView.nearestDesc(domSel.focusNode), inWidget = nearestDesc && nearestDesc.size == 0
+  let head = view.docView.posFromDOM(domSel.focusNode, domSel.focusOffset)
+  let $head = doc.resolve(head), $anchor, selection
+  if (selectionCollapsed(domSel)) {
+    $anchor = $head
+    while (nearestDesc && !nearestDesc.node) nearestDesc = nearestDesc.parent
+    if (nearestDesc && nearestDesc.node.isAtom && NodeSelection.isSelectable(nearestDesc.node) && nearestDesc.parent) {
+      let pos = nearestDesc.posBefore
+      selection = new NodeSelection(head == pos ? $head : doc.resolve(pos))
     }
-
-    if (!selection) {
-      let bias = origin == "pointer" || (this.view.state.selection.head < $head.pos && !inWidget) ? 1 : -1
-      selection = selectionBetween(this.view, $anchor, $head, bias)
-    }
-    if (!this.view.state.selection.eq(selection)) {
-      let tr = this.view.state.tr.setSelection(selection)
-      if (origin == "pointer") tr.setMeta("pointer", true)
-      else if (origin == "key") tr.scrollIntoView()
-      this.view.dispatch(tr)
-    } else {
-      selectionToDOM(this.view)
-    }
-  }
-}
-
-class SelectionChangePoller {
-  constructor(reader) {
-    this.listening = false
-    this.curOrigin = null
-    this.originTime = 0
-    this.reader = reader
-
-    this.readFunc = () => reader.readFromDOM(this.originTime > Date.now() - 50 ? this.curOrigin : null)
+  } else {
+    $anchor = doc.resolve(view.docView.posFromDOM(domSel.anchorNode, domSel.anchorOffset))
   }
 
-  poll(origin) {
-    this.curOrigin = origin
-    this.originTime = Date.now()
+  if (!selection) {
+    let bias = origin == "pointer" || (view.state.selection.head < $head.pos && !inWidget) ? 1 : -1
+    selection = selectionBetween(view, $anchor, $head, bias)
   }
-
-  start(andRead) {
-    if (!this.listening) {
-      let doc = this.reader.view.dom.ownerDocument
-      doc.addEventListener("selectionchange", this.readFunc)
-      this.listening = true
-      if (andRead) this.readFunc()
-    }
-  }
-
-  stop() {
-    if (this.listening) {
-      let doc = this.reader.view.dom.ownerDocument
-      doc.removeEventListener("selectionchange", this.readFunc)
-      this.listening = false
-    }
-  }
+  return selection
 }
 
 export function selectionToDOM(view, takeFocus, force) {
@@ -138,18 +34,15 @@ export function selectionToDOM(view, takeFocus, force) {
     if (!takeFocus) return
     // See https://bugzilla.mozilla.org/show_bug.cgi?id=921444
     if (browser.gecko && browser.gecko_version <= 55) {
-      view.selectionReader.ignoreUpdates = true
+      view.domObserver.disconnectSelection()
       view.dom.focus()
-      view.selectionReader.ignoreUpdates = false
+      view.domObserver.connectSelection()
     }
   } else if (!view.editable && !hasSelection(view) && !takeFocus) {
     return
   }
 
-  let reader = view.selectionReader
-  if (reader.lastSelection && reader.lastSelection.eq(sel) && !reader.domChanged()) return
-
-  reader.ignoreUpdates = true
+  view.domObserver.disconnectSelection()
 
   if (view.cursorWrapper) {
     selectCursorWrapper(view)
@@ -174,8 +67,8 @@ export function selectionToDOM(view, takeFocus, force) {
     }
   }
 
-  reader.storeDOMState(sel)
-  reader.ignoreUpdates = false
+  view.domObserver.connectSelection()
+  view.domObserver.ignoreCurSelection()
 }
 
 // Kludge to work around Webkit not allowing a selection to start/end
@@ -257,12 +150,12 @@ export function selectionBetween(view, $anchor, $head, bias) {
     || TextSelection.between($anchor, $head, bias)
 }
 
-function hasFocusAndSelection(view) {
+export function hasFocusAndSelection(view) {
   if (view.editable && view.root.activeElement != view.dom) return false
   return hasSelection(view)
 }
 
-function hasSelection(view) {
+export function hasSelection(view) {
   let sel = view.root.getSelection()
   if (!sel.anchorNode) return false
   try {

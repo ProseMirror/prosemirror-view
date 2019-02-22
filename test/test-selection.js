@@ -65,7 +65,7 @@ describe("EditorView", () => {
     function test(node, offset, expected) {
       setDOMSel(node, offset)
       view.dom.focus()
-      view.selectionReader.readFromDOM()
+      view.domObserver.flush()
       let sel = view.state.selection
       ist(sel.head == null ? sel.from : sel.head, expected)
     }

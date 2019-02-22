@@ -63,7 +63,6 @@ export class DOMChange {
   finish(force) {
     clearTimeout(this.timeout)
     if (this.composing && !force) return
-    this.view.domObserver.flush()
     let range = this.changedRange()
     this.markDirty(range)
 
@@ -287,8 +286,8 @@ function readDOMChange(view, mapping, oldState, range, allowTypeOver) {
       looksLikeJoin(doc, change.start, change.endA, $from, $to) &&
       view.someProp("handleKeyDown", f => f(view, keyEvent(8, "Backspace")))) {
     if (browser.android && browser.chrome) { // #820
-      view.selectionReader.suppressUpdates = true
-      setTimeout(() => view.selectionReader.suppressUpdates = false, 50)
+      view.domObserver.suppressSelectionUpdates = true
+      setTimeout(() => view.domObserver.suppressSelectionUpdates = false, 50)
     }
     return
   }

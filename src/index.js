@@ -4,7 +4,7 @@ import {NodeSelection} from "prosemirror-state"
 import {scrollRectIntoView, posAtCoords, coordsAtPos, endOfTextblock, storeScrollPos, resetScrollPos} from "./domcoords"
 import {docViewDesc} from "./viewdesc"
 import {initInput, destroyInput, dispatchEvent, ensureListeners} from "./input"
-import {SelectionReader, selectionToDOM, needsCursorWrapper, anchorInRightPlace, syncNodeSelection} from "./selection"
+import {selectionToDOM, needsCursorWrapper, anchorInRightPlace, syncNodeSelection} from "./selection"
 import {Decoration, viewDecorations} from "./decoration"
 import browser from "./browser"
 
@@ -56,9 +56,7 @@ export class EditorView {
     // information about the dragged slice and whether it is being
     // copied or moved. At any other time, it is null.
     this.dragging = null
-    initInput(this) // Must be done before creating a SelectionReader
-
-    this.selectionReader = new SelectionReader(this)
+    initInput(this)
 
     this.pluginViews = []
     this.updatePluginViews()
@@ -116,10 +114,6 @@ export class EditorView {
       ensureListeners(this)
     }
 
-    this.domObserver.flush()
-    if (this.inDOMChange && this.inDOMChange.stateUpdated(state)) return
-
-    let prevEditable = this.editable
     this.editable = getEditable(this)
     updateCursorWrapper(this)
     let innerDeco = viewDecorations(this), outerDeco = computeDocDeco(this)
@@ -127,7 +121,7 @@ export class EditorView {
     let scroll = reconfigured ? "reset"
         : state.scrollToSelection > prev.scrollToSelection ? "to selection" : "preserve"
     let updateDoc = redraw || !this.docView.matchesNode(state.doc, outerDeco, innerDeco)
-    let updateSel = updateDoc || !state.selection.eq(prev.selection) || this.selectionReader.domChanged()
+    let updateSel = updateDoc || !state.selection.eq(prev.selection)
     let oldScrollPos = scroll == "preserve" && updateSel && storeScrollPos(this)
 
     if (updateSel) {
@@ -143,7 +137,6 @@ export class EditorView {
           this.docView.destroy()
           this.docView = docViewDesc(state.doc, outerDeco, innerDeco, this.dom, this)
         }
-        this.selectionReader.clearDOMState()
         if (startSelContext)
           forceSelUpdate = needChromeSelectionForce(startSelContext, this.root)
       }
@@ -161,8 +154,7 @@ export class EditorView {
       this.domObserver.start()
     }
 
-    if (prevEditable != this.editable) this.selectionReader.editableChanged()
-    this.updatePluginViews(reconfigured ? null : prev)
+    this.updatePluginViews(prev)
 
     if (scroll == "reset") {
       this.dom.scrollTop = 0
@@ -334,7 +326,6 @@ export class EditorView {
     if (!this.docView) return
     destroyInput(this)
     this.destroyPluginViews()
-    this.selectionReader.destroy()
     if (this.mounted) {
       this.docView.update(this.state.doc, [], viewDecorations(this), this)
       this.dom.textContent = ""
