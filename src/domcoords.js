@@ -172,13 +172,15 @@ function posFromCaret(view, node, offset, coords) {
 
 function elementFromPoint(element, coords, box) {
   let len = element.childNodes.length
-  if (len) for (let startI = Math.max(0, Math.floor(len * (coords.top - box.top) / (box.bottom - box.top)) - 2), i = startI;;) {
-    let child = element.childNodes[i]
-    if (child.nodeType == 1) {
-      let rects = child.getClientRects()
-      for (let j = 0; j < rects.length; j++) {
-        let rect = rects[j]
-        if (inRect(coords, rect)) return elementFromPoint(child, coords, rect)
+  if (len && box.top < box.bottom) {
+    for (let startI = Math.max(0, Math.floor(len * (coords.top - box.top) / (box.bottom - box.top)) - 2), i = startI;;) {
+      let child = element.childNodes[i]
+      if (child.nodeType == 1) {
+        let rects = child.getClientRects()
+        for (let j = 0; j < rects.length; j++) {
+          let rect = rects[j]
+          if (inRect(coords, rect)) return elementFromPoint(child, coords, rect)
+        }
       }
       if ((i = (i + 1) % len) == startI) break
     }
