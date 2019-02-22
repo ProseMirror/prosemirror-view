@@ -10,9 +10,14 @@ export class DOMObserver {
   constructor(view) {
     this.view = view
     this.observer = window.MutationObserver &&
-      new window.MutationObserver(mutations => this.registerMutations(mutations))
-    if (useCharData)
-      this.onCharData = e => this.registerMutation({target: e.target, type: "characterData", oldValue: e.prevValue})
+      new window.MutationObserver(mutations => this.flush(mutations))
+    this.charDataQueue = []
+    if (useCharData) {
+      this.onCharData = e => {
+        this.charDataQueue.push({target: e.target, type: "characterData", oldValue: e.prevValue})
+        this.setTimeout(() => this.flush(), 20)
+      }
+    }
   }
 
   start() {
@@ -23,54 +28,66 @@ export class DOMObserver {
   }
 
   stop() {
-    if (this.observer) {
-      this.flush()
+    this.flush()
+    if (this.observer)
       this.observer.disconnect()
-    }
     if (useCharData)
       this.view.dom.removeEventListener("DOMCharacterDataModified", this.onCharData)
   }
 
-  flush() {
-    if (this.observer)
-      this.registerMutations(this.observer.takeRecords())
+  flush(mutations) {
+    if (!mutations) mutations = this.observer.takeRecords()
+    if (this.charDataQueue.length) {
+      mutations = this.charDataQuery.concat(mutations)
+      this.charDataQueue.length = 0
+    }
+    this.registerMutations(mutations)
   }
 
   registerMutations(mutations) {
-    for (let i = 0; i < mutations.length; i++)
-      this.registerMutation(mutations[i])
+    if (!this.view.editable) return false
+    let from = -1, to = -1, typeOver = false
+    for (let i = 0; i < mutations.length; i++) {
+      let result = this.registerMutation(mutations[i])
+      if (result) {
+        from = from < 0 ? result.from : Math.min(result.from, from)
+        to = to < 0 ? result.to : Math.max(result.to, to)
+        if (result.typeOver) typeOver = true
+      }
+    }
+    if (from < 0) return false
+
+    DOMChange.start(this.view).addRange(from, to)
+    if (typeOver) DOMChange.start(this.view).typeOver = true
+    return true
   }
 
   registerMutation(mut) {
-    if (!this.view.editable) return
     let desc = this.view.docView.nearestDesc(mut.target)
     if (mut.type == "attributes" &&
-        (desc == this.view.docView || mut.attributeName == "contenteditable")) return
-    if (!desc || desc.ignoreMutation(mut)) return
+        (desc == this.view.docView || mut.attributeName == "contenteditable")) return null
+    if (!desc || desc.ignoreMutation(mut)) return null
 
-    let from, to
     if (mut.type == "childList") {
       let fromOffset = mut.previousSibling && mut.previousSibling.parentNode == mut.target
           ? domIndex(mut.previousSibling) + 1 : 0
-      if (fromOffset == -1) return
-      from = desc.localPosFromDOM(mut.target, fromOffset, -1)
+      let from = desc.localPosFromDOM(mut.target, fromOffset, -1)
       let toOffset = mut.nextSibling && mut.nextSibling.parentNode == mut.target
           ? domIndex(mut.nextSibling) : mut.target.childNodes.length
-      if (toOffset == -1) return
-      to = desc.localPosFromDOM(mut.target, toOffset, 1)
+      let to = desc.localPosFromDOM(mut.target, toOffset, 1)
+      return {from, to}
     } else if (mut.type == "attributes") {
-      from = desc.posAtStart - desc.border
-      to = desc.posAtEnd + desc.border
+      return {from: desc.posAtStart - desc.border, to: desc.posAtEnd + desc.border}
     } else { // "characterData"
-      from = desc.posAtStart
-      to = desc.posAtEnd
-      // An event was generated for a text change that didn't change
-      // any text. Mark the dom change to fall back to assuming the
-      // selection was typed over with an identical value if it can't
-      // find another change.
-      if (mut.target.nodeValue == mut.oldValue) DOMChange.start(this.view).typeOver = true
+      return {
+        from: desc.posAtStart,
+        to: desc.posAtEnd,
+        // An event was generated for a text change that didn't change
+        // any text. Mark the dom change to fall back to assuming the
+        // selection was typed over with an identical value if it can't
+        // find another change.
+        typeOver: mut.target.nodeValue == mut.oldValue
+      }
     }
-
-    DOMChange.start(this.view).addRange(from, to)
   }
 }
