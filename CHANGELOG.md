@@ -1,3 +1,9 @@
+## 1.8.1 (2019-02-22)
+
+### Bug fixes
+
+Fix infinite loop in `coordsAtPos`.
+
 ## 1.8.0 (2019-02-21)
 
 ### Bug fixes
