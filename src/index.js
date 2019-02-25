@@ -113,6 +113,12 @@ export class EditorView {
 
     this.domObserver.flush()
     if (this.inDOMChange && this.inDOMChange.stateUpdated(state)) return
+    // Work around for an issue where an update arriving right between
+    // a DOM selection change and the "selectionchange" event for it
+    // can cause a spurious DOM selection update, disrupting mouse
+    // drag selection.
+    let interruptingMouse = this.mouseDown && this.selectionReader.domChanged() &&
+        !this.selectionReader.lastReadSelection.eq(state.selection)
 
     let prevEditable = this.editable
     this.editable = getEditable(this)
@@ -143,7 +149,8 @@ export class EditorView {
         if (startSelContext)
           forceSelUpdate = needChromeSelectionForce(startSelContext, this.root)
       }
-      selectionToDOM(this, false, forceSelUpdate)
+      if (!interruptingMouse || forceSelUpdate)
+        selectionToDOM(this, false, forceSelUpdate)
       this.domObserver.start()
     }
 

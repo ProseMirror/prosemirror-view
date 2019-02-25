@@ -11,7 +11,7 @@ export class SelectionReader {
 
     // Track the state of the DOM selection.
     this.lastAnchorNode = this.lastHeadNode = this.lastAnchorOffset = this.lastHeadOffset = null
-    this.lastSelection = view.state.selection
+    this.lastSelection = this.lastReadSelection = view.state.selection
     this.ignoreUpdates = false
     this.suppressUpdates = false
     this.poller = poller(this)
@@ -90,6 +90,7 @@ export class SelectionReader {
       let tr = this.view.state.tr.setSelection(selection)
       if (origin == "pointer") tr.setMeta("pointer", true)
       else if (origin == "key") tr.scrollIntoView()
+      this.lastReadSelection = selection
       this.view.dispatch(tr)
     } else {
       selectionToDOM(this.view)
