@@ -349,7 +349,8 @@ handlers.touchdown = view => {
 
 handlers.contextmenu = view => forceDOMFlush(view)
 
-const timeoutComposition = 5000 // Drop active composition after 5 seconds of inactivity
+// Drop active composition after 5 seconds of inactivity on Android
+const timeoutComposition = browser.android ? 5000 : -1
 
 editHandlers.compositionstart = editHandlers.compositionupdate = view => {
   view.composing = true
@@ -357,17 +358,17 @@ editHandlers.compositionstart = editHandlers.compositionupdate = view => {
 }
 
 editHandlers.compositionend = view => {
-  if (view.composing) scheduleComposeEnd(view, 20)
+  if (view.composing) {
+    view.composing = false
+    scheduleComposeEnd(view, 20)
+  }
 }
 
 function scheduleComposeEnd(view, delay) {
   clearTimeout(view.composingTimeout)
-  view.composingTimeout = setTimeout(() => endComposition(view), delay)
+  if (delay > -1) view.composingTimeout = setTimeout(() => endComposition(view), delay)
 }
 
-// FIXME somehow schedule this so that, when possible, the tree update
-// happens alongside the update for the changes made by the
-// composition end
 function endComposition(view) {
   view.composing = false
   while (view.compositionNodes.length > 0) view.compositionNodes.pop().markParentsDirty()

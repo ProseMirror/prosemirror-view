@@ -528,6 +528,16 @@ class MarkViewDesc extends ViewDesc {
       this.dirty = NOT_DIRTY
     }
   }
+
+  slice(from, to, view) {
+    let copy = MarkViewDesc.create(this.parent, this.mark, true, view)
+    let nodes = this.children, size = this.size
+    if (to < size) nodes = replaceNodes(nodes, to, size, view)
+    if (from > 0) nodes = replaceNodes(nodes, 0, from, view)
+    for (let i = 0; i < nodes.length; i++) nodes[i].parent = copy
+    copy.children = nodes
+    return copy
+  }
 }
 
 // Node view descs are the main, most common type of view desc, and
@@ -614,8 +624,7 @@ class NodeViewDesc extends ViewDesc {
   // separate step, syncs the DOM inside `this.contentDOM` to
   // `this.children`.
   updateChildren(view, pos) {
-    let updater = new ViewTreeUpdater(this), inline = this.node.inlineContent
-    let comp = this.localComposition(view, pos, updater)
+    let updater = new ViewTreeUpdater(this), inline = this.node.inlineContent, off = pos
     iterDeco(this.node, this.innerDeco, (widget, i) => {
       if (widget.spec.marks)
         updater.syncToMarks(widget.spec.marks, inline, view)
@@ -623,7 +632,7 @@ class NodeViewDesc extends ViewDesc {
         updater.syncToMarks(i == this.node.childCount ? Mark.none : this.node.child(i).marks, inline, view)
       // If the next node is a desc matching this widget, reuse it,
       // otherwise insert the widget as a new view desc.
-      updater.placeWidget(widget, view, pos)
+      updater.placeWidget(widget, view, off)
     }, (child, outerDeco, innerDeco, i) => {
       // Make sure the wrapping mark descs match the node's marks.
       updater.syncToMarks(child.marks, inline, view)
@@ -633,18 +642,20 @@ class NodeViewDesc extends ViewDesc {
         // Or try updating the next desc to reflect this node.
         updater.updateNextNode(child, outerDeco, innerDeco, view, i) ||
         // Or just add it as a new desc.
-        updater.addNode(child, outerDeco, innerDeco, view, pos)
-      pos += child.nodeSize
-    }, comp ? comp.from - pos : -1, comp ? comp.to - pos : -1, comp ? () => {
-      updater.placeComposition(view, comp.desc)
-    } : null)
+        updater.addNode(child, outerDeco, innerDeco, view, off)
+      off += child.nodeSize
+    })
     // Drop all remaining descs after the current position.
     updater.syncToMarks(nothing, inline, view)
     if (this.node.isTextblock) updater.addTextblockHacks()
     updater.destroyRest()
 
     // Sync the DOM if anything changed
-    if (updater.changed || this.dirty == CONTENT_DIRTY) this.renderChildren()
+    if (updater.changed || this.dirty == CONTENT_DIRTY) {
+      // May have to protect focused DOM from being changed if a composition is active
+      if (view.composing && this.node.inlineContent) this.localComposition(view, pos)
+      this.renderChildren()
+    }
   }
 
   renderChildren() {
@@ -653,36 +664,24 @@ class NodeViewDesc extends ViewDesc {
   }
 
   localComposition(view, pos) {
-    if (!view.composing || !this.node.inlineContent || !(view.state.selection instanceof TextSelection)) return
+    // Only do something if both the selection and a focused text node
+    // are inside of this node, and the node isn't already part of a
+    // view that's a child of this view
     let {from, to} = view.state.selection
-    // FIXME check whether selection isn't inside a non-leaf child node
-    if (from < pos || to > pos + this.node.content.size) return
+    if (!(view.state.selection instanceof TextSelection) || from < pos || to > pos + this.node.content.size) return
     let sel = view.root.getSelection()
     let textNode = nearbyTextNode(sel.focusNode, sel.focusOffset)
-    if (!textNode || !this.dom.contains(textNode.parentNode)) return
+    if (!textNode || !this.dom.contains(textNode.parentNode) || this.getDesc(textNode)) return
 
-    let text = textNode.nodeValue.replace(/\ufeff/g, ""), textPos = -1
-    for (let str = "", i = 0, childPos = pos; i < this.node.childCount; i++) {
-      let child = this.node.child(i), end = childPos + child.nodeSize
-      if (child.isText) {
-        str += child.text
-        if (end >= to) {
-          let strStart = end - str.length, found = str.lastIndexOf(text)
-          while (found > -1 && strStart + found > from) found = str.lastIndexOf(text, found - 1)
-          if (found > -1 && strStart + found + text.length >= to) {
-            textPos = strStart + found
-            break
-          } else if (end > to - text.length) {
-            break
-          }
-        }
-      } else {
-        str = ""
-      }
-      childPos = end
-    }
+    // Find the text in the focused node in the node, stop if it's not
+    // there (may have been modified through other means, in which
+    // case it should overwritten)
+    let text = textNode.nodeValue.replace(/\ufeff/g, "")
+    let textPos = findTextInFragment(this.node.content, text, from - pos, to - pos)
     if (textPos < 0) return
 
+    // Create a composition view for the orphaned nodes
+    // FIXME this'll probably go wrong when that group of nodes is bigger than just the test node
     let topNode = textNode
     for (;; topNode = topNode.parentNode) {
       if (topNode.parentNode == this.dom) break
@@ -695,7 +694,9 @@ class NodeViewDesc extends ViewDesc {
       desc = new CompositionViewDesc(this, topNode, textNode, text)
       view.compositionNodes.push(desc)
     }
-    return {from: textPos, to: textPos + text.length, desc}
+
+    // Patch up this.children to contain the composition view
+    this.children = replaceNodes(this.children, textPos, textPos + text.length, view, desc)
   }
 
   // : (Node, [Decoration], DecorationSet, EditorView) → bool
@@ -788,6 +789,11 @@ class TextViewDesc extends NodeViewDesc {
 
   ignoreMutation(mutation) {
     return mutation.type != "characterData"
+  }
+
+  slice(from, to, view) {
+    let node = this.node.cut(from, to), dom = document.createTextNode(node.text)
+    return new TextViewDesc(this.parent, node, this.outerDeco, this.innerDeco, dom, dom, view)
   }
 }
 
@@ -1160,10 +1166,10 @@ function compareSide(a, b) { return a.type.side - b.type.side }
 // a fragment. Calls `onNode` for each node, with its local and child
 // decorations. Splits text nodes when there is a decoration starting
 // or ending inside of them. Calls `onWidget` for each widget.
-function iterDeco(parent, deco, onWidget, onNode, gapFrom, gapTo, onGap) {
+function iterDeco(parent, deco, onWidget, onNode) {
   let locals = deco.locals(parent), offset = 0
   // Simple, cheap variant for when there are no local decorations
-  if (locals.length == 0 && !onGap) {
+  if (locals.length == 0) {
     for (let i = 0; i < parent.childCount; i++) {
       let child = parent.child(i)
       onNode(child, locals, deco.forChild(offset, child), i)
@@ -1187,22 +1193,7 @@ function iterDeco(parent, deco, onWidget, onNode, gapFrom, gapTo, onGap) {
     }
 
     let child, index
-    if (onGap && gapFrom == offset) {
-      onGap()
-      offset = gapTo
-      while (decoIndex < locals.length && locals[decoIndex].to < offset) decoIndex++
-      let skip = gapTo - gapFrom
-      while (skip > 0) {
-        let next = restNode || parent.child(parentIndex++)
-        if (next.size > skip) {
-          restNode = next.cut(skip)
-          break
-        } else {
-          skip -= next.size
-        }
-      }
-      continue
-    } else if (restNode) {
+    if (restNode) {
       index = -1
       child = restNode
       restNode = null
@@ -1219,7 +1210,6 @@ function iterDeco(parent, deco, onWidget, onNode, gapFrom, gapTo, onGap) {
     let end = offset + child.nodeSize
     if (child.isText) {
       let cutAt = end
-      if (onGap && gapTo > offset && gapTo < cutAt) cutAt = gapTo
       if (decoIndex < locals.length && locals[decoIndex].from < cutAt) cutAt = locals[decoIndex].from
       for (let i = 0; i < active.length; i++) if (active[i].to < cutAt) cutAt = active[i].to
       if (cutAt < end) {
@@ -1259,4 +1249,50 @@ function nearbyTextNode(node, offset) {
       return null
     }
   }
+}
+
+// Find a piece of text in an inline fragment, overlapping from-to
+function findTextInFragment(frag, text, from, to) {
+  for (let str = "", i = 0, childPos = 0; i < frag.childCount; i++) {
+    let child = frag.child(i), end = childPos + child.nodeSize
+    if (child.isText) {
+      str += child.text
+      if (end >= to) {
+        let strStart = end - str.length, found = str.lastIndexOf(text)
+        while (found > -1 && strStart + found > from) found = str.lastIndexOf(text, found - 1)
+        if (found > -1 && strStart + found + text.length >= to) {
+          return strStart + found
+        } else if (end > to - text.length) {
+          break
+        }
+      }
+    } else {
+      str = ""
+    }
+    childPos = end
+  }
+  return -1
+}
+
+// Replace range from-to in an array of view descs with replacement
+// (may be null to just delete). This goes very much against the grain
+// of the rest of this code, which tends to create nodes with the
+// right shape in one go, rather than messing with them after
+// creation, but is necessary in the composition hack.
+function replaceNodes(nodes, from, to, view, replacement) {
+  let result = []
+  for (let i = 0, off = 0; i < nodes.length; i++) {
+    let child = nodes[i], start = off, end = off += child.size
+    if (start >= to || end <= from) {
+      result.push(child)
+    } else {
+      if (start < from) result.push(child.slice(0, from - start, view))
+      if (replacement) {
+        result.push(replacement)
+        replacement = null
+      }
+      if (end > to) result.push(child.slice(to - start, child.size, view))
+    }
+  }
+  return result
 }
