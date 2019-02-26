@@ -22,6 +22,10 @@ export function initInput(view) {
   view.lastClick = {time: 0, x: 0, y: 0, type: ""}
   view.lastSelectionOrigin = null
   view.lastSelectionTime = 0
+
+  view.composing = false
+  view.composingTimeout = null
+
   view.domObserver = new DOMObserver(view, (from, to, typeOver) => readDOMChange(view, from, to, typeOver))
   view.domObserver.start()
   // Used by hacks like the beforeinput handler to check whether anything happened in the DOM
@@ -344,38 +348,29 @@ handlers.touchdown = view => {
 
 handlers.contextmenu = view => forceDOMFlush(view)
 
-// Input compositions are hard. Mostly because the events fired by
-// browsers are A) very unpredictable and inconsistent, and B) not
-// cancelable.
-//
-// ProseMirror has the problem that it must not update the DOM during
-// a composition, or the browser will cancel it. What it does is keep
-// long-running operations (delayed DOM updates) when a composition is
-// active.
-//
-// We _do not_ trust the information in the composition events which,
-// apart from being very uninformative to begin with, is often just
-// plain wrong. Instead, when a composition ends, we parse the dom
-// around the original selection, and derive an update from that.
+const timeoutComposition = 5000 // Drop active composition after 5 seconds of inactivity
 
-/* FIXME reimplement
 editHandlers.compositionstart = editHandlers.compositionupdate = view => {
-  DOMChange.start(view, true)
+  view.composing = true
+  scheduleComposeEnd(view, timeoutComposition)
 }
 
-editHandlers.compositionend = (view, e) => {
-  if (!view.inDOMChange) {
-    // We received a compositionend without having seen any previous
-    // events for the composition. If there's data in the event
-    // object, we assume that it's a real change, and start a
-    // composition. Otherwise, we just ignore it.
-    if (e.data) DOMChange.start(view, true)
-    else return
-  }
-
-  view.inDOMChange.compositionEnd(e)
+editHandlers.compositionend = view => {
+  if (view.composing) scheduleComposeEnd(view, 20)
 }
-*/
+
+function scheduleComposeEnd(view, delay) {
+  clearTimeout(view.composingTimeout)
+  view.composingTimeout = setTimeout(() => {
+    view.composing = false
+    view.updateState(view.state)
+  }, delay)
+}
+
+export function forceCompositionEnd(view) {
+  clearTimeout(view.composingTimeout)
+  view.composing = false
+}
 
 function captureCopy(view, dom) {
   // The extra wrapper is somehow necessary on IE/Edge to prevent the
