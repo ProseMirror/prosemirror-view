@@ -540,7 +540,7 @@ class NodeViewDesc extends ViewDesc {
       ;({dom, contentDOM} = DOMSerializer.renderSpec(document, node.type.spec.toDOM(node)))
     }
     if (!contentDOM && !node.isText && dom.nodeName != "BR") { // Chrome gets confused by <br contenteditable=false>
-      dom.contentEditable = false
+      if (!dom.hasAttribute('contentEditable')) dom.contentEditable = false
       if (node.type.spec.draggable) dom.draggable = true
     }
 
