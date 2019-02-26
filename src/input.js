@@ -25,6 +25,7 @@ export function initInput(view) {
 
   view.composing = false
   view.composingTimeout = null
+  view.compositionNodes = []
 
   view.domObserver = new DOMObserver(view, (from, to, typeOver) => readDOMChange(view, from, to, typeOver))
   view.domObserver.start()
@@ -361,10 +362,16 @@ editHandlers.compositionend = view => {
 
 function scheduleComposeEnd(view, delay) {
   clearTimeout(view.composingTimeout)
-  view.composingTimeout = setTimeout(() => {
-    view.composing = false
-    view.updateState(view.state)
-  }, delay)
+  view.composingTimeout = setTimeout(() => endComposition(view), delay)
+}
+
+// FIXME somehow schedule this so that, when possible, the tree update
+// happens alongside the update for the changes made by the
+// composition end
+function endComposition(view) {
+  view.composing = false
+  while (view.compositionNodes.length > 0) view.compositionNodes.pop().markParentsDirty()
+  if (view.docView.dirty) view.updateState(view.state)
 }
 
 export function forceCompositionEnd(view) {

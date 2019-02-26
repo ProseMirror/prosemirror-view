@@ -1,6 +1,7 @@
 import {DOMSerializer, Fragment, Mark} from "prosemirror-model"
+import {TextSelection} from "prosemirror-state"
 
-import {domIndex, isEquivalentPosition} from "./dom"
+import {domIndex, isEquivalentPosition, nodeSize} from "./dom"
 import browser from "./browser"
 
 // NodeView:: interface
@@ -390,6 +391,14 @@ class ViewDesc {
     }
     this.dirty = CONTENT_DIRTY
   }
+
+  markParentsDirty() {
+    let level = 1
+    for (let node = this.parent; node; node = node.parent) {
+      let dirty = level == 1 ? CONTENT_DIRTY : CHILD_DIRTY
+      if (node.dirty < dirty) node.dirty = dirty
+    }
+  }
 }
 
 // Reused array to avoid allocating fresh arrays for things that will
@@ -462,6 +471,27 @@ class CursorWrapperDesc extends WidgetViewDesc {
   }
 
   ignoreMutation() { return false }
+}
+
+// FIXME handle \ufeff char in content
+class CompositionViewDesc extends ViewDesc {
+  constructor(parent, dom, textDOM, text) {
+    super(parent, nothing, dom, null)
+    this.textDOM = textDOM
+    this.text = text
+  }
+
+  get size() { return this.text.length }
+
+  localPosFromDOM(dom, offset) {
+    return this.posAtStart + (dom == this.textDOM ? offset : offset ? this.size : 0)
+  }
+
+  domFromPos(pos) { return {node: this.textDOM, offset: pos} }
+
+  ignoreMutation() { return false }
+
+  update(text) { this.text = text }
 }
 
 // A mark desc represents a mark. May have multiple children,
@@ -585,6 +615,7 @@ class NodeViewDesc extends ViewDesc {
   // `this.children`.
   updateChildren(view, pos) {
     let updater = new ViewTreeUpdater(this), inline = this.node.inlineContent
+    let comp = this.localComposition(view, pos, updater)
     iterDeco(this.node, this.innerDeco, (widget, i) => {
       if (widget.spec.marks)
         updater.syncToMarks(widget.spec.marks, inline, view)
@@ -604,7 +635,9 @@ class NodeViewDesc extends ViewDesc {
         // Or just add it as a new desc.
         updater.addNode(child, outerDeco, innerDeco, view, pos)
       pos += child.nodeSize
-    })
+    }, comp ? comp.from - pos : -1, comp ? comp.to - pos : -1, comp ? () => {
+      updater.placeComposition(view, comp.desc)
+    } : null)
     // Drop all remaining descs after the current position.
     updater.syncToMarks(nothing, inline, view)
     if (this.node.isTextblock) updater.addTextblockHacks()
@@ -617,6 +650,52 @@ class NodeViewDesc extends ViewDesc {
   renderChildren() {
     renderDescs(this.contentDOM, this.children, NodeViewDesc.is)
     if (browser.ios) iosHacks(this.dom)
+  }
+
+  localComposition(view, pos) {
+    if (!view.composing || !this.node.inlineContent || !(view.state.selection instanceof TextSelection)) return
+    let {from, to} = view.state.selection
+    // FIXME check whether selection isn't inside a non-leaf child node
+    if (from < pos || to > pos + this.node.content.size) return
+    let sel = view.root.getSelection()
+    let textNode = nearbyTextNode(sel.focusNode, sel.focusOffset)
+    if (!textNode || !this.dom.contains(textNode.parentNode)) return
+
+    let text = textNode.nodeValue.replace(/\ufeff/g, ""), textPos = -1
+    for (let str = "", i = 0, childPos = pos; i < this.node.childCount; i++) {
+      let child = this.node.child(i), end = childPos + child.nodeSize
+      if (child.isText) {
+        str += child.text
+        if (end >= to) {
+          let strStart = end - str.length, found = str.lastIndexOf(text)
+          while (found > -1 && strStart + found > from) found = str.lastIndexOf(text, found - 1)
+          if (found > -1 && strStart + found + text.length >= to) {
+            textPos = strStart + found
+            break
+          } else if (end > to - text.length) {
+            break
+          }
+        }
+      } else {
+        str = ""
+      }
+      childPos = end
+    }
+    if (textPos < 0) return
+
+    let topNode = textNode
+    for (;; topNode = topNode.parentNode) {
+      if (topNode.parentNode == this.dom) break
+      if (topNode.pmViewDesc) topNode.pmViewDesc = null
+    }
+    let desc = topNode.pmViewDesc
+    if (desc instanceof CompositionViewDesc) {
+      desc.update(text)
+    } else {
+      desc = new CompositionViewDesc(this, topNode, textNode, text)
+      view.compositionNodes.push(desc)
+    }
+    return {from: textPos, to: textPos + text.length, desc}
   }
 
   // : (Node, [Decoration], DecorationSet, EditorView) → bool
@@ -1030,6 +1109,12 @@ class ViewTreeUpdater {
     }
   }
 
+  placeComposition(view, desc) {
+    this.syncToMarks(nothing, true, view)
+    if (this.top.children[this.index] == desc) this.index++
+    else { this.top.children.splice(this.index++, 0, desc); this.changed = true }
+  }
+
   // Make sure a textblock looks and behaves correctly in
   // contentEditable.
   addTextblockHacks() {
@@ -1106,6 +1191,17 @@ function iterDeco(parent, deco, onWidget, onNode, gapFrom, gapTo, onGap) {
       onGap()
       offset = gapTo
       while (decoIndex < locals.length && locals[decoIndex].to < offset) decoIndex++
+      let skip = gapTo - gapFrom
+      while (skip > 0) {
+        let next = restNode || parent.child(parentIndex++)
+        if (next.size > skip) {
+          restNode = next.cut(skip)
+          break
+        } else {
+          skip -= next.size
+        }
+      }
+      continue
     } else if (restNode) {
       index = -1
       child = restNode
@@ -1147,5 +1243,20 @@ function iosHacks(dom) {
     dom.style.cssText = oldCSS + "; list-style: square !important"
     window.getComputedStyle(dom).listStyle
     dom.style.cssText = oldCSS
+  }
+}
+
+function nearbyTextNode(node, offset) {
+  for (;;) {
+    if (node.nodeType == 3) return node
+    if (node.nodeType == 1 && offset > 0) {
+      node = node.childNodes[offset - 1]
+      offset = nodeSize(node)
+    } else if (node.nodeType == 1 && offset < node.childNodes.length) {
+      node = node.childNodes[offset]
+      offset = 0
+    } else {
+      return null
+    }
   }
 }
