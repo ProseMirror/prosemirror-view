@@ -4,7 +4,7 @@ import {NodeSelection} from "prosemirror-state"
 import {scrollRectIntoView, posAtCoords, coordsAtPos, endOfTextblock, storeScrollPos, resetScrollPos} from "./domcoords"
 import {docViewDesc} from "./viewdesc"
 import {initInput, destroyInput, dispatchEvent, ensureListeners} from "./input"
-import {SelectionReader, selectionToDOM, needsCursorWrapper} from "./selection"
+import {SelectionReader, selectionToDOM, needsCursorWrapper, anchorInRightPlace} from "./selection"
 import {Decoration, viewDecorations} from "./decoration"
 import browser from "./browser"
 
@@ -113,12 +113,6 @@ export class EditorView {
 
     this.domObserver.flush()
     if (this.inDOMChange && this.inDOMChange.stateUpdated(state)) return
-    // Work around for an issue where an update arriving right between
-    // a DOM selection change and the "selectionchange" event for it
-    // can cause a spurious DOM selection update, disrupting mouse
-    // drag selection.
-    let mouseSelecting = this.mouseDown && this.selectionReader.domChanged() &&
-        this.selectionReader.lastReadSelection.eq(state.selection)
 
     let prevEditable = this.editable
     this.editable = getEditable(this)
@@ -149,7 +143,12 @@ export class EditorView {
         if (startSelContext)
           forceSelUpdate = needChromeSelectionForce(startSelContext, this.root)
       }
-      if (!mouseSelecting || forceSelUpdate)
+      // Work around for an issue where an update arriving right between
+      // a DOM selection change and the "selectionchange" event for it
+      // can cause a spurious DOM selection update, disrupting mouse
+      // drag selection.
+      if (forceSelUpdate ||
+          !(this.mouseDown && this.selectionReader.domChanged() && anchorInRightPlace(this)))
         selectionToDOM(this, false, forceSelUpdate)
       this.domObserver.start()
     }

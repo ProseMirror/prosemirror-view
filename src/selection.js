@@ -1,7 +1,7 @@
 import {TextSelection, NodeSelection} from "prosemirror-state"
 
 import browser from "./browser"
-import {selectionCollapsed} from "./dom"
+import {selectionCollapsed, isEquivalentPosition} from "./dom"
 
 // Track the state of the DOM selection, creating transactions to
 // update the selection state when necessary.
@@ -11,7 +11,7 @@ export class SelectionReader {
 
     // Track the state of the DOM selection.
     this.lastAnchorNode = this.lastHeadNode = this.lastAnchorOffset = this.lastHeadOffset = null
-    this.lastSelection = this.lastReadSelection = view.state.selection
+    this.lastSelection = view.state.selection
     this.ignoreUpdates = false
     this.suppressUpdates = false
     this.poller = poller(this)
@@ -90,7 +90,6 @@ export class SelectionReader {
       let tr = this.view.state.tr.setSelection(selection)
       if (origin == "pointer") tr.setMeta("pointer", true)
       else if (origin == "key") tr.scrollIntoView()
-      this.lastReadSelection = selection
       this.view.dispatch(tr)
     } else {
       selectionToDOM(this.view)
@@ -330,4 +329,10 @@ export function needsCursorWrapper(state) {
     return $pos
   else
     return null
+}
+
+export function anchorInRightPlace(view) {
+  let anchorDOM = view.docView.domFromPos(view.state.selection.anchor)
+  let domSel = view.root.getSelection()
+  return isEquivalentPosition(anchorDOM.node, anchorDOM.offset, domSel.anchorNode, domSel.anchorOffset)
 }
