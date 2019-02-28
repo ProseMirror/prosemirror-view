@@ -1,3 +1,9 @@
+## 1.8.2 (2019-02-28)
+
+### Bug fixes
+
+Fix an issue where a view state update happening between a change to the DOM selection and the corresponding browser event could disrupt mouse selection.
+
 ## 1.8.1 (2019-02-22)
 
 ### Bug fixes
