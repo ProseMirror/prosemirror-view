@@ -317,7 +317,8 @@ class MouseDown {
                // (hidden) cursor is doesn't change the selection, and
                // thus doesn't get a reaction from ProseMirror. This
                // works around that.
-               (browser.chrome && !(this.view.state.selection instanceof TextSelection))) {
+               (browser.chrome && !(this.view.state.selection instanceof TextSelection) &&
+                (this.pos.pos == this.view.state.selection.from || this.pos.pos == this.view.state.selection.to))) {
       updateSelection(this.view, Selection.near(this.view.state.doc.resolve(this.pos.pos)), "pointer")
       event.preventDefault()
     } else {
