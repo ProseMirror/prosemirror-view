@@ -1,3 +1,9 @@
+## 1.8.3 (2019-03-04)
+
+### Bug fixes
+
+Fix an issue where clicking when there's a non-text selection active sometimes doesn't cause the appropriate new selection.
+
 ## 1.8.2 (2019-02-28)
 
 ### Bug fixes
