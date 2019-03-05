@@ -1,4 +1,4 @@
-const {eq, doc, p, em} = require("prosemirror-test-builder")
+const {schema, eq, doc, p, em, code, strong} = require("prosemirror-test-builder")
 const ist = require("ist")
 const {tempEditor, requireFocus, findTextNode} = require("./view")
 const {Decoration, DecorationSet, __endComposition} = require("..")
@@ -21,6 +21,12 @@ function hasCompositionNode(_pm) {
   let {focusNode} = document.getSelection()
   while (focusNode && !focusNode.pmViewDesc) focusNode = focusNode.parentNode
   return focusNode && focusNode.pmViewDesc.constructor.name == "CompositionViewDesc"
+}
+
+function focusNode() {
+  let {focusNode, focusOffset} = document.getSelection()
+  if (focusNode.nodeType == 1) focusNode = focusNode.childNodes[focusOffset + (focusOffset ? -1 : 0)]
+  return focusNode
 }
 
 function compose(pm, start, update, options = {}) {
@@ -164,6 +170,35 @@ describe("EditorView composition", () => {
       n => edit(n, "w")
     ])
     ist(pm.state.doc, doc(p("one ", em("twooow"))), eq)
+  })
+
+  it("handles composition in a mark that has multiple children", () => {
+    let pm = requireFocus(tempEditor({doc: doc(p("one ", em("two", strong(" three"))))}))
+    compose(pm, () => edit(findTextNode(pm.dom, "two"), "o"), [
+      n => edit(n, "o"),
+      n => edit(n, "w")
+    ])
+    ist(pm.state.doc, doc(p("one ", em("twooow", strong(" three")))), eq)
+  })
+
+  it("supports composition in a cursor wrapper", () => {
+    let pm = requireFocus(tempEditor({doc: doc(p("<a>"))}))
+    pm.dispatch(pm.state.tr.addStoredMark(schema.marks.em.create()))
+    compose(pm, () => edit(focusNode(), "a"), [
+      n => edit(n, "b"),
+      n => edit(n, "c")
+    ], {node: true})
+    ist(pm.state.doc, doc(p(em("abc"))), eq)
+  })
+
+  it("handles composition in a multi-child mark with a cursor wrapper", () => {
+    let pm = requireFocus(tempEditor({doc: doc(p("one ", em("two<a>", strong(" three"))))}))
+    pm.dispatch(pm.state.tr.addStoredMark(schema.marks.code.create()))
+    compose(pm, () => edit(focusNode(), "o"), [
+      n => edit(n, "o"),
+      n => edit(n, "w")
+    ], {node: true})
+    ist(pm.state.doc, doc(p("one ", em("two", code("oow"), strong(" three")))), eq)
   })
 
   it("doesn't get interrupted by changes in decorations", () => {

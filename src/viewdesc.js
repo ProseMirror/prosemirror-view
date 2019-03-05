@@ -450,30 +450,11 @@ class WidgetViewDesc extends ViewDesc {
 // example through storedMarks), so that the style of the text doesn't
 // visually 'pop' between typing it and actually updating the view.
 class CursorWrapperDesc extends WidgetViewDesc {
-  parseRule() {
-    let content
-    for (let child = this.dom.firstChild; child; child = child.nextSibling) {
-      let add
-      if (child.nodeType == 3) {
-        let text = child.nodeValue.replace(/\ufeff/g, "")
-        if (!text) continue
-        add = document.createTextNode(text)
-      } else if (child.textContent == "\ufeff") {
-        continue
-      } else {
-        add = child.cloneNode(true)
-      }
-      if (!content) content = document.createDocumentFragment()
-      content.appendChild(add)
-    }
-    if (content) return {skip: content}
-    else return super.parseRule()
-  }
+  parseRule() { return {skip: withoutZeroWidthSpaces(this.dom)} }
 
   ignoreMutation() { return false }
 }
 
-// FIXME handle \ufeff char in content
 class CompositionViewDesc extends ViewDesc {
   constructor(parent, dom, textDOM, text) {
     super(parent, nothing, dom, null)
@@ -483,15 +464,20 @@ class CompositionViewDesc extends ViewDesc {
 
   get size() { return this.text.length }
 
+  parseRule() { return {skip: withoutZeroWidthSpaces(this.dom)} }
+
   localPosFromDOM(dom, offset) {
-    return this.posAtStart + (dom == this.textDOM ? offset : offset ? this.size : 0)
+    if (dom != this.textDOM) return this.posAtStart + (offset ? this.size : 0)
+    let zwsp = this.textDOM.nodeValue.indexOf("\ufeff")
+    return this.posAtStart + offset - (zwsp > -1 && zwsp < offset ? 1 : 0)
   }
 
-  domFromPos(pos) { return {node: this.textDOM, offset: pos} }
+  domFromPos(pos) {
+    let zwsp = this.textDOM.nodeValue.indexOf("\ufeff")
+    return {node: this.textDOM, offset: pos + (zwsp > -1 && zwsp <= pos ? 1 : 0)}
+  }
 
   ignoreMutation() { return false }
-
-  update(text) { this.text = text }
 }
 
 // A mark desc represents a mark. May have multiple children,
@@ -689,19 +675,15 @@ class NodeViewDesc extends ViewDesc {
     if (this.getDesc(node)) return
 
     // Create a composition view for the orphaned nodes
-    // FIXME this'll probably go wrong when that group of nodes is bigger than just the test node
     let topNode = node
     for (;; topNode = topNode.parentNode) {
       if (topNode.parentNode == this.dom) break
+      while (topNode.previousSibling) topNode.parentNode.removeChild(topNode.previousSibling)
+      while (topNode.nextSibling) topNode.parentNode.removeChild(topNode.nextSibling)
       if (topNode.pmViewDesc) topNode.pmViewDesc = null
     }
-    let desc = topNode.pmViewDesc
-    if (desc instanceof CompositionViewDesc) {
-      desc.update(text)
-    } else {
-      desc = new CompositionViewDesc(this, topNode, node, text)
-      view.compositionNodes.push(desc)
-    }
+    let desc = new CompositionViewDesc(this, topNode, node, text)
+    view.compositionNodes.push(desc)
 
     // Patch up this.children to contain the composition view
     this.children = replaceNodes(this.children, pos, pos + text.length, view, desc)
@@ -991,9 +973,9 @@ function rm(dom) {
 // the widget and node descs inside of them.
 class ViewTreeUpdater {
   // : (NodeViewDesc)
-  constructor(top, protectTextNode) {
+  constructor(top, lockedNode) {
     this.top = top
-    this.protect = protectTextNode
+    this.lock = lockedNode
     // Index into `this.top`'s child array, represents the current
     // update position.
     this.index = 0
@@ -1098,8 +1080,14 @@ class ViewTreeUpdater {
       let preMatch = this.preMatched.indexOf(next)
       if (preMatch > -1 && preMatch + this.preMatchOffset != index) return false
       let nextDOM = next.dom
-      if (!(this.protect && next.nodeDOM == this.protect) && // (Don't match the protected node)
-          next.update(node, outerDeco, innerDeco, view)) {
+
+      // Can't update if nextDOM is or contains this.lock, except if
+      // it's a text node whose content already matches the new text
+      // and whose decorations match the new ones.
+      let locked = this.lock && (nextDOM == this.lock || nextDOM.nodeType == 1 && nextDOM.contains(this.lock.parentNode)) &&
+          !(node.isText && next.node && next.node.isText && next.nodeDOM.nodeValue == node.text &&
+            next.dirty != NODE_DIRTY && sameOuterDeco(outerDeco, next.outerDeco))
+      if (!locked && next.update(node, outerDeco, innerDeco, view)) {
         if (next.dom != nextDOM) this.changed = true
         this.index++
         return true
@@ -1305,4 +1293,16 @@ function replaceNodes(nodes, from, to, view, replacement) {
     }
   }
   return result
+}
+
+function withoutZeroWidthSpaces(dom) {
+  let clone = dom.cloneNode(true)
+  function scan(node) {
+    if (node.nodeType == 1)
+      for (let child = node.firstChild; child; child = child.nextSibling) scan(child)
+    else if (node.nodeType == 3)
+      node.nodeValue = node.nodeValue.replace(/\ufeff/g, "")
+  }
+  scan(clone)
+  return clone
 }

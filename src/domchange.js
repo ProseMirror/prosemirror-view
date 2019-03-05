@@ -5,26 +5,6 @@ import {selectionBetween, selectionFromDOM} from "./selection"
 import {selectionCollapsed, keyEvent} from "./dom"
 import browser from "./browser"
 
-/* FIXME include this in new composition impl
-  ignoreKeyDownOnCompositionEnd(event) {
-    // See https://www.stum.de/2016/06/24/handling-ime-events-in-javascript/.
-    // On Japanese input method editors (IMEs), the Enter key is used to confirm character
-    // selection. On Safari, when Enter is pressed, compositionend and keydown events are
-    // emitted. The keydown event triggers newline insertion, which we don't want.
-    // This method returns true if the keydown event should be ignored.
-    // We only ignore it once, as pressing Enter a second time *should* insert a newline.
-    // Furthermore, the keydown event timestamp must be close to the compositionEndedAt timestamp.
-    // This guards against the case where compositionend is triggered without the keyboard
-    // (e.g. character confirmation may be done with the mouse), and keydown is triggered
-    // afterwards- we wouldn't want to ignore the keydown event in this case.
-    if (browser.safari && this.compositionEndedAt !== null && Math.abs(event.timeStamp - this.compositionEndedAt) < 500) {
-      this.compositionEndedAt = null
-      return true
-    }
-    return false
-  }
-*/
-
 // Note that all referencing and parsing is done with the
 // start-of-operation selection and document, since that's the one
 // that the DOM represents. If any changes came in in the meantime,

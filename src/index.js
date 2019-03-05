@@ -146,7 +146,7 @@ export class EditorView {
       // can cause a spurious DOM selection update, disrupting mouse
       // drag selection.
       if (forceSelUpdate ||
-          !(this.mouseDown && this.selectionReader.domChanged() && anchorInRightPlace(this))) {
+          !(this.mouseDown && this.domObserver.currentSelection.eq(this.root.getSelection()) && anchorInRightPlace(this))) {
         selectionToDOM(this, false, forceSelUpdate)
       } else {
         syncNodeSelection(this, state.selection)

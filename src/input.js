@@ -26,6 +26,7 @@ export function initInput(view) {
   view.composing = false
   view.composingTimeout = null
   view.compositionNodes = []
+  view.compositionEndedAt = -2e8
 
   view.domObserver = new DOMObserver(view, (from, to, typeOver) => readDOMChange(view, from, to, typeOver))
   view.domObserver.start()
@@ -88,7 +89,7 @@ export function dispatchEvent(view, event) {
 
 editHandlers.keydown = (view, event) => {
   view.shiftKey = event.keyCode == 16 || event.shiftKey
-  // FIXME ignore keys during and directly after composition
+  if (inOrNearComposition(view, event)) return
   view.lastKeyCode = event.keyCode
   view.lastKeyCodeTime = Date.now()
   if (view.someProp("handleKeyDown", f => f(view, event)) || captureKeyDown(view, event))
@@ -102,8 +103,8 @@ editHandlers.keyup = (view, e) => {
 }
 
 editHandlers.keypress = (view, event) => {
-  // FIXME ignore keys during and directly after composition
-  if (!event.charCode || event.ctrlKey && !event.altKey || browser.mac && event.metaKey) return
+  if (inOrNearComposition(view, event) || !event.charCode ||
+      event.ctrlKey && !event.altKey || browser.mac && event.metaKey) return
 
   if (view.someProp("handleKeyPress", f => f(view, event))) {
     event.preventDefault()
@@ -221,9 +222,8 @@ function defaultTripleClick(view, inside) {
   }
 }
 
-function forceDOMFlush(_view) {
-  // FIXME flush composition, when implemented
-  return false
+function forceDOMFlush(view) {
+  return endComposition(view)
 }
 
 const selectNodeModifier = browser.mac ? "metaKey" : "ctrlKey"
@@ -350,23 +350,41 @@ handlers.touchdown = view => {
 
 handlers.contextmenu = view => forceDOMFlush(view)
 
+function inOrNearComposition(view, event) {
+  if (view.composing) return true
+  // See https://www.stum.de/2016/06/24/handling-ime-events-in-javascript/.
+  // On Japanese input method editors (IMEs), the Enter key is used to confirm character
+  // selection. On Safari, when Enter is pressed, compositionend and keydown events are
+  // emitted. The keydown event triggers newline insertion, which we don't want.
+  // This method returns true if the keydown event should be ignored.
+  // We only ignore it once, as pressing Enter a second time *should* insert a newline.
+  // Furthermore, the keydown event timestamp must be close to the compositionEndedAt timestamp.
+  // This guards against the case where compositionend is triggered without the keyboard
+  // (e.g. character confirmation may be done with the mouse), and keydown is triggered
+  // afterwards- we wouldn't want to ignore the keydown event in this case.
+  if (browser.safari && Math.abs(event.timeStamp - this.compositionEndedAt) < 500) {
+    this.compositionEndedAt = -2e8
+    return true
+  }
+  return false
+}
+
 // Drop active composition after 5 seconds of inactivity on Android
 const timeoutComposition = browser.android ? 5000 : -1
 
 editHandlers.compositionstart = editHandlers.compositionupdate = view => {
   if (!view.composing) {
-    if (view.compositionNodes.length) {
-      view.domObserver.flush()
-      endComposition(view)
-    }
+    view.domObserver.flush()
+    endComposition(view)
     view.composing = true
   }
   scheduleComposeEnd(view, timeoutComposition)
 }
 
-editHandlers.compositionend = view => {
+editHandlers.compositionend = (view, event) => {
   if (view.composing) {
     view.composing = false
+    view.compositionEndedAt = event.timeStamp
     scheduleComposeEnd(view, 20)
   }
 }
@@ -379,7 +397,11 @@ function scheduleComposeEnd(view, delay) {
 export function endComposition(view) {
   view.composing = false
   while (view.compositionNodes.length > 0) view.compositionNodes.pop().markParentsDirty()
-  if (view.docView.dirty) view.updateState(view.state)
+  if (view.docView.dirty) {
+    view.updateState(view.state)
+    return true
+  }
+  return false
 }
 
 function captureCopy(view, dom) {
