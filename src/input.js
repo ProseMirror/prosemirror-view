@@ -53,6 +53,7 @@ export function destroyInput(view) {
   view.domObserver.stop()
   for (let type in view.eventHandlers)
     view.dom.removeEventListener(type, view.eventHandlers[type])
+  clearTimeout(view.composingTimeout)
 }
 
 export function ensureListeners(view) {
@@ -353,7 +354,13 @@ handlers.contextmenu = view => forceDOMFlush(view)
 const timeoutComposition = browser.android ? 5000 : -1
 
 editHandlers.compositionstart = editHandlers.compositionupdate = view => {
-  view.composing = true
+  if (!view.composing) {
+    if (view.compositionNodes.length) {
+      view.domObserver.flush()
+      endComposition(view)
+    }
+    view.composing = true
+  }
   scheduleComposeEnd(view, timeoutComposition)
 }
 
@@ -369,15 +376,10 @@ function scheduleComposeEnd(view, delay) {
   if (delay > -1) view.composingTimeout = setTimeout(() => endComposition(view), delay)
 }
 
-function endComposition(view) {
+export function endComposition(view) {
   view.composing = false
   while (view.compositionNodes.length > 0) view.compositionNodes.pop().markParentsDirty()
   if (view.docView.dirty) view.updateState(view.state)
-}
-
-export function forceCompositionEnd(view) {
-  clearTimeout(view.composingTimeout)
-  view.composing = false
 }
 
 function captureCopy(view, dom) {

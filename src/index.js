@@ -12,6 +12,7 @@ export {Decoration, DecorationSet} from "./decoration"
 
 // Exported for testing
 export {serializeForClipboard as __serializeForClipboard, parseFromClipboard as __parseFromClipboard} from "./clipboard"
+export {endComposition as __endComposition} from "./input"
 
 // ::- An editor view manages the DOM structure that represents an
 // editable document. Its state and behavior are determined by its

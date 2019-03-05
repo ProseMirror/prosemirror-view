@@ -624,7 +624,9 @@ class NodeViewDesc extends ViewDesc {
   // separate step, syncs the DOM inside `this.contentDOM` to
   // `this.children`.
   updateChildren(view, pos) {
-    let updater = new ViewTreeUpdater(this), inline = this.node.inlineContent, off = pos
+    let inline = this.node.inlineContent, off = pos
+    let composition = inline && view.composing && this.localCompositionNode(view, pos)
+    let updater = new ViewTreeUpdater(this, composition && composition.node)
     iterDeco(this.node, this.innerDeco, (widget, i) => {
       if (widget.spec.marks)
         updater.syncToMarks(widget.spec.marks, inline, view)
@@ -653,7 +655,7 @@ class NodeViewDesc extends ViewDesc {
     // Sync the DOM if anything changed
     if (updater.changed || this.dirty == CONTENT_DIRTY) {
       // May have to protect focused DOM from being changed if a composition is active
-      if (view.composing && this.node.inlineContent) this.localComposition(view, pos)
+      if (composition) this.protectLocalComposition(view, composition)
       this.renderChildren()
     }
   }
@@ -663,7 +665,7 @@ class NodeViewDesc extends ViewDesc {
     if (browser.ios) iosHacks(this.dom)
   }
 
-  localComposition(view, pos) {
+  localCompositionNode(view, pos) {
     // Only do something if both the selection and a focused text node
     // are inside of this node, and the node isn't already part of a
     // view that's a child of this view
@@ -671,18 +673,24 @@ class NodeViewDesc extends ViewDesc {
     if (!(view.state.selection instanceof TextSelection) || from < pos || to > pos + this.node.content.size) return
     let sel = view.root.getSelection()
     let textNode = nearbyTextNode(sel.focusNode, sel.focusOffset)
-    if (!textNode || !this.dom.contains(textNode.parentNode) || this.getDesc(textNode)) return
+    if (!textNode || !this.dom.contains(textNode.parentNode)) return
 
     // Find the text in the focused node in the node, stop if it's not
     // there (may have been modified through other means, in which
     // case it should overwritten)
     let text = textNode.nodeValue.replace(/\ufeff/g, "")
     let textPos = findTextInFragment(this.node.content, text, from - pos, to - pos)
-    if (textPos < 0) return
+
+    return textPos < 0 ? null : {node: textNode, pos: textPos, text}
+  }
+
+  protectLocalComposition(view, {node, pos, text}) {
+    // The node is already part of a local view desc, leave it there
+    if (this.getDesc(node)) return
 
     // Create a composition view for the orphaned nodes
     // FIXME this'll probably go wrong when that group of nodes is bigger than just the test node
-    let topNode = textNode
+    let topNode = node
     for (;; topNode = topNode.parentNode) {
       if (topNode.parentNode == this.dom) break
       if (topNode.pmViewDesc) topNode.pmViewDesc = null
@@ -691,12 +699,12 @@ class NodeViewDesc extends ViewDesc {
     if (desc instanceof CompositionViewDesc) {
       desc.update(text)
     } else {
-      desc = new CompositionViewDesc(this, topNode, textNode, text)
+      desc = new CompositionViewDesc(this, topNode, node, text)
       view.compositionNodes.push(desc)
     }
 
     // Patch up this.children to contain the composition view
-    this.children = replaceNodes(this.children, textPos, textPos + text.length, view, desc)
+    this.children = replaceNodes(this.children, pos, pos + text.length, view, desc)
   }
 
   // : (Node, [Decoration], DecorationSet, EditorView) → bool
@@ -983,8 +991,9 @@ function rm(dom) {
 // the widget and node descs inside of them.
 class ViewTreeUpdater {
   // : (NodeViewDesc)
-  constructor(top) {
+  constructor(top, protectTextNode) {
     this.top = top
+    this.protect = protectTextNode
     // Index into `this.top`'s child array, represents the current
     // update position.
     this.index = 0
@@ -1089,7 +1098,8 @@ class ViewTreeUpdater {
       let preMatch = this.preMatched.indexOf(next)
       if (preMatch > -1 && preMatch + this.preMatchOffset != index) return false
       let nextDOM = next.dom
-      if (next.update(node, outerDeco, innerDeco, view)) {
+      if (!(this.protect && next.nodeDOM == this.protect) && // (Don't match the protected node)
+          next.update(node, outerDeco, innerDeco, view)) {
         if (next.dom != nextDOM) this.changed = true
         this.index++
         return true

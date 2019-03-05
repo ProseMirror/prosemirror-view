@@ -42,3 +42,11 @@ function findTextNode(node, text) {
   }
 }
 exports.findTextNode = findTextNode
+
+function requireFocus(pm) {
+  if (!document.hasFocus())
+    throw new Error("The document doesn't have focus, which is needed for this test")
+  pm.focus()
+  return pm
+}
+exports.requireFocus = requireFocus
