@@ -234,17 +234,16 @@ function singleRect(object, bias) {
 // : (EditorView, number) → {left: number, top: number, right: number, bottom: number}
 // Given a position in the document model, get a bounding box of the
 // character at that position, relative to the window.
-export function coordsAtPos(view, pos) {
+export function coordsAtPos(view, pos, end = false) {
   let {node, offset} = view.docView.domFromPos(pos)
   let side, rect
   if (node.nodeType == 3) {
-    if (offset < node.nodeValue.length) {
+    if (end && offset < node.nodeValue.length) {
+      rect = singleRect(textRange(node, offset - 1, offset), -1)
+      side = "right"
+    } else if (offset < node.nodeValue.length) {
       rect = singleRect(textRange(node, offset, offset + 1), -1)
       side = "left"
-    }
-    if ((!rect || rect.left == rect.right) && offset) {
-      rect = singleRect(textRange(node, offset - 1, offset), 1)
-      side = "right"
     }
   } else if (node.firstChild) {
     if (offset < node.childNodes.length) {
