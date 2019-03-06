@@ -259,10 +259,10 @@ export class EditorView {
   // Returns the viewport rectangle at a given document position. `left`
   // and `right` will be the same number, as this returns a flat
   // cursor-ish rectangle.
-  coordsAtPos(pos) {
+  coordsAtPos(pos, end = false) {
     if (this.inDOMChange)
       pos = this.inDOMChange.mapping.invert().map(pos)
-    return coordsAtPos(this, pos)
+    return coordsAtPos(this, pos, end)
   }
 
   // :: (number) → {node: dom.Node, offset: number}
