@@ -157,7 +157,7 @@ describe("EditorView", () => {
     let view = tempEditor({doc: doc(p("one"), blockquote(p("two"), p("three")))})
     ;[1, 2, 4, 7, 14, 15].forEach(pos => {
       let coords = view.coordsAtPos(pos)
-      let found = view.posAtCoords(coords).pos
+      let found = view.posAtCoords({top: coords.top + 1, left: coords.left}).pos
       ist(found, pos)
     })
   })
