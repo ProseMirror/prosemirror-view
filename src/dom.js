@@ -47,7 +47,7 @@ function scanFor(node, off, targetNode, targetOff, dir) {
   }
 }
 
-function nodeSize(node) {
+export function nodeSize(node) {
   return node.nodeType == 3 ? node.nodeValue.length : node.childNodes.length
 }
 

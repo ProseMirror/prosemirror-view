@@ -143,6 +143,16 @@ describe("EditorView", () => {
     })
   })
 
+  it("produces sensible screen coordinates around line breaks", () => {
+    let view = tempEditor({doc: doc(p("one two three four five-six-seven-eight"))})
+    view.dom.style.width = "4em"
+    allPositions(view.state.doc);[9].forEach(pos => {
+      let coords = view.coordsAtPos(pos)
+      let found = view.posAtCoords({top: coords.top + 1, left: coords.left}).pos
+      ist(found, pos)
+    })
+  })
+
   it("can go back and forth between screen coords and document positions", () => {
     let view = tempEditor({doc: doc(p("one"), blockquote(p("two"), p("three")))})
     ;[1, 2, 4, 7, 14, 15].forEach(pos => {

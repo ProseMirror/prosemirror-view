@@ -1,4 +1,5 @@
-import {textRange, parentNode} from "./dom"
+import {nodeSize, textRange, parentNode} from "./dom"
+import browser from "./browser"
 
 function windowRect(win) {
   return {left: 0, right: win.innerWidth,
@@ -236,32 +237,55 @@ function singleRect(object, bias) {
 // character at that position, relative to the window.
 export function coordsAtPos(view, pos) {
   let {node, offset} = view.docView.domFromPos(pos)
-  let side, rect
-  if (node.nodeType == 3) {
-    if (offset < node.nodeValue.length) {
-      rect = singleRect(textRange(node, offset, offset + 1), -1)
-      side = "left"
+
+  // These browsers support querying empty text ranges
+  if (node.nodeType == 3 && (browser.chrome || browser.gecko)) {
+    let rect = singleRect(textRange(node, offset, offset), 0)
+    // Firefox returns bad results (the position before the space)
+    // when querying a position directly after line-broken
+    // whitespace. Detect this situation and and kludge around it
+    if (browser.gecko && offset && /\s/.test(node.nodeValue[offset - 1]) && offset < node.nodeValue.length) {
+      let rectBefore = singleRect(textRange(node, offset - 1, offset - 1), -1)
+      if (Math.abs(rectBefore.left - rect.left) < 1 && rectBefore.top == rect.top) {
+        let rectAfter = singleRect(textRange(node, offset, offset + 1), -1)
+        return flatten(rectAfter, rectAfter.left < rectBefore.left)
+      }
     }
-    if ((!rect || rect.left == rect.right) && offset) {
-      rect = singleRect(textRange(node, offset - 1, offset), 1)
-      side = "right"
-    }
-  } else if (node.firstChild) {
-    if (offset < node.childNodes.length) {
-      let child = node.childNodes[offset]
-      rect = singleRect(child.nodeType == 3 ? textRange(child) : child, -1)
-      side = "left"
-    }
-    if ((!rect || rect.top == rect.bottom) && offset) {
-      let child = node.childNodes[offset - 1]
-      rect = singleRect(child.nodeType == 3 ? textRange(child) : child, 1)
-      side = "right"
-    }
-  } else {
-    rect = node.getBoundingClientRect()
-    side = "left"
+    return rect
   }
-  let x = rect[side]
+
+  // Not Firefox/Chrome, or not in a text node, so we have to use
+  // actual element/character rectangles to get a solution (this part
+  // is not very bidi-safe)
+  //
+  // Try the left side first, fall back to the right one if that
+  // doesn't work.
+  for (let dir = -1; dir < 2; dir += 2) {
+    if (dir < 0 && offset) {
+      let prev, target = node.nodeType == 3 ? textRange(node, offset - 1, offset)
+          : (prev = node.childNodes[offset - 1]).nodeType == 3 ? textRange(prev)
+          : prev.nodeType == 1 && prev.nodeName != "BR" ? prev : null // BR nodes tend to only return the rectangle before them
+      if (target) {
+        let rect = singleRect(target, 1)
+        if (rect.top < rect.bottom) return flatten(rect, false)
+      }
+    } else if (dir > 0 && offset < nodeSize(node)) {
+      let next, target = node.nodeType == 3 ? textRange(node, offset, offset + 1)
+          : (next = node.childNodes[offset]).nodeType == 3 ? textRange(next)
+          : next.nodeType == 1 ? next : null
+      if (target) {
+        let rect = singleRect(target, -1)
+        if (rect.top < rect.bottom) return flatten(rect, true)
+      }
+    }
+  }
+  // All else failed, just try to get a rectangle for the target node
+  return flatten(singleRect(node.nodeType == 3 ? textRange(node) : node, 0), false)
+}
+
+function flatten(rect, left) {
+  if (rect.width == 0) return rect
+  let x = left ? rect.left : rect.right
   return {top: rect.top, bottom: rect.bottom, left: x, right: x}
 }
 
