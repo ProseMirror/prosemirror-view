@@ -362,8 +362,8 @@ function inOrNearComposition(view, event) {
   // This guards against the case where compositionend is triggered without the keyboard
   // (e.g. character confirmation may be done with the mouse), and keydown is triggered
   // afterwards- we wouldn't want to ignore the keydown event in this case.
-  if (browser.safari && Math.abs(event.timeStamp - this.compositionEndedAt) < 500) {
-    this.compositionEndedAt = -2e8
+  if (browser.safari && Math.abs(event.timeStamp - view.compositionEndedAt) < 500) {
+    view.compositionEndedAt = -2e8
     return true
   }
   return false
