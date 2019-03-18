@@ -150,6 +150,7 @@ export class EditorView {
       if (forceSelUpdate ||
           !(this.mouseDown && this.selectionReader.domChanged() && anchorInRightPlace(this)))
         selectionToDOM(this, false, forceSelUpdate)
+      else syncNodeSelection(this, state.selection)
       this.domObserver.start()
     }
 
