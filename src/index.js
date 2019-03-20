@@ -4,7 +4,7 @@ import {NodeSelection} from "prosemirror-state"
 import {scrollRectIntoView, posAtCoords, coordsAtPos, endOfTextblock, storeScrollPos, resetScrollPos} from "./domcoords"
 import {docViewDesc} from "./viewdesc"
 import {initInput, destroyInput, dispatchEvent, ensureListeners} from "./input"
-import {SelectionReader, selectionToDOM, needsCursorWrapper, anchorInRightPlace} from "./selection"
+import {SelectionReader, selectionToDOM, needsCursorWrapper, anchorInRightPlace, syncNodeSelection} from "./selection"
 import {Decoration, viewDecorations} from "./decoration"
 import browser from "./browser"
 
@@ -150,7 +150,8 @@ export class EditorView {
       if (forceSelUpdate ||
           !(this.mouseDown && this.selectionReader.domChanged() && anchorInRightPlace(this)))
         selectionToDOM(this, false, forceSelUpdate)
-      else syncNodeSelection(this, state.selection)
+      else
+        syncNodeSelection(this, state.selection)
       this.domObserver.start()
     }
 

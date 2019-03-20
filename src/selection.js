@@ -272,7 +272,7 @@ function selectCursorWrapper(view) {
   }
 }
 
-function syncNodeSelection(view, sel) {
+export function syncNodeSelection(view, sel) {
   if (sel instanceof NodeSelection) {
     let desc = view.docView.descAt(sel.from)
     if (desc != view.lastSelectedViewDesc) {
