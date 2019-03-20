@@ -1,3 +1,13 @@
+## 1.8.4 (2019-03-20)
+
+### Bug fixes
+
+[`EditorView.coordsAtPos`](https://prosemirror.net/docs/ref/#view.EditorView.coordsAtPos) is now more accurate in right-to-left text on Chrome and Firefox.
+
+[`EditorView.coordsAtPos`](https://prosemirror.net/docs/ref/#view.EditorView.coordsAtPos) returns more accurate coordinates when querying the position directly after a line wrap point.
+
+Fix an issue where clicking directly in front of a node selection doesn't clear the node selection markup.
+
 ## 1.8.3 (2019-03-04)
 
 ### Bug fixes
