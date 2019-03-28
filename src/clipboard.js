@@ -52,7 +52,7 @@ export function parseFromClipboard(view, text, html, plainText, $context) {
       })
     }
   } else {
-    view.someProp("transformPastedHTML", f => html = f(html))
+    view.someProp("transformPastedHTML", f => { html = f(html) })
     dom = readHTML(html)
   }
 
