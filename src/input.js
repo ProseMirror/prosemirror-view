@@ -18,6 +18,7 @@ export function initInput(view) {
   view.inDOMChange = null
   view.lastKeyCode = null
   view.lastKeyCodeTime = 0
+  view.lastClick = {time: 0, x: 0, y: 0, type: ""}
   view.domObserver = new DOMObserver(view)
   view.domObserver.start()
 
@@ -108,8 +109,6 @@ editHandlers.keypress = (view, event) => {
 }
 
 function eventCoords(event) { return {left: event.clientX, top: event.clientY} }
-
-let lastClick = {time: 0, x: 0, y: 0, type: ""}
 
 function isNear(event, click) {
   let dx = click.x - event.clientX, dy = click.y - event.clientY
@@ -223,11 +222,11 @@ handlers.mousedown = (view, event) => {
   view.shiftKey = event.shiftKey
   let flushed = forceDOMFlush(view)
   let now = Date.now(), type = "singleClick"
-  if (now - lastClick.time < 500 && isNear(event, lastClick) && !event[selectNodeModifier]) {
-    if (lastClick.type == "singleClick") type = "doubleClick"
-    else if (lastClick.type == "doubleClick") type = "tripleClick"
+  if (now - view.lastClick.time < 500 && isNear(event, view.lastClick) && !event[selectNodeModifier]) {
+    if (view.lastClick.type == "singleClick") type = "doubleClick"
+    else if (view.lastClick.type == "doubleClick") type = "tripleClick"
   }
-  lastClick = {time: now, x: event.clientX, y: event.clientY, type}
+  view.lastClick = {time: now, x: event.clientX, y: event.clientY, type}
 
   let pos = view.posAtCoords(eventCoords(event))
   if (!pos) return
