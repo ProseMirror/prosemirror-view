@@ -4,7 +4,7 @@ import {Mapping} from "prosemirror-transform"
 
 import {TrackMappings} from "./trackmappings"
 import {selectionBetween} from "./selection"
-import {selectionCollapsed} from "./dom"
+import {selectionCollapsed, keyEvent} from "./dom"
 import browser from "./browser"
 
 export class DOMChange {
@@ -231,14 +231,6 @@ function rangeAroundSelection(selection) {
   }
 }
 
-function keyEvent(keyCode, key) {
-  let event = document.createEvent("Event")
-  event.initEvent("keydown", true, true)
-  event.keyCode = keyCode
-  event.key = event.code = key
-  return event
-}
-
 function readDOMChange(view, mapping, oldState, range, allowTypeOver) {
   let parse = parseBetween(view, oldState, range)
 
@@ -265,6 +257,7 @@ function readDOMChange(view, mapping, oldState, range, allowTypeOver) {
     }
     return
   }
+  view.domChangeCount++
   // Handle the case where overwriting a selection by typing matches
   // the start or end of the selected content, creating a change
   // that's smaller than what was actually overwritten.

@@ -7,6 +7,7 @@ import {DOMChange} from "./domchange"
 import {parseFromClipboard, serializeForClipboard} from "./clipboard"
 import {DOMObserver} from "./domobserver"
 import {selectionBetween, needsCursorWrapper} from "./selection"
+import {keyEvent} from "./dom"
 
 // A collection of DOM events that occur within the editor, and callback functions
 // to invoke when the event fires.
@@ -21,6 +22,8 @@ export function initInput(view) {
   view.lastClick = {time: 0, x: 0, y: 0, type: ""}
   view.domObserver = new DOMObserver(view)
   view.domObserver.start()
+  // Used by hacks like the beforeinput handler to check whether anything happened in the DOM
+  view.domChangeCount = 0
 
   view.eventHandlers = Object.create(null)
   for (let event in handlers) {
@@ -551,6 +554,27 @@ handlers.blur = view => {
   if (view.focused) {
     view.dom.classList.remove("ProseMirror-focused")
     view.focused = false
+  }
+}
+
+handlers.beforeinput = (view, event) => {
+  // We should probably do more with beforeinput events, but support
+  // is so spotty that I'm still waiting to see where they are going.
+
+  // Very specific hack to deal with backspace sometimes failing on
+  // Chrome Android when after an uneditable node.
+  if (browser.chrome && browser.android && event.inputType == "deleteContentBackward") {
+    let {domChangeCount} = view
+    setTimeout(() => {
+      if (view.domChangeCount != domChangeCount) return // Event already had some effect
+      // This bug tends to close the virtual keyboard, so we refocus
+      view.dom.blur()
+      view.focus()
+      if (view.someProp("handleKeyDown", f => f(view, keyEvent(8, "Backspace")))) return
+      let {$cursor} = view.state.selection
+      // Crude approximation of backspace behavior when no command handled it
+      if ($cursor && $cursor.pos > 0) view.dispatch(view.state.tr.delete($cursor.pos - 1, $cursor.pos).scrollIntoView())
+    }, 50)
   }
 }
 
