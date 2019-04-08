@@ -1,5 +1,5 @@
 const {doc, p, hr, em, strong, img, blockquote, schema} = require("prosemirror-test-builder")
-const {Plugin} = require("prosemirror-state")
+const {Plugin, TextSelection} = require("prosemirror-state")
 const {tempEditor} = require("./view")
 const {DecorationSet, Decoration} = require("../dist")
 const ist = require("ist")
@@ -399,5 +399,15 @@ describe("Decoration drawing", () => {
     let widgetDOM = view.dom.querySelector("button")
     view.dispatch(view.state.tr.insertText("!", 2, 2))
     ist(view.dom.querySelector("button"), widgetDOM)
+  })
+
+  it("doesn't get confused by split text nodes", () => {
+    let view = tempEditor({doc: doc(p("abab")), decorations(state) {
+      return state.selection.from <= 1 ? null :
+        DecorationSet.create(view.state.doc, [Decoration.inline(1, 2, {class: "foo"}),
+                                              Decoration.inline(3, 4, {class: "foo"})])
+    }})
+    view.dispatch(view.state.tr.setSelection(TextSelection.create(view.state.doc, 5)))
+    ist(view.dom.textContent, "abab")
   })
 })

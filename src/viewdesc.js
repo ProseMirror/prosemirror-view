@@ -970,7 +970,7 @@ class ViewTreeUpdater {
   // Try to find a node desc matching the given data. Skip over it and
   // return true when successful.
   findNodeMatch(node, outerDeco, innerDeco, index) {
-    let found = -1, preMatch = this.preMatched[index], children = this.top.children
+    let found = -1, preMatch = index < 0 ? undefined : this.preMatched[index], children = this.top.children
     if (preMatch && preMatch.matchesNode(node, outerDeco, innerDeco)) {
       found = children.indexOf(preMatch)
     } else {
@@ -1094,11 +1094,13 @@ function iterDeco(parent, deco, onWidget, onNode) {
       }
     }
 
-    let child
+    let child, index
     if (restNode) {
+      index = -1
       child = restNode
       restNode = null
     } else if (parentIndex < parent.childCount) {
+      index = parentIndex
       child = parent.child(parentIndex++)
     } else {
       break
@@ -1116,10 +1118,11 @@ function iterDeco(parent, deco, onWidget, onNode) {
         restNode = child.cut(cutAt - offset)
         child = child.cut(0, cutAt - offset)
         end = cutAt
+        index = -1
       }
     }
 
-    onNode(child, active.length ? active.slice() : nothing, deco.forChild(offset, child), parentIndex - 1)
+    onNode(child, active.length ? active.slice() : nothing, deco.forChild(offset, child), index)
     offset = end
   }
 }
