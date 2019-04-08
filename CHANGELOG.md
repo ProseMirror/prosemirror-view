@@ -1,3 +1,11 @@
+## 1.8.5 (2019-04-08)
+
+### Bug fixes
+
+Multiple [`transformPastedHTML`](https://prosemirror.net/docs/ref/#view.EditorProps.transformPastedHTML) props are now all properly called in order, rather than only the first one.
+
+Fixes an issue where invalid change positions were computed when a composition happened concurrently with a change that inserted content at the same position.
+
 ## 1.8.4 (2019-03-20)
 
 ### Bug fixes
