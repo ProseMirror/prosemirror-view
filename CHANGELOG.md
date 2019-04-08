@@ -1,3 +1,9 @@
+## 1.8.6 (2019-04-08)
+
+### Bug fixes
+
+Fix a bug where decorations splitting a text node would sometimes confuse the display updater and make decorated nodes disappear.
+
 ## 1.8.5 (2019-04-08)
 
 ### Bug fixes
