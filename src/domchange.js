@@ -293,7 +293,7 @@ function readDOMChange(view, mapping, oldState, range, allowTypeOver) {
     return
   }
 
-  let from = mapping.map(change.start), to = mapping.map(change.endA, -1)
+  let from = mapping.map(change.start), to = Math.max(from, mapping.map(change.endA, -1))
 
   let tr, storedMarks, markChange, $from1
   if ($from.sameParent($to) && $from.parent.inlineContent) {
