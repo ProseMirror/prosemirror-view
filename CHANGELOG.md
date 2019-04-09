@@ -1,3 +1,9 @@
+## 1.8.7 (2019-04-09)
+
+### Bug fixes
+
+The [`handlePaste`](https://prosemirror.net/docs/ref/#view.EditorProps.handlePaste) prop is now activated even when the default parser can't make any sense of the clipboard content.
+
 ## 1.8.6 (2019-04-08)
 
 ### Bug fixes
