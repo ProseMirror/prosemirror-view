@@ -1,5 +1,6 @@
 import {Selection, NodeSelection, TextSelection} from "prosemirror-state"
 import {dropPoint} from "prosemirror-transform"
+import {Slice} from "prosemirror-model"
 
 import browser from "./browser"
 import {captureKeyDown} from "./capturekeys"
@@ -445,9 +446,7 @@ function capturePaste(view, e) {
 
 function doPaste(view, text, html, e) {
   let slice = parseFromClipboard(view, text, html, view.shiftKey, view.state.selection.$from)
-  if (!slice) return false
-
-  if (view.someProp("handlePaste", f => f(view, e, slice))) return true
+  if (view.someProp("handlePaste", f => f(view, e, slice || Slice.empty)) || !slice) return true
 
   let singleNode = sliceSingleNode(slice)
   let tr = singleNode ? view.state.tr.replaceSelectionWith(singleNode, view.shiftKey) : view.state.tr.replaceSelection(slice)
