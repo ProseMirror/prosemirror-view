@@ -909,7 +909,13 @@ class ViewTreeUpdater {
     // Tracks whether anything was changed
     this.changed = false
 
-    this.preMatched = preMatch(top.node.content, top.children)
+    let pre = preMatch(top.node.content, top.children)
+    this.preMatched = pre.nodes
+    this.preMatchOffset = pre.offset
+  }
+
+  getPreMatch(index) {
+    return index >= this.preMatchOffset ? this.preMatched[index - this.preMatchOffset] : null
   }
 
   // Destroy and remove the children between the given indices in
@@ -970,7 +976,7 @@ class ViewTreeUpdater {
   // Try to find a node desc matching the given data. Skip over it and
   // return true when successful.
   findNodeMatch(node, outerDeco, innerDeco, index) {
-    let found = -1, preMatch = index < 0 ? undefined : this.preMatched[index], children = this.top.children
+    let found = -1, preMatch = index < 0 ? undefined : this.getPreMatch(index), children = this.top.children
     if (preMatch && preMatch.matchesNode(node, outerDeco, innerDeco)) {
       found = children.indexOf(preMatch)
     } else {
@@ -996,7 +1002,7 @@ class ViewTreeUpdater {
     let next = this.top.children[this.index]
     if (next instanceof NodeViewDesc) {
       let preMatch = this.preMatched.indexOf(next)
-      if (preMatch > -1 && preMatch != index) return false
+      if (preMatch > -1 && preMatch + this.preMatchOffset != index) return false
       let nextDOM = next.dom
       if (next.update(node, outerDeco, innerDeco, view)) {
         if (next.dom != nextDOM) this.changed = true
@@ -1056,9 +1062,10 @@ function preMatch(frag, descs) {
     let desc = descs[i], node = desc.node
     if (!node) continue
     if (node != frag.child(end - 1)) break
-    result[--end] = desc
+    result.push(desc)
+    --end
   }
-  return result
+  return {nodes: result.reverse(), offset: end}
 }
 
 function compareSide(a, b) { return a.type.side - b.type.side }
