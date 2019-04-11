@@ -45,7 +45,6 @@ export class EditorView {
     }
 
     this.editable = getEditable(this)
-    this.redraw = false
     this.cursorWrapper = null
     updateCursorWrapper(this)
     this.nodeViews = buildNodeViews(this)
@@ -106,13 +105,13 @@ export class EditorView {
   }
 
   updateStateInner(state, reconfigured) {
-    let prev = this.state
+    let prev = this.state, redraw = false
     this.state = state
     if (reconfigured) {
       let nodeViews = buildNodeViews(this)
       if (changedNodeViews(nodeViews, this.nodeViews)) {
         this.nodeViews = nodeViews
-        this.redraw = true
+        redraw = true
       }
       ensureListeners(this)
     }
@@ -127,7 +126,7 @@ export class EditorView {
 
     let scroll = reconfigured ? "reset"
         : state.scrollToSelection > prev.scrollToSelection ? "to selection" : "preserve"
-    let updateDoc = this.redraw || !this.docView.matchesNode(state.doc, outerDeco, innerDeco)
+    let updateDoc = redraw || !this.docView.matchesNode(state.doc, outerDeco, innerDeco)
     let updateSel = updateDoc || !state.selection.eq(prev.selection) || this.selectionReader.domChanged()
     let oldScrollPos = scroll == "preserve" && updateSel && storeScrollPos(this)
 
@@ -140,10 +139,9 @@ export class EditorView {
         // where the thing the user sees differs from the selection
         // reported by the Selection object (#710)
         let startSelContext = browser.chrome && selectionContext(this.root)
-        if (this.redraw || !this.docView.update(state.doc, outerDeco, innerDeco, this)) {
+        if (redraw || !this.docView.update(state.doc, outerDeco, innerDeco, this)) {
           this.docView.destroy()
           this.docView = docViewDesc(state.doc, outerDeco, innerDeco, this.dom, this)
-          this.redraw = false
         }
         this.selectionReader.clearDOMState()
         if (startSelContext)
