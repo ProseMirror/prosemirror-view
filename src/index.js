@@ -109,7 +109,14 @@ export class EditorView {
   updateState(state) {
     let prev = this.state
     this.state = state
-    if (prev.plugins != state.plugins) ensureListeners(this)
+    if (prev.plugins != state.plugins) {
+      let nodeViews = buildNodeViews(this)
+      if (changedNodeViews(nodeViews, this.nodeViews)) {
+        this.nodeViews = nodeViews
+        this.redraw = true
+      }
+      ensureListeners(this)
+    }
 
     this.domObserver.flush()
     if (this.inDOMChange && this.inDOMChange.stateUpdated(state)) return
