@@ -248,10 +248,24 @@ export function coordsAtPos(view, pos) {
       let rectBefore = singleRect(textRange(node, offset - 1, offset - 1), -1)
       if (Math.abs(rectBefore.left - rect.left) < 1 && rectBefore.top == rect.top) {
         let rectAfter = singleRect(textRange(node, offset, offset + 1), -1)
-        return flatten(rectAfter, rectAfter.left < rectBefore.left)
+        return flattenV(rectAfter, rectAfter.left < rectBefore.left)
       }
     }
     return rect
+  }
+
+  if (node.nodeType == 1 && !view.state.doc.resolve(pos).parent.inlineContent) {
+    // Return a horizontal line in block context
+    let top = true, rect
+    if (offset) {
+      let before = node.childNodes[offset - 1]
+      if (before.nodeType == 1) { rect = before.getBoundingClientRect(); top = false }
+    }
+    if (!rect && offset < node.childNodes.length) {
+      let after = node.childNodes[offset]
+      if (after.nodeType == 1) rect = after.getBoundingClientRect()
+    }
+    return flattenH(rect || parent.getBoundingClientRect(), top)
   }
 
   // Not Firefox/Chrome, or not in a text node, so we have to use
@@ -267,7 +281,7 @@ export function coordsAtPos(view, pos) {
           : prev.nodeType == 1 && prev.nodeName != "BR" ? prev : null // BR nodes tend to only return the rectangle before them
       if (target) {
         let rect = singleRect(target, 1)
-        if (rect.top < rect.bottom) return flatten(rect, false)
+        if (rect.top < rect.bottom) return flattenV(rect, false)
       }
     } else if (dir > 0 && offset < nodeSize(node)) {
       let next, target = node.nodeType == 3 ? textRange(node, offset, offset + 1)
@@ -275,18 +289,24 @@ export function coordsAtPos(view, pos) {
           : next.nodeType == 1 ? next : null
       if (target) {
         let rect = singleRect(target, -1)
-        if (rect.top < rect.bottom) return flatten(rect, true)
+        if (rect.top < rect.bottom) return flattenV(rect, true)
       }
     }
   }
   // All else failed, just try to get a rectangle for the target node
-  return flatten(singleRect(node.nodeType == 3 ? textRange(node) : node, 0), false)
+  return flattenV(singleRect(node.nodeType == 3 ? textRange(node) : node, 0), false)
 }
 
-function flatten(rect, left) {
+function flattenV(rect, left) {
   if (rect.width == 0) return rect
   let x = left ? rect.left : rect.right
   return {top: rect.top, bottom: rect.bottom, left: x, right: x}
+}
+
+function flattenH(rect, top) {
+  if (rect.height == 0) return rect
+  let y = top ? rect.top : rect.bottom
+  return {top: y, bottom: y, left: rect.left, right: rect.right}
 }
 
 function withFlushedState(view, state, f) {

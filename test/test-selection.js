@@ -143,6 +143,25 @@ describe("EditorView", () => {
     })
   })
 
+  it("produces horizontal rectangles for positions between blocks", () => {
+    let view = tempEditor({doc: doc(p("ha"), hr, blockquote(p("ba")))})
+    let a = view.coordsAtPos(0)
+    ist(a.top, a.bottom)
+    ist(a.top, view.dom.firstChild.getBoundingClientRect().top)
+    ist(a.left, a.right, "<")
+    let b = view.coordsAtPos(4)
+    ist(b.top, b.bottom)
+    ist(b.top, a.top, ">")
+    ist(b.left, b.right, "<")
+    let c = view.coordsAtPos(5)
+    ist(c.top, c.bottom)
+    ist(c.top, b.top, ">")
+    let d = view.coordsAtPos(6)
+    ist(d.top, d.bottom)
+    ist(d.left, d.right, "<")
+    ist(d.top, view.dom.getBoundingClientRect().bottom, "<")
+  })
+
   it("produces sensible screen coordinates around line breaks", () => {
     let view = tempEditor({doc: doc(p("one two three four five-six-seven-eight"))})
     view.dom.style.width = "4em"
