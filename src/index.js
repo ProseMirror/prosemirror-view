@@ -83,12 +83,7 @@ export class EditorView {
   update(props) {
     if (props.handleDOMEvents != this._props.handleDOMEvents) ensureListeners(this)
     this._props = props
-    let nodeViews = buildNodeViews(this)
-    if (changedNodeViews(nodeViews, this.nodeViews)) {
-      this.nodeViews = nodeViews
-      this.redraw = true
-    }
-    this.updateState(props.state)
+    this.updateStateInner(props.state, true)
   }
 
   // :: (DirectEditorProps)
@@ -107,9 +102,20 @@ export class EditorView {
   // Update the editor's `state` prop, without touching any of the
   // other props.
   updateState(state) {
+    this.updateStateInner(state, this.state.plugins != state.plugins)
+  }
+
+  updateStateInner(state, reconfigured) {
     let prev = this.state
     this.state = state
-    if (prev.plugins != state.plugins) ensureListeners(this)
+    if (reconfigured) {
+      let nodeViews = buildNodeViews(this)
+      if (changedNodeViews(nodeViews, this.nodeViews)) {
+        this.nodeViews = nodeViews
+        this.redraw = true
+      }
+      ensureListeners(this)
+    }
 
     this.domObserver.flush()
     if (this.inDOMChange && this.inDOMChange.stateUpdated(state)) return
@@ -119,7 +125,7 @@ export class EditorView {
     updateCursorWrapper(this)
     let innerDeco = viewDecorations(this), outerDeco = computeDocDeco(this)
 
-    let scroll = prev.config != state.config ? "reset"
+    let scroll = reconfigured ? "reset"
         : state.scrollToSelection > prev.scrollToSelection ? "to selection" : "preserve"
     let updateDoc = this.redraw || !this.docView.matchesNode(state.doc, outerDeco, innerDeco)
     let updateSel = updateDoc || !state.selection.eq(prev.selection) || this.selectionReader.domChanged()
@@ -156,7 +162,7 @@ export class EditorView {
     }
 
     if (prevEditable != this.editable) this.selectionReader.editableChanged()
-    this.updatePluginViews(prev)
+    this.updatePluginViews(reconfigured ? null : prev)
 
     if (scroll == "reset") {
       this.dom.scrollTop = 0
@@ -179,11 +185,10 @@ export class EditorView {
   }
 
   updatePluginViews(prevState) {
-    let plugins = this.state.plugins
-    if (!prevState || prevState.plugins != plugins) {
+    if (!prevState) {
       this.destroyPluginViews()
-      for (let i = 0; i < plugins.length; i++) {
-        let plugin = plugins[i]
+      for (let i = 0; i < this.state.plugins.length; i++) {
+        let plugin = this.state.plugins[i]
         if (plugin.spec.view) this.pluginViews.push(plugin.spec.view(this))
       }
     } else {
