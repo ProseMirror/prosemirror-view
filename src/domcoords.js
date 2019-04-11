@@ -257,13 +257,13 @@ export function coordsAtPos(view, pos) {
   if (node.nodeType == 1 && !view.state.doc.resolve(pos).parent.inlineContent) {
     // Return a horizontal line in block context
     let top = true, rect
-    if (offset) {
-      let before = node.childNodes[offset - 1]
-      if (before.nodeType == 1) { rect = before.getBoundingClientRect(); top = false }
-    }
-    if (!rect && offset < node.childNodes.length) {
+    if (offset < node.childNodes.length) {
       let after = node.childNodes[offset]
       if (after.nodeType == 1) rect = after.getBoundingClientRect()
+    }
+    if (!rect && offset) {
+      let before = node.childNodes[offset - 1]
+      if (before.nodeType == 1) { rect = before.getBoundingClientRect(); top = false }
     }
     return flattenH(rect || parent.getBoundingClientRect(), top)
   }
