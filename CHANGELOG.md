@@ -1,3 +1,9 @@
+## 1.8.8 (2019-04-11)
+
+### Bug fixes
+
+Fix a regression from 1.8.4 that made it return unreasonable rectangles for positions between blocks.
+
 ## 1.8.7 (2019-04-09)
 
 ### Bug fixes
