@@ -288,7 +288,8 @@ export function syncNodeSelection(view, sel) {
 // Clear all DOM statefulness of the last node selection.
 function clearNodeSelection(view) {
   if (view.lastSelectedViewDesc) {
-    view.lastSelectedViewDesc.deselectNode()
+    if (view.lastSelectedViewDesc.parent)
+      view.lastSelectedViewDesc.deselectNode()
     view.lastSelectedViewDesc = null
   }
 }
