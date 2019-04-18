@@ -1,3 +1,15 @@
+## 1.8.9 (2019-04-18)
+
+### Bug fixes
+
+Improve display update times for nodes with thousands of children by fix an accidental piece of quadratic complexity.
+
+Fixes an issue where changes to the [`nodeViews` prop](https://prosemirror.net/docs/ref/#view.EditorProps.nodeViews) weren't noticed when using [`updateState`](https://prosemirror.net/docs/ref/#view.EditorView.updateState) to update the view.
+
+Fix issue where sometimes moving the selection back its last position with the mouse failed to update ProseMirror's selection state.
+
+No longer call [`deselectNode`](https://prosemirror.net/docs/ref/#view.NodeView.deselectNode) on already-destroyed node views.
+
 ## 1.8.8 (2019-04-11)
 
 ### Bug fixes
