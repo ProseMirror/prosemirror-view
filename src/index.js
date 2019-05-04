@@ -150,7 +150,7 @@ export class EditorView {
         selectionToDOM(this, false, forceSelUpdate)
       } else {
         syncNodeSelection(this, state.selection)
-        this.selectionReader.storeDOMState(state.selection)
+        this.domObserver.setCurSelection()
       }
       this.domObserver.start()
     }
