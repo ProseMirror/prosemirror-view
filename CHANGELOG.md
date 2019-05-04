@@ -1,3 +1,9 @@
+## 1.9.1 (2019-05-04)
+
+### Bug fixes
+
+Fix a regression where mouse selection would sometimes raise an error.
+
 ## 1.9.0 (2019-05-03)
 
 ### New features
