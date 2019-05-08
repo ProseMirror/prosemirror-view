@@ -155,7 +155,7 @@ export class EditorView {
       this.domObserver.start()
     }
 
-    this.updatePluginViews(prev)
+    this.updatePluginViews(reconfigured ? null : prev)
 
     if (scroll == "reset") {
       this.dom.scrollTop = 0
