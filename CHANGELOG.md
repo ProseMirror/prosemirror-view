@@ -1,3 +1,9 @@
+## 1.9.2 (2019-05-08)
+
+### Bug fixes
+
+Fix a bug where updating to a reconfigured state would not recreate the view's plugin views.
+
 ## 1.9.1 (2019-05-04)
 
 ### Bug fixes
