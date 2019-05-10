@@ -252,6 +252,7 @@ handlers.mousedown = (view, event) => {
 class MouseDown {
   constructor(view, pos, event, flushed) {
     this.view = view
+    this.startDoc = view.state.doc
     this.pos = pos
     this.event = event
     this.flushed = flushed
@@ -312,11 +313,14 @@ class MouseDown {
     if (!this.view.dom.contains(event.target.nodeType == 3 ? event.target.parentNode : event.target))
       return
 
-    if (this.allowDefault) {
+    let pos = this.pos
+    if (this.view.state.doc != this.startDoc) pos = this.view.posAtCoords(eventCoords(event))
+
+    if (this.allowDefault || !pos) {
       // Force a cursor wrapper redraw if this was suppressed (to avoid an issue with IE drag-selection)
       if (browser.ie && needsCursorWrapper(this.view.state)) this.view.updateState(this.view.state)
       setSelectionOrigin(this.view, "pointer")
-    } else if (handleSingleClick(this.view, this.pos.pos, this.pos.inside, event, this.selectNode)) {
+    } else if (handleSingleClick(this.view, pos.pos, pos.inside, event, this.selectNode)) {
       event.preventDefault()
     } else if (this.flushed ||
                // Chrome will sometimes treat a node selection as a
@@ -327,8 +331,8 @@ class MouseDown {
                // thus doesn't get a reaction from ProseMirror. This
                // works around that.
                (browser.chrome && !(this.view.state.selection instanceof TextSelection) &&
-                (this.pos.pos == this.view.state.selection.from || this.pos.pos == this.view.state.selection.to))) {
-      updateSelection(this.view, Selection.near(this.view.state.doc.resolve(this.pos.pos)), "pointer")
+                (pos.pos == this.view.state.selection.from || pos.pos == this.view.state.selection.to))) {
+      updateSelection(this.view, Selection.near(this.view.state.doc.resolve(pos.pos)), "pointer")
       event.preventDefault()
     } else {
       setSelectionOrigin(this.view, "pointer")
