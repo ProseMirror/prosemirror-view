@@ -1,3 +1,9 @@
+## 1.9.3 (2019-05-10)
+
+### Bug fixes
+
+Fix a bug where, if the document was changed at exactly the right moment, `handleClickOn` could be called with `null` as the node.
+
 ## 1.9.2 (2019-05-08)
 
 ### Bug fixes
