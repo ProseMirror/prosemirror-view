@@ -155,7 +155,7 @@ export class EditorView {
       this.domObserver.start()
     }
 
-    this.updatePluginViews(reconfigured ? null : prev)
+    this.updatePluginViews(prev)
 
     if (scroll == "reset") {
       this.dom.scrollTop = 0
@@ -178,7 +178,7 @@ export class EditorView {
   }
 
   updatePluginViews(prevState) {
-    if (!prevState) {
+    if (!prevState || prevState.plugins != this.state.plugins) {
       this.destroyPluginViews()
       for (let i = 0; i < this.state.plugins.length; i++) {
         let plugin = this.state.plugins[i]
