@@ -1,3 +1,9 @@
+## 1.9.4 (2019-05-13)
+
+### Bug fixes
+
+Fix a regression where all plugin views were recreated when calling [`setProps`](https://prosemirror.net/docs/ref/#view.EditorView.setProps).
+
 ## 1.9.3 (2019-05-10)
 
 ### Bug fixes
