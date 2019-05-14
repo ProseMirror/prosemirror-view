@@ -1,3 +1,9 @@
+## 1.9.5 (2019-05-14)
+
+### Bug fixes
+
+Fix regression in handling text editing events on IE11.
+
 ## 1.9.4 (2019-05-13)
 
 ### Bug fixes
