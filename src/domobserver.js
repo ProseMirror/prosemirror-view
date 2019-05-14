@@ -33,7 +33,7 @@ export class DOMObserver {
     if (useCharData) {
       this.onCharData = e => {
         this.charDataQueue.push({target: e.target, type: "characterData", oldValue: e.prevValue})
-        this.setTimeout(() => this.flush(), 20)
+        window.setTimeout(() => this.flush(), 20)
       }
     }
     this.onSelectionChange = this.onSelectionChange.bind(this)
@@ -74,7 +74,7 @@ export class DOMObserver {
   flush(mutations) {
     if (!mutations) mutations = this.observer.takeRecords()
     if (this.charDataQueue.length) {
-      mutations = this.charDataQuery.concat(mutations)
+      mutations = this.charDataQueue.concat(mutations)
       this.charDataQueue.length = 0
     }
 
