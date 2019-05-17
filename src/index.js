@@ -57,11 +57,17 @@ export class EditorView {
     // information about the dragged slice and whether it is being
     // copied or moved. At any other time, it is null.
     this.dragging = null
+
     initInput(this)
 
     this.pluginViews = []
     this.updatePluginViews()
   }
+
+  // composing:: boolean
+  // Holds `true` when a
+  // [composition](https://developer.mozilla.org/en-US/docs/Mozilla/IME_handling_guide)
+  // is active.
 
   // :: DirectEditorProps
   // The view's current [props](#view.EditorProps).
