@@ -677,7 +677,7 @@ class NodeViewDesc extends ViewDesc {
     // Create a composition view for the orphaned nodes
     let topNode = node
     for (;; topNode = topNode.parentNode) {
-      if (topNode.parentNode == this.dom) break
+      if (topNode.parentNode == this.contentDOM) break
       while (topNode.previousSibling) topNode.parentNode.removeChild(topNode.previousSibling)
       while (topNode.nextSibling) topNode.parentNode.removeChild(topNode.nextSibling)
       if (topNode.pmViewDesc) topNode.pmViewDesc = null
