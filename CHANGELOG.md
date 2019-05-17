@@ -1,3 +1,9 @@
+## 1.9.6 (2019-05-17)
+
+### Bug fixes
+
+Fix bug in composition handling when the composition's parent node has an extra wrapper node around its content.
+
 ## 1.9.5 (2019-05-14)
 
 ### Bug fixes
