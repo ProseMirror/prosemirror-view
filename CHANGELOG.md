@@ -1,3 +1,13 @@
+## 1.9.7 (2019-05-28)
+
+### Bug fixes
+
+ProseMirror will no longer try to stabilize the scroll position during updates on browsers that support [scroll anchoring](https://developer.mozilla.org/en-US/docs/Web/CSS/overflow-anchor), since it'd inadvertently cancel the browser's behavior.
+
+Fix an issue in Safari where the editor would interrupt the composition spacebar menu because it incorrectly interpreted the mutation events fired by the browser as representing a replacement of the selection with identical text.
+
+Work around an issue where, on Safari, an IME composition started in an empty textblock would vanish when you press enter.
+
 ## 1.9.6 (2019-05-17)
 
 ### Bug fixes
