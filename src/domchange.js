@@ -88,8 +88,6 @@ export function readDOMChange(view, from, to, typeOver) {
   to = view.state.doc.resolve(to).after(shared + 1)
 
   let sel = view.state.selection
-  let allowTypeOver = typeOver && sel instanceof TextSelection && !sel.empty && sel.$head.sameParent(sel.$anchor)
-
   let parse = parseBetween(view, from, to)
 
   let doc = view.state.doc, compare = doc.slice(parse.from, parse.to)
@@ -106,7 +104,8 @@ export function readDOMChange(view, from, to, typeOver) {
 
   let change = findDiff(compare.content, parse.doc.content, parse.from, preferredPos, preferredSide)
   if (!change) {
-    if (allowTypeOver) {
+    if (typeOver && sel instanceof TextSelection && !sel.empty && sel.$head.sameParent(sel.$anchor) &&
+        !view.composing && !(parse.sel && parse.sel.anchor != parse.sel.head)) {
       let state = view.state, sel = state.selection
       view.dispatch(state.tr.replaceSelectionWith(state.schema.text(state.doc.textBetween(sel.from, sel.to)), true).scrollIntoView())
     } else if (parse.sel) {
