@@ -42,6 +42,11 @@ export function initInput(view) {
         handler(view, event)
     })
   }
+  // On Safari, for reasons beyond my understanding, adding an input
+  // event handler makes an issue where the composition vanishes when
+  // you press enter go away.
+  if (browser.safari) view.dom.addEventListener("input", () => null)
+
   ensureListeners(view)
 }
 
