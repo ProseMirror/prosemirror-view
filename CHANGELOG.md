@@ -1,3 +1,9 @@
+## 1.9.8 (2019-05-29)
+
+### Bug fixes
+
+Fix an issue where moving focus from a node inside of the editor to the editor itself could sometimes lead to a node selection around the inner node rather than the intended selection (on Chrome).
+
 ## 1.9.7 (2019-05-28)
 
 ### Bug fixes
