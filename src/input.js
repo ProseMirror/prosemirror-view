@@ -577,14 +577,18 @@ editHandlers.drop = (view, e) => {
 
 handlers.focus = view => {
   if (!view.focused) {
+    view.domObserver.stop()
     view.dom.classList.add("ProseMirror-focused")
+    view.domObserver.start()
     view.focused = true
   }
 }
 
 handlers.blur = view => {
   if (view.focused) {
+    view.domObserver.stop()
     view.dom.classList.remove("ProseMirror-focused")
+    view.domObserver.start()
     view.focused = false
   }
 }
