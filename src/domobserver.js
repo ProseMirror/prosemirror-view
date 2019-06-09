@@ -29,10 +29,10 @@ export class DOMObserver {
     this.observer = window.MutationObserver &&
       new window.MutationObserver(mutations => this.flush(mutations))
     this.currentSelection = new SelectionState
-    this.charDataQueue = []
+    this.queue = []
     if (useCharData) {
       this.onCharData = e => {
-        this.charDataQueue.push({target: e.target, type: "characterData", oldValue: e.prevValue})
+        this.queue.push({target: e.target, type: "characterData", oldValue: e.prevValue})
         window.setTimeout(() => this.flush(), 20)
       }
     }
@@ -48,6 +48,11 @@ export class DOMObserver {
   }
 
   stop() {
+    let take = this.observer.takeRecords()
+    if (take.length) {
+      for (let i = 0; i < take.length; i++) this.queue.push(take[i])
+      window.setTimeout(() => this.flush(), 20)
+    }
     if (this.observer) this.observer.disconnect()
     if (useCharData) this.view.dom.removeEventListener("DOMCharacterDataModified", this.onCharData)
     this.disconnectSelection()
@@ -72,10 +77,11 @@ export class DOMObserver {
   }
 
   flush(mutations) {
+    if (!this.view.docView) return
     if (!mutations) mutations = this.observer.takeRecords()
-    if (this.charDataQueue.length) {
-      mutations = this.charDataQueue.concat(mutations)
-      this.charDataQueue.length = 0
+    if (this.queue.length) {
+      mutations = this.queue.concat(mutations)
+      this.queue.length = 0
     }
 
     let sel = this.view.root.getSelection()
