@@ -25,12 +25,19 @@ function selectHorizontally(view, dir, mods) {
       return false
     } else {
       let $head = sel.$head, node = $head.textOffset ? null : dir < 0 ? $head.nodeBefore : $head.nodeAfter, desc
-      if (node && NodeSelection.isSelectable(node)) {
-        let nodePos = dir < 0 ? $head.pos - node.nodeSize : $head.pos
-        if (node.isAtom || (desc = view.docView.descAt(nodePos)) && !desc.contentDOM)
-          return apply(view, new NodeSelection(dir < 0 ? view.state.doc.resolve($head.pos - node.nodeSize) : $head))
+      if (!node || node.isText) return false
+      let nodePos = dir < 0 ? $head.pos - node.nodeSize : $head.pos
+      if (!(node.isAtom || (desc = view.docView.descAt(nodePos)) && !desc.contentDOM)) return false
+      if (NodeSelection.isSelectable(node)) {
+        return apply(view, new NodeSelection(dir < 0 ? view.state.doc.resolve($head.pos - node.nodeSize) : $head))
+      } else if (browser.webkit) {
+        // Chrome and Safari will introduce extra pointless cursor
+        // positions around inline uneditable nodes, so we have to
+        // take over and move the cursor past them (#937)
+        return apply(view, new TextSelection(view.state.doc.resolve(dir < 0 ? nodePos : nodePos + node.nodeSize)))
+      } else {
+        return false
       }
-      return false
     }
   } else if (sel instanceof NodeSelection && sel.node.isInline) {
     return apply(view, new TextSelection(dir > 0 ? sel.$to : sel.$from))
