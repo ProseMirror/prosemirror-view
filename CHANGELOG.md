@@ -1,3 +1,11 @@
+## 1.9.9 (2019-06-09)
+
+### Bug fixes
+
+Fix arrowing over unselectable inline nodes in Chrome and Safari, which by default introduce an extra needless cursor position before the node.
+
+Fix a bug that caused DOM changes to be ignored when happening directly in front of some types of DOM events (such as focus/blur).
+
 ## 1.9.8 (2019-05-29)
 
 ### Bug fixes
