@@ -270,16 +270,16 @@ class ViewDesc {
       return {node: this.contentDOM, from, to, fromOffset: 0, toOffset: this.contentDOM.childNodes.length}
 
     let fromOffset = -1, toOffset = -1
-    for (let offset = 0, i = 0;; i++) {
+    for (let offset = base, i = 0;; i++) {
       let child = this.children[i], end = offset + child.size
       if (fromOffset == -1 && from <= end) {
         let childBase = offset + child.border
         // FIXME maybe descend mark views to parse a narrower range?
         if (from >= childBase && to <= end - child.border && child.node &&
             child.contentDOM && this.contentDOM.contains(child.contentDOM))
-          return child.parseRange(from - childBase, to - childBase, base + childBase)
+          return child.parseRange(from, to, childBase)
 
-        from = base + offset
+        from = offset
         for (let j = i; j > 0; j--) {
           let prev = this.children[j - 1]
           if (prev.size && prev.dom.parentNode == this.contentDOM && !prev.emptyChildAt(1)) {
@@ -291,7 +291,7 @@ class ViewDesc {
         if (fromOffset == -1) fromOffset = 0
       }
       if (fromOffset > -1 && to <= end) {
-        to = base + end
+        to = end
         for (let j = i + 1; j < this.children.length; j++) {
           let next = this.children[j]
           if (next.size && next.dom.parentNode == this.contentDOM && !next.emptyChildAt(-1)) {
