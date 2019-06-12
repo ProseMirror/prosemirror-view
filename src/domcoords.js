@@ -265,7 +265,7 @@ export function coordsAtPos(view, pos) {
       let before = node.childNodes[offset - 1]
       if (before.nodeType == 1) { rect = before.getBoundingClientRect(); top = false }
     }
-    return flattenH(rect || parent.getBoundingClientRect(), top)
+    return flattenH(rect || node.getBoundingClientRect(), top)
   }
 
   // Not Firefox/Chrome, or not in a text node, so we have to use
