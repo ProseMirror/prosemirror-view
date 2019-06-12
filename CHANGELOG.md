@@ -1,3 +1,9 @@
+## 1.9.10 (2019-06-12)
+
+### Bug fixes
+
+Fix a crash in `coordsAtPos` caused by use of an incorrect variable name.
+
 ## 1.9.9 (2019-06-09)
 
 ### Bug fixes
