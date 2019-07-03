@@ -253,8 +253,9 @@ class ViewDesc {
     if (!this.contentDOM) return {node: this.dom, offset: 0}
     for (let offset = 0, i = 0;; i++) {
       if (offset == pos) {
-        while (i < this.children.length && this.children[i].beforePosition) i++
-        return {node: this.contentDOM, offset: i}
+        while (i < this.children.length && (this.children[i].beforePosition || this.children[i].dom.parentNode != this.contentDOM)) i++
+        return {node: this.contentDOM,
+                offset: i == this.children.length ? this.contentDOM.childNodes.length : domIndex(this.children[i].dom)}
       }
       if (i == this.children.length) throw new Error("Invalid position " + pos)
       let child = this.children[i], end = offset + child.size
