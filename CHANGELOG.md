@@ -1,3 +1,13 @@
+## 1.9.11 (2019-07-03)
+
+### Bug fixes
+
+Fix an issue where the DOM change handler would treat the parsed content as the wrong part of the document.
+
+Fix an issue in IE11 where deleting the last character in a textblock causes a crash.
+
+Fix an issue where backspacing out the first character in a textblock would cause IE11 to move the selection to some incorrect position.
+
 ## 1.9.10 (2019-06-12)
 
 ### Bug fixes
