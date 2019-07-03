@@ -37,6 +37,7 @@ export class DOMObserver {
       }
     }
     this.onSelectionChange = this.onSelectionChange.bind(this)
+    this.suppressingSelectionUpdates = false
   }
 
   start() {
@@ -66,9 +67,14 @@ export class DOMObserver {
     this.view.dom.ownerDocument.removeEventListener("selectionchange", this.onSelectionChange)
   }
 
+  suppressSelectionUpdates() {
+    this.suppressingSelectionUpdates = true
+    setTimeout(() => this.suppressingSelectionUpdates = false, 50)
+  }
+
   onSelectionChange() {
     if (!hasFocusAndSelection(this.view)) return
-    if (this.suppressSelectionUpdates) return selectionToDOM(this.view)
+    if (this.suppressingSelectionUpdates) return selectionToDOM(this.view)
     this.flush()
   }
 
@@ -85,7 +91,7 @@ export class DOMObserver {
     }
 
     let sel = this.view.root.getSelection()
-    let newSel = !this.currentSelection.eq(sel) && hasSelection(this.view)
+    let newSel = !this.suppressingSelectionUpdates && !this.currentSelection.eq(sel) && hasSelection(this.view)
 
     let from = -1, to = -1, typeOver = false
     if (this.view.editable) {

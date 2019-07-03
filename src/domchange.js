@@ -1,7 +1,7 @@
 import {Fragment, DOMParser} from "prosemirror-model"
 import {Selection, TextSelection} from "prosemirror-state"
 
-import {selectionBetween, selectionFromDOM} from "./selection"
+import {selectionBetween, selectionFromDOM, selectionToDOM} from "./selection"
 import {selectionCollapsed, keyEvent} from "./dom"
 import browser from "./browser"
 
@@ -143,10 +143,7 @@ export function readDOMChange(view, from, to, typeOver) {
   if (view.state.selection.anchor > change.start &&
       looksLikeJoin(doc, change.start, change.endA, $from, $to) &&
       view.someProp("handleKeyDown", f => f(view, keyEvent(8, "Backspace")))) {
-    if (browser.android && browser.chrome) { // #820
-      view.domObserver.suppressSelectionUpdates = true
-      setTimeout(() => view.domObserver.suppressSelectionUpdates = false, 50)
-    }
+    if (browser.android && browser.chrome) view.domObserver.suppressSelectionUpdates() // #820
     return
   }
 
@@ -155,6 +152,12 @@ export function readDOMChange(view, from, to, typeOver) {
   let tr, storedMarks, markChange, $from1
   if ($from.sameParent($to) && $from.parent.inlineContent) {
     if ($from.pos == $to.pos) { // Deletion
+      // IE11 sometimes weirdly moves the DOM selection around after
+      // backspacing out the first element in a textblock
+      if (browser.ie && browser.ie_version <= 11 && $from.parentOffset == 0) {
+        view.domObserver.suppressSelectionUpdates()
+        setTimeout(() => selectionToDOM(view), 20)
+      }
       tr = view.state.tr.delete(chFrom, chTo)
       storedMarks = doc.resolve(change.start).marksAcross(doc.resolve(change.endA))
     } else if ( // Adding or removing a mark
