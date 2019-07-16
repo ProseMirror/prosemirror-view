@@ -1,3 +1,9 @@
+## 1.9.12 (2019-07-16)
+
+### Bug fixes
+
+Fix a crash `posAtCoords` in Firefox when the coordinates are above a text input field.
+
 ## 1.9.11 (2019-07-03)
 
 ### Bug fixes
