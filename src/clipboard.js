@@ -63,10 +63,10 @@ export function parseFromClipboard(view, text, html, plainText, $context) {
     slice = parser.parseSlice(dom, {preserveWhitespace: !!(asText || sliceData), context: $context})
   }
   if (sliceData)
-    slice = addContext(new Slice(slice.content, Math.min(slice.openStart, +sliceData[1]),
-                                 Math.min(slice.openEnd, +sliceData[2])), sliceData[3])
+    slice = addContext(closeSlice(slice, +sliceData[1], +sliceData[2]), sliceData[3])
   else // HTML wasn't created by ProseMirror. Make sure top-level siblings are coherent
     slice = Slice.maxOpen(normalizeSiblings(slice.content, $context), false)
+
   view.someProp("transformPasted", f => { slice = f(slice) })
   return slice
 }
@@ -127,6 +127,23 @@ function closeRight(node, depth) {
   let fragment = node.content.replaceChild(node.childCount - 1, closeRight(node.lastChild, depth - 1))
   let fill = node.contentMatchAt(node.childCount).fillBefore(Fragment.empty, true)
   return node.copy(fragment.append(fill))
+}
+
+function closeRange(fragment, side, from, to, depth, openEnd) {
+  let node = side < 0 ? fragment.firstChild : fragment.lastChild, inner = node.content
+  if (depth < to - 1) inner = closeRange(inner, side, from, to, depth + 1, openEnd)
+  if (depth >= from)
+    inner = side < 0 ? node.contentMatchAt(0).fillBefore(inner, fragment.childCount > 1 || openEnd <= depth).append(inner)
+      : inner.append(node.contentMatchAt(node.childCount).fillBefore(Fragment.empty, true))
+  return fragment.replaceChild(side < 0 ? 0 : fragment.childCount - 1, node.copy(inner))
+}
+
+function closeSlice(slice, openStart, openEnd) {
+  if (openStart < slice.openStart)
+    slice = new Slice(closeRange(slice.content, -1, openStart, slice.openStart, 0, slice.openEnd), openStart, slice.openEnd)
+  if (openEnd < slice.openEnd)
+    slice = new Slice(closeRange(slice.content, 1, openEnd, slice.openEnd, 0, 0), slice.openStart, openEnd)
+  return slice
 }
 
 // Trick from jQuery -- some elements must be wrapped in other
