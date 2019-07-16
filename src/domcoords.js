@@ -210,6 +210,9 @@ export function posAtCoords(view, coords) {
   }
   elt = targetKludge(elt, coords)
   if (node) {
+    // Firefox will sometimes return offsets into <input> nodes, which
+    // have no actual children, from caretPositionFromPoint (#953)
+    if (node.nodeType == 1) offset = Math.min(offset, node.childNodes.length)
     // Suspiciously specific kludge to work around caret*FromPoint
     // never returning a position at the end of the document
     if (node == view.dom && offset == node.childNodes.length - 1 && node.lastChild.nodeType == 1 &&
