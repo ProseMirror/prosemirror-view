@@ -84,10 +84,12 @@ export class DOMObserver {
 
   ignoreSelectionMutation(sel) {
     let desc = this.view.docView.nearestDesc(sel.anchorNode, true)
+    
+    if (!desc || !desc.node || !desc.dom) return false
 
     if (desc.node.isText) return false
 
-    return desc && desc.dom && desc.ignoreMutation({
+    return desc.ignoreMutation({
       type: 'selection',
       target: desc.dom
     })
