@@ -82,6 +82,15 @@ export class DOMObserver {
     this.currentSelection.set(this.view.root.getSelection())
   }
 
+  ignoreSelectionMutation(sel) {
+    let desc = this.view.docView.nearestDesc(sel.anchorNode, true)
+
+    return desc && desc.dom && desc.ignoreMutation({
+      type: 'selection',
+      target: desc.dom
+    })
+  }
+
   flush(mutations) {
     if (!this.view.docView) return
     if (!mutations) mutations = this.observer.takeRecords()
@@ -91,7 +100,8 @@ export class DOMObserver {
     }
 
     let sel = this.view.root.getSelection()
-    let newSel = !this.suppressingSelectionUpdates && !this.currentSelection.eq(sel) && hasSelection(this.view)
+
+    let newSel = !this.suppressingSelectionUpdates && !this.currentSelection.eq(sel) && hasSelection(this.view) && !this.ignoreSelectionMutation(sel)
 
     let from = -1, to = -1, typeOver = false
     if (this.view.editable) {
