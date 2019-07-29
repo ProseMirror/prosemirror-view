@@ -380,7 +380,7 @@ export class DecorationSet {
       if (this.children[i] != other.children[i] ||
           this.children[i + 1] != other.children[i + 1] ||
           !this.children[i + 2].eq(other.children[i + 2])) return false
-    return false
+    return true
   }
 
   locals(node) {
