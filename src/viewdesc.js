@@ -60,7 +60,10 @@ import browser from "./browser"
 //   ignoreMutation:: ?(dom.MutationRecord) → bool
 //   Called when a DOM
 //   [mutation](https://developer.mozilla.org/en-US/docs/Web/API/MutationObserver)
-//   happens within the view. Return false if the editor should
+//   or a selection change happens within the view. When the change is
+//   a selection change, the record will have a `type` property of
+//   `"selection"` (which doesn't occur for native mutation records).
+//   Return false if the editor should re-read the selection or
 //   re-parse the range around the mutation, true if it can safely be
 //   ignored.
 //
@@ -779,7 +782,7 @@ class TextViewDesc extends NodeViewDesc {
   }
 
   ignoreMutation(mutation) {
-    return mutation.type != "characterData"
+    return mutation.type != "characterData" && mutation.type != "selection"
   }
 
   slice(from, to, view) {

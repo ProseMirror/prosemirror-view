@@ -93,10 +93,10 @@ export class DOMObserver {
   }
 
   ignoreSelectionChange(sel) {
+    if (sel.rangeCount == 0) return true
     let container = sel.getRangeAt(0).commonAncestorContainer
-    let desc = this.view.docView.nearestDesc(container, true)
-
-    return desc && desc.node && !desc.node.isText && desc.node.isAtom
+    let desc = this.view.docView.nearestDesc(container)
+    return desc && desc.ignoreMutation({type: "selection", target: container.nodeType == 3 ? container.parentNode : container})
   }
 
   flush(mutations) {
@@ -108,7 +108,6 @@ export class DOMObserver {
     }
 
     let sel = this.view.root.getSelection()
-
     let newSel = !this.suppressingSelectionUpdates && !this.currentSelection.eq(sel) && hasSelection(this.view) && !this.ignoreSelectionChange(sel)
 
     let from = -1, to = -1, typeOver = false
