@@ -1,3 +1,15 @@
+## 1.9.13 (2019-07-29)
+
+### Bug fixes
+
+Fix an issue where copying content from a ProseMirror instance into an instance using another schema could, in some circumstances, insert schema-violating content.
+
+Fix comparison of decoration sets, which should solve unneccesary re-renders when updating decorations with an identical but newly allocated set. Don't update DOM selection in uneditable editors when the focus is elsewhere
+
+Fix a bug where the editor would steal focus from child elements when in non-editable mode.
+
+Fix error and corruption in IE11 when backspacing out a single character after a br node.
+
 ## 1.9.12 (2019-07-16)
 
 ### Bug fixes
