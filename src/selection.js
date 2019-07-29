@@ -38,7 +38,7 @@ export function selectionToDOM(view, takeFocus, force) {
       view.dom.focus()
       view.domObserver.connectSelection()
     }
-  } else if (!view.editable && !hasSelection(view) && !takeFocus) {
+  } else if (!view.editable && !(hasSelection(view) && document.activeElement.contains(view.dom)) && !takeFocus) {
     return
   }
 
