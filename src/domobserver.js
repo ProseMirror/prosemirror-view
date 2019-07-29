@@ -27,7 +27,17 @@ export class DOMObserver {
     this.view = view
     this.handleDOMChange = handleDOMChange
     this.observer = window.MutationObserver &&
-      new window.MutationObserver(mutations => this.flush(mutations))
+      new window.MutationObserver(mutations => {
+        // IE11 will sometimes (on backspacing out a single character
+        // text node after a BR node) call the observer callback
+        // before actually updating the DOM, which will cause
+        // ProseMirror to miss the change (see #930)
+        if (browser.ie && browser.ie_version <= 11 && mutations.some(
+          m => m.type == "childList" && m.removedNodes.length == 1 && m.removedNodes[0].parentNode == m.target))
+          setTimeout(() => this.flush(mutations), 10)
+        else
+          this.flush(mutations)
+      })
     this.currentSelection = new SelectionState
     this.queue = []
     if (useCharData) {
