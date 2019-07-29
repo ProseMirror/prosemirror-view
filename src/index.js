@@ -1,10 +1,9 @@
-import {Mark} from "prosemirror-model"
 import {NodeSelection} from "prosemirror-state"
 
 import {scrollRectIntoView, posAtCoords, coordsAtPos, endOfTextblock, storeScrollPos, resetScrollPos} from "./domcoords"
 import {docViewDesc} from "./viewdesc"
 import {initInput, destroyInput, dispatchEvent, ensureListeners} from "./input"
-import {selectionToDOM, needsCursorWrapper, anchorInRightPlace, syncNodeSelection} from "./selection"
+import {selectionToDOM, anchorInRightPlace, syncNodeSelection} from "./selection"
 import {Decoration, viewDecorations} from "./decoration"
 import browser from "./browser"
 
@@ -371,34 +370,25 @@ function computeDocDeco(view) {
   return [Decoration.node(0, view.state.doc.content.size, attrs)]
 }
 
-function cursorWrapperDOM(visible) {
-  let span = document.createElement("span")
-  span.textContent = "\ufeff" // zero-width non-breaking space
-  if (!visible) {
-    span.style.position = "absolute"
-    span.style.left = "-100000px"
-  }
-  return span
+function cursorWrapperDOM() {
+  let elt = document.createElement("div")
+  elt.style.position = "absolute"
+  elt.style.left = "-100000px"
+  return elt
 }
 
 function updateCursorWrapper(view) {
-  let $pos = needsCursorWrapper(view.state)
-  // On IE/Edge, moving the DOM selection will abort a mouse drag, so
-  // there we delay the creation of the wrapper when the mouse is down.
-  if ($pos && !(browser.ie && view.mouseDown)) {
-    let visible = view.state.selection.visible
-    // Needs a cursor wrapper
-    let marks = view.state.storedMarks || $pos.marks(), dom
-    if (!view.cursorWrapper || !Mark.sameSet(view.cursorWrapper.deco.spec.marks, marks) ||
-        view.cursorWrapper.dom.textContent != "\ufeff" ||
-        view.cursorWrapper.deco.spec.visible != visible)
-      dom = cursorWrapperDOM(visible)
-    else if (view.cursorWrapper.deco.pos != $pos.pos)
+  let {$head, $anchor, visible} = view.state.selection
+  if (visible || $head.pos != $anchor.pos) {
+    view.cursorWrapper = null
+  } else {
+    let dom
+    if (!view.cursorWrapper || view.cursorWrapper.dom.childNodes.length)
+      dom = cursorWrapperDOM()
+    else if (view.cursorWrapper.deco.pos != $head.pos)
       dom = view.cursorWrapper.dom
     if (dom)
-      view.cursorWrapper = {dom, deco: Decoration.widget($pos.pos, dom, {isCursorWrapper: true, marks, raw: true, visible})}
-  } else {
-    view.cursorWrapper = null
+      view.cursorWrapper = {dom, deco: Decoration.widget($head.pos, dom, {raw: true})}
   }
 }
 

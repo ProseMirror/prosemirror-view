@@ -108,7 +108,7 @@ function removeClassOnSelectionChange(view) {
 function selectCursorWrapper(view) {
   let domSel = view.root.getSelection(), range = document.createRange()
   let node = view.cursorWrapper.dom
-  range.setEnd(node, node.childNodes.length)
+  range.setEnd(node, 0)
   range.collapse(false)
   domSel.removeAllRanges()
   domSel.addRange(range)
@@ -167,20 +167,6 @@ export function hasSelection(view) {
   } catch(_) {
     return false
   }
-}
-
-function nonInclusiveMark(mark) {
-  return mark.type.spec.inclusive === false
-}
-
-export function needsCursorWrapper(state) {
-  let {$head, $anchor, visible} = state.selection
-  let $pos = $head.pos == $anchor.pos && (!visible || $head.parent.inlineContent) ? $head : null
-  if ($pos && (!visible || state.storedMarks || $pos.parent.content.length == 0 ||
-               $pos.parentOffset && !$pos.textOffset && $pos.nodeBefore.marks.some(nonInclusiveMark)))
-    return $pos
-  else
-    return null
 }
 
 export function anchorInRightPlace(view) {

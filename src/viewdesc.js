@@ -449,16 +449,6 @@ class WidgetViewDesc extends ViewDesc {
   }
 }
 
-// A cursor wrapper is used to put the cursor in when newly typed text
-// needs to be styled differently from its surrounding text (for
-// example through storedMarks), so that the style of the text doesn't
-// visually 'pop' between typing it and actually updating the view.
-class CursorWrapperDesc extends WidgetViewDesc {
-  parseRule() { return {skip: withoutZeroWidthSpaces(this.dom)} }
-
-  ignoreMutation() { return false }
-}
-
 class CompositionViewDesc extends ViewDesc {
   constructor(parent, dom, textDOM, text) {
     super(parent, nothing, dom, null)
@@ -468,17 +458,13 @@ class CompositionViewDesc extends ViewDesc {
 
   get size() { return this.text.length }
 
-  parseRule() { return {skip: withoutZeroWidthSpaces(this.dom)} }
-
   localPosFromDOM(dom, offset) {
     if (dom != this.textDOM) return this.posAtStart + (offset ? this.size : 0)
-    let zwsp = this.textDOM.nodeValue.indexOf("\ufeff")
-    return this.posAtStart + offset - (zwsp > -1 && zwsp < offset ? 1 : 0)
+    return this.posAtStart + offset
   }
 
   domFromPos(pos) {
-    let zwsp = this.textDOM.nodeValue.indexOf("\ufeff")
-    return {node: this.textDOM, offset: pos + (zwsp > -1 && zwsp <= pos ? 1 : 0)}
+    return {node: this.textDOM, offset: pos}
   }
 
   ignoreMutation(mut) { 
@@ -670,7 +656,7 @@ class NodeViewDesc extends ViewDesc {
     // Find the text in the focused node in the node, stop if it's not
     // there (may have been modified through other means, in which
     // case it should overwritten)
-    let text = textNode.nodeValue.replace(/\ufeff/g, "")
+    let text = textNode.nodeValue
     let textPos = findTextInFragment(this.node.content, text, from - pos, to - pos)
 
     return textPos < 0 ? null : {node: textNode, pos: textPos, text}
@@ -1113,7 +1099,7 @@ class ViewTreeUpdater {
     if (this.index < this.top.children.length && this.top.children[this.index].matchesWidget(widget)) {
       this.index++
     } else {
-      let desc = new (widget.spec.isCursorWrapper ? CursorWrapperDesc : WidgetViewDesc)(this.top, widget, view, pos)
+      let desc = new WidgetViewDesc(this.top, widget, view, pos)
       this.top.children.splice(this.index++, 0, desc)
       this.changed = true
     }
@@ -1299,16 +1285,4 @@ function replaceNodes(nodes, from, to, view, replacement) {
     }
   }
   return result
-}
-
-function withoutZeroWidthSpaces(dom) {
-  let clone = dom.cloneNode(true)
-  function scan(node) {
-    if (node.nodeType == 1)
-      for (let child = node.firstChild; child; child = child.nextSibling) scan(child)
-    else if (node.nodeType == 3)
-      node.nodeValue = node.nodeValue.replace(/\ufeff/g, "")
-  }
-  scan(clone)
-  return clone
 }

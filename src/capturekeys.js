@@ -71,13 +71,7 @@ function skipIgnoredNodesLeft(view) {
   for (;;) {
     if (offset > 0) {
       if (node.nodeType != 1) {
-        if (node.nodeType == 3 && node.nodeValue.charAt(offset - 1) == "\ufeff") {
-          // IE11's cursor will still be stuck when placed at the
-          // beginning of the cursor wrapper text node (#807)
-          if (browser.ie && browser.ie_version <= 11) force = true
-          moveNode = node
-          moveOffset = --offset
-        } else break
+        break
       } else {
         let before = node.childNodes[offset - 1]
         if (isIgnorable(before)) {
