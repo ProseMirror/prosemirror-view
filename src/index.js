@@ -45,6 +45,7 @@ export class EditorView {
     }
 
     this.editable = getEditable(this)
+    this.markCursor = null
     this.cursorWrapper = null
     updateCursorWrapper(this)
     this.nodeViews = buildNodeViews(this)
@@ -370,23 +371,23 @@ function computeDocDeco(view) {
   return [Decoration.node(0, view.state.doc.content.size, attrs)]
 }
 
-function cursorWrapperDOM() {
-  let elt = document.createElement("div")
-  elt.style.position = "absolute"
-  elt.style.left = "-100000px"
-  return elt
-}
-
 function updateCursorWrapper(view) {
   let {$head, $anchor, visible} = view.state.selection
-  if (visible || $head.pos != $anchor.pos) {
+  if (view.markCursor) {
+    let dom = document.createElement("img")
+    dom.setAttribute("mark-placeholder", "true")
+    view.cursorWrapper = {dom, deco: Decoration.widget($head.pos, dom, {raw: true, marks: view.markCursor})}
+  } else if (visible || $head.pos != $anchor.pos) {
     view.cursorWrapper = null
   } else {
     let dom
-    if (!view.cursorWrapper || view.cursorWrapper.dom.childNodes.length)
-      dom = cursorWrapperDOM()
-    else if (view.cursorWrapper.deco.pos != $head.pos)
+    if (!view.cursorWrapper || view.cursorWrapper.dom.childNodes.length) {
+      dom = document.createElement("div")
+      dom.style.position = "absolute"
+      dom.style.left = "-100000px"
+    } else if (view.cursorWrapper.deco.pos != $head.pos) {
       dom = view.cursorWrapper.dom
+    }
     if (dom)
       view.cursorWrapper = {dom, deco: Decoration.widget($head.pos, dom, {raw: true})}
   }

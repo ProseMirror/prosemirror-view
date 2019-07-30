@@ -1,7 +1,7 @@
 import {TextSelection, NodeSelection} from "prosemirror-state"
 
 import browser from "./browser"
-import {selectionCollapsed, isEquivalentPosition} from "./dom"
+import {selectionCollapsed, isEquivalentPosition, domIndex} from "./dom"
 
 export function selectionFromDOM(view, origin) {
   let domSel = view.root.getSelection(), doc = view.state.doc
@@ -107,8 +107,9 @@ function removeClassOnSelectionChange(view) {
 
 function selectCursorWrapper(view) {
   let domSel = view.root.getSelection(), range = document.createRange()
-  let node = view.cursorWrapper.dom
-  range.setEnd(node, 0)
+  let node = view.cursorWrapper.dom, img = node.nodeName == "IMG"
+  if (img) range.setEnd(node.parentNode, domIndex(node) + 1)
+  else range.setEnd(node, 0)
   range.collapse(false)
   domSel.removeAllRanges()
   domSel.addRange(range)
@@ -117,7 +118,7 @@ function selectCursorWrapper(view) {
   // resize handles and a selection that considers the absolutely
   // positioned wrapper, rather than the root editable node, the
   // focused element.
-  if (!view.state.selection.visible && browser.ie && browser.ie_version <= 11) {
+  if (!img && !view.state.selection.visible && browser.ie && browser.ie_version <= 11) {
     node.disabled = true
     node.disabled = false
   }

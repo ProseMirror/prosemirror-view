@@ -382,7 +382,16 @@ const timeoutComposition = browser.android ? 5000 : -1
 editHandlers.compositionstart = editHandlers.compositionupdate = view => {
   if (!view.composing) {
     view.domObserver.flush()
-    endComposition(view)
+    let {state} = view, $pos = state.selection.$from
+    if (state.selection.empty &&
+        (state.storedMarks || (!$pos.textOffset && $pos.parentOffset && $pos.nodeBefore.marks.some(m => m.type.spec.inclusive === false)))) {
+      // Need to wrap the cursor in mark nodes different from the ones in the DOM context
+      view.markCursor = view.state.storedMarks || $pos.marks()
+      endComposition(view, true)
+      view.markCursor = null
+    } else {
+      endComposition(view)
+    }
     view.composing = true
   }
   scheduleComposeEnd(view, timeoutComposition)
@@ -401,10 +410,10 @@ function scheduleComposeEnd(view, delay) {
   if (delay > -1) view.composingTimeout = setTimeout(() => endComposition(view), delay)
 }
 
-export function endComposition(view) {
+export function endComposition(view, forceUpdate) {
   view.composing = false
   while (view.compositionNodes.length > 0) view.compositionNodes.pop().markParentsDirty()
-  if (view.docView.dirty) {
+  if (forceUpdate || view.docView.dirty) {
     view.updateState(view.state)
     return true
   }

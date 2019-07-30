@@ -65,6 +65,8 @@ function ruleFromNode(parser, context) {
         return parser.matchTag(document.createElement("li"), context)
       else if (dom.parentNode.lastChild == dom || browser.safari && /^(tr|table)$/i.test(dom.parentNode.nodeName))
         return {ignore: true}
+    } else if (dom.nodeName == "IMG" && dom.getAttribute("mark-placeholder")) {
+      return {ignore: true}
     }
   }
 }
