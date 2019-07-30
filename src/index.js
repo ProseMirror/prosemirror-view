@@ -145,7 +145,7 @@ export class EditorView {
           this.docView = docViewDesc(state.doc, outerDeco, innerDeco, this.dom, this)
         }
         if (startSelContext)
-          forceSelUpdate = needChromeSelectionForce(startSelContext, this.root)
+          forceSelUpdate = !this.composing && needChromeSelectionForce(startSelContext, this.root)
       }
       // Work around for an issue where an update arriving right between
       // a DOM selection change and the "selectionchange" event for it

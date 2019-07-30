@@ -1026,7 +1026,7 @@ class ViewTreeUpdater {
       if (found > -1) {
         if (found > this.index) {
           this.changed = true
-          this.top.children.splice(this.index, found - this.index)
+          this.destroyBetween(this.index, found)
         }
         this.top = this.top.children[this.index]
       } else {
@@ -1103,12 +1103,6 @@ class ViewTreeUpdater {
       this.top.children.splice(this.index++, 0, desc)
       this.changed = true
     }
-  }
-
-  placeComposition(view, desc) {
-    this.syncToMarks(nothing, true, view)
-    if (this.top.children[this.index] == desc) this.index++
-    else { this.top.children.splice(this.index++, 0, desc); this.changed = true }
   }
 
   // Make sure a textblock looks and behaves correctly in
