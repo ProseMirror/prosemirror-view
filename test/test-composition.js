@@ -184,7 +184,7 @@ describe("EditorView composition", () => {
   it("supports composition in a cursor wrapper", () => {
     let pm = requireFocus(tempEditor({doc: doc(p("<a>"))}))
     pm.dispatch(pm.state.tr.addStoredMark(schema.marks.em.create()))
-    compose(pm, () => edit(focusNode(), "a"), [
+    compose(pm, () => edit(pm.dom.firstChild.appendChild(document.createTextNode("")), "a"), [
       n => edit(n, "b"),
       n => edit(n, "c")
     ], {node: true})
@@ -194,7 +194,8 @@ describe("EditorView composition", () => {
   it("handles composition in a multi-child mark with a cursor wrapper", () => {
     let pm = requireFocus(tempEditor({doc: doc(p("one ", em("two<a>", strong(" three"))))}))
     pm.dispatch(pm.state.tr.addStoredMark(schema.marks.code.create()))
-    compose(pm, () => edit(focusNode(), "o"), [
+    let emNode = pm.dom.querySelector("em")
+    compose(pm, () => edit(emNode.insertBefore(document.createTextNode(""), emNode.querySelector("strong")), "o"), [
       n => edit(n, "o"),
       n => edit(n, "w")
     ], {node: true})

@@ -202,7 +202,7 @@ describe("DOM change", () => {
   it("resolves ambiguous text input", () => {
     let view = tempEditor({doc: doc(p("fo<a>o"))})
     view.dispatch(view.state.tr.addStoredMark(view.state.schema.marks.strong.create()))
-    findTextNode(view.dom, "\ufeff").nodeValue = "\ufeffo"
+    findTextNode(view.dom, "foo").nodeValue = "fooo"
     flush(view)
     ist(view.state.doc, doc(p("fo", strong("o"), "o")), eq)
   })
@@ -314,14 +314,14 @@ describe("DOM change", () => {
 
   it("notices text added to a cursor wrapper at the start of a mark", () => {
     let view = tempEditor({doc: doc(p(strong(a("foo<a>"), "bar")))})
-    findTextNode(view.dom, "\ufeff").nodeValue = "\ufeffxy"
+    findTextNode(view.dom, "foo").nodeValue = "fooxy"
     flush(view)
     ist(view.state.doc, doc(p(strong(a("foo"), "xybar"))), eq)
   })
 
   it("removes cursor wrapper text when the wrapper otherwise remains valid", () => {
     let view = tempEditor({doc: doc(p(a(strong("foo<a>"), "bar")))})
-    findTextNode(view.dom, "\ufeff").nodeValue = "\ufeffq"
+    findTextNode(view.dom, "foo").nodeValue = "fooq"
     flush(view)
     ist(view.state.doc, doc(p(a(strong("fooq"), "bar"))), eq)
     ist(!findTextNode(view.dom, "\ufeffq"))

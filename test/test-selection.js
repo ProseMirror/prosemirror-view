@@ -255,17 +255,6 @@ describe("EditorView", () => {
     ist(view.state.selection.from, 6)
   })
 
-  it("wraps the cursor in the appropriate marks", () => {
-    if (!document.hasFocus()) return
-    let view = tempEditor({doc: doc(p("fo<a>o"))})
-    view.dispatch(view.state.tr.setStoredMarks([schema.marks.em.create()]))
-    view.focus()
-    let inEm = false
-    for (let parent = getSelection().focusNode; parent != view.dom; parent = parent.parentNode)
-      if (parent.nodeName == "EM") inEm = true
-    ist(inEm)
-  })
-
   it("updates the selection even if the DOM parameters look unchanged", () => {
     if (!document.hasFocus()) return
     let view = tempEditor({doc: doc(p("foobar<a>"))})
