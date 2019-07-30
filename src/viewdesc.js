@@ -1230,6 +1230,8 @@ function nearbyTextNode(node, offset) {
   for (;;) {
     if (node.nodeType == 3) return node
     if (node.nodeType == 1 && offset > 0) {
+      if (node.childNodes.length > offset && node.childNodes[offset].nodeType == 3)
+        return node.childNodes[offset]
       node = node.childNodes[offset - 1]
       offset = nodeSize(node)
     } else if (node.nodeType == 1 && offset < node.childNodes.length) {
@@ -1252,7 +1254,7 @@ function findTextInFragment(frag, text, from, to) {
         while (found > -1 && strStart + found > from) found = str.lastIndexOf(text, found - 1)
         if (found > -1 && strStart + found + text.length >= to) {
           return strStart + found
-        } else if (end > to - text.length) {
+        } else if (end > to) {
           break
         }
       }
