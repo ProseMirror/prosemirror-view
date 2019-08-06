@@ -227,7 +227,6 @@ export class EditorView {
     this.domObserver.stop()
     selectionToDOM(this, true)
     this.domObserver.start()
-    if (this.editable) this.dom.focus()
   }
 
   // :: union<dom.Document, dom.DocumentFragment>
