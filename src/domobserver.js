@@ -117,7 +117,7 @@ export class DOMObserver {
         if (result) {
           from = from < 0 ? result.from : Math.min(result.from, from)
           to = to < 0 ? result.to : Math.max(result.to, to)
-          if (result.typeOver) typeOver = true
+          if (result.typeOver && !this.view.composing) typeOver = true
         }
       }
     }
