@@ -373,6 +373,7 @@ function endOfTextblockHorizontal(view, state, dir) {
     // textblock (or doesn't move it at all, when at the start/end of
     // the document).
     let oldRange = sel.getRangeAt(0), oldNode = sel.focusNode, oldOff = sel.focusOffset
+    let oldBidiLevel = sel.caretBidiLevel // Only for Firefox
     sel.modify("move", dir, "character")
     let parentDOM = $head.depth ? view.docView.domAfterPos($head.before()) : view.dom
     let result = !parentDOM.contains(sel.focusNode.nodeType == 1 ? sel.focusNode : sel.focusNode.parentNode) ||
@@ -380,6 +381,7 @@ function endOfTextblockHorizontal(view, state, dir) {
     // Restore the previous selection
     sel.removeAllRanges()
     sel.addRange(oldRange)
+    if (oldBidiLevel != null) sel.caretBidiLevel = oldBidiLevel
     return result
   })
 }
