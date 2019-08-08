@@ -226,6 +226,10 @@ export class EditorView {
   focus() {
     this.domObserver.stop()
     selectionToDOM(this, true)
+    if (this.editable) {
+      if (this.dom.setActive) this.dom.setActive() // for IE
+      else this.dom.focus({preventScroll: true})
+    }
     this.domObserver.start()
   }
 
