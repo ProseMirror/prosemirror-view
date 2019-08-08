@@ -481,7 +481,9 @@ class CompositionViewDesc extends ViewDesc {
     return {node: this.textDOM, offset: pos + (zwsp > -1 && zwsp <= pos ? 1 : 0)}
   }
 
-  ignoreMutation() { return false }
+  ignoreMutation(mut) { 
+    return mut.type === 'characterData' && mut.target.nodeValue == mut.oldValue
+   }
 }
 
 // A mark desc represents a mark. May have multiple children,
