@@ -391,6 +391,22 @@ editHandlers.compositionstart = editHandlers.compositionupdate = view => {
       view.markCursor = null
     } else {
       endComposition(view)
+      // In firefox, if the cursor is after but outside a marked node,
+      // the inserted text won't inherit the marks. So this moves it
+      // inside if necessary.
+      if (browser.gecko && state.selection.empty && $pos.parentOffset && !$pos.textOffset && $pos.nodeBefore.marks.length) {
+        let sel = view.root.getSelection()
+        for (let node = sel.focusNode, offset = sel.focusOffset; node && node.nodeType == 1 && offset != 0;) {
+          let before = offset < 0 ? node.lastChild : node.childNodes[offset - 1]
+          if (before.nodeType == 3) {
+            sel.collapse(before, before.nodeValue.length)
+            break
+          } else {
+            node = before
+            offset = -1
+          }
+        }
+      }
     }
     view.composing = true
   }
