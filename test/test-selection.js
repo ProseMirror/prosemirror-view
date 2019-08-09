@@ -1,4 +1,4 @@
-const {schema, doc, blockquote, p, em, img: img_, strong, code, br, hr, ul, li} = require("prosemirror-test-builder")
+const {doc, blockquote, p, em, img: img_, strong, code, br, hr, ul, li} = require("prosemirror-test-builder")
 const ist = require("ist")
 const {Selection, NodeSelection} = require("prosemirror-state")
 const {tempEditor, findTextNode} = require("./view")

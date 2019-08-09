@@ -23,12 +23,6 @@ function hasCompositionNode(_pm) {
   return focusNode && focusNode.pmViewDesc.constructor.name == "CompositionViewDesc"
 }
 
-function focusNode() {
-  let {focusNode, focusOffset} = document.getSelection()
-  if (focusNode.nodeType == 1) focusNode = focusNode.childNodes[focusOffset + (focusOffset ? -1 : 0)]
-  return focusNode
-}
-
 function compose(pm, start, update, options = {}) {
   event(pm, "compositionstart")
   ist(pm.composing)

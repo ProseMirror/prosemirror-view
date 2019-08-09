@@ -467,7 +467,7 @@ class CompositionViewDesc extends ViewDesc {
     return {node: this.textDOM, offset: pos}
   }
 
-  ignoreMutation(mut) { 
+  ignoreMutation(mut) {
     return mut.type === 'characterData' && mut.target.nodeValue == mut.oldValue
    }
 }
