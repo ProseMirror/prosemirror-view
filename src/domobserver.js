@@ -132,7 +132,10 @@ export class DOMObserver {
   registerMutation(mut) {
     let desc = this.view.docView.nearestDesc(mut.target)
     if (mut.type == "attributes" &&
-        (desc == this.view.docView || mut.attributeName == "contenteditable")) return null
+        (desc == this.view.docView || mut.attributeName == "contenteditable" ||
+         // Firefox sometimes fires spurious events for null/empty styles
+         (mut.attributeName == "style" && !mut.oldValue && !mut.target.getAttribute("style"))))
+      return null
     if (!desc || desc.ignoreMutation(mut)) return null
 
     if (mut.type == "childList") {
