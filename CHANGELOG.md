@@ -1,3 +1,21 @@
+## 1.10.0 (2019-08-13)
+
+### Bug fixes
+
+Fix an issue that caused the cursor to be scrolled into view when `focus()` was called on IE11.
+
+Fix problem where the cursor cycled through pieces of right-to-left text on Firefox during horizontal motion when the gapcursor plugin was enabled.
+
+Fix spurious mutation events in Firefox causing mark replacement at end of composition. Restore call to dom.focus on view.focus
+
+Fix a bug that could cause node views in front of marked nodes to not be destroyed when deleted, and caused confusion in composition handling in some situations.
+
+Cursor wrappers (a kludge to make sure typed text gets wrapping DOM structure corresponding to the current marks) are now created less eagerly, and in a less invasive way, which resolves a number of problems with composition (especially on Safari) and bidirectional text.
+
+### New features
+
+Node views can now ignore selection change events through their [`ignoreMutation`](http://prosemirror.net/docs/ref/#view.NodeView.ignoreMutation) callback.
+
 ## 1.9.13 (2019-07-29)
 
 ### Bug fixes
