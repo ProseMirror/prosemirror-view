@@ -11,11 +11,20 @@ function getSide(value, side) {
 }
 
 export function scrollRectIntoView(view, rect, startDOM) {
-  let scrollThreshold = view.someProp("scrollThreshold") || 0, scrollMargin = view.someProp("scrollMargin") || 5
+  let scrollThreshold = view.someProp("scrollThreshold") || 0,
+    scrollMargin = view.someProp("scrollMargin") || 5,
+    scrollContainerClass = view.someProp('scrollContainerClass')
+
   let doc = view.dom.ownerDocument, win = doc.defaultView
   for (let parent = startDOM || view.dom;; parent = parentNode(parent)) {
     if (!parent) break
     if (parent.nodeType != 1) continue
+
+    if (scrollContainerClass) {
+      const isTarget = parent.classList.contains(scrollContainerClass)
+      if (!isTarget) continue
+    }
+
     let atTop = parent == doc.body || parent.nodeType != 1
     let bounding = atTop ? windowRect(win) : parent.getBoundingClientRect()
     let moveX = 0, moveY = 0

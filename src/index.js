@@ -591,6 +591,11 @@ function changedNodeViews(a, b) {
 //   scrollMargin:: ?union<number, {top: number, right: number, bottom: number, left: number}>
 //   Determines the extra space (in pixels) that is left above or
 //   below the cursor when it is scrolled into view. Defaults to 5.
+//
+//   scrollContainerClass:: ?string
+//   Class name for the ancestor element of root editor element in control of scrollable functionality.
+//   If not set, parent nodes are recursively iterated through and a scrollable container
+//   is programmatically determined using numerous dom queries
 
 // DirectEditorProps:: interface extends EditorProps
 //
