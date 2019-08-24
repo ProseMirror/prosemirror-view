@@ -47,17 +47,20 @@ export function selectionToDOM(view, takeFocus, force) {
   if (view.cursorWrapper) {
     selectCursorWrapper(view)
   } else {
-    let {anchor, head} = sel, resetEditableFrom, resetEditableTo
-    if (brokenSelectBetweenUneditable && !(sel instanceof TextSelection)) {
-      if (!sel.$from.parent.inlineContent)
-        resetEditableFrom = temporarilyEditableNear(view, sel.from)
-      if (!sel.empty && !sel.$from.parent.inlineContent)
-        resetEditableTo = temporarilyEditableNear(view, sel.to)
-    }
-    view.docView.setSelection(anchor, head, view.root, force)
-    if (brokenSelectBetweenUneditable) {
-      if (resetEditableFrom) resetEditableFrom.contentEditable = "false"
-      if (resetEditableTo) resetEditableTo.contentEditable = "false"
+    let {anchor, head} = sel
+    if(!sel.trackingOnly) {
+      let resetEditableFrom, resetEditableTo
+      if (brokenSelectBetweenUneditable && !(sel instanceof TextSelection)) {
+        if (!sel.$from.parent.inlineContent)
+          resetEditableFrom = temporarilyEditableNear(view, sel.from)
+        if (!sel.empty && !sel.$from.parent.inlineContent)
+          resetEditableTo = temporarilyEditableNear(view, sel.to)
+      }
+      view.docView.setSelection(anchor, head, view.root, force)
+      if (brokenSelectBetweenUneditable) {
+        if (resetEditableFrom) resetEditableFrom.contentEditable = "false"
+        if (resetEditableTo) resetEditableTo.contentEditable = "false"
+      }
     }
     if (sel.visible) {
       view.dom.classList.remove("ProseMirror-hideselection")
