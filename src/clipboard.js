@@ -11,13 +11,13 @@ export function serializeForClipboard(view, slice) {
   }
 
   let serializer = view.someProp("clipboardSerializer") || DOMSerializer.fromSchema(view.state.schema)
-  let wrap = document.createElement("div")
-  wrap.appendChild(serializer.serializeFragment(content))
+  let doc = detachedDoc(), wrap = doc.createElement("div")
+  wrap.appendChild(serializer.serializeFragment(content, {document: doc}))
 
   let firstChild = wrap.firstChild, needsWrap
   while (firstChild && firstChild.nodeType == 1 && (needsWrap = wrapMap[firstChild.nodeName.toLowerCase()])) {
     for (let i = needsWrap.length - 1; i >= 0; i--) {
-      let wrapper = document.createElement(needsWrap[i])
+      let wrapper = doc.createElement(needsWrap[i])
       while (wrap.firstChild) wrapper.appendChild(wrap.firstChild)
       wrap.appendChild(wrapper)
     }
@@ -151,12 +151,16 @@ function closeSlice(slice, openStart, openEnd) {
 // "<td>..</td>"` the table cells are ignored.
 const wrapMap = {thead: ["table"], colgroup: ["table"], col: ["table", "colgroup"],
                  tr: ["table", "tbody"], td: ["table", "tbody", "tr"], th: ["table", "tbody", "tr"]}
-let detachedDoc = null
+
+let _detachedDoc = null
+function detachedDoc() {
+  return _detachedDoc || (_detachedDoc = document.implementation.createHTMLDocument("title"))
+}
+
 function readHTML(html) {
   let metas = /(\s*<meta [^>]*>)*/.exec(html)
   if (metas) html = html.slice(metas[0].length)
-  let doc = detachedDoc || (detachedDoc = document.implementation.createHTMLDocument("title"))
-  let elt = doc.createElement("div")
+  let elt = detachedDoc().createElement("div")
   let firstTag = /(?:<meta [^>]*>)*<([a-z][^>\s]+)/i.exec(html), wrap, depth = 0
   if (wrap = firstTag && wrapMap[firstTag[1].toLowerCase()]) {
     html = wrap.map(n => "<" + n + ">").join("") + html + wrap.map(n => "</" + n + ">").reverse().join("")
