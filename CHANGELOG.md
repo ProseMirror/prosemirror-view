@@ -1,3 +1,9 @@
+## 1.10.1 (2019-08-28)
+
+### Bug fixes
+
+Copying content will no longer create elements in the main document, which prevents images from loading just because they appear in clipboard content.
+
 ## 1.10.0 (2019-08-13)
 
 ### Bug fixes
