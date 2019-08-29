@@ -174,7 +174,7 @@ function posFromCaret(view, node, offset, coords) {
 function elementFromPoint(element, coords, box) {
   let len = element.childNodes.length
   if (len && box.top < box.bottom) {
-    for (let startI = Math.max(0, Math.floor(len * (coords.top - box.top) / (box.bottom - box.top)) - 2), i = startI;;) {
+    for (let startI = Math.max(0, Math.min(len - 1, Math.floor(len * (coords.top - box.top) / (box.bottom - box.top)) - 2)), i = startI;;) {
       let child = element.childNodes[i]
       if (child.nodeType == 1) {
         let rects = child.getClientRects()
