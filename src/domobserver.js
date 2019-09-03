@@ -27,6 +27,7 @@ export class DOMObserver {
     this.view = view
     this.handleDOMChange = handleDOMChange
     this.queue = []
+    this.flushingSoon = false
     this.observer = window.MutationObserver &&
       new window.MutationObserver(mutations => {
         for (let i = 0; i < mutations.length; i++) this.queue.push(mutations[i])
@@ -36,7 +37,7 @@ export class DOMObserver {
         // ProseMirror to miss the change (see #930)
         if (browser.ie && browser.ie_version <= 11 && mutations.some(
           m => m.type == "childList" && m.removedNodes.length == 1 && m.removedNodes[0].parentNode == m.target))
-          setTimeout(() => this.flush(mutations), 10)
+          this.flushSoon()
         else
           this.flush()
       })
@@ -44,11 +45,18 @@ export class DOMObserver {
     if (useCharData) {
       this.onCharData = e => {
         this.queue.push({target: e.target, type: "characterData", oldValue: e.prevValue})
-        window.setTimeout(() => this.flush(), 20)
+        this.flushSoon()
       }
     }
     this.onSelectionChange = this.onSelectionChange.bind(this)
     this.suppressingSelectionUpdates = false
+  }
+
+  flushSoon() {
+    if (!this.flushingSoon) {
+      this.flushingSoon = true
+      window.setTimeout(() => { this.flushingSoon = false; this.flush() }, 20)
+    }
   }
 
   start() {
@@ -84,7 +92,7 @@ export class DOMObserver {
   }
 
   onSelectionChange() {
-    if (!hasFocusAndSelection(this.view)) return
+    if (!hasFocusAndSelection(this.view) || this.flushingSoon) return
     if (this.suppressingSelectionUpdates) return selectionToDOM(this.view)
     this.flush()
   }
