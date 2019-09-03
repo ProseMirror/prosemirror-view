@@ -26,8 +26,10 @@ export class DOMObserver {
   constructor(view, handleDOMChange) {
     this.view = view
     this.handleDOMChange = handleDOMChange
+    this.queue = []
     this.observer = window.MutationObserver &&
       new window.MutationObserver(mutations => {
+        for (let i = 0; i < mutations.length; i++) this.queue.push(mutations[i])
         // IE11 will sometimes (on backspacing out a single character
         // text node after a BR node) call the observer callback
         // before actually updating the DOM, which will cause
@@ -36,10 +38,9 @@ export class DOMObserver {
           m => m.type == "childList" && m.removedNodes.length == 1 && m.removedNodes[0].parentNode == m.target))
           setTimeout(() => this.flush(mutations), 10)
         else
-          this.flush(mutations)
+          this.flush()
       })
     this.currentSelection = new SelectionState
-    this.queue = []
     if (useCharData) {
       this.onCharData = e => {
         this.queue.push({target: e.target, type: "characterData", oldValue: e.prevValue})
@@ -99,9 +100,9 @@ export class DOMObserver {
     return desc && desc.ignoreMutation({type: "selection", target: container.nodeType == 3 ? container.parentNode : container})
   }
 
-  flush(mutations) {
+  flush() {
     if (!this.view.docView) return
-    if (!mutations) mutations = this.observer.takeRecords()
+    let mutations = this.observer.takeRecords()
     if (this.queue.length) {
       mutations = this.queue.concat(mutations)
       this.queue.length = 0
