@@ -36,7 +36,8 @@ export class DOMObserver {
         // before actually updating the DOM, which will cause
         // ProseMirror to miss the change (see #930)
         if (browser.ie && browser.ie_version <= 11 && mutations.some(
-          m => m.type == "childList" && m.removedNodes.length == 1 && m.removedNodes[0].parentNode == m.target))
+          m => m.type == "childList" && m.removedNodes.length == 1 && m.removedNodes[0].parentNode == m.target ||
+               m.type == "characterData" && m.oldValue.length > m.target.nodeValue.length))
           this.flushSoon()
         else
           this.flush()
