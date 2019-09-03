@@ -1,3 +1,15 @@
+## 1.10.2 (2019-09-03)
+
+### Bug fixes
+
+Fix an issue where `posAtCoords` could crash by dereferencing undefined in some circumstances.
+
+Fix inserting text next to a hard break in IE11.
+
+Fix an issue where typing over a selection would result in two different transactions (once for the deletion, once for the insertion) on IE11.
+
+Selecting the word at the start of the document and typing over it no longer causes the text input to appear at the end of the document in IE11.
+
 ## 1.10.1 (2019-08-28)
 
 ### Bug fixes
