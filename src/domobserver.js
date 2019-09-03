@@ -139,11 +139,18 @@ export class DOMObserver {
     if (!desc || desc.ignoreMutation(mut)) return null
 
     if (mut.type == "childList") {
-      let fromOffset = mut.previousSibling && mut.previousSibling.parentNode == mut.target
-          ? domIndex(mut.previousSibling) + 1 : 0
+      let prev = mut.previousSibling, next = mut.nextSibling
+      if (browser.ie && browser.ie_version <= 11) {
+        // IE11 gives us incorrect next/prev siblings when the change
+        // happens next to a BR node
+        while (prev && prev.nodeName == "BR") prev = prev.previousSibling
+        while (next && next.nodeName == "BR") next = next.previousSibling
+      }
+      let fromOffset = prev && prev.parentNode == mut.target
+          ? domIndex(prev) + 1 : 0
       let from = desc.localPosFromDOM(mut.target, fromOffset, -1)
-      let toOffset = mut.nextSibling && mut.nextSibling.parentNode == mut.target
-          ? domIndex(mut.nextSibling) : mut.target.childNodes.length
+      let toOffset = next && next.parentNode == mut.target
+          ? domIndex(next) : mut.target.childNodes.length
       let to = desc.localPosFromDOM(mut.target, toOffset, 1)
       return {from, to}
     } else if (mut.type == "attributes") {
