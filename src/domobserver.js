@@ -93,7 +93,7 @@ export class DOMObserver {
   }
 
   onSelectionChange() {
-    if (!hasFocusAndSelection(this.view) || this.flushingSoon) return
+    if (!hasFocusAndSelection(this.view)) return
     if (this.suppressingSelectionUpdates) return selectionToDOM(this.view)
     this.flush()
   }
@@ -110,7 +110,7 @@ export class DOMObserver {
   }
 
   flush() {
-    if (!this.view.docView) return
+    if (!this.view.docView || this.flushingSoon) return
     let mutations = this.observer.takeRecords()
     if (this.queue.length) {
       mutations = this.queue.concat(mutations)
