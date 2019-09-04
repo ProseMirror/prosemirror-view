@@ -439,7 +439,7 @@ export function endComposition(view, forceUpdate) {
 function captureCopy(view, dom) {
   // The extra wrapper is somehow necessary on IE/Edge to prevent the
   // content from being mangled when it is put onto the clipboard
-  let doc = dom.ownerDocument
+  let doc = view.dom.ownerDocument
   let wrap = doc.body.appendChild(doc.createElement("div"))
   wrap.appendChild(dom)
   wrap.style.cssText = "position: fixed; left: -10000px; top: 10px"
