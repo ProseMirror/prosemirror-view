@@ -1,3 +1,9 @@
+## 1.10.3 (2019-09-04)
+
+### Bug fixes
+
+Fix a regression in 1.10.2 that broke copying on IE11.
+
 ## 1.10.2 (2019-09-03)
 
 ### Bug fixes
