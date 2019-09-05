@@ -44,6 +44,8 @@ export class EditorView {
       else if (place.mount) this.mounted = true
     }
 
+    // :: bool
+    // Indicates whether the editor is currently [editable](#view.EditorProps.editable).
     this.editable = getEditable(this)
     this.markCursor = null
     this.cursorWrapper = null
