@@ -1,3 +1,9 @@
+## 1.11.1 (2019-09-16)
+
+### Bug fixes
+
+Fix issue where typing over the entire contents of an inline node on IE11 would insert the typed content in the wrong position.
+
 ## 1.11.0 (2019-09-16)
 
 ### Bug fixes
