@@ -1,5 +1,5 @@
 import browser from "./browser"
-import {domIndex} from "./dom"
+import {domIndex, isEquivalentPosition} from "./dom"
 import {hasFocusAndSelection, hasSelection, selectionToDOM} from "./selection"
 
 const observeOptions = {childList: true, characterData: true, attributes: true, subtree: true, characterDataOldValue: true}
@@ -95,6 +95,15 @@ export class DOMObserver {
   onSelectionChange() {
     if (!hasFocusAndSelection(this.view)) return
     if (this.suppressingSelectionUpdates) return selectionToDOM(this.view)
+    // Deletions on IE11 fire their events in the wrong order, giving
+    // us a selection change event before the DOM changes are
+    // reported.
+    if (browser.ie && browser.ie_version <= 11 && !this.view.state.selection.empty) {
+      let sel = this.view.root.getSelection()
+      // Selection.isCollapsed isn't reliable on IE
+      if (sel.focusNode && isEquivalentPosition(sel.focusNode, sel.focusOffset, sel.anchorNode, sel.anchorOffset))
+        return this.flushSoon()
+    }
     this.flush()
   }
 
