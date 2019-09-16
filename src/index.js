@@ -148,6 +148,12 @@ export class EditorView {
         }
         if (startSelContext)
           forceSelUpdate = !this.composing && needChromeSelectionForce(startSelContext, this.root)
+        // IE11 will sometimes _report_ the selection as being in the
+        // right place but actually draw/use a different selection
+        // after a deletion (#973).
+        if (browser.ie && browser.ie_version <= 11 && !prev.selection.empty && state.selection.empty &&
+            state.doc.content.size < prev.doc.content.size)
+          forceSelUpdate = true
       }
       // Work around for an issue where an update arriving right between
       // a DOM selection change and the "selectionchange" event for it
