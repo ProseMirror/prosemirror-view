@@ -1,3 +1,13 @@
+## 1.11.0 (2019-09-16)
+
+### Bug fixes
+
+Fix an issue where IE11 would select the entire textblock after deleting content at its start.
+
+### New features
+
+View instances now have a public `editable` property that indicates whether they are in editable mode.
+
 ## 1.10.3 (2019-09-04)
 
 ### Bug fixes
