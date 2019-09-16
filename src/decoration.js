@@ -227,7 +227,7 @@ export class DecorationSet {
   // boundaries) and match the given predicate on their spec. When
   // `start` and `end` are omitted, all decorations in the set are
   // considered. When `predicate` isn't given, all decorations are
-  // asssumed to match.
+  // assumed to match.
   find(start, end, predicate) {
     let result = []
     this.findInner(start == null ? 0 : start, end == null ? 1e9 : end, result, 0, predicate)
