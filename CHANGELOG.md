@@ -1,3 +1,11 @@
+## 1.11.2 (2019-09-17)
+
+### Bug fixes
+
+Fix an issue where typing over a decorated piece of text would sometimes just act like deletion.
+
+Fix another problem in IE11 with typing over content, where typing over a decorated bit of text caused a crash.
+
 ## 1.11.1 (2019-09-16)
 
 ### Bug fixes
