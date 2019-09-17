@@ -32,6 +32,7 @@ function parseBetween(view, from_, to_) {
   let startDoc = view.state.doc
   let parser = view.someProp("domParser") || DOMParser.fromSchema(view.state.schema)
   let $from = startDoc.resolve(from)
+
   let sel = null, doc = parser.parse(parent, {
     topNode: $from.parent,
     topMatch: $from.parent.contentMatchAt($from.index()),
