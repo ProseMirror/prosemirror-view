@@ -384,7 +384,8 @@ class ViewDesc {
         let startInside = offset + child.border, endInside = end - child.border
         if (from >= startInside && to <= endInside) {
           this.dirty = from == offset || to == end ? CONTENT_DIRTY : CHILD_DIRTY
-          if (from == startInside && to == endInside && child.contentLost) child.dirty = NODE_DIRTY
+          if (from == startInside && to == endInside &&
+              (child.contentLost || child.dom.parentNode != this.contentDOM)) child.dirty = NODE_DIRTY
           else child.markDirty(from - startInside, to - startInside)
           return
         } else {
