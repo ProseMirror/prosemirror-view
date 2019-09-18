@@ -210,9 +210,19 @@ export function posAtCoords(view, coords) {
   }
   elt = targetKludge(elt, coords)
   if (node) {
-    // Firefox will sometimes return offsets into <input> nodes, which
-    // have no actual children, from caretPositionFromPoint (#953)
-    if (node.nodeType == 1) offset = Math.min(offset, node.childNodes.length)
+    if (browser.gecko && node.nodeType == 1) {
+      // Firefox will sometimes return offsets into <input> nodes, which
+      // have no actual children, from caretPositionFromPoint (#953)
+      offset = Math.min(offset, node.childNodes.length)
+      // It'll also move the returned position before image nodes,
+      // even if those are behind it.
+      if (offset < node.childNodes.length) {
+        let next = node.childNodes[offset], box
+        if (next.nodeName == "IMG" && (box = next.getBoundingClientRect()).right <= coords.left &&
+            box.bottom > coords.top)
+          offset++
+      }
+    }
     // Suspiciously specific kludge to work around caret*FromPoint
     // never returning a position at the end of the document
     if (node == view.dom && offset == node.childNodes.length - 1 && node.lastChild.nodeType == 1 &&
