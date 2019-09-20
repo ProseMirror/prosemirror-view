@@ -1,3 +1,11 @@
+## 1.11.3 (2019-09-20)
+
+### Bug fixes
+
+Fix an issue where the DOM node representing a mark could be corrupted when the browser decides to replace it with another node but ProseMirror restored the old node after the change.
+
+Handle another case where typing over a selection in IE11 confused the editor.
+
 ## 1.11.2 (2019-09-17)
 
 ### Bug fixes
