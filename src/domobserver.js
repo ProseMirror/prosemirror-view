@@ -69,12 +69,14 @@ export class DOMObserver {
   }
 
   stop() {
-    let take = this.observer.takeRecords()
-    if (take.length) {
-      for (let i = 0; i < take.length; i++) this.queue.push(take[i])
-      window.setTimeout(() => this.flush(), 20)
+    if (this.observer) {
+      let take = this.observer.takeRecords()
+      if (take.length) {
+        for (let i = 0; i < take.length; i++) this.queue.push(take[i])
+        window.setTimeout(() => this.flush(), 20)
+      }
+      this.observer.disconnect()
     }
-    if (this.observer) this.observer.disconnect()
     if (useCharData) this.view.dom.removeEventListener("DOMCharacterDataModified", this.onCharData)
     this.disconnectSelection()
   }
@@ -120,7 +122,7 @@ export class DOMObserver {
 
   flush() {
     if (!this.view.docView || this.flushingSoon) return
-    let mutations = this.observer.takeRecords()
+    let mutations = this.observer ? this.observer.takeRecords() : []
     if (this.queue.length) {
       mutations = this.queue.concat(mutations)
       this.queue.length = 0
