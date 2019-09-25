@@ -176,6 +176,10 @@ export class Decoration {
   // Creates a node decoration. `from` and `to` should point precisely
   // before and after a node in the document. That node, and only that
   // node, will receive the given attributes.
+  //
+  //   spec:: ?Object
+  //   Optional information to store with the decoration. It
+  //   is also used when comparing decorators for equality.
   static node(from, to, attrs, spec) {
     return new Decoration(from, to, new NodeType(attrs, spec))
   }
