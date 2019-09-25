@@ -121,7 +121,7 @@ export class DOMObserver {
   }
 
   flush() {
-    if (!this.view.docView || this.flushingSoon) return
+    if (!this.view.docView || this.flushingSoon || !this.observer) return
     let mutations = this.observer.takeRecords()
     if (this.queue.length) {
       mutations = this.queue.concat(mutations)
