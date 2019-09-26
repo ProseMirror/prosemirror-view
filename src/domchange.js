@@ -132,6 +132,17 @@ export function readDOMChange(view, from, to, typeOver) {
     }
   }
 
+  // IE11 will insert a non-breaking space _ahead_ of the space after
+  // the cursor space when adding a space before another space. When
+  // that happened, adjust the change to cover the space instead.
+  if (browser.ie && browser.ie_version <= 11 && change.endB == change.start + 1 &&
+      change.endA == change.start && change.start > 0 &&
+      parse.doc.textBetween(change.start - parse.from - 1, change.start - parse.from + 1) == " \u00a0") {
+    change.start--
+    change.endA--
+    change.endB--
+  }
+
   let $from = parse.doc.resolveNoCache(change.start - parse.from)
   let $to = parse.doc.resolveNoCache(change.endB - parse.from)
   let nextSel
