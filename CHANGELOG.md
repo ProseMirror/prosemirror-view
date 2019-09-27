@@ -1,3 +1,11 @@
+## 1.11.4 (2019-09-27)
+
+### Bug fixes
+
+Fix an IE11 issue where marks would sometimes unexpectedly get dropped when inserting a space after marked text.
+
+Fixes an issue where `handleTextInput` wasn't called when typing over a single character with the same character.
+
 ## 1.11.3 (2019-09-20)
 
 ### Bug fixes
