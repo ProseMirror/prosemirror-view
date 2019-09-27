@@ -109,13 +109,14 @@ export function readDOMChange(view, from, to, typeOver) {
   if (!change) {
     if (typeOver && sel instanceof TextSelection && !sel.empty && sel.$head.sameParent(sel.$anchor) &&
         !view.composing && !(parse.sel && parse.sel.anchor != parse.sel.head)) {
-      let state = view.state, sel = state.selection
-      view.dispatch(state.tr.replaceSelectionWith(state.schema.text(state.doc.textBetween(sel.from, sel.to)), true).scrollIntoView())
-    } else if (parse.sel) {
-      let sel = resolveSelection(view, view.state.doc, parse.sel)
-      if (sel && !sel.eq(view.state.selection)) view.dispatch(view.state.tr.setSelection(sel))
+      change = {start: sel.from, endA: sel.to, endB: sel.to}
+    } else {
+      if (parse.sel) {
+        let sel = resolveSelection(view, view.state.doc, parse.sel)
+        if (sel && !sel.eq(view.state.selection)) view.dispatch(view.state.tr.setSelection(sel))
+      }
+      return
     }
-    return
   }
   view.domChangeCount++
   // Handle the case where overwriting a selection by typing matches
@@ -136,7 +137,7 @@ export function readDOMChange(view, from, to, typeOver) {
   // the cursor space when adding a space before another space. When
   // that happened, adjust the change to cover the space instead.
   if (browser.ie && browser.ie_version <= 11 && change.endB == change.start + 1 &&
-      change.endA == change.start && change.start > 0 &&
+      change.endA == change.start && change.start > parse.from &&
       parse.doc.textBetween(change.start - parse.from - 1, change.start - parse.from + 1) == " \u00a0") {
     change.start--
     change.endA--
