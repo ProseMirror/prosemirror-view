@@ -177,7 +177,8 @@ export class Decoration {
   // before and after a node in the document. That node, and only that
   // node, will receive the given attributes.
   //
-  //   spec:: ?Object
+  //   spec::-
+  //
   //   Optional information to store with the decoration. It
   //   is also used when comparing decorators for equality.
   static node(from, to, attrs, spec) {
