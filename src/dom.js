@@ -52,8 +52,9 @@ export function nodeSize(node) {
 }
 
 function hasBlockDesc(dom) {
-  let desc = dom.pmViewDesc
-  return desc && desc.node && desc.node.isBlock
+  let desc
+  for (let cur = dom; cur; cur = cur.parentNode) if (desc = cur.pmViewDesc) break
+  return desc && desc.node && desc.node.isBlock && (desc.dom == dom || desc.contentDOM == dom)
 }
 
 // Work around Chrome issue https://bugs.chromium.org/p/chromium/issues/detail?id=447523
