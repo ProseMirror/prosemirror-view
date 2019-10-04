@@ -1,3 +1,9 @@
+## 1.11.5 (2019-10-04)
+
+### Bug fixes
+
+Don't leave DOM selection in place when it is inside a node view but not inside its content DOM element.
+
 ## 1.11.4 (2019-09-27)
 
 ### Bug fixes
