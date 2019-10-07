@@ -1,3 +1,9 @@
+## 1.11.6 (2019-10-07)
+
+### Bug fixes
+
+Fix workaround for broken IE11 DOM change records when inserting between `<br>` nodes to handle more cases.
+
 ## 1.11.5 (2019-10-04)
 
 ### Bug fixes
