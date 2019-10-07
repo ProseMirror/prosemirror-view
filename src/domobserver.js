@@ -161,11 +161,14 @@ export class DOMObserver {
 
     if (mut.type == "childList") {
       let prev = mut.previousSibling, next = mut.nextSibling
-      if (browser.ie && browser.ie_version <= 11) {
-        // IE11 gives us incorrect next/prev siblings when the change
-        // happens next to a BR node
-        while (prev && prev.nodeName == "BR") prev = prev.previousSibling
-        while (next && next.nodeName == "BR") next = next.previousSibling
+      if (browser.ie && browser.ie_version <= 11 && mut.addedNodes.length) {
+        // IE11 gives us incorrect next/prev siblings for some
+        // insertions, to if there are added nodes, recompute those
+        for (let i = 0; i < mut.addedNodes.length; i++) {
+          let {previousSibling, nextSibling} = mut.addedNodes[i]
+          if (!previousSibling || Array.prototype.indexOf.call(mut.addedNodes, previousSibling) < 0) prev = previousSibling
+          if (!nextSibling || Array.prototype.indexOf.call(mut.addedNodes, nextSibling) < 0) next = nextSibling
+        }
       }
       let fromOffset = prev && prev.parentNode == mut.target
           ? domIndex(prev) + 1 : 0
