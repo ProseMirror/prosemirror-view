@@ -163,7 +163,7 @@ export class DOMObserver {
       let prev = mut.previousSibling, next = mut.nextSibling
       if (browser.ie && browser.ie_version <= 11 && mut.addedNodes.length) {
         // IE11 gives us incorrect next/prev siblings for some
-        // insertions, to if there are added nodes, recompute those
+        // insertions, so if there are added nodes, recompute those
         for (let i = 0; i < mut.addedNodes.length; i++) {
           let {previousSibling, nextSibling} = mut.addedNodes[i]
           if (!previousSibling || Array.prototype.indexOf.call(mut.addedNodes, previousSibling) < 0) prev = previousSibling
