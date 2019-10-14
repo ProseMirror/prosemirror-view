@@ -6,6 +6,7 @@ import {initInput, destroyInput, dispatchEvent, ensureListeners} from "./input"
 import {selectionToDOM, anchorInRightPlace, syncNodeSelection} from "./selection"
 import {Decoration, viewDecorations} from "./decoration"
 import browser from "./browser"
+import {checkProsemirrorCSSLoaded, checkProsemirrorCSSLoadedOnFocus} from './warn'
 
 export {Decoration, DecorationSet} from "./decoration"
 
@@ -61,6 +62,8 @@ export class EditorView {
     this.dragging = null
 
     initInput(this)
+
+    checkProsemirrorCSSLoadedOnFocus(this)
 
     this.pluginViews = []
     this.updatePluginViews()
@@ -238,6 +241,7 @@ export class EditorView {
       if (this.dom.setActive) this.dom.setActive() // for IE
       else this.dom.focus({preventScroll: true})
     }
+    checkProsemirrorCSSLoaded()
     this.domObserver.start()
   }
 
