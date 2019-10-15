@@ -1,3 +1,9 @@
+## 1.11.7 (2019-10-15)
+
+### Bug fixes
+
+Enabling a mark and then starting a composition, on Chrome Android, will no longer cause the cursor to jump to the start of the composition.
+
 ## 1.11.6 (2019-10-07)
 
 ### Bug fixes
