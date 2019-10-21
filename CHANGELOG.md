@@ -1,3 +1,9 @@
+## 1.12.0 (2019-10-21)
+
+### New features
+
+The mutation records passed to [`ignoreMutation`](https://prosemirror.net/docs/ref/#view.NodeView.ignoreMutation) now contain the old attribute value.
+
 ## 1.11.7 (2019-10-15)
 
 ### Bug fixes
