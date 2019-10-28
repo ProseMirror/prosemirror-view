@@ -138,10 +138,10 @@ export class DOMObserver {
     let sel = this.view.root.getSelection()
     let newSel = !this.suppressingSelectionUpdates && !this.currentSelection.eq(sel) && hasSelection(this.view) && !this.ignoreSelectionChange(sel)
 
-    let from = -1, to = -1, typeOver = false
+    let from = -1, to = -1, typeOver = false, added = []
     if (this.view.editable) {
       for (let i = 0; i < mutations.length; i++) {
-        let result = this.registerMutation(mutations[i])
+        let result = this.registerMutation(mutations[i], added)
         if (result) {
           from = from < 0 ? result.from : Math.min(result.from, from)
           to = to < 0 ? result.to : Math.max(result.to, to)
@@ -160,7 +160,9 @@ export class DOMObserver {
     }
   }
 
-  registerMutation(mut) {
+  registerMutation(mut, added) {
+    // Ignore mutations inside nodes that were already noted as inserted
+    if (added.indexOf(mut.target) > -1) return null
     let desc = this.view.docView.nearestDesc(mut.target)
     if (mut.type == "attributes" &&
         (desc == this.view.docView || mut.attributeName == "contenteditable" ||
@@ -185,6 +187,7 @@ export class DOMObserver {
       let from = desc.localPosFromDOM(mut.target, fromOffset, -1)
       let toOffset = next && next.parentNode == mut.target
           ? domIndex(next) : mut.target.childNodes.length
+      for (let i = 0; i < mut.addedNodes.length; i++) added.push(mut.addedNodes[i])
       let to = desc.localPosFromDOM(mut.target, toOffset, 1)
       return {from, to}
     } else if (mut.type == "attributes") {
