@@ -198,7 +198,10 @@ export function readDOMChange(view, from, to, typeOver) {
     // Chrome Android will sometimes, during composition, report the
     // selection in the wrong place. If it looks like that is
     // happening, don't update the selection.
-    if (sel && !(browser.chrome && browser.android && view.composing && sel.empty && sel.head == chFrom))
+    // Edge just doesn't move the cursor forward when you start typing
+    // in an empty block or between br nodes.
+    if (sel && !(browser.chrome && browser.android && view.composing && sel.empty && sel.head == chFrom ||
+                 browser.ie && sel.empty && sel.head == chFrom))
       tr.setSelection(sel)
   }
   if (storedMarks) tr.ensureMarks(storedMarks)
