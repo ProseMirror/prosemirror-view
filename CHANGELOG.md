@@ -1,3 +1,13 @@
+## 1.12.1 (2019-10-28)
+
+### Bug fixes
+
+Reduce unnecessary redraws when typing creates a new text node on Chrome.
+
+The default prosemirror.css now also turns off ligatures in Edge.
+
+Fix issue where the cursor stays before the typed text in Edge, when typing in an empty paragraph or between hard break nodes.
+
 ## 1.12.0 (2019-10-21)
 
 ### New features
