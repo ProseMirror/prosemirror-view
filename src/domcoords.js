@@ -193,8 +193,10 @@ function elementFromPoint(element, coords, box) {
 export function posAtCoords(view, coords) {
   let root = view.root, node, offset
   if (root.caretPositionFromPoint) {
-    let pos = root.caretPositionFromPoint(coords.left, coords.top)
-    if (pos) ({offsetNode: node, offset} = pos)
+    try { // Firefox throws for this call in hard-to-predict circumstances (#994)
+      let pos = root.caretPositionFromPoint(coords.left, coords.top)
+      if (pos) ({offsetNode: node, offset} = pos)
+    } catch (_) {}
   }
   if (!node && root.caretRangeFromPoint) {
     let range = root.caretRangeFromPoint(coords.left, coords.top)
