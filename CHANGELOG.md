@@ -1,3 +1,13 @@
+## 1.12.2 (2019-11-05)
+
+### Bug fixes
+
+Set the editable element to use a `white-space: break-spaces` style so that whitespace at the end of a line properly moves the cursor to the next line.
+
+Fix issue where `posAtCoords` could throw an error in some circumstances on Firefox.
+
+Don't force focus back on the editor if a node view moves focus in its `setSelection` method.
+
 ## 1.12.1 (2019-10-28)
 
 ### Bug fixes
