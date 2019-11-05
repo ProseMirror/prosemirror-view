@@ -234,7 +234,7 @@ export class EditorView {
   focus() {
     this.domObserver.stop()
     selectionToDOM(this, true)
-    if (this.editable) {
+    if (this.editable && !focusOnSubcomponent(this)) {
       if (this.dom.setActive) this.dom.setActive() // for IE
       else this.dom.focus({preventScroll: true})
     }
@@ -437,6 +437,16 @@ function changedNodeViews(a, b) {
   }
   for (let _ in b) nB++
   return nA != nB
+}
+
+function focusOnSubcomponent(view) {
+  let {$from, $to} = view.state.selection
+  for (let d = $from.depth; d > 0; d--) {
+    if ($to > $from.after(d)) continue
+    let desc = view.docView.descAt($from.before(d))
+    if (desc) return desc.dom.contains(document.activeElement)
+  }
+  return false
 }
 
 // EditorProps:: interface
