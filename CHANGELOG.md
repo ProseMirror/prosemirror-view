@@ -1,3 +1,11 @@
+## 1.12.3 (2019-11-07)
+
+### Bug fixes
+
+Fix issue where paste events were stopped when the clipboard parser failed to make sense of the content.
+
+Fix issue where the `handlePaste` prop might be called multiple times for a single paste.
+
 ## 1.12.2 (2019-11-05)
 
 ### Bug fixes
