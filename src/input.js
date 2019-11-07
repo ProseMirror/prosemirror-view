@@ -513,7 +513,7 @@ editHandlers.paste = (view, e) => {
   let data = brokenClipboardAPI ? null : e.clipboardData
   let html = data && data.getData("text/html"), text = data && data.getData("text/plain")
   if (data && (html || text || data.files.length)) {
-    doPaste(view, html, text, e)
+    doPaste(view, text, html, e)
     e.preventDefault()
   } else {
     capturePaste(view, e)
