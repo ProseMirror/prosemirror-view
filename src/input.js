@@ -502,7 +502,8 @@ function capturePaste(view, e) {
 
 function doPaste(view, text, html, e) {
   let slice = parseFromClipboard(view, text, html, view.shiftKey, view.state.selection.$from)
-  if (view.someProp("handlePaste", f => f(view, e, slice || Slice.empty)) || !slice) return true
+  if (view.someProp("handlePaste", f => f(view, e, slice || Slice.empty))) return true
+  if (!slice) return false
 
   let singleNode = sliceSingleNode(slice)
   let tr = singleNode ? view.state.tr.replaceSelectionWith(singleNode, view.shiftKey) : view.state.tr.replaceSelection(slice)
