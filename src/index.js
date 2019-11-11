@@ -161,7 +161,7 @@ export class EditorView {
       // drag selection.
       if (forceSelUpdate ||
           !(this.mouseDown && this.domObserver.currentSelection.eq(this.root.getSelection()) && anchorInRightPlace(this))) {
-        selectionToDOM(this, false, forceSelUpdate)
+        selectionToDOM(this, forceSelUpdate)
       } else {
         syncNodeSelection(this, state.selection)
         this.domObserver.setCurSelection()
@@ -233,11 +233,11 @@ export class EditorView {
   // Focus the editor.
   focus() {
     this.domObserver.stop()
-    selectionToDOM(this, true)
-    if (this.editable && !focusOnSubcomponent(this)) {
+    if (this.editable) {
       if (this.dom.setActive) this.dom.setActive() // for IE
       else this.dom.focus({preventScroll: true})
     }
+    selectionToDOM(this)
     this.domObserver.start()
   }
 
@@ -437,16 +437,6 @@ function changedNodeViews(a, b) {
   }
   for (let _ in b) nB++
   return nA != nB
-}
-
-function focusOnSubcomponent(view) {
-  let {$from, $to} = view.state.selection
-  for (let d = $from.depth; d > 0; d--) {
-    if ($to > $from.after(d)) continue
-    let desc = view.docView.descAt($from.before(d))
-    if (desc) return desc.dom.contains(document.activeElement)
-  }
-  return false
 }
 
 // EditorProps:: interface

@@ -26,21 +26,11 @@ export function selectionFromDOM(view, origin) {
   return selection
 }
 
-export function selectionToDOM(view, takeFocus, force) {
+export function selectionToDOM(view, force) {
   let sel = view.state.selection
   syncNodeSelection(view, sel)
 
-  if (view.editable && !view.hasFocus()) {
-    if (!takeFocus) return
-    // See https://bugzilla.mozilla.org/show_bug.cgi?id=921444
-    if (browser.gecko && browser.gecko_version <= 55) {
-      view.domObserver.disconnectSelection()
-      view.dom.focus()
-      view.domObserver.connectSelection()
-    }
-  } else if (!view.editable && !(hasSelection(view) && document.activeElement.contains(view.dom)) && !takeFocus) {
-    return
-  }
+  if (view.editable ? !view.hasFocus() : !(hasSelection(view) && document.activeElement.contains(view.dom))) return
 
   view.domObserver.disconnectSelection()
 
