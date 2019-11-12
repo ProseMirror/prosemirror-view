@@ -1,3 +1,9 @@
+## 1.13.1 (2019-11-12)
+
+### Bug fixes
+
+Work around selection jumping that sometimes occurs on Chrome when focusing the editor.
+
 ## 1.13.0 (2019-11-08)
 
 ### New features
