@@ -1,3 +1,9 @@
+## 1.13.2 (2019-11-14)
+
+### Bug fixes
+
+Fix issue where `EditorView.focus` would scroll the top of the document into view on Safari.
+
 ## 1.13.1 (2019-11-12)
 
 ### Bug fixes
