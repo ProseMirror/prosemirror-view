@@ -45,7 +45,6 @@ export function scrollRectIntoView(view, rect, startDOM) {
 // when the size of the content above changes.
 export function storeScrollPos(view) {
   let rect = view.dom.getBoundingClientRect(), startY = Math.max(0, rect.top)
-  let doc = view.dom.ownerDocument
   let refDOM, refTop
   for (let x = (rect.left + rect.right) / 2, y = startY + 1;
        y < Math.min(innerHeight, rect.bottom); y += 5) {
@@ -58,23 +57,50 @@ export function storeScrollPos(view) {
       break
     }
   }
-  let stack = []
-  for (let dom = view.dom; dom; dom = parentNode(dom)) {
+  return {refDOM, refTop, stack: scrollStack(view.dom)}
+}
+
+function scrollStack(dom) {
+  let stack = [], doc = dom.ownerDocument
+  for (; dom; dom = parentNode(dom)) {
     stack.push({dom, top: dom.scrollTop, left: dom.scrollLeft})
-    if (dom == doc.body) break
+    if (dom == doc) break
   }
-  return {refDOM, refTop, stack}
+  return stack
 }
 
 // Reset the scroll position of the editor's parent nodes to that what
 // it was before, when storeScrollPos was called.
 export function resetScrollPos({refDOM, refTop, stack}) {
   let newRefTop = refDOM ? refDOM.getBoundingClientRect().top : 0
-  let dTop = newRefTop == 0 ? 0 : newRefTop - refTop
+  restoreScrollStack(stack, newRefTop == 0 ? 0 : newRefTop - refTop)
+}
+
+function restoreScrollStack(stack, dTop) {
   for (let i = 0; i < stack.length; i++) {
     let {dom, top, left} = stack[i]
     if (dom.scrollTop != top + dTop) dom.scrollTop = top + dTop
     if (dom.scrollLeft != left) dom.scrollLeft = left
+  }
+}
+
+let preventScrollSupported = null
+// Feature-detects support for .focus({preventScroll: true}), and uses
+// a fallback kludge when not supported.
+export function focusPreventScroll(dom) {
+  if (dom.setActive) return dom.setActive() // in IE
+  if (preventScrollSupported) return dom.focus(preventScrollSupported)
+
+  let stored = scrollStack(dom)
+  dom.focus(preventScrollSupported == null ? {
+    get preventScroll() {
+      preventScrollSupported = {preventScroll: true}
+      return true
+    }
+  } : undefined)
+  if (!preventScrollSupported) {
+    preventScrollSupported = false
+    restoreScrollStack(stored, 0)
   }
 }
 

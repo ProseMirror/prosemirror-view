@@ -1,6 +1,7 @@
 import {NodeSelection} from "prosemirror-state"
 
-import {scrollRectIntoView, posAtCoords, coordsAtPos, endOfTextblock, storeScrollPos, resetScrollPos} from "./domcoords"
+import {scrollRectIntoView, posAtCoords, coordsAtPos, endOfTextblock, storeScrollPos,
+        resetScrollPos, focusPreventScroll} from "./domcoords"
 import {docViewDesc} from "./viewdesc"
 import {initInput, destroyInput, dispatchEvent, ensureListeners} from "./input"
 import {selectionToDOM, anchorInRightPlace, syncNodeSelection} from "./selection"
@@ -233,10 +234,7 @@ export class EditorView {
   // Focus the editor.
   focus() {
     this.domObserver.stop()
-    if (this.editable) {
-      if (this.dom.setActive) this.dom.setActive() // for IE
-      else this.dom.focus({preventScroll: true})
-    }
+    if (this.editable) focusPreventScroll(this.dom)
     selectionToDOM(this)
     this.domObserver.start()
   }
