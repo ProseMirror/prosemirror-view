@@ -149,6 +149,16 @@ export class DOMObserver {
         }
       }
     }
+
+    // Firefox adds bogus BR to the very end of LI node
+    // in case of backspacing last character in the LI and having inline DOM element in front of it (e.g. SPAN or custom TODO)
+    // FF issue: https://bugzilla.mozilla.org/show_bug.cgi?id=1596374
+    if (result.gecko &&
+        mutations.some(mut =>
+          mut.target.nodeName === "LI" &&
+          mut.addedNodes.length === 1 &&
+          mut.addedNodes[0].nodeName === "BR")) to += 2
+
     if (from > -1 || newSel) {
       if (from > -1) {
         this.view.docView.markDirty(from, to)
