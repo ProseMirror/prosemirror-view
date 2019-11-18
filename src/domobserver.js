@@ -155,6 +155,7 @@ export class DOMObserver {
     // FF issue: https://bugzilla.mozilla.org/show_bug.cgi?id=1596374
     if (result.gecko &&
         mutations.some(mut =>
+          mut.target &&
           mut.target.nodeName === "LI" &&
           mut.addedNodes.length === 1 &&
           mut.addedNodes[0].nodeName === "BR")) to += 2
