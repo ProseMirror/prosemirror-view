@@ -1,3 +1,11 @@
+## 1.13.3 (2019-11-19)
+
+### Bug fixes
+
+Fix issue where the editor wouldn't update its internal selection when the editor was blurred, its selection was changed programatically, and then the editor was re-focused with its old DOM selection.
+
+The file referred to in the package's `module` field now is compiled down to ES5.
+
 ## 1.13.2 (2019-11-14)
 
 ### Bug fixes
