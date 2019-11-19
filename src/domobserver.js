@@ -149,6 +149,7 @@ export class DOMObserver {
         }
       }
     }
+
     if (from > -1 || newSel) {
       if (from > -1) {
         this.view.docView.markDirty(from, to)

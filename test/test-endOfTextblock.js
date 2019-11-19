@@ -1,7 +1,7 @@
 const {schema, doc, p, a} = require("prosemirror-test-builder")
 const ist = require("ist")
 const {tempEditor} = require("./view")
-const {Decoration, DecorationSet} = require("../dist")
+const {Decoration, DecorationSet} = require("..")
 const {TextSelection} = require("prosemirror-state")
 
 describe("EditorView.endOfTextblock", () => {

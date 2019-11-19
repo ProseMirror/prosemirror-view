@@ -4,7 +4,7 @@ const {NodeSelection, TextSelection} = require("prosemirror-state")
 const {Slice, Fragment} = require("prosemirror-model")
 const {tempEditor} = require("./view")
 
-const {__serializeForClipboard: serializeForClipboard, __parseFromClipboard: parseFromClipboard} = require("../dist")
+const {__serializeForClipboard: serializeForClipboard, __parseFromClipboard: parseFromClipboard} = require("..")
 
 describe("Clipboard interface", () => {
   it("copies only the node for a node selection", () => {
