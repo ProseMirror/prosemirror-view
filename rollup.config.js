@@ -1,12 +1,14 @@
-import buble from '@rollup/plugin-buble'
-
-export default {
+module.exports = {
   input: './src/index.js',
-  output: {
-    dir: 'dist',
+  output: [{
+    file: 'dist/index.js',
     format: 'cjs',
     sourcemap: true
-  },
-  plugins: [buble()],
+  }, {
+    file: 'dist/index.mjs',
+    format: 'es',
+    sourcemap: true
+  }],
+  plugins: [require('@rollup/plugin-buble')()],
   external(id) { return !/^[\.\/]/.test(id) }
 }

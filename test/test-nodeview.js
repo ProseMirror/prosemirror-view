@@ -1,7 +1,7 @@
 const {doc, p, br, blockquote} = require("prosemirror-test-builder")
 const {Plugin} = require("prosemirror-state")
 const {tempEditor} = require("./view")
-const {DecorationSet, Decoration} = require("../dist")
+const {DecorationSet, Decoration} = require("..")
 const ist = require("ist")
 
 describe("nodeViews prop", () => {

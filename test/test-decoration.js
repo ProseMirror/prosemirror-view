@@ -2,7 +2,7 @@ const ist = require("ist")
 const {schema, doc, p, h1, li, ul, blockquote} = require("prosemirror-test-builder")
 const {Transform} = require("prosemirror-transform")
 
-const {Decoration, DecorationSet} = require("../dist")
+const {Decoration, DecorationSet} = require("..")
 
 let widget = document.createElement("button")
 

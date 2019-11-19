@@ -1,7 +1,7 @@
 const {schema, doc, ul, li, p, strong, hr} = require("prosemirror-test-builder")
 const {EditorState} = require("prosemirror-state")
 const {Schema} = require("prosemirror-model")
-const {EditorView} = require("../dist")
+const {EditorView} = require("..")
 const {tempEditor} = require("./view")
 const ist = require("ist")
 

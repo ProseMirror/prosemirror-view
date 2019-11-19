@@ -1,4 +1,4 @@
-const {EditorView} = require("../dist")
+const {EditorView} = require("..")
 const {EditorState, Selection, TextSelection, NodeSelection} = require("prosemirror-state")
 const {schema} = require("prosemirror-test-builder")
 

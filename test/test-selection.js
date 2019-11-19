@@ -2,7 +2,7 @@ const {doc, blockquote, p, em, img: img_, strong, code, br, hr, ul, li} = requir
 const ist = require("ist")
 const {Selection, NodeSelection} = require("prosemirror-state")
 const {tempEditor, findTextNode} = require("./view")
-const {Decoration, DecorationSet} = require("../dist")
+const {Decoration, DecorationSet} = require("..")
 
 const img = img_({src: "data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw=="})
 

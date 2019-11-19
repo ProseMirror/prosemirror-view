@@ -1,7 +1,7 @@
 const {doc, p, hr, em, strong, img, blockquote, schema} = require("prosemirror-test-builder")
 const {Plugin, TextSelection} = require("prosemirror-state")
 const {tempEditor} = require("./view")
-const {DecorationSet, Decoration} = require("../dist")
+const {DecorationSet, Decoration} = require("..")
 const ist = require("ist")
 
 function make(str) {
