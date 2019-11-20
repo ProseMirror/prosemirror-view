@@ -5,7 +5,7 @@ module.exports = {
     format: 'cjs',
     sourcemap: true
   }, {
-    file: 'dist/index.mjs',
+    file: 'dist/index.es.js',
     format: 'es',
     sourcemap: true
   }],
