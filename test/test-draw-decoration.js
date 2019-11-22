@@ -278,6 +278,15 @@ describe("Decoration drawing", () => {
     ist(!para.title)
   })
 
+  it("can add and remove CSS custom properties from a node", () => {
+    let deco = Decoration.node(0, 5, {style: '--my-custom-property:36px'})
+    let view = tempEditor({doc: doc(p("foo")),
+                           plugins: [decoPlugin([deco])]})
+    ist(view.dom.querySelector("p").style.getPropertyValue('--my-custom-property'), "36px")
+    updateDeco(view, null, [deco])
+    ist(view.dom.querySelector("p").style.getPropertyValue('--my-custom-property'), "")
+  })
+
   it("updates decorated nodes even if a widget is added before them", () => {
     let view = tempEditor({doc: doc(p("a"), p("b")), plugins: [decoPlugin([])]})
     let lastP = view.dom.querySelectorAll("p")[1]

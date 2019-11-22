@@ -2,7 +2,7 @@ const {schema, eq, doc, p, em, code, strong} = require("prosemirror-test-builder
 const ist = require("ist")
 const {tempEditor, requireFocus, findTextNode} = require("./view")
 const {Decoration, DecorationSet, __endComposition} = require("..")
-const {Plugin} = require("../../state")
+const {Plugin} = require("prosemirror-state")
 
 // declare global: CompositionEvent
 
