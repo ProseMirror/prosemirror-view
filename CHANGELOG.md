@@ -162,7 +162,7 @@ Cursor wrappers (a kludge to make sure typed text gets wrapping DOM structure co
 
 ### New features
 
-Node views can now ignore selection change events through their [`ignoreMutation`](http://prosemirror.net/docs/ref/#view.NodeView.ignoreMutation) callback.
+Node views can now ignore selection change events through their [`ignoreMutation`](https://prosemirror.net/docs/ref/#view.NodeView.ignoreMutation) callback.
 
 ## 1.9.13 (2019-07-29)
 
@@ -642,7 +642,7 @@ Work around a Chrome cursor motion bug by making sure <br> nodes don't get a con
 
 ### Bug fixes
 
-Fix issue where [`Decoration.map`](http://prosemirror.net/docs/ref/#view.DecorationSet.map) would in some situations with nested nodes incorrectly map decoration positions.
+Fix issue where [`Decoration.map`](https://prosemirror.net/docs/ref/#view.DecorationSet.map) would in some situations with nested nodes incorrectly map decoration positions.
 
 ## 1.0.7 (2018-01-05)
 
@@ -654,7 +654,7 @@ Pasting from an external source no longer opens isolating nodes like table cells
 
 ### Bug fixes
 
-[`DecorationSet.remove`](http://prosemirror.net/docs/ref/#view.DecorationSet.remove) now uses a proper deep compare to determine if widgets are the same (it used to compare by identity).
+[`DecorationSet.remove`](https://prosemirror.net/docs/ref/#view.DecorationSet.remove) now uses a proper deep compare to determine if widgets are the same (it used to compare by identity).
 
 ## 1.0.5 (2017-12-05)
 
@@ -680,7 +680,7 @@ Pressing backspace between two identical characters will no longer generate a tr
 
 Fix test for whether a node can be selected when arrowing onto it from the right.
 
-Calling [`posAtCoords`](http://prosemirror.net/docs/ref/#view.EditorView.posAtCoords) while a read from the DOM is pending will no longer return a malformed result.
+Calling [`posAtCoords`](https://prosemirror.net/docs/ref/#view.EditorView.posAtCoords) while a read from the DOM is pending will no longer return a malformed result.
 
 ## 1.0.1 (2017-11-10)
 
@@ -710,19 +710,19 @@ Copy/paste on Edge 15 and up now uses the clipboard API, fixing a problem that m
 
 ### New features
 
-The [`dragging`](http://prosemirror.net/docs/ref/#view.EditorView.dragging) property of a view, which contains information about editor content being dragged, is now part of the public interface.
+The [`dragging`](https://prosemirror.net/docs/ref/#view.EditorView.dragging) property of a view, which contains information about editor content being dragged, is now part of the public interface.
 
 ## 0.24.0 (2017-09-25)
 
 ### New features
 
-The [`clipboardTextParser`](http://prosemirror.net/docs/ref/version/0.24.0.html#view.EditorProps.clipboardTextParser) prop is now passed a context position.
+The [`clipboardTextParser`](https://prosemirror.net/docs/ref/version/0.24.0.html#view.EditorProps.clipboardTextParser) prop is now passed a context position.
 
 ## 0.23.0 (2017-09-13)
 
 ### Breaking changes
 
-The `onFocus`, `onBlur`, and `handleContextMenu` props are no longer supported. You can achieve their effect with the [`handleDOMEvents`](http://prosemirror.net/docs/ref/version/0.23.0.html#view.EditorProps.handleDOMEvents) prop.
+The `onFocus`, `onBlur`, and `handleContextMenu` props are no longer supported. You can achieve their effect with the [`handleDOMEvents`](https://prosemirror.net/docs/ref/version/0.23.0.html#view.EditorProps.handleDOMEvents) prop.
 
 ### Bug fixes
 
@@ -736,13 +736,13 @@ The view will no longer scroll into view when receiving a state that isn't deriv
 
 Transactions caused by a paste now have their "paste" meta property set to true.
 
-Adds a new view prop, [`handleScrollToSelection`](http://prosemirror.net/docs/ref/version/0.23.0.html#view.EditorProps.handleScrollToSelection) to override the behavior of scrolling the selection into view.
+Adds a new view prop, [`handleScrollToSelection`](https://prosemirror.net/docs/ref/version/0.23.0.html#view.EditorProps.handleScrollToSelection) to override the behavior of scrolling the selection into view.
 
-The new editor prop [`clipboardTextSerializer`](http://prosemirror.net/docs/ref/version/0.23.0.html#view.EditorProps.clipboardTextSerializer) allows you to override the way a piece of document is converted to clipboard text.
+The new editor prop [`clipboardTextSerializer`](https://prosemirror.net/docs/ref/version/0.23.0.html#view.EditorProps.clipboardTextSerializer) allows you to override the way a piece of document is converted to clipboard text.
 
-Adds the editor prop [`clipboardTextParser`](http://prosemirror.net/docs/ref/version/0.23.0.html#view.EditorProps.clipboardTextParser), which can be used to define your own parsing strategy for clipboard text content.
+Adds the editor prop [`clipboardTextParser`](https://prosemirror.net/docs/ref/version/0.23.0.html#view.EditorProps.clipboardTextParser), which can be used to define your own parsing strategy for clipboard text content.
 
-[`DecorationSet.find`](http://prosemirror.net/docs/ref/version/0.23.0.html#view.DecorationSet.find) now supports passing a predicate to filter decorations by spec.
+[`DecorationSet.find`](https://prosemirror.net/docs/ref/version/0.23.0.html#view.DecorationSet.find) now supports passing a predicate to filter decorations by spec.
 
 ## 0.22.1 (2017-08-16)
 
@@ -760,7 +760,7 @@ Fix an issue where moving the cursor through a text widget causes the editor to 
 
 Fixes an issue where down-arrow in front of a widget would sometimes not cause any cursor motion on Chrome.
 
-[Destroying](http://prosemirror.net/docs/ref/version/0.22.0.html#view.EditorView.destroy) a [mounted](http://prosemirror.net/docs/ref/version/0.22.0.html#view.EditorView.constructor) editor view no longer leaks event handlers.
+[Destroying](https://prosemirror.net/docs/ref/version/0.22.0.html#view.EditorView.destroy) a [mounted](https://prosemirror.net/docs/ref/version/0.22.0.html#view.EditorView.constructor) editor view no longer leaks event handlers.
 
 Display updates for regular, non-composition input are now synchronous, which should reduce flickering when, for example, updating decorations in response to typing.
 
@@ -768,7 +768,7 @@ Display updates for regular, non-composition input are now synchronous, which sh
 
 The editor can now be initialized in a document other than the global document (say, an `iframe`).
 
-Editor views now have a [`domAtPos` method](http://prosemirror.net/docs/ref/version/0.22.0.html#view.EditorView.domAtPos), which gives you the DOM position corresponding to a given document position.
+Editor views now have a [`domAtPos` method](https://prosemirror.net/docs/ref/version/0.22.0.html#view.EditorView.domAtPos), which gives you the DOM position corresponding to a given document position.
 
 ## 0.21.1 (2017-05-09)
 
@@ -784,7 +784,7 @@ The `associative` option to widget decorations is no longer supported. To make a
 
 ### New features
 
-[Widget decorations](http://prosemirror.net/docs/ref/version/0.21.0.html#view.Decoration^widget) now support a `side` option that controls which side of them the cursor is drawn, where they move when content is inserted at their position, and the order in which they appear relative to other widgets at the same position.
+[Widget decorations](https://prosemirror.net/docs/ref/version/0.21.0.html#view.Decoration^widget) now support a `side` option that controls which side of them the cursor is drawn, where they move when content is inserted at their position, and the order in which they appear relative to other widgets at the same position.
 
 ## 0.20.5 (2017-05-02)
 
@@ -830,7 +830,7 @@ Fixes a problem where triple-clicking the editor would sometimes cause the scrol
 
 ### Breaking changes
 
-The `inclusiveLeft` and `inclusiveRight` options to inline decorations were renamed to [`inclusiveStart`](http://prosemirror.net/docs/ref/version/0.20.0.html#view.Decoration^inline^spec.inclusiveStart) and [`inclusiveEnd`](http://prosemirror.net/docs/ref/version/0.20.0.html#view.Decoration^inline^spec.inclusiveEnd) so that they also make sense in right-to-left text. The old names work with a warning until the next release.
+The `inclusiveLeft` and `inclusiveRight` options to inline decorations were renamed to [`inclusiveStart`](https://prosemirror.net/docs/ref/version/0.20.0.html#view.Decoration^inline^spec.inclusiveStart) and [`inclusiveEnd`](https://prosemirror.net/docs/ref/version/0.20.0.html#view.Decoration^inline^spec.inclusiveEnd) so that they also make sense in right-to-left text. The old names work with a warning until the next release.
 
 The default styling for lists and blockquotes was removed from `prosemirror.css`. (They were moved to the [`example-setup`](https://github.com/ProseMirror/prosemirror-example-setup) module.)
 
@@ -844,7 +844,7 @@ Backspacing after turning off a mark now works again in Firefox.
 
 ### New features
 
-The new props [`handlePaste`](http://prosemirror.net/docs/ref/version/0.20.0.html#view.EditorProps.handlePaste) and [`handleDrop`](http://prosemirror.net/docs/ref/version/0.20.0.html#view.EditorProps.handleDrop) can be used to override drop and paste behavior.
+The new props [`handlePaste`](https://prosemirror.net/docs/ref/version/0.20.0.html#view.EditorProps.handlePaste) and [`handleDrop`](https://prosemirror.net/docs/ref/version/0.20.0.html#view.EditorProps.handleDrop) can be used to override drop and paste behavior.
 
 ## 0.19.1 (2017-03-18)
 
@@ -856,41 +856,41 @@ Fixes a number of issues with characters being duplicated or disappearing when t
 
 ### Breaking changes
 
-[`endOfTextblock`](http://prosemirror.net/docs/ref/version/0.19.0.html#view.EditorView.endOfTextblock) no longer always returns false for horizontal motion on non-cursor selections, but checks the position of the selection head instead.
+[`endOfTextblock`](https://prosemirror.net/docs/ref/version/0.19.0.html#view.EditorView.endOfTextblock) no longer always returns false for horizontal motion on non-cursor selections, but checks the position of the selection head instead.
 
 ### Bug fixes
 
 Typing after adding/removing a mark no longer briefly shows the new text with the wrong marks.
 
-[`posAtCoords`](http://prosemirror.net/docs/ref/version/0.19.0.html#view.EditorView.posAtCoords) is now more reliable on modern browsers by using browser APIs.
+[`posAtCoords`](https://prosemirror.net/docs/ref/version/0.19.0.html#view.EditorView.posAtCoords) is now more reliable on modern browsers by using browser APIs.
 
 Fix a bug where the view would in some circumstances leave superfluous DOM nodes around inside marks.
 
 ### New features
 
-You can now override the selection the editor creates for a given DOM selection with the [`createSelectionBetween`](http://prosemirror.net/docs/ref/version/0.19.0.html#view.EditorProps.createSelectionBetween) prop.
+You can now override the selection the editor creates for a given DOM selection with the [`createSelectionBetween`](https://prosemirror.net/docs/ref/version/0.19.0.html#view.EditorProps.createSelectionBetween) prop.
 
 ## 0.18.0 (2017-02-24)
 
 ### Breaking changes
 
-`Decoration` objects now store their definition object under [`spec`](http://prosemirror.net/docs/ref/version/0.18.0.html#Decoration.spec), not `options`. The old property name still works, with a warning, until the next release.
+`Decoration` objects now store their definition object under [`spec`](https://prosemirror.net/docs/ref/version/0.18.0.html#Decoration.spec), not `options`. The old property name still works, with a warning, until the next release.
 
 ### Bug fixes
 
-Fix bug where calling [`focus`](http://prosemirror.net/docs/ref/version/0.18.0.html#view.EditorView.focus) when there was a text selection would sometimes result in `state.selection` receiving an incorrect value.
+Fix bug where calling [`focus`](https://prosemirror.net/docs/ref/version/0.18.0.html#view.EditorView.focus) when there was a text selection would sometimes result in `state.selection` receiving an incorrect value.
 
-[`EditorView.props`](http://prosemirror.net/docs/ref/version/0.18.0.html#view.EditorView.props) now has its `state` property updated when you call `updateState`.
+[`EditorView.props`](https://prosemirror.net/docs/ref/version/0.18.0.html#view.EditorView.props) now has its `state` property updated when you call `updateState`.
 
 Putting decorations on or inside a node view with an `update` method now works.
 
 ### New features
 
-[Plugin view](http://prosemirror.net/docs/ref/version/0.18.0.html#state.PluginSpec.view) update methods are now passed the view's previous state as second argument.
+[Plugin view](https://prosemirror.net/docs/ref/version/0.18.0.html#state.PluginSpec.view) update methods are now passed the view's previous state as second argument.
 
-The `place` agument to the [`EditorView` constructor](http://prosemirror.net/docs/ref/version/0.18.0.html#view.EditorView) can now be an object with a `mount` property to directly provide the node that should be made editable.
+The `place` agument to the [`EditorView` constructor](https://prosemirror.net/docs/ref/version/0.18.0.html#view.EditorView) can now be an object with a `mount` property to directly provide the node that should be made editable.
 
-The new [`EditorView.setProps` method](http://prosemirror.net/docs/ref/version/0.18.0.html#view.EditorView.setProps) makes it easier to update individual props.
+The new [`EditorView.setProps` method](https://prosemirror.net/docs/ref/version/0.18.0.html#view.EditorView.setProps) makes it easier to update individual props.
 
 ## 0.17.7 (2017-02-08)
 
@@ -902,7 +902,7 @@ Fixes crash in the code that maintains the scroll position when the document is 
 
 ### Bug fixes
 
-Transactions that shouldn't [scroll the selection into view](http://prosemirror.net/docs/ref/version/0.17.0.html#state.transaction.scrollIntoView) now no longer do so.
+Transactions that shouldn't [scroll the selection into view](https://prosemirror.net/docs/ref/version/0.17.0.html#state.transaction.scrollIntoView) now no longer do so.
 
 ## 0.17.4 (2017-02-02)
 
@@ -936,25 +936,25 @@ Fix failure to apply DOM changes that start at document position 0.
 
 Fix issue where a document update that left the selection in the same place sometimes led to an incorrect DOM selection.
 
-Make sure [`EditorView.focus`](http://prosemirror.net/docs/ref/version/0.17.0.html#view.EditorView.focus) doesn't cause the browser to scroll the top of the editor into view.
+Make sure [`EditorView.focus`](https://prosemirror.net/docs/ref/version/0.17.0.html#view.EditorView.focus) doesn't cause the browser to scroll the top of the editor into view.
 
 ## 0.17.0 (2017-01-05)
 
 ### Breaking changes
 
-The `handleDOMEvent` prop has been dropped in favor of the [`handleDOMEvents`](http://prosemirror.net/docs/ref/version/0.17.0.html#view.EditorProps.handleDOMEvents) (plural) prop.
+The `handleDOMEvent` prop has been dropped in favor of the [`handleDOMEvents`](https://prosemirror.net/docs/ref/version/0.17.0.html#view.EditorProps.handleDOMEvents) (plural) prop.
 
-The `onChange` prop has been replaced by a [`dispatchTransaction`](http://prosemirror.net/docs/ref/version/0.17.0.html#view.EditorProps.dispatchTransaction) prop (which takes a transaction instead of an action).
+The `onChange` prop has been replaced by a [`dispatchTransaction`](https://prosemirror.net/docs/ref/version/0.17.0.html#view.EditorProps.dispatchTransaction) prop (which takes a transaction instead of an action).
 
 ### New features
 
-Added support for a [`handleDOMEvents` prop](http://prosemirror.net/docs/ref/version/0.17.0.html#view.EditorProps.handleDOMEvents), which allows you to provide handler functions per DOM event, and works even for events that the editor doesn't normally add a handler for.
+Added support for a [`handleDOMEvents` prop](https://prosemirror.net/docs/ref/version/0.17.0.html#view.EditorProps.handleDOMEvents), which allows you to provide handler functions per DOM event, and works even for events that the editor doesn't normally add a handler for.
 
-Add view method [`dispatch`](http://prosemirror.net/docs/ref/version/0.17.0.html#view.EditorView.dispatch), which provides a convenient way to dispatch transactions.
+Add view method [`dispatch`](https://prosemirror.net/docs/ref/version/0.17.0.html#view.EditorView.dispatch), which provides a convenient way to dispatch transactions.
 
-The [`dispatchTransaction`](http://prosemirror.net/docs/ref/version/0.17.0.html#view.EditorProps.dispatchTransaction) (used to be `onAction`) prop is now optional, and will default to simply applying the transaction to the current view state.
+The [`dispatchTransaction`](https://prosemirror.net/docs/ref/version/0.17.0.html#view.EditorProps.dispatchTransaction) (used to be `onAction`) prop is now optional, and will default to simply applying the transaction to the current view state.
 
-[Widget decorations](http://prosemirror.net/docs/ref/version/0.17.0.html#view.Decoration.widget) now accept an option `associative` which can be used to configure on which side of content inserted at their position they end up.
+[Widget decorations](https://prosemirror.net/docs/ref/version/0.17.0.html#view.Decoration.widget) now accept an option `associative` which can be used to configure on which side of content inserted at their position they end up.
 
 Typing immediately after deleting text now preserves the marks of the deleted text.
 
@@ -970,7 +970,7 @@ Solve problem where setting a node selection would trigger a DOM read, leading t
 
 ### Breaking changes
 
-The `spellcheck`, `label`, and `class` props are now replaced by an [`attributes` prop](http://prosemirror.net/docs/ref/version/0.16.0.html#view.EditorProps.attributes).
+The `spellcheck`, `label`, and `class` props are now replaced by an [`attributes` prop](https://prosemirror.net/docs/ref/version/0.16.0.html#view.EditorProps.attributes).
 
 ### Bug fixes
 
@@ -984,13 +984,13 @@ Inserting a node no longer causes nodes of the same type after it to be needness
 
 ### New features
 
-Add a new editor prop [`editable`](http://prosemirror.net/docs/ref/version/0.16.0.html#view.EditorProps.editable) which controls whether the editor's `contentEditable` behavior is enabled.
+Add a new editor prop [`editable`](https://prosemirror.net/docs/ref/version/0.16.0.html#view.EditorProps.editable) which controls whether the editor's `contentEditable` behavior is enabled.
 
-Plugins and props can now set any DOM attribute on the outer editor node using the [`attributes` prop](http://prosemirror.net/docs/ref/version/0.16.0.html#view.EditorProps.attributes).
+Plugins and props can now set any DOM attribute on the outer editor node using the [`attributes` prop](https://prosemirror.net/docs/ref/version/0.16.0.html#view.EditorProps.attributes).
 
 Node view constructors and update methods now have access to the node's wrapping decorations, which can be used to pass information to a node view without encoding it in the document.
 
-Attributes added or removed by node and inline [decorations](http://prosemirror.net/docs/ref/version/0.16.0.html#view.Decoration) no longer cause the nodes inside of them to be fully redrawn, making node views more stable and allowing CSS transitions to be used.
+Attributes added or removed by node and inline [decorations](https://prosemirror.net/docs/ref/version/0.16.0.html#view.Decoration) no longer cause the nodes inside of them to be fully redrawn, making node views more stable and allowing CSS transitions to be used.
 
 ## 0.15.2 (2016-12-10)
 
@@ -1016,7 +1016,7 @@ The editor view no longer draws a drop cursor when dragging content over the edi
 
 Simple typing and backspacing now gets handled by the browser without ProseMirror redrawing the touched nodes, making spell-checking and various platform-specific input tricks (long-press on OS X, double space on iOS) work in the editor.
 
-Improve tracking of DOM nodes that have been touched by user changes, so that [`updateState`](http://prosemirror.net/docs/ref/version/0.15.0.html#view.EditorView.updateState) can reliably fix them.
+Improve tracking of DOM nodes that have been touched by user changes, so that [`updateState`](https://prosemirror.net/docs/ref/version/0.15.0.html#view.EditorView.updateState) can reliably fix them.
 
 Changes to the document that happen while dragging editor content no longer break moving of the content.
 
@@ -1028,7 +1028,7 @@ Toggling a mark when there is no selection now works better on mobile platforms.
 
 ### New features
 
-Introduces an [`endOfTextblock`](http://prosemirror.net/docs/ref/version/0.15.0.html#view.EditorView.endOfTextblock) method on views, which can be used to find out in a bidi- and layout-aware way whether the selection is on the edge of a textblock.
+Introduces an [`endOfTextblock`](https://prosemirror.net/docs/ref/version/0.15.0.html#view.EditorView.endOfTextblock) method on views, which can be used to find out in a bidi- and layout-aware way whether the selection is on the edge of a textblock.
 
 ## 0.14.4 (2016-12-02)
 
@@ -1060,23 +1060,23 @@ Restores previously broken kludge that allows the cursor to appear after non-tex
 
 ### Breaking changes
 
-Wrapping decorations are now created using the [`nodeName`](http://prosemirror.net/docs/ref/version/0.14.0.html#view.DecorationAttrs.nodeName) property. The `wrapper` property is no longer supported.
+Wrapping decorations are now created using the [`nodeName`](https://prosemirror.net/docs/ref/version/0.14.0.html#view.DecorationAttrs.nodeName) property. The `wrapper` property is no longer supported.
 
-The `onUnmountDOM` prop is no longer supported (use a node view with a [`destroy`](http://prosemirror.net/docs/ref/version/0.14.0.html#view.NodeView.destroy) method instead).
+The `onUnmountDOM` prop is no longer supported (use a node view with a [`destroy`](https://prosemirror.net/docs/ref/version/0.14.0.html#view.NodeView.destroy) method instead).
 
-The `domSerializer` prop is no longer supported. Use [node views](http://prosemirror.net/docs/ref/version/0.14.0.html#view.EditorProps.nodeViews) to configure editor-specific node representations.
+The `domSerializer` prop is no longer supported. Use [node views](https://prosemirror.net/docs/ref/version/0.14.0.html#view.EditorProps.nodeViews) to configure editor-specific node representations.
 
 ### New features
 
-Widget decorations can now be given a [`key`](http://prosemirror.net/docs/ref/version/0.14.0.html#view.Decoration.widget^options.key) property to prevent unneccesary redraws.
+Widget decorations can now be given a [`key`](https://prosemirror.net/docs/ref/version/0.14.0.html#view.Decoration.widget^options.key) property to prevent unneccesary redraws.
 
-The `EditorView` class now has a [`destroy`](http://prosemirror.net/docs/ref/version/0.14.0.html#view.EditorView.destroy) method for cleaning up.
+The `EditorView` class now has a [`destroy`](https://prosemirror.net/docs/ref/version/0.14.0.html#view.EditorView.destroy) method for cleaning up.
 
-The [`handleClickOn`](http://prosemirror.net/docs/ref/version/0.14.0.html#view.EditorProps.handleClickOn) prop and friends now receive a `direct` boolean argument that indicates whether the node was clicked directly.
+The [`handleClickOn`](https://prosemirror.net/docs/ref/version/0.14.0.html#view.EditorProps.handleClickOn) prop and friends now receive a `direct` boolean argument that indicates whether the node was clicked directly.
 
-[Widget decorations](http://prosemirror.net/docs/ref/version/0.14.0.html#view.Decoration^widget) now support a `stopEvent` option that can be used to control which DOM events that pass through them should be ignored by the editor view.
+[Widget decorations](https://prosemirror.net/docs/ref/version/0.14.0.html#view.Decoration^widget) now support a `stopEvent` option that can be used to control which DOM events that pass through them should be ignored by the editor view.
 
-You can now [specify](http://prosemirror.net/docs/ref/version/0.14.0.html#view.EditorProps.nodeViews) custom [node views](http://prosemirror.net/docs/ref/version/0.14.0.html#view.NodeView) for an editor view, which give you control over the way node of a given type are represented in the DOM. See the related [RFC](https://discuss.prosemirror.net/t/rfc-node-views-to-manage-the-representation-of-nodes/463).
+You can now [specify](https://prosemirror.net/docs/ref/version/0.14.0.html#view.EditorProps.nodeViews) custom [node views](https://prosemirror.net/docs/ref/version/0.14.0.html#view.NodeView) for an editor view, which give you control over the way node of a given type are represented in the DOM. See the related [RFC](https://discuss.prosemirror.net/t/rfc-node-views-to-manage-the-representation-of-nodes/463).
 
 ## 0.13.2 (2016-11-15)
 
@@ -1106,9 +1106,9 @@ Widget nodes at the end of textblocks are now reliably drawn during display upda
 
 ### New features
 
-[`DecorationSet.map`](http://prosemirror.net/docs/ref/version/0.13.0.html#view.DecorationSet.map) now takes an options object which allows you to specify an `onRemove` callback to be notified when remapping drops decorations.
+[`DecorationSet.map`](https://prosemirror.net/docs/ref/version/0.13.0.html#view.DecorationSet.map) now takes an options object which allows you to specify an `onRemove` callback to be notified when remapping drops decorations.
 
-The [`transformPastedHTML`](http://prosemirror.net/docs/ref/version/0.13.0.html#view.EditorProps.transformPastedHTML) and [`transformPastedText`](http://prosemirror.net/docs/ref/version/0.13.0.html#view.EditorProps.transformPastedText) props were (re-)added, and can be used to clean up pasted content.
+The [`transformPastedHTML`](https://prosemirror.net/docs/ref/version/0.13.0.html#view.EditorProps.transformPastedHTML) and [`transformPastedText`](https://prosemirror.net/docs/ref/version/0.13.0.html#view.EditorProps.transformPastedText) props were (re-)added, and can be used to clean up pasted content.
 
 ## 0.12.2 (2016-11-02)
 
@@ -1132,7 +1132,7 @@ Ignore empty inline decorations when building a decoration set.
 ### Breaking changes
 
 The return value of
-[`EditorView.posAtCoords`](http://prosemirror.net/docs/ref/version/0.12.0.html#view.EditorView.posAtCoords) changed to
+[`EditorView.posAtCoords`](https://prosemirror.net/docs/ref/version/0.12.0.html#view.EditorView.posAtCoords) changed to
 contain an `inside` property pointing at the innermost node that the
 coordinates are inside of. (Note that the docs for this method were
 wrong in the previous release.)
@@ -1149,15 +1149,15 @@ Don't treat fast ctrl-clicks as double or triple clicks.
 
 ### New features
 
-Implement [decorations](http://prosemirror.net/docs/ref/version/0.12.0.html#view.Decoration), a way to
+Implement [decorations](https://prosemirror.net/docs/ref/version/0.12.0.html#view.Decoration), a way to
 influence the way the document is drawn. Add the [`decorations`
-prop](http://prosemirror.net/docs/ref/version/0.12.0.html#view.EditorProps.decorations) to specify them.
+prop](https://prosemirror.net/docs/ref/version/0.12.0.html#view.EditorProps.decorations) to specify them.
 
 ## 0.11.2 (2016-10-04)
 
 ### Bug fixes
 
-Pass actual event object to [`handleDOMEvent`](http://prosemirror.net/docs/ref/version/0.11.0.html#view.EditorProps.handleDOMEvent), rather than just its name.
+Pass actual event object to [`handleDOMEvent`](https://prosemirror.net/docs/ref/version/0.11.0.html#view.EditorProps.handleDOMEvent), rather than just its name.
 
 Fix display corruption caused by using the wrong state as previous version during IME.
 
@@ -1169,22 +1169,22 @@ Moved into a separate module from the old `edit` submodule. Completely
 new approach to managing the editor's DOM representation and input.
 
 Event handlers and options are now replaced by
-[props](http://prosemirror.net/docs/ref/version/0.11.0.html#view.EditorProps). The view's state is now 'shallow',
+[props](https://prosemirror.net/docs/ref/version/0.11.0.html#view.EditorProps). The view's state is now 'shallow',
 represented entirely by a set of props, one of which holds an editor
-state value from the [state](http://prosemirror.net/docs/ref/version/0.11.0.html#state) module.
+state value from the [state](https://prosemirror.net/docs/ref/version/0.11.0.html#state) module.
 
 When the user interacts with the editor, it will pass an
-[action](http://prosemirror.net/docs/ref/version/0.11.0.html#state.Action) to its
-[`onAction`](http://prosemirror.net/docs/ref/version/0.11.0.html#view.EditorProps.onAction) prop, which is responsible
+[action](https://prosemirror.net/docs/ref/version/0.11.0.html#state.Action) to its
+[`onAction`](https://prosemirror.net/docs/ref/version/0.11.0.html#view.EditorProps.onAction) prop, which is responsible
 for triggering an view update.
 
 The `markRange` system was dropped, to be replaced in the next release
 by a 'decoration' system.
 
 There is no keymap support in the view module anymore. Use a
-[keymap](http://prosemirror.net/docs/ref/version/0.11.0.html#keymap) plugin for that.
+[keymap](https://prosemirror.net/docs/ref/version/0.11.0.html#keymap) plugin for that.
 
-The undo [history](http://prosemirror.net/docs/ref/version/0.11.0.html#history) is now a separate plugin.
+The undo [history](https://prosemirror.net/docs/ref/version/0.11.0.html#history) is now a separate plugin.
 
 CSS needed by the editor is no longer injected implicitly into the
 page. Instead, you should arrange for the `style/prosemirror.css` file
@@ -1192,16 +1192,16 @@ to be loaded into your page.
 
 ### New features
 
-The DOM [parser](http://prosemirror.net/docs/ref/version/0.11.0.html#model.DOMParser) and
-[serializer](http://prosemirror.net/docs/ref/version/0.11.0.html#model.DOMSerializer) used to interact with the visible
+The DOM [parser](https://prosemirror.net/docs/ref/version/0.11.0.html#model.DOMParser) and
+[serializer](https://prosemirror.net/docs/ref/version/0.11.0.html#model.DOMSerializer) used to interact with the visible
 DOM and the clipboard can now be customized through
-[props](http://prosemirror.net/docs/ref/version/0.11.0.html#view.EditorProps).
+[props](https://prosemirror.net/docs/ref/version/0.11.0.html#view.EditorProps).
 
 You can now provide a catch-all DOM
-[event handler](http://prosemirror.net/docs/ref/version/0.11.0.html#view.EditorProps.handleDOMEvent) to get a first
+[event handler](https://prosemirror.net/docs/ref/version/0.11.0.html#view.EditorProps.handleDOMEvent) to get a first
 chance at handling DOM events.
 
-The [`onUnmountDOM`](http://prosemirror.net/docs/ref/version/0.11.0.html#view.EditorProps.onUnmountDOM) can be used to
+The [`onUnmountDOM`](https://prosemirror.net/docs/ref/version/0.11.0.html#view.EditorProps.onUnmountDOM) can be used to
 be notified when a piece of the document DOM is thrown away (in case
 cleanup is needed).
 
