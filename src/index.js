@@ -247,8 +247,10 @@ export class EditorView {
   get root() {
     let cached = this._root
     if (cached == null) for (let search = this.dom.parentNode; search; search = search.parentNode) {
-      if (search.nodeType == 9 || (search.nodeType == 11 && search.host))
+      if (search.nodeType == 9 || (search.nodeType == 11 && search.host)) {
+        if (!search.getSelection) Object.getPrototypeOf(search).getSelection = () => document.getSelection()
         return this._root = search
+      }
     }
     return cached || document
   }
