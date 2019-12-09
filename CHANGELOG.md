@@ -1,3 +1,13 @@
+## 1.13.5 (2019-12-09)
+
+### Bug fixes
+
+Fix the way decorations update node styles to allow removing CSS custom properties. Link to https in readme and changelog
+
+The `root` accessor on views now makes sure that, when it returns a shadow root, that object has a `getSelection` method.
+
+Fix an issue where the DOM selection could get out of sync with ProseMirror's selection state in Edge.
+
 ## 1.13.4 (2019-11-20)
 
 ### Bug fixes
