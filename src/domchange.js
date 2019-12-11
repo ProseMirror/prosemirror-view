@@ -42,7 +42,7 @@ function parseBetween(view, from_, to_) {
     preserveWhitespace: $from.parent.type.spec.code ? "full" : true,
     editableContent: true,
     findPositions: find,
-    ruleFromNode: ruleFromNode(parser, $from),
+    ruleFromNode,
     context: $from
   })
   if (find && find[0].pos != null) {
@@ -53,22 +53,23 @@ function parseBetween(view, from_, to_) {
   return {doc, sel, from, to}
 }
 
-function ruleFromNode(parser, context) {
-  return dom => {
-    let desc = dom.pmViewDesc
-    if (desc) {
-      return desc.parseRule()
-    } else if (dom.nodeName == "BR" && dom.parentNode) {
-      // Safari replaces the list item or table cell with a BR
-      // directly in the list node (?!) if you delete the last
-      // character in a list item or table cell (#708, #862)
-      if (browser.safari && /^(ul|ol)$/i.test(dom.parentNode.nodeName))
-        return parser.matchTag(document.createElement("li"), context)
-      else if (dom.parentNode.lastChild == dom || browser.safari && /^(tr|table)$/i.test(dom.parentNode.nodeName))
-        return {ignore: true}
-    } else if (dom.nodeName == "IMG" && dom.getAttribute("mark-placeholder")) {
+function ruleFromNode(dom) {
+  let desc = dom.pmViewDesc
+  if (desc) {
+    return desc.parseRule()
+  } else if (dom.nodeName == "BR" && dom.parentNode) {
+    // Safari replaces the list item or table cell with a BR
+    // directly in the list node (?!) if you delete the last
+    // character in a list item or table cell (#708, #862)
+    if (browser.safari && /^(ul|ol)$/i.test(dom.parentNode.nodeName)) {
+      let skip = document.createElement("div")
+      skip.appendChild(document.createElement("li"))
+      return {skip}
+    } else if (dom.parentNode.lastChild == dom || browser.safari && /^(tr|table)$/i.test(dom.parentNode.nodeName)) {
       return {ignore: true}
     }
+  } else if (dom.nodeName == "IMG" && dom.getAttribute("mark-placeholder")) {
+    return {ignore: true}
   }
 }
 
