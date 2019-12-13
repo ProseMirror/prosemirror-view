@@ -136,24 +136,18 @@ export class EditorView {
 
     if (updateSel) {
       this.domObserver.stop()
-      let forceSelUpdate = false
+      // Work around an issue in Chrome, IE, and Edge where changing
+      // the DOM around an active selection puts it into a broken
+      // state where the thing the user sees differs from the
+      // selection reported by the Selection object (#710, #973,
+      // #1011, #1013).
+      let forceSelUpdate = updateDoc && (browser.ie || browser.chrome) &&
+          !prev.selection.empty && !state.selection.empty && selectionContextChanged(prev.selection, state.selection)
       if (updateDoc) {
-        // Work around an issue in Chrome where changing the DOM
-        // around the active selection puts it into a broken state
-        // where the thing the user sees differs from the selection
-        // reported by the Selection object (#710)
-        let startSelContext = browser.chrome && selectionContext(this.root)
         if (redraw || !this.docView.update(state.doc, outerDeco, innerDeco, this)) {
           this.docView.destroy()
           this.docView = docViewDesc(state.doc, outerDeco, innerDeco, this.dom, this)
         }
-        if (startSelContext)
-          forceSelUpdate = !this.composing && needChromeSelectionForce(startSelContext, this.root)
-        // IE and Edge will sometimes _report_ the selection as being
-        // in the right place but actually draw/use a different
-        // selection (#973, #1011).
-        if (browser.ie && !prev.selection.empty)
-          forceSelUpdate = true
       }
       // Work around for an issue where an update arriving right between
       // a DOM selection change and the "selectionchange" event for it
@@ -404,19 +398,9 @@ function getEditable(view) {
   return !view.someProp("editable", value => value(view.state) === false)
 }
 
-function selectionContext(root) {
-  let {focusOffset: offset, focusNode: node} = root.getSelection()
-  if (!node || node.nodeType == 3) return null
-  return [node, offset,
-          node.nodeType == 1 ? node.childNodes[offset - 1] : null,
-          node.nodeType == 1 ? node.childNodes[offset] : null]
-}
-
-function needChromeSelectionForce(context, root) {
-  let newContext = selectionContext(root)
-  if (!newContext || newContext[0].nodeType == 3) return false
-  for (let i = 0; i < context.length; i++) if (newContext[i] != context[i]) return true
-  return false
+function selectionContextChanged(sel1, sel2) {
+  let depth = Math.min(sel1.$anchor.sharedDepth(sel1.head), sel2.$anchor.sharedDepth(sel2.head))
+  return sel1.$anchor.node(depth) != sel2.$anchor.node(depth)
 }
 
 function buildNodeViews(view) {
