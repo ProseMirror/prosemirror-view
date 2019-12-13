@@ -150,6 +150,15 @@ export class DOMObserver {
       }
     }
 
+    if (browser.gecko && added.length > 1) {
+      let brs = added.filter(n => n.nodeName == "BR")
+      if (brs.length == 2) {
+        let [a, b] = brs
+        if (a.parentNode && a.parentNode.parentNode == b.parentNode) b.remove()
+        else a.remove()
+      }
+    }
+
     if (from > -1 || newSel) {
       if (from > -1) {
         this.view.docView.markDirty(from, to)
