@@ -1,3 +1,13 @@
+## 1.13.6 (2019-12-13)
+
+### Bug fixes
+
+Fix a crash when deleting a list item in Safari while using a parse rule with a `context` property for `<li>` elements.
+
+Work around another case where Chrome reports an incorrect selection.
+
+Work around issue where Firefox will insert a stray BR node when deleting a text node in some types of DOM structure.
+
 ## 1.13.5 (2019-12-09)
 
 ### Bug fixes
