@@ -1,3 +1,9 @@
+## 1.13.7 (2019-12-16)
+
+### Bug fixes
+
+Fix a bug that caused the DOM to go out of sync with the decorations when updating inline decorations that added multiple wrapping nodes to a piece of content.
+
 ## 1.13.6 (2019-12-13)
 
 ### Bug fixes
