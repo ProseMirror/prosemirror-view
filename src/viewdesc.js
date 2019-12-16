@@ -904,11 +904,12 @@ function patchOuterDeco(outerDOM, nodeDOM, prevComputed, curComputed) {
     if (i) {
       let parent
       if (prev && prev.nodeName == deco.nodeName && curDOM != outerDOM &&
-          (parent = nodeDOM.parentNode) && parent.tagName.toLowerCase() == deco.nodeName) {
+          (parent = curDOM.parentNode) && parent.tagName.toLowerCase() == deco.nodeName) {
         curDOM = parent
       } else {
         parent = document.createElement(deco.nodeName)
         parent.appendChild(curDOM)
+        prev = noDeco[0]
         curDOM = parent
       }
     }

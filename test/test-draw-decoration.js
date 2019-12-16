@@ -64,6 +64,17 @@ describe("Decoration drawing", () => {
     ist(found[0].previousSibling.nodeName, "P")
   })
 
+  it("can update multi-level wrapping decorations", () => {
+    let d2 = Decoration.inline(1, 5, {nodeName: "i", class: "b"})
+    let view = tempEditor({doc: doc(p("hello")),
+                           plugins: [decoPlugin([Decoration.inline(1, 5, {nodeName: "i", class: "a"}), d2])]})
+    ist(view.dom.querySelectorAll("i").length, 2)
+    updateDeco(view, [Decoration.inline(1, 5, {nodeName: "i", class: "c"})], [d2])
+    let iNodes = view.dom.querySelectorAll("i")
+    ist(iNodes.length, 2)
+    ist(Array.prototype.map.call(iNodes, n => n.className).sort().join(), "a,c")
+  })
+
   it("draws overlapping inline decorations", () => {
     let view = tempEditor({doc: doc(p("abcdef")),
                            plugins: [decoPlugin(["3-5-foo", "4-6-bar", "1-7-baz"])]})
