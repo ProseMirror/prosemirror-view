@@ -176,8 +176,12 @@ export class DOMObserver {
     let desc = this.view.docView.nearestDesc(mut.target)
     if (mut.type == "attributes" &&
         (desc == this.view.docView || mut.attributeName == "contenteditable" ||
-         // Firefox sometimes fires spurious events for null/empty styles
-         (mut.attributeName == "style" && !mut.oldValue && !mut.target.getAttribute("style"))))
+         (mut.attributeName == "style" && 
+          // Firefox sometimes fires spurious events for null/empty styles
+          (!mut.oldValue && !mut.target.getAttribute("style")) ||
+          // Chrome sometimes fires mutations for styles, even though the value doesn't change at all.
+          // This can cause infinite loops as styles are reparsed
+          mut.oldValue == mut.target.getAttribute("style"))))
       return null
     if (!desc || desc.ignoreMutation(mut)) return null
 
