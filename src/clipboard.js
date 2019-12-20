@@ -59,7 +59,13 @@ export function parseFromClipboard(view, text, html, plainText, $context) {
             queryElement.setAttribute('data-query-id', (Math.random() + 1).toString(36).substr(2, 5))
             queryElement.className = 'query'
             queryElement.textContent = textContent
+
+            let separator = document.createElement('img')
+            separator.setAttribute('src', 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAUAAAAVCAYAAACOuSR+AAAAFUlEQVR42mN8P1XsPwMaYBwVHPSCAMuUNqOQ9f+eAAAAAElFTkSuQmCC')
+            separator.className = 'separator'
+
             paragraph.appendChild(queryElement)
+            paragraph.appendChild(separator)
           }
         }
         
