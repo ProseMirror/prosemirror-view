@@ -3,7 +3,7 @@
   "version": "1.13.4",
   "description": "ProseMirror's view component",
   "main": "src/index.js",
-  "module": "dist/index.es.js",
+  "module": "src/index.js",
   "style": "style/prosemirror.css",
   "license": "MIT",
   "maintainers": [
