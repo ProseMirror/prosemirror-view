@@ -21,7 +21,7 @@
     "prosemirror-model": "^1.1.0",
     "prosemirror-state": "^1.0.0",
     "prosemirror-transform": "^1.1.0",
-    "nanoid": "^2.0.3",
+    "nanoid": "^2.0.3"
   },
   "devDependencies": {
     "ist": "^1.0.0",
