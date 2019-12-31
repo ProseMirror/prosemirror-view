@@ -1,5 +1,6 @@
 import {Slice, Fragment, DOMParser, DOMSerializer} from "prosemirror-model"
 import ruleBaseSplit from './text-splitter'
+import nanoid from "nanoid"
 
 export function serializeForClipboard(view, slice) {
   let context = [], {content, openStart, openEnd} = slice
@@ -56,7 +57,7 @@ export function parseFromClipboard(view, text, html, plainText, $context) {
           for (let index = 0; index < texts.length; index++) {
             const textContent = texts[index];
             let queryElement = document.createElement("span")
-            queryElement.setAttribute('data-query-id', (Math.random() + 1).toString(36).substr(2, 5))
+            queryElement.setAttribute('data-query-id', nanoid(10))
             queryElement.className = 'query'
             queryElement.textContent = textContent
 
