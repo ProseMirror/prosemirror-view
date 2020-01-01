@@ -57,7 +57,7 @@ export function parseFromClipboard(view, text, html, plainText, $context) {
           for (let index = 0; index < texts.length; index++) {
             const textContent = texts[index];
             let queryElement = document.createElement("span")
-            queryElement.setAttribute('data-query-id', nanoid(10))
+            queryElement.setAttribute('data-query-id', nanoid())
             queryElement.className = 'query'
             queryElement.textContent = textContent
 
