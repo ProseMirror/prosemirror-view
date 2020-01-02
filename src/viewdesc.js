@@ -606,10 +606,10 @@ class NodeViewDesc extends ViewDesc {
     let inline = this.node.inlineContent, off = pos
     let composition = inline && view.composing && this.localCompositionNode(view, pos)
     let updater = new ViewTreeUpdater(this, composition && composition.node)
-    iterDeco(this.node, this.innerDeco, (widget, i) => {
+    iterDeco(this.node, this.innerDeco, (widget, i, insideNode) => {
       if (widget.spec.marks)
         updater.syncToMarks(widget.spec.marks, inline, view)
-      else if (widget.type.side >= 0)
+      else if (widget.type.side >= 0 && !insideNode)
         updater.syncToMarks(i == this.node.childCount ? Mark.none : this.node.child(i).marks, inline, view)
       // If the next node is a desc matching this widget, reuse it,
       // otherwise insert the widget as a new view desc.
@@ -1171,9 +1171,9 @@ function iterDeco(parent, deco, onWidget, onNode) {
         (widgets || (widgets = [widget])).push(locals[decoIndex++])
       if (widgets) {
         widgets.sort(compareSide)
-        for (let i = 0; i < widgets.length; i++) onWidget(widgets[i], parentIndex)
+        for (let i = 0; i < widgets.length; i++) onWidget(widgets[i], parentIndex, !!restNode)
       } else {
-        onWidget(widget, parentIndex)
+        onWidget(widget, parentIndex, !!restNode)
       }
     }
 
