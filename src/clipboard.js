@@ -42,41 +42,44 @@ export function parseFromClipboard(view, text, html, plainText, $context) {
   if (!html && !text) return null
   // let asText = text && (plainText || inCode || !html)
   // if (asText) {
-    view.someProp("transformPastedText", f => { text = f(text) })
-    if (inCode) return new Slice(Fragment.from(view.state.schema.text(text)), 0, 0)
-    let parsed = view.someProp("clipboardTextParser", f => f(text, $context))
-    if (parsed) {
-      slice = parsed
-    } else {
-      dom = document.createElement("div")
-      text.trim().split(/(?:\r\n?|\n)+/).forEach(block => {
-        let texts = ruleBaseSplit(block)
-        let paragraph = document.createElement("p")
-        //class="query" / data-query-id="uwwl1" / Math.random() + 1).toString(36).substr(2, 5)
-        if (texts.length) {
-          for (let index = 0; index < texts.length; index++) {
-            const textContent = texts[index];
-            let queryElement = document.createElement("span")
-            queryElement.setAttribute('data-query-id', nanoid())
-            queryElement.className = 'query'
-            queryElement.textContent = textContent
-
-            let separator = document.createElement('img')
-            separator.setAttribute('src', 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAUAAAAVCAYAAACOuSR+AAAAFUlEQVR42mN8P1XsPwMaYBwVHPSCAMuUNqOQ9f+eAAAAAElFTkSuQmCC')
-            separator.className = 'separator'
-
-            paragraph.appendChild(queryElement)
-            paragraph.appendChild(separator)
-          }
-        }
-        
-        dom.appendChild(paragraph)
-      })
-    }
+    // view.someProp("transformPastedText", f => { text = f(text) })
+    // if (inCode) return new Slice(Fragment.from(view.state.schema.text(text)), 0, 0)
+    // let parsed = view.someProp("clipboardTextParser", f => f(text, $context))
+    // if (parsed) {
+    //   slice = parsed
+    // } else {
+    // }
   // } else {
   //   view.someProp("transformPastedHTML", f => { html = f(html) })
   //   dom = readHTML(html)
   // }
+
+  dom = document.createElement("div")
+  const paragraphs = text.trim().split(/(?:\r\n?|\n)+/)
+  paragraphs.forEach(block => {
+    let paragraph = document.createElement("p")
+    let texts = []
+    view.someProp("handleTextSplitter", f => f(block, texts))
+    //class="query" / data-query-id="uwwl1" / Math.random() + 1).toString(36).substr(2, 5)
+    if (texts.length) {
+      for (let index = 0; index < texts.length; index++) {
+        const textContent = texts[index];
+        let queryElement = document.createElement("span")
+        queryElement.setAttribute('data-query-id', nanoid())
+        queryElement.className = 'query'
+        queryElement.textContent = textContent
+
+        let separator = document.createElement('img')
+        separator.setAttribute('src', 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAUAAAAVCAYAAACOuSR+AAAAFUlEQVR42mN8P1XsPwMaYBwVHPSCAMuUNqOQ9f+eAAAAAElFTkSuQmCC')
+        separator.className = 'separator'
+
+        paragraph.appendChild(queryElement)
+        paragraph.appendChild(separator)
+      }
+    }
+    
+    dom.appendChild(paragraph)
+  })
 
   let contextNode = dom && dom.querySelector("[data-pm-slice]")
   let sliceData = contextNode && /^(\d+) (\d+) (.*)/.exec(contextNode.getAttribute("data-pm-slice"))
