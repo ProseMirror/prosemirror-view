@@ -1,5 +1,4 @@
 import {Slice, Fragment, DOMParser, DOMSerializer} from "prosemirror-model"
-import ruleBaseSplit from './text-splitter'
 import nanoid from "nanoid"
 
 export function serializeForClipboard(view, slice) {
@@ -37,7 +36,7 @@ export function serializeForClipboard(view, slice) {
 
 // : (EditorView, string, string, ?bool, ResolvedPos) → ?Slice
 // Read a slice of content from the clipboard (or drop data).
-export function parseFromClipboard(view, text, html, plainText, $context) {
+export async function parseFromClipboard(view, text, html, plainText, $context) {
   let dom, inCode = $context.parent.type.spec.code, slice
   if (!html && !text) return null
   // let asText = text && (plainText || inCode || !html)
@@ -53,31 +52,33 @@ export function parseFromClipboard(view, text, html, plainText, $context) {
   //   view.someProp("transformPastedHTML", f => { html = f(html) })
   //   dom = readHTML(html)
   // }
-
+  let blocks = []
   dom = document.createElement("div")
-  const paragraphs = text.trim().split(/(?:\r\n?|\n)+/)
-  paragraphs.forEach(block => {
+  const handler = view.someProp("handleTextSplitter")
+  const response = await handler(text)
+  
+  if (!response) return null
+  if (response.hasOwnProperty('result')) {
+    blocks.push(response.result)
+  } else {
+    blocks = response
+  }
+  blocks.forEach(block => {
     let paragraph = document.createElement("p")
-    let texts = []
-    view.someProp("handleTextSplitter", f => f(block, texts))
-    //class="query" / data-query-id="uwwl1" / Math.random() + 1).toString(36).substr(2, 5)
-    if (texts.length) {
-      for (let index = 0; index < texts.length; index++) {
-        const textContent = texts[index];
-        let queryElement = document.createElement("span")
-        queryElement.setAttribute('data-query-id', nanoid())
-        queryElement.className = 'query'
-        queryElement.textContent = textContent
+    block.forEach(text => {
+      const textContent = text;
+      let queryElement = document.createElement("span")
+      queryElement.setAttribute('data-query-id', nanoid())
+      queryElement.className = 'query'
+      queryElement.textContent = textContent
 
-        let separator = document.createElement('img')
-        separator.setAttribute('src', 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAUAAAAVCAYAAACOuSR+AAAAFUlEQVR42mN8P1XsPwMaYBwVHPSCAMuUNqOQ9f+eAAAAAElFTkSuQmCC')
-        separator.className = 'separator'
+      let separator = document.createElement('img')
+      separator.setAttribute('src', 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAUAAAAVCAYAAACOuSR+AAAAFUlEQVR42mN8P1XsPwMaYBwVHPSCAMuUNqOQ9f+eAAAAAElFTkSuQmCC')
+      separator.className = 'separator'
 
-        paragraph.appendChild(queryElement)
-        paragraph.appendChild(separator)
-      }
-    }
-    
+      paragraph.appendChild(queryElement)
+      paragraph.appendChild(separator)
+    })
     dom.appendChild(paragraph)
   })
 

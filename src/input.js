@@ -500,8 +500,8 @@ function capturePaste(view, e) {
   }, 50)
 }
 
-function doPaste(view, text, html, e) {
-  let slice = parseFromClipboard(view, text, html, view.shiftKey, view.state.selection.$from)
+async function doPaste(view, text, html, e) {
+  let slice = await parseFromClipboard(view, text, html, view.shiftKey, view.state.selection.$from)
   if (view.someProp("handlePaste", f => f(view, e, slice || Slice.empty)) || !slice) return
 
   let singleNode = sliceSingleNode(slice)
