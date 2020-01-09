@@ -59,7 +59,7 @@ export async function parseFromClipboard(view, text, html, plainText, $context) 
   
   if (!response) return null
   if (response.hasOwnProperty('result')) {
-    blocks.push(response.result)
+    blocks = response.result
   } else {
     blocks = response
   }
