@@ -65,6 +65,7 @@ export async function parseFromClipboard(view, text, html, plainText, $context) 
   }
   blocks.forEach(block => {
     let paragraph = document.createElement("p")
+    paragraph.setAttribute('data-actor-id', $context.node().attrs.actor)
     block.forEach(text => {
       const textContent = text;
       let queryElement = document.createElement("span")
