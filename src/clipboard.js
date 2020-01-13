@@ -56,7 +56,8 @@ export async function parseFromClipboard(view, text, html, plainText, $context) 
   dom = document.createElement("div")
   const handler = view.someProp("handleTextSplitter")
   const response = await handler(text)
-  
+  let actorId = $context.node().attrs.actor
+
   if (!response) return null
   if (response.hasOwnProperty('result')) {
     blocks = response.result
@@ -65,7 +66,7 @@ export async function parseFromClipboard(view, text, html, plainText, $context) 
   }
   blocks.forEach(block => {
     let paragraph = document.createElement("p")
-    paragraph.setAttribute('data-actor-id', $context.node().attrs.actor)
+    actorId && paragraph.setAttribute('data-actor-id', actorId)
     block.forEach(text => {
       const textContent = text;
       let queryElement = document.createElement("span")
