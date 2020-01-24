@@ -1,3 +1,9 @@
+## 1.13.8 (2020-01-24)
+
+### Bug fixes
+
+Fix bug that would sometimes cause widget decorations to be drawn with marks from the node after the text node they were inside of.
+
 ## 1.13.7 (2019-12-16)
 
 ### Bug fixes
