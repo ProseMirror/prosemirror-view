@@ -367,8 +367,8 @@ class ViewDesc {
   }
 
   // : (dom.MutationRecord) → bool
-  ignoreMutation(_mutation) {
-    return !this.contentDOM
+  ignoreMutation(mutation) {
+    return !this.contentDOM && mutation.type != "selection"
   }
 
   get contentLost() {

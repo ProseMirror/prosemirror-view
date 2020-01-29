@@ -40,6 +40,7 @@ function scanFor(node, off, targetNode, targetOff, dir) {
       node = parent
     } else if (node.nodeType == 1) {
       node = node.childNodes[off + (dir < 0 ? -1 : 0)]
+      if (node.contentEditable == "false") return false
       off = dir < 0 ? nodeSize(node) : 0
     } else {
       return false
