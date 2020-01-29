@@ -406,6 +406,7 @@ editHandlers.compositionstart = editHandlers.compositionupdate = view => {
         let sel = view.root.getSelection()
         for (let node = sel.focusNode, offset = sel.focusOffset; node && node.nodeType == 1 && offset != 0;) {
           let before = offset < 0 ? node.lastChild : node.childNodes[offset - 1]
+          if (!before) break
           if (before.nodeType == 3) {
             sel.collapse(before, before.nodeValue.length)
             break
