@@ -1,3 +1,9 @@
+## 1.13.10 (2020-01-29)
+
+### Bug fixes
+
+Fix a crash on Firefox when starting a composition after a marked non-text node.
+
 ## 1.13.9 (2020-01-29)
 
 ### Bug fixes
