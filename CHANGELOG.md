@@ -1,3 +1,13 @@
+## 1.13.9 (2020-01-29)
+
+### Bug fixes
+
+Make sure to reset the selection when the browser moves it into an uneditable node.
+
+Fix issue where the editor would fail to create a meaningful DOM selection for a node selection on Safari.
+
+Makes sure the iOS virtual keyboard gets its internal state (autocorrection, autocapitalization) updated when the user presses enter.
+
 ## 1.13.8 (2020-01-24)
 
 ### Bug fixes
