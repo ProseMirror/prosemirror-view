@@ -164,7 +164,7 @@ export class DOMObserver {
         this.view.docView.markDirty(from, to)
         checkCSS(this.view)
       }
-      this.handleDOMChange(from, to, typeOver)
+      this.handleDOMChange(from, to, typeOver, added)
       if (this.view.docView.dirty) this.view.updateState(this.view.state)
       else if (!this.currentSelection.eq(sel)) selectionToDOM(this.view)
     }

@@ -73,7 +73,7 @@ function ruleFromNode(dom) {
   }
 }
 
-export function readDOMChange(view, from, to, typeOver) {
+export function readDOMChange(view, from, to, typeOver, addedNodes) {
   if (from < 0) {
     let origin = view.lastSelectionTime > Date.now() - 50 ? view.lastSelectionOrigin : null
     let newSel = selectionFromDOM(view, origin)
@@ -148,13 +148,17 @@ export function readDOMChange(view, from, to, typeOver) {
   let $from = parse.doc.resolveNoCache(change.start - parse.from)
   let $to = parse.doc.resolveNoCache(change.endB - parse.from)
   let nextSel
-  // If this looks like the effect of pressing Enter, just dispatch an
-  // Enter key instead.
-  if (!$from.sameParent($to) && $from.pos < parse.doc.content.size &&
-      (nextSel = Selection.findFrom(parse.doc.resolve($from.pos + 1), 1, true)) &&
-      nextSel.head == $to.pos &&
-      view.someProp("handleKeyDown", f => f(view, keyEvent(13, "Enter"))))
+  // If this looks like the effect of pressing Enter (or was recorded
+  // as being an iOS enter press), just dispatch an Enter key instead.
+  if (((browser.ios && view.lastIOSEnter > Date.now() - 100 &&
+        (!$from.sameParent($to) || addedNodes.some(n => n.nodeName == "DIV"))) ||
+       (!$from.sameParent($to) && $from.pos < parse.doc.content.size &&
+        (nextSel = Selection.findFrom(parse.doc.resolve($from.pos + 1), 1, true)) &&
+        nextSel.head == $to.pos)) &&
+      view.someProp("handleKeyDown", f => f(view, keyEvent(13, "Enter")))) {
+    view.lastIOSEnter = 0
     return
+  }
   // Same for backspace
   if (view.state.selection.anchor > change.start &&
       looksLikeJoin(doc, change.start, change.endA, $from, $to) &&

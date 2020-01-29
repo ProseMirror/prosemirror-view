@@ -244,7 +244,7 @@ export function captureKeyDown(view, event) {
     return stopNativeHorizontalDelete(view, -1) || skipIgnoredNodesLeft(view)
   } else if (code == 46 || (browser.mac && code == 68 && mods == "c")) { // Delete, Ctrl-d on Mac
     return stopNativeHorizontalDelete(view, 1) || skipIgnoredNodesRight(view)
-  } else if (code == 13 || code == 27) { // Enter, Esc
+  } else if ((code == 13 && !browser.ios) || code == 27) { // Enter (let through on iOS, to avoid keyboard sync issues), Esc
     return true
   } else if (code == 37) { // Left arrow
     return selectHorizontally(view, -1, mods) || skipIgnoredNodesLeft(view)

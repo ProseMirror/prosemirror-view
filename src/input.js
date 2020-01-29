@@ -23,12 +23,14 @@ export function initInput(view) {
   view.lastSelectionOrigin = null
   view.lastSelectionTime = 0
 
+  view.lastIOSEnter = 0
+
   view.composing = false
   view.composingTimeout = null
   view.compositionNodes = []
   view.compositionEndedAt = -2e8
 
-  view.domObserver = new DOMObserver(view, (from, to, typeOver) => readDOMChange(view, from, to, typeOver))
+  view.domObserver = new DOMObserver(view, (from, to, typeOver, added) => readDOMChange(view, from, to, typeOver, added))
   view.domObserver.start()
   // Used by hacks like the beforeinput handler to check whether anything happened in the DOM
   view.domChangeCount = 0
@@ -97,7 +99,13 @@ editHandlers.keydown = (view, event) => {
   if (inOrNearComposition(view, event)) return
   view.lastKeyCode = event.keyCode
   view.lastKeyCodeTime = Date.now()
-  if (view.someProp("handleKeyDown", f => f(view, event)) || captureKeyDown(view, event))
+  // On iOS, if we preventDefault enter key presses, the virtual
+  // keyboard gets confused. So the hack here is to set a flag that
+  // makes the DOM change code recognize that what just happens should
+  // be replaced by whatever the Enter key handlers do.
+  if (browser.ios && event.keyCode == 13 && !event.ctrlKey && !event.altKey && !event.metaKey)
+    view.lastIOSEnter = Date.now()
+  else if (view.someProp("handleKeyDown", f => f(view, event)) || captureKeyDown(view, event))
     event.preventDefault()
   else
     setSelectionOrigin(view, "key")
