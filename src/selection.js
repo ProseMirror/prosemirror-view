@@ -55,8 +55,8 @@ export function selectionToDOM(view, force) {
     }
     view.docView.setSelection(anchor, head, view.root, force)
     if (brokenSelectBetweenUneditable) {
-      if (resetEditableFrom) resetEditableFrom.contentEditable = "false"
-      if (resetEditableTo) resetEditableTo.contentEditable = "false"
+      if (resetEditableFrom) resetEditable(resetEditableFrom)
+      if (resetEditableTo) resetEditable(resetEditableTo)
     }
     if (sel.visible) {
       view.dom.classList.remove("ProseMirror-hideselection")
@@ -80,15 +80,21 @@ function temporarilyEditableNear(view, pos) {
   let {node, offset} = view.docView.domFromPos(pos)
   let after = offset < node.childNodes.length ? node.childNodes[offset] : null
   let before = offset ? node.childNodes[offset - 1] : null
-  if ((!after || after.contentEditable == "false") && (!before || before.contentEditable == "false")) {
-    if (after) {
-      after.contentEditable = "true"
-      return after
-    } else if (before) {
-      before.contentEditable = "true"
-      return before
-    }
+  if ((!after || after.contentEditable == "false") && (browser.safari || !before || before.contentEditable == "false")) {
+    if (after) return setEditable(after)
+    else if (before) return setEditable(before)
   }
+}
+
+function setEditable(element) {
+  element.contentEditable = "true"
+  if (browser.safari && element.draggable) { element.draggable = false; element.wasDraggable = true }
+  return element
+}
+
+function resetEditable(element) {
+  element.contentEditable = "false"
+  if (element.wasDraggable) { element.draggable = true; element.wasDraggable = null }
 }
 
 function removeClassOnSelectionChange(view) {
