@@ -1,3 +1,9 @@
+## 1.13.11 (2020-01-31)
+
+### Bug fixes
+
+Fix an issue that could lead to the editor making regular content uneditable on Safari.
+
 ## 1.13.10 (2020-01-29)
 
 ### Bug fixes
