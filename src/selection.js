@@ -80,7 +80,8 @@ function temporarilyEditableNear(view, pos) {
   let {node, offset} = view.docView.domFromPos(pos)
   let after = offset < node.childNodes.length ? node.childNodes[offset] : null
   let before = offset ? node.childNodes[offset - 1] : null
-  if ((!after || after.contentEditable == "false") && (browser.safari || !before || before.contentEditable == "false")) {
+  if (browser.safari && after && after.contentEditable == "false") return setEditable(after)
+  if ((!after || after.contentEditable == "false") && (!before || before.contentEditable == "false")) {
     if (after) return setEditable(after)
     else if (before) return setEditable(before)
   }
