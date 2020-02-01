@@ -149,8 +149,17 @@ function closeSlice(slice, openStart, openEnd) {
 // Trick from jQuery -- some elements must be wrapped in other
 // elements for innerHTML to work. I.e. if you do `div.innerHTML =
 // "<td>..</td>"` the table cells are ignored.
-const wrapMap = {thead: ["table"], colgroup: ["table"], col: ["table", "colgroup"],
-                 tr: ["table", "tbody"], td: ["table", "tbody", "tr"], th: ["table", "tbody", "tr"]}
+const wrapMap = {
+  thead: ["table"],
+  tbody: ["table"],
+  tfoot: ["table"],
+  caption: ["table"],
+  colgroup: ["table"],
+  col: ["table", "colgroup"],
+  tr: ["table", "tbody"],
+  td: ["table", "tbody", "tr"],
+  th: ["table", "tbody", "tr"]
+}
 
 let _detachedDoc = null
 function detachedDoc() {
