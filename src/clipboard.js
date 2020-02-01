@@ -151,6 +151,9 @@ function closeSlice(slice, openStart, openEnd) {
 // "<td>..</td>"` the table cells are ignored.
 const wrapMap = {
   thead: ["table"],
+  tbody: ["table"],
+  tfoot: ["table"],
+  caption: ["table"],
   colgroup: ["table"],
   col: ["table", "colgroup"],
   tr: ["table", "tbody"],
