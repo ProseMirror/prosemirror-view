@@ -137,6 +137,16 @@ export class Decoration {
   //     Can be used to control which DOM events, when they bubble out
   //     of this widget, the editor view should ignore.
   //
+  //    ignoreMutation:: ?(dom.MutationRecord) → bool
+  //    Called when a DOM
+  //    [mutation](https://developer.mozilla.org/en-US/docs/Web/API/MutationObserver)
+  //    or a selection change happens within the Widget. When the change is
+  //    a selection change, the record will have a `type` property of
+  //    `"selection"` (which doesn't occur for native mutation records).
+  //    Return false if the editor should re-read the selection or
+  //    re-parse the range around the mutation, true if it can safely be
+  //    ignored.
+  //
   //     key:: ?string
   //     When comparing decorations of this type (in order to decide
   //     whether it needs to be redrawn), ProseMirror will by default
