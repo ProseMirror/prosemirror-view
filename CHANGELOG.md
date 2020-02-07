@@ -1,3 +1,15 @@
+## 1.14.0 (2020-02-07)
+
+### Bug fixes
+
+Fix parsing of `tbody`, `tfoot`, and `caption` elements in pasted HTML content. Fix bug in selection-is-at-edge check
+
+Fix an issue where moving focus to the editor with the keyboard or the DOM `focus` method would leave the DOM and state selections inconsistent.
+
+### New features
+
+Widget decorations can now take an `ignoreSelection` option, that causes the editor to leave selections inside them alone.
+
 ## 1.13.11 (2020-01-31)
 
 ### Bug fixes
