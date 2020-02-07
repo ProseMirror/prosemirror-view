@@ -124,7 +124,10 @@ export class DOMObserver {
     if (sel.rangeCount == 0) return true
     let container = sel.getRangeAt(0).commonAncestorContainer
     let desc = this.view.docView.nearestDesc(container)
-    return desc && desc.ignoreMutation({type: "selection", target: container.nodeType == 3 ? container.parentNode : container})
+    if (desc && desc.ignoreMutation({type: "selection", target: container.nodeType == 3 ? container.parentNode : container})) {
+      this.setCurSelection()
+      return true
+    }
   }
 
   flush() {
