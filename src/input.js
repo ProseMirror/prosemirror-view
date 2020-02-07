@@ -7,7 +7,7 @@ import {captureKeyDown} from "./capturekeys"
 import {readDOMChange} from "./domchange"
 import {parseFromClipboard, serializeForClipboard} from "./clipboard"
 import {DOMObserver} from "./domobserver"
-import {selectionBetween} from "./selection"
+import {selectionBetween, selectionToDOM} from "./selection"
 import {keyEvent} from "./dom"
 
 // A collection of DOM events that occur within the editor, and callback functions
@@ -615,6 +615,9 @@ handlers.focus = view => {
     view.dom.classList.add("ProseMirror-focused")
     view.domObserver.start()
     view.focused = true
+    setTimeout(() => {
+      if (!view.domObserver.currentSelection.eq(view.root.getSelection())) selectionToDOM(view)
+    }, 20)
   }
 }
 
