@@ -448,6 +448,10 @@ class WidgetViewDesc extends ViewDesc {
     let stop = this.widget.spec.stopEvent
     return stop ? stop(event) : false
   }
+
+  ignoreMutation(mutation) {
+    return mutation.type != "selection" || this.widget.spec.ignoreSelection
+  }
 }
 
 class CompositionViewDesc extends ViewDesc {

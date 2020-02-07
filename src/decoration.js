@@ -137,6 +137,11 @@ export class Decoration {
   //     Can be used to control which DOM events, when they bubble out
   //     of this widget, the editor view should ignore.
   //
+  //     ignoreSelection:: ?bool
+  //     When set (defaults to false), selection changes inside the
+  //     widget are ignored, and don't cause ProseMirror to try and
+  //     re-sync the selection with its selection state.
+  //
   //     key:: ?string
   //     When comparing decorations of this type (in order to decide
   //     whether it needs to be redrawn), ProseMirror will by default
