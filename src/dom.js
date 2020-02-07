@@ -52,6 +52,17 @@ export function nodeSize(node) {
   return node.nodeType == 3 ? node.nodeValue.length : node.childNodes.length
 }
 
+export function isOnEdge(node, offset, parent) {
+  for (let atStart = offset == 0, atEnd = offset == nodeSize(node); atStart || atEnd;) {
+    if (node == parent) return true
+    let index = domIndex(node)
+    node = node.parentNode
+    if (!node) return false
+    atStart = atStart && index == 0
+    atEnd = atEnd && index == nodeSize(node)
+  }
+}
+
 function hasBlockDesc(dom) {
   let desc
   for (let cur = dom; cur; cur = cur.parentNode) if (desc = cur.pmViewDesc) break

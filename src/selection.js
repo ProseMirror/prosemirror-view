@@ -1,7 +1,7 @@
 import {TextSelection, NodeSelection} from "prosemirror-state"
 
 import browser from "./browser"
-import {selectionCollapsed, isEquivalentPosition, domIndex, nodeSize} from "./dom"
+import {selectionCollapsed, isEquivalentPosition, domIndex, isOnEdge} from "./dom"
 
 export function selectionFromDOM(view, origin) {
   let domSel = view.root.getSelection(), doc = view.state.doc
@@ -12,7 +12,7 @@ export function selectionFromDOM(view, origin) {
     $anchor = $head
     while (nearestDesc && !nearestDesc.node) nearestDesc = nearestDesc.parent
     if (nearestDesc && nearestDesc.node.isAtom && NodeSelection.isSelectable(nearestDesc.node) && nearestDesc.parent
-        && !(nearestDesc.node.isInline && onEdge(domSel, nearestDesc.dom))) {
+        && !(nearestDesc.node.isInline && isOnEdge(domSel.focusNode, domSel.focusOffset, nearestDesc.dom))) {
       let pos = nearestDesc.posBefore
       selection = new NodeSelection(head == pos ? $head : doc.resolve(pos))
     }
@@ -25,14 +25,6 @@ export function selectionFromDOM(view, origin) {
     selection = selectionBetween(view, $anchor, $head, bias)
   }
   return selection
-}
-
-function onEdge(domSel, node) {
-  for (let cur = domSel.focusNode, lo = domSel.focusOffset, hi = lo; cur;) {
-    if (cur == node) return lo == 0 || hi == nodeSize(node)
-    lo = domIndex(cur); hi = lo + 1
-    cur = cur.parentNode
-  }
 }
 
 export function selectionToDOM(view, force) {
