@@ -33,6 +33,7 @@ export function scrollRectIntoView(view, rect, startDOM) {
       } else {
         if (moveY) parent.scrollTop += moveY
         if (moveX) parent.scrollLeft += moveX
+        rect = {left: rect.left - moveX, top: rect.top - moveY, right: rect.right - moveX, bottom: rect.bottom - moveY}
       }
     }
     if (atTop) break
