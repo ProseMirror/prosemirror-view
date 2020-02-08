@@ -1,3 +1,9 @@
+## 1.14.1 (2020-02-08)
+
+### Bug fixes
+
+Fix issue where scrolling the cursor into view in a scrollable editor would sometimes inappropriately scroll an outer container as well.
+
 ## 1.14.0 (2020-02-07)
 
 ### Bug fixes
