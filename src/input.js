@@ -616,7 +616,8 @@ handlers.focus = view => {
     view.domObserver.start()
     view.focused = true
     setTimeout(() => {
-      if (!view.domObserver.currentSelection.eq(view.root.getSelection())) selectionToDOM(view)
+      if (view.docView && view.hasFocus() && !view.domObserver.currentSelection.eq(view.root.getSelection()))
+        selectionToDOM(view)
     }, 20)
   }
 }
