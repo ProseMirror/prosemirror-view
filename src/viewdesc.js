@@ -1244,23 +1244,22 @@ function nearbyTextNode(node, offset) {
 
 // Find a piece of text in an inline fragment, overlapping from-to
 function findTextInFragment(frag, text, from, to) {
-  for (let str = "", i = 0, childPos = 0; i < frag.childCount; i++) {
-    let child = frag.child(i), end = childPos + child.nodeSize
-    if (child.isText) {
-      str += child.text
-      if (end >= to) {
-        let strStart = end - str.length, found = str.lastIndexOf(text)
-        while (found > -1 && strStart + found > from) found = str.lastIndexOf(text, found - 1)
-        if (found > -1 && strStart + found + text.length >= to) {
-          return strStart + found
-        } else if (end > to) {
-          break
-        }
-      }
-    } else {
-      str = ""
+  for (let i = 0, pos = 0; i < frag.childCount && pos <= to;) {
+    let child = frag.child(i++), childStart = pos
+    pos += child.nodeSize
+    if (!child.isText) continue
+    let str = child.text
+    while (i < frag.childCount) {
+      let next = frag.child(i++)
+      pos += next.nodeSize
+      if (!next.isText) break
+      str += next.text
     }
-    childPos = end
+    if (pos >= from) {
+      let found = str.lastIndexOf(text, to - childStart)
+      if (found >= 0 && found + text.length + childStart >= from)
+        return childStart + found
+    }
   }
   return -1
 }
