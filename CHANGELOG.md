@@ -1,3 +1,9 @@
+## 1.14.2 (2020-02-10)
+
+### Bug fixes
+
+Fix bug when starting a composition after a link, when the composition started with the character that ended the link.
+
 ## 1.14.1 (2020-02-08)
 
 ### Bug fixes
