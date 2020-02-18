@@ -106,7 +106,7 @@ export class DOMObserver {
     if (browser.ie && browser.ie_version <= 11 && !this.view.state.selection.empty) {
       let sel = this.view.root.getSelection()
       // Selection.isCollapsed isn't reliable on IE
-      if (sel.focusNode && isEquivalentPosition(sel.focusNode, sel.focusOffset, sel.anchorNode, sel.anchorOffset))
+      if (!this.view.composing && sel.focusNode && isEquivalentPosition(sel.focusNode, sel.focusOffset, sel.anchorNode, sel.anchorOffset))
         return this.flushSoon()
     }
     this.flush()
