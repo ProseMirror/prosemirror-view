@@ -7,7 +7,7 @@ import {captureKeyDown} from "./capturekeys"
 import {readDOMChange} from "./domchange"
 import {parseFromClipboard, serializeForClipboard} from "./clipboard"
 import {DOMObserver} from "./domobserver"
-import {selectionBetween, selectionToDOM} from "./selection"
+import {selectionBetween, selectionToDOM, selectionFromDOM} from "./selection"
 import {keyEvent} from "./dom"
 
 // A collection of DOM events that occur within the editor, and callback functions
@@ -439,7 +439,9 @@ export function endComposition(view, forceUpdate) {
   view.composing = false
   while (view.compositionNodes.length > 0) view.compositionNodes.pop().markParentsDirty()
   if (forceUpdate || view.docView.dirty) {
-    view.updateState(view.state)
+    let sel = selectionFromDOM(view)
+    if (!sel.eq(view.state.selection)) view.dispatch(view.state.tr.setSelection(sel))
+    else view.updateState(view.state)
     return true
   }
   return false
