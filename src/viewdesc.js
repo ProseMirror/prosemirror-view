@@ -218,8 +218,11 @@ class ViewDesc {
       let desc = this.getDesc(cur)
       if (desc && (!onlyNodes || desc.node)) {
         // If dom is outside of this desc's nodeDOM, don't count it.
-        if (first && desc.nodeDOM && !(desc.nodeDOM.nodeType == 1 ? desc.nodeDOM.contains(dom) : desc.nodeDOM == dom)) first = false
-        else return desc
+        if (first && desc.nodeDOM &&
+            !(desc.nodeDOM.nodeType == 1 ? desc.nodeDOM.contains(dom.nodeType == 1 ? dom : dom.parentNode) : desc.nodeDOM == dom))
+          first = false
+        else
+          return desc
       }
     }
   }
