@@ -141,7 +141,7 @@ export class EditorView {
       // state where the thing the user sees differs from the
       // selection reported by the Selection object (#710, #973,
       // #1011, #1013).
-      let forceSelUpdate = updateDoc && (browser.ie || browser.chrome) &&
+      let forceSelUpdate = updateDoc && (browser.ie || browser.chrome) && !this.composing &&
           !prev.selection.empty && !state.selection.empty && selectionContextChanged(prev.selection, state.selection)
       if (updateDoc) {
         if (redraw || !this.docView.update(state.doc, outerDeco, innerDeco, this)) {
