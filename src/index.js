@@ -145,6 +145,7 @@ export class EditorView {
           !prev.selection.empty && !state.selection.empty && selectionContextChanged(prev.selection, state.selection)
       if (updateDoc) {
         if (redraw || !this.docView.update(state.doc, outerDeco, innerDeco, this)) {
+          this.docView.updateOuterDeco([])
           this.docView.destroy()
           this.docView = docViewDesc(state.doc, outerDeco, innerDeco, this.dom, this)
         }
