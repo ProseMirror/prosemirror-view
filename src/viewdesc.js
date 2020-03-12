@@ -402,7 +402,7 @@ class ViewDesc {
 
   markParentsDirty() {
     let level = 1
-    for (let node = this.parent; node; node = node.parent) {
+    for (let node = this.parent; node; node = node.parent, level++) {
       let dirty = level == 1 ? CONTENT_DIRTY : CHILD_DIRTY
       if (node.dirty < dirty) node.dirty = dirty
     }
