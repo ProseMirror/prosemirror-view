@@ -97,6 +97,7 @@ export function dispatchEvent(view, event) {
 editHandlers.keydown = (view, event) => {
   view.shiftKey = event.keyCode == 16 || event.shiftKey
   if (inOrNearComposition(view, event)) return
+  view.domObserver.forceFlush()
   view.lastKeyCode = event.keyCode
   view.lastKeyCodeTime = Date.now()
   // On iOS, if we preventDefault enter key presses, the virtual
@@ -436,6 +437,7 @@ function scheduleComposeEnd(view, delay) {
 }
 
 export function endComposition(view, forceUpdate) {
+  view.domObserver.forceFlush()
   view.composing = false
   while (view.compositionNodes.length > 0) view.compositionNodes.pop().markParentsDirty()
   if (forceUpdate || view.docView.dirty) {

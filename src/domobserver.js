@@ -34,7 +34,7 @@ export class DOMObserver {
     this.view = view
     this.handleDOMChange = handleDOMChange
     this.queue = []
-    this.flushingSoon = false
+    this.flushingSoon = -1
     this.observer = window.MutationObserver &&
       new window.MutationObserver(mutations => {
         for (let i = 0; i < mutations.length; i++) this.queue.push(mutations[i])
@@ -61,9 +61,15 @@ export class DOMObserver {
   }
 
   flushSoon() {
-    if (!this.flushingSoon) {
-      this.flushingSoon = true
-      window.setTimeout(() => { this.flushingSoon = false; this.flush() }, 20)
+    if (this.flushingSoon < 0)
+      this.flushingSoon = window.setTimeout(() => { this.flushingSoon = -1; this.flush() }, 20)
+  }
+
+  forceFlush() {
+    if (this.flushingSoon > -1) {
+      window.clearTimeout(this.flushingSoon)
+      this.flushingSoon = -1
+      this.flush()
     }
   }
 
@@ -131,7 +137,7 @@ export class DOMObserver {
   }
 
   flush() {
-    if (!this.view.docView || this.flushingSoon) return
+    if (!this.view.docView || this.flushingSoon > -1) return
     let mutations = this.observer ? this.observer.takeRecords() : []
     if (this.queue.length) {
       mutations = this.queue.concat(mutations)
