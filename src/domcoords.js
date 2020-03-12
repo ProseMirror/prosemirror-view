@@ -31,9 +31,11 @@ export function scrollRectIntoView(view, rect, startDOM) {
       if (atTop) {
         win.scrollBy(moveX, moveY)
       } else {
+        let startX = parent.scrollLeft, startY = parent.scrollTop
         if (moveY) parent.scrollTop += moveY
         if (moveX) parent.scrollLeft += moveX
-        rect = {left: rect.left - moveX, top: rect.top - moveY, right: rect.right - moveX, bottom: rect.bottom - moveY}
+        let dX = parent.scrollX - startX, dY = parent.scrollY - startY
+        rect = {left: rect.left - dX, top: rect.top - dY, right: rect.right - dX, bottom: rect.bottom - dY}
       }
     }
     if (atTop) break
