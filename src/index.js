@@ -140,15 +140,17 @@ export class EditorView {
       // the DOM around an active selection puts it into a broken
       // state where the thing the user sees differs from the
       // selection reported by the Selection object (#710, #973,
-      // #1011, #1013).
+      // #1011, #1013, #1035).
       let forceSelUpdate = updateDoc && (browser.ie || browser.chrome) && !this.composing &&
           !prev.selection.empty && !state.selection.empty && selectionContextChanged(prev.selection, state.selection)
       if (updateDoc) {
+        let selContext = browser.chrome && selectionContext(this.root)
         if (redraw || !this.docView.update(state.doc, outerDeco, innerDeco, this)) {
           this.docView.updateOuterDeco([])
           this.docView.destroy()
           this.docView = docViewDesc(state.doc, outerDeco, innerDeco, this.dom, this)
         }
+        if (selContext && needChromeSelectionReset(selContext, this.root)) forceSelUpdate = true
       }
       // Work around for an issue where an update arriving right between
       // a DOM selection change and the "selectionchange" event for it
@@ -401,7 +403,7 @@ function getEditable(view) {
 
 function selectionContextChanged(sel1, sel2) {
   let depth = Math.min(sel1.$anchor.sharedDepth(sel1.head), sel2.$anchor.sharedDepth(sel2.head))
-  return sel1.$anchor.node(depth) != sel2.$anchor.node(depth)
+  return sel1.$anchor.start(depth) != sel2.$anchor.start(depth)
 }
 
 function buildNodeViews(view) {
@@ -421,6 +423,18 @@ function changedNodeViews(a, b) {
   }
   for (let _ in b) nB++
   return nA != nB
+}
+
+function selectionContext(root) {
+  let {focusOffset: offset, focusNode: node} = root.getSelection()
+  return node && node.nodeType == 1 ? [node, offset, node.childNodes[offset - 1], node.childNodes[offset]] : null
+}
+
+function needChromeSelectionReset(context, root) {
+  let newContext = selectionContext(root)
+  if (!newContext || newContext[0].nodeType == 3) return false
+  for (let i = 0; i < context.length; i++) if (newContext[i] != context[i]) return true
+  return false
 }
 
 // EditorProps:: interface
