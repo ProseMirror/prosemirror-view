@@ -1074,23 +1074,26 @@ class ViewTreeUpdater {
   // Try to update the next node, if any, to the given data. Checks
   // pre-matches to avoid overwriting nodes that could still be used.
   updateNextNode(node, outerDeco, innerDeco, view, index) {
-    if (this.index == this.top.children.length) return false
-    let next = this.top.children[this.index]
-    if (next instanceof NodeViewDesc) {
-      let preMatch = this.preMatched.indexOf(next)
-      if (preMatch > -1 && preMatch + this.preMatchOffset != index) return false
-      let nextDOM = next.dom
+    for (let i = this.index; i < this.top.children.length; i++) {
+      let next = this.top.children[i]
+      if (next instanceof NodeViewDesc) {
+        let preMatch = this.preMatched.indexOf(next)
+        if (preMatch > -1 && preMatch + this.preMatchOffset != index) return false
+        let nextDOM = next.dom
 
-      // Can't update if nextDOM is or contains this.lock, except if
-      // it's a text node whose content already matches the new text
-      // and whose decorations match the new ones.
-      let locked = this.lock && (nextDOM == this.lock || nextDOM.nodeType == 1 && nextDOM.contains(this.lock.parentNode)) &&
-          !(node.isText && next.node && next.node.isText && next.nodeDOM.nodeValue == node.text &&
-            next.dirty != NODE_DIRTY && sameOuterDeco(outerDeco, next.outerDeco))
-      if (!locked && next.update(node, outerDeco, innerDeco, view)) {
-        if (next.dom != nextDOM) this.changed = true
-        this.index++
-        return true
+        // Can't update if nextDOM is or contains this.lock, except if
+        // it's a text node whose content already matches the new text
+        // and whose decorations match the new ones.
+        let locked = this.lock && (nextDOM == this.lock || nextDOM.nodeType == 1 && nextDOM.contains(this.lock.parentNode)) &&
+            !(node.isText && next.node && next.node.isText && next.nodeDOM.nodeValue == node.text &&
+              next.dirty != NODE_DIRTY && sameOuterDeco(outerDeco, next.outerDeco))
+        if (!locked && next.update(node, outerDeco, innerDeco, view)) {
+          this.destroyBetween(this.index, i)
+          if (next.dom != nextDOM) this.changed = true
+          this.index = i + 1
+          return true
+        }
+        break
       }
     }
     return false
