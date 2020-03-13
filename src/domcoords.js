@@ -34,7 +34,7 @@ export function scrollRectIntoView(view, rect, startDOM) {
         let startX = parent.scrollLeft, startY = parent.scrollTop
         if (moveY) parent.scrollTop += moveY
         if (moveX) parent.scrollLeft += moveX
-        let dX = parent.scrollTop - startX, dY = parent.scrollLeft - startY
+        let dX = parent.scrollLeft - startX, dY = parent.scrollTop - startY
         rect = {left: rect.left - dX, top: rect.top - dY, right: rect.right - dX, bottom: rect.bottom - dY}
       }
     }
