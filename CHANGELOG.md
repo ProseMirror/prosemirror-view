@@ -1,3 +1,19 @@
+## 1.14.3 (2020-03-16)
+
+### Bug fixes
+
+Fix mismatch between DOM and state selection bug at compositionend in IE11.
+
+Make sure `handleDrop`](https://prosemirror.net/docs/ref/#view.EditorProps.handleDrop) is called even when there's nothing on the clipboard.
+
+Fix a bug where reconfiguring a view in a way that changed both the active node views and the attributes of the top node left the old attributes active.
+
+Work around another case where Chrome lies to the script about its current DOM selection state.
+
+Avoid redrawing nodes when both their content and a widget in front of them is updated in the same transaction.
+
+Fix issue where scrolling with multiple scrollable containers sometimes moves to the wrong position.
+
 ## 1.14.2 (2020-02-10)
 
 ### Bug fixes
