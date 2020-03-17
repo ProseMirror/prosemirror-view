@@ -104,12 +104,20 @@ editHandlers.keydown = (view, event) => {
   // keyboard gets confused. So the hack here is to set a flag that
   // makes the DOM change code recognize that what just happens should
   // be replaced by whatever the Enter key handlers do.
-  if (browser.ios && event.keyCode == 13 && !event.ctrlKey && !event.altKey && !event.metaKey)
-    view.lastIOSEnter = Date.now()
-  else if (view.someProp("handleKeyDown", f => f(view, event)) || captureKeyDown(view, event))
+  if (browser.ios && event.keyCode == 13 && !event.ctrlKey && !event.altKey && !event.metaKey) {
+    let now = Date.now()
+    view.lastIOSEnter = now
+    setTimeout(() => {
+      if (view.lastIOSEnter == now) {
+        view.someProp("handleKeyDown", f => f(view, keyEvent(13, "Enter")))
+        view.lastIOSEnter = 0
+      }
+    }, 50)
+  } else if (view.someProp("handleKeyDown", f => f(view, event)) || captureKeyDown(view, event)) {
     event.preventDefault()
-  else
+  } else {
     setSelectionOrigin(view, "key")
+  }
 }
 
 editHandlers.keyup = (view, e) => {
