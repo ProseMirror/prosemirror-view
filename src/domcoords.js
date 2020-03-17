@@ -283,7 +283,7 @@ export function coordsAtPos(view, pos) {
   let {node, offset} = view.docView.domFromPos(pos)
 
   // These browsers support querying empty text ranges
-  if (node.nodeType == 3 && browser.webkit) {
+  if (node.nodeType == 3 && (browser.webkit || browser.gecko) ) {
     let rect = singleRect(textRange(node, offset, offset), 0)
     // Firefox returns bad results (the position before the space)
     // when querying a position directly after line-broken
