@@ -1,3 +1,11 @@
+## 1.14.4 (2020-03-17)
+
+### Bug fixes
+
+Improve return values from `coordsAtPos` on line breaks in Safari and Firefox.
+
+Make sure enter on iOS is handled even when the native behavior has no effect.
+
 ## 1.14.3 (2020-03-16)
 
 ### Bug fixes
