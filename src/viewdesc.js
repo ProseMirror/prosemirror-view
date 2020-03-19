@@ -346,7 +346,8 @@ class ViewDesc {
     }
 
     let anchorDOM = this.domFromPos(anchor), headDOM = this.domFromPos(head)
-    let domSel = root.getSelection(), range = document.createRange()
+    let domSel = root.getSelection()
+
     if (!force &&
         isEquivalentPosition(anchorDOM.node, anchorDOM.offset, domSel.anchorNode, domSel.anchorOffset) &&
         isEquivalentPosition(headDOM.node, headDOM.offset, domSel.focusNode, domSel.focusOffset))
@@ -355,18 +356,17 @@ class ViewDesc {
     // Selection.extend can be used to create an 'inverted' selection
     // (one where the focus is before the anchor), but not all
     // browsers support it yet.
-    if (domSel.extend) {
-      range.setEnd(anchorDOM.node, anchorDOM.offset)
-      range.collapse(false)
+    if (domSel.extend || anchor == head) {
+      domSel.collapse(anchorDOM.node, anchorDOM.offset)
+      if (anchor != head) domSel.extend(headDOM.node, headDOM.offset)
     } else {
       if (anchor > head) { let tmp = anchorDOM; anchorDOM = headDOM; headDOM = tmp }
+      let range = document.createRange()
       range.setEnd(headDOM.node, headDOM.offset)
       range.setStart(anchorDOM.node, anchorDOM.offset)
+      domSel.removeAllRanges()
+      domSel.addRange(range)
     }
-    domSel.removeAllRanges()
-    domSel.addRange(range)
-    if (domSel.extend)
-      domSel.extend(headDOM.node, headDOM.offset)
   }
 
   // : (dom.MutationRecord) → bool
