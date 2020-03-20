@@ -205,7 +205,8 @@ export function readDOMChange(view, from, to, typeOver, addedNodes) {
     // happening, don't update the selection.
     // Edge just doesn't move the cursor forward when you start typing
     // in an empty block or between br nodes.
-    if (sel && !(browser.chrome && browser.android && view.composing && sel.empty && sel.head == chFrom ||
+    if (sel && !(browser.chrome && browser.android && view.composing && sel.empty &&
+                   (sel.head == chFrom || sel.head == tr.mapping.map(chTo) - 1) ||
                  browser.ie && sel.empty && sel.head == chFrom))
       tr.setSelection(sel)
   }
