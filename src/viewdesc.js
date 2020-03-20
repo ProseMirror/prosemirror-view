@@ -730,7 +730,7 @@ class NodeViewDesc extends ViewDesc {
   // Remove selected node marking from this node.
   deselectNode() {
     this.nodeDOM.classList.remove("ProseMirror-selectednode")
-    if (this.contentDOM || !this.node.type.spec.draggable) this.dom.draggable = false
+    if (this.contentDOM || !this.node.type.spec.draggable) this.dom.removeAttribute("draggable")
   }
 }
 

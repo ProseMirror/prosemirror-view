@@ -322,7 +322,7 @@ class MouseDown {
     this.view.root.removeEventListener("mousemove", this.move)
     if (this.mightDrag && this.target) {
       this.view.domObserver.stop()
-      if (this.mightDrag.addAttr) this.target.draggable = false
+      if (this.mightDrag.addAttr) this.target.removeAttribute("draggable")
       if (this.mightDrag.setUneditable) this.target.removeAttribute("contentEditable")
       this.view.domObserver.start()
     }
