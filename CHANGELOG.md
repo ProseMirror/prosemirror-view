@@ -1,3 +1,11 @@
+## 1.14.5 (2020-03-23)
+
+### Bug fixes
+
+Work around Chrome Android issue where pasting would close the virtual keyboard.
+
+Fix an issue where some kinds of changes would cause nodes to show up twice in the DOM.
+
 ## 1.14.4 (2020-03-17)
 
 ### Bug fixes
