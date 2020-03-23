@@ -1090,7 +1090,7 @@ class ViewTreeUpdater {
         if (!locked && next.update(node, outerDeco, innerDeco, view)) {
           this.destroyBetween(this.index, i)
           if (next.dom != nextDOM) this.changed = true
-          this.index = i + 1
+          this.index++
           return true
         }
         break

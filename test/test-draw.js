@@ -1,4 +1,4 @@
-const {doc, pre, h1, p, hr} = require("prosemirror-test-builder")
+const {doc, strong, pre, h1, p, hr, schema} = require("prosemirror-test-builder")
 const {Plugin} = require("prosemirror-state")
 const {tempEditor} = require("./view")
 const ist = require("ist")
@@ -126,5 +126,11 @@ describe("EditorView draw", () => {
     }}})
     ist(!view.dom.querySelector("hr"))
     ist(view.dom.querySelector("var"))
+  })
+
+  it("doesn't get confused by merged nodes", () => {
+    let view = tempEditor({doc: doc(p(strong("one"), " two ", strong("three")))})
+    view.dispatch(view.state.tr.removeMark(1, 4, schema.marks.strong))
+    ist(view.dom.querySelectorAll("strong").length, 1)
   })
 })
