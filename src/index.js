@@ -376,11 +376,10 @@ function computeDocDeco(view) {
 }
 
 function updateCursorWrapper(view) {
-  let {$head, $anchor} = view.state.selection
   if (view.markCursor) {
     let dom = document.createElement("img")
     dom.setAttribute("mark-placeholder", "true")
-    view.cursorWrapper = {dom, deco: Decoration.widget($head.pos, dom, {raw: true, marks: view.markCursor})}
+    view.cursorWrapper = {dom, deco: Decoration.widget(view.state.selection.head, dom, {raw: true, marks: view.markCursor})}
   } else {
     view.cursorWrapper = null
   }
