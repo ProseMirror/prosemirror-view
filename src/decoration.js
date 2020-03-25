@@ -95,8 +95,8 @@ export class Decoration {
     return new Decoration(from, to, this.type)
   }
 
-  eq(other) {
-    return this.type.eq(other.type) && this.from == other.from && this.to == other.to
+  eq(other, offset = 0) {
+    return this.type.eq(other.type) && this.from + offset == other.from && this.to + offset == other.to
   }
 
   map(mapping, offset, oldOffset) {
@@ -346,7 +346,7 @@ export class DecorationSet {
       }
     }
     if (local.length) for (let i = 0, span; i < decorations.length; i++) if (span = decorations[i]) {
-      for (let j = 0; j < local.length; j++) if (local[j].type.eq(span.type)) {
+      for (let j = 0; j < local.length; j++) if (local[j].eq(span, offset)) {
         if (local == this.local) local = this.local.slice()
         local.splice(j--, 1)
       }

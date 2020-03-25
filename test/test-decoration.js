@@ -272,6 +272,11 @@ describe("DecorationSet", () => {
     it("ignores decorations that don't exist", () => {
       ist(str(buildRem(doc(p("foo")), {pos: 5}, {pos: 2})), "[5-5]")
     })
+
+    it("compares by both position and type when removing", () => {
+      let deco = DecorationSet.create(doc(p("one")), [[1, 2], [3, 4]].map(([from, to]) => Decoration.inline(from, to)))
+      ist(deco.remove([deco.find()[0]]).find().length, 1)
+    })
   })
 })
 
