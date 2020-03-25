@@ -52,7 +52,7 @@ export function selectionToDOM(view, force) {
     }
     if (sel.visible) {
       view.dom.classList.remove("ProseMirror-hideselection")
-    } else if (anchor != head) {
+    } else {
       view.dom.classList.add("ProseMirror-hideselection")
       if ("onselectionchange" in document) removeClassOnSelectionChange(view)
     }

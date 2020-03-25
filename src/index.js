@@ -376,24 +376,13 @@ function computeDocDeco(view) {
 }
 
 function updateCursorWrapper(view) {
-  let {$head, $anchor, visible} = view.state.selection
+  let {$head, $anchor} = view.state.selection
   if (view.markCursor) {
     let dom = document.createElement("img")
     dom.setAttribute("mark-placeholder", "true")
     view.cursorWrapper = {dom, deco: Decoration.widget($head.pos, dom, {raw: true, marks: view.markCursor})}
-  } else if (visible || $head.pos != $anchor.pos) {
-    view.cursorWrapper = null
   } else {
-    let dom
-    if (!view.cursorWrapper || view.cursorWrapper.dom.childNodes.length) {
-      dom = document.createElement("div")
-      dom.style.position = "absolute"
-      dom.style.left = "-100000px"
-    } else if (view.cursorWrapper.deco.pos != $head.pos) {
-      dom = view.cursorWrapper.dom
-    }
-    if (dom)
-      view.cursorWrapper = {dom, deco: Decoration.widget($head.pos, dom, {raw: true})}
+    view.cursorWrapper = null
   }
 }
 
