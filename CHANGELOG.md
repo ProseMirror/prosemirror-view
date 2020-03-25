@@ -1,3 +1,11 @@
+## 1.14.6 (2020-03-25)
+
+### Bug fixes
+
+Fix superfluous cursor showing up in Chrome when there is a gap cursor or similar custom empty selection active.
+
+Fix an issue where `DecorationSet.remove` would ignore the positions of its argument decorations, and only compare by type.
+
 ## 1.14.5 (2020-03-23)
 
 ### Bug fixes
