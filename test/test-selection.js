@@ -268,4 +268,19 @@ describe("EditorView", () => {
     range.setStart(view.dom, 0)
     ist(range.toString(), "foobar")
   })
+
+  it("sets selection even if Selection.extend throws DOMException", () => {
+    let originalExtend = window.Selection.prototype.extend
+    window.Selection.prototype.extend = () => {
+      throw new DOMException("failed")
+    }
+    try {
+      let view = tempEditor({doc: doc(p("foo", img), hr, p(img, "bar"))})
+      setSel(view, NodeSelection.create(view.state.doc, 4))
+      view.dispatchEvent(event(DOWN))
+      ist(view.state.selection.from, 6)
+    } finally {
+      window.Selection.prototype.extend = originalExtend
+    }
+  })
 })

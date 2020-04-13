@@ -356,10 +356,23 @@ class ViewDesc {
     // Selection.extend can be used to create an 'inverted' selection
     // (one where the focus is before the anchor), but not all
     // browsers support it yet.
+    let domSelExtended = false
     if (domSel.extend || anchor == head) {
       domSel.collapse(anchorDOM.node, anchorDOM.offset)
-      if (anchor != head) domSel.extend(headDOM.node, headDOM.offset)
-    } else {
+      try {
+        if (anchor != head) domSel.extend(headDOM.node, headDOM.offset)
+        domSelExtended = true
+      } catch (err) {
+        // In some cases with Chrome the selection is empty after calling
+        // collapse, even when it should be valid. This appears to be a bug, but
+        // it is difficult to isolate. If this happens fallback to the old path
+        // without using extend.
+        if (!(err instanceof DOMException)) {
+          throw err;
+        }
+      }
+    }
+    if (!domSelExtended) {
       if (anchor > head) { let tmp = anchorDOM; anchorDOM = headDOM; headDOM = tmp }
       let range = document.createRange()
       range.setEnd(headDOM.node, headDOM.offset)
