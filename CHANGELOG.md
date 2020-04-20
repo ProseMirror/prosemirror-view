@@ -1,3 +1,11 @@
+## 1.14.7 (2020-04-20)
+
+### Bug fixes
+
+Fix a crash on Chrome during selection updates when `Selection.collapse` inexplicably leaves the selection empty. Update documented type for handlePaste event arg
+
+Fix another issue that could break decoration set mapping in deeply nested nodes.
+
 ## 1.14.6 (2020-03-25)
 
 ### Bug fixes
