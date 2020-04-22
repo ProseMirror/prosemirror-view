@@ -13,6 +13,9 @@ import browser from "./browser"
 // the behavior of a node's in-editor representation, and need to
 // [define](#view.EditorProps.nodeViews) a custom node view.
 //
+// Mark views only support `dom` and `contentDOM`, and don't support
+// any of the node view methods.
+//
 // Objects returned as node views must conform to this interface.
 //
 //   dom:: ?dom.Node
