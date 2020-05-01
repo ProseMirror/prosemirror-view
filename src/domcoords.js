@@ -233,6 +233,8 @@ export function posAtCoords(view, coords) {
   }
 
   let elt = root.elementFromPoint(coords.left, coords.top + 1), pos
+  // Safari's caretRangeFromPoint returns nonsense when on a draggable element
+  if (browser.safari && elt.draggable) node = offset = null
   if (!elt || !view.dom.contains(elt.nodeType != 1 ? elt.parentNode : elt)) {
     let box = view.dom.getBoundingClientRect()
     if (!inRect(coords, box)) return null

@@ -343,6 +343,8 @@ class MouseDown {
     } else if (handleSingleClick(this.view, pos.pos, pos.inside, event, this.selectNode)) {
       event.preventDefault()
     } else if (this.flushed ||
+               // Safari ignores clicks on draggable elements
+               (browser.safari && this.mightDrag && !this.mightDrag.node.isAtom) ||
                // Chrome will sometimes treat a node selection as a
                // cursor, but still report that the node is selected
                // when asked through getSelection. You'll then get a
