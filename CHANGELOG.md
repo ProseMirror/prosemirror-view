@@ -1,3 +1,13 @@
+## 1.14.8 (2020-05-01)
+
+### Bug fixes
+
+Work around an issue in Safari where you couldn't click inside a selected element to put the cursor there.
+
+Fix enter at start of paragraph in iOS inserting two new paragraphs.
+
+Scrolling the cursor into view now makes sure it doesn't end up below a scrollbar.
+
 ## 1.14.7 (2020-04-20)
 
 ### Bug fixes
