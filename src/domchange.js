@@ -147,12 +147,13 @@ export function readDOMChange(view, from, to, typeOver, addedNodes) {
 
   let $from = parse.doc.resolveNoCache(change.start - parse.from)
   let $to = parse.doc.resolveNoCache(change.endB - parse.from)
+  let inlineChange = $from.sameParent($to) && $from.parent.inlineContent
   let nextSel
   // If this looks like the effect of pressing Enter (or was recorded
   // as being an iOS enter press), just dispatch an Enter key instead.
   if (((browser.ios && view.lastIOSEnter > Date.now() - 100 &&
-        (!$from.sameParent($to) || addedNodes.some(n => n.nodeName == "DIV"))) ||
-       (!$from.sameParent($to) && $from.pos < parse.doc.content.size &&
+        (!inlineChange || addedNodes.some(n => n.nodeName == "DIV" || n.nodeName == "P"))) ||
+       (!inlineChange && $from.pos < parse.doc.content.size &&
         (nextSel = Selection.findFrom(parse.doc.resolve($from.pos + 1), 1, true)) &&
         nextSel.head == $to.pos)) &&
       view.someProp("handleKeyDown", f => f(view, keyEvent(13, "Enter")))) {
@@ -170,7 +171,7 @@ export function readDOMChange(view, from, to, typeOver, addedNodes) {
   let chFrom = change.start, chTo = change.endA
 
   let tr, storedMarks, markChange, $from1
-  if ($from.sameParent($to) && $from.parent.inlineContent) {
+  if (inlineChange) {
     if ($from.pos == $to.pos) { // Deletion
       // IE11 sometimes weirdly moves the DOM selection around after
       // backspacing out the first element in a textblock
