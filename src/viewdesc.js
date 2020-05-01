@@ -370,9 +370,7 @@ class ViewDesc {
         // collapse, even when it should be valid. This appears to be a bug, but
         // it is difficult to isolate. If this happens fallback to the old path
         // without using extend.
-        if (!(err instanceof DOMException)) {
-          throw err;
-        }
+        if (!(err instanceof DOMException)) throw err
       }
     }
     if (!domSelExtended) {
