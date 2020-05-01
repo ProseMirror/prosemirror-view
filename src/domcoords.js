@@ -1,23 +1,30 @@
 import {nodeSize, textRange, parentNode} from "./dom"
 import browser from "./browser"
 
-function windowRect(win) {
-  return {left: 0, right: win.innerWidth,
-          top: 0, bottom: win.innerHeight}
+function windowRect(doc) {
+  return {left: 0, right: doc.documentElement.clientWidth,
+          top: 0, bottom: doc.documentElement.clientHeight}
 }
 
 function getSide(value, side) {
   return typeof value == "number" ? value : value[side]
 }
 
+function clientRect(node) {
+  let rect = node.getBoundingClientRect()
+  // Make sure scrollbar width isn't included in the rectangle
+  return {left: rect.left, right: rect.left + node.clientWidth,
+          top: rect.top, bottom: rect.top + node.clientHeight}
+}
+
 export function scrollRectIntoView(view, rect, startDOM) {
   let scrollThreshold = view.someProp("scrollThreshold") || 0, scrollMargin = view.someProp("scrollMargin") || 5
-  let doc = view.dom.ownerDocument, win = doc.defaultView
+  let doc = view.dom.ownerDocument
   for (let parent = startDOM || view.dom;; parent = parentNode(parent)) {
     if (!parent) break
     if (parent.nodeType != 1) continue
     let atTop = parent == doc.body || parent.nodeType != 1
-    let bounding = atTop ? windowRect(win) : parent.getBoundingClientRect()
+    let bounding = atTop ? windowRect(doc) : clientRect(parent)
     let moveX = 0, moveY = 0
     if (rect.top < bounding.top + getSide(scrollThreshold, "top"))
       moveY = -(bounding.top - rect.top + getSide(scrollMargin, "top"))
@@ -29,7 +36,7 @@ export function scrollRectIntoView(view, rect, startDOM) {
       moveX = rect.right - bounding.right + getSide(scrollMargin, "right")
     if (moveX || moveY) {
       if (atTop) {
-        win.scrollBy(moveX, moveY)
+        doc.defaultView.scrollBy(moveX, moveY)
       } else {
         let startX = parent.scrollLeft, startY = parent.scrollTop
         if (moveY) parent.scrollTop += moveY
