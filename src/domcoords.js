@@ -371,7 +371,7 @@ function withFlushedState(view, state, f) {
     return f()
   } finally {
     if (viewState != state) view.updateState(viewState)
-    if (active != view.dom) active.focus()
+    if (active != view.dom && active) active.focus()
   }
 }
 
