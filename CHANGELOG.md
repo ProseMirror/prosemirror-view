@@ -1,3 +1,9 @@
+## 1.14.9 (2020-05-06)
+
+### Bug fixes
+
+Fix a crash on IE, which sets `document.activeElement` to null in some circumstances.
+
 ## 1.14.8 (2020-05-01)
 
 ### Bug fixes
