@@ -1,3 +1,11 @@
+## 1.14.10 (2020-05-18)
+
+### Bug fixes
+
+Fix an issue where the editor would override behavior for Cmd-arrow key presses on macOS the wrong way in some situations.
+
+Fix handling of copy and paste in IE when top-level elements can't be focused.
+
 ## 1.14.9 (2020-05-06)
 
 ### Bug fixes
