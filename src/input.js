@@ -462,11 +462,11 @@ export function endComposition(view, forceUpdate) {
 function captureCopy(view, dom) {
   // The extra wrapper is somehow necessary on IE/Edge to prevent the
   // content from being mangled when it is put onto the clipboard
-  let doc = view.dom.ownerDocument
-  let wrap = doc.body.appendChild(doc.createElement("div"))
+  if (!view.dom.parentNode) return
+  let wrap = view.dom.parentNode.appendChild(document.createElement("div"))
   wrap.appendChild(dom)
   wrap.style.cssText = "position: fixed; left: -10000px; top: 10px"
-  let sel = getSelection(), range = doc.createRange()
+  let sel = getSelection(), range = document.createRange()
   range.selectNodeContents(dom)
   // Done because IE will fire a selectionchange moving the selection
   // to its start when removeAllRanges is called and the editor still
@@ -475,7 +475,7 @@ function captureCopy(view, dom) {
   sel.removeAllRanges()
   sel.addRange(range)
   setTimeout(() => {
-    doc.body.removeChild(wrap)
+    if (wrap.parentNode) wrap.parentNode.removeChild(wrap)
     view.focus()
   }, 50)
 }
@@ -509,15 +509,15 @@ function sliceSingleNode(slice) {
 }
 
 function capturePaste(view, e) {
-  let doc = view.dom.ownerDocument
+  if (!view.dom.parentNode) return
   let plainText = view.shiftKey || view.state.selection.$from.parent.type.spec.code
-  let target = doc.body.appendChild(doc.createElement(plainText ? "textarea" : "div"))
+  let target = view.dom.parentNode.appendChild(document.createElement(plainText ? "textarea" : "div"))
   if (!plainText) target.contentEditable = "true"
   target.style.cssText = "position: fixed; left: -10000px; top: 10px"
   target.focus()
   setTimeout(() => {
     view.focus()
-    doc.body.removeChild(target)
+    if (target.parentNode) target.parentNode.removeChild(target)
     if (plainText) doPaste(view, target.value, null, e)
     else doPaste(view, target.textContent, target.innerHTML, e)
   }, 50)
