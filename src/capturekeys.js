@@ -23,7 +23,7 @@ function selectHorizontally(view, dir, mods) {
       let next = moveSelectionBlock(view.state, dir)
       if (next && (next instanceof NodeSelection)) return apply(view, next)
       return false
-    } else if (!(browser.mac && mods.indexOf("m"))) {
+    } else if (!(browser.mac && mods.indexOf("m") > -1)) {
       let $head = sel.$head, node = $head.textOffset ? null : dir < 0 ? $head.nodeBefore : $head.nodeAfter, desc
       if (!node || node.isText) return false
       let nodePos = dir < 0 ? $head.pos - node.nodeSize : $head.pos
@@ -170,7 +170,7 @@ function setSelFocus(view, sel, node, offset) {
 function selectVertically(view, dir, mods) {
   let sel = view.state.selection
   if (sel instanceof TextSelection && !sel.empty || mods.indexOf("s") > -1) return false
-  if (browser.mac && mods.indexOf("m")) return false
+  if (browser.mac && mods.indexOf("m") > -1) return false
   let {$from, $to} = sel
 
   if (!$from.parent.inlineContent || view.endOfTextblock(dir < 0 ? "up" : "down")) {
