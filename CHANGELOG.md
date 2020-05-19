@@ -1,3 +1,9 @@
+## 1.14.11 (2020-05-19)
+
+### Bug fixes
+
+Fix bug in the way the editor handles Cmd-arrow presses on macOS.
+
 ## 1.14.10 (2020-05-18)
 
 ### Bug fixes
