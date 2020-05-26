@@ -236,10 +236,11 @@ class ViewDesc {
   }
 
   posFromDOM(dom, offset, bias) {
-    for (let scan = dom;; scan = scan.parentNode) {
+    for (let scan = dom; scan; scan = scan.parentNode) {
       let desc = this.getDesc(scan)
       if (desc) return desc.localPosFromDOM(dom, offset, bias)
     }
+    return -1
   }
 
   // : (number) → ?NodeViewDesc

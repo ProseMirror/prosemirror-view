@@ -5,8 +5,10 @@ import {selectionCollapsed, isEquivalentPosition, domIndex, isOnEdge} from "./do
 
 export function selectionFromDOM(view, origin) {
   let domSel = view.root.getSelection(), doc = view.state.doc
+  if (!domSel.focusNode) return null
   let nearestDesc = view.docView.nearestDesc(domSel.focusNode), inWidget = nearestDesc && nearestDesc.size == 0
   let head = view.docView.posFromDOM(domSel.focusNode, domSel.focusOffset)
+  if (head < 0) return null
   let $head = doc.resolve(head), $anchor, selection
   if (selectionCollapsed(domSel)) {
     $anchor = $head
@@ -17,7 +19,9 @@ export function selectionFromDOM(view, origin) {
       selection = new NodeSelection(head == pos ? $head : doc.resolve(pos))
     }
   } else {
-    $anchor = doc.resolve(view.docView.posFromDOM(domSel.anchorNode, domSel.anchorOffset))
+    let anchor = view.docView.posFromDOM(domSel.anchorNode, domSel.anchorOffset)
+    if (anchor < 0) return null
+    $anchor = doc.resolve(anchor)
   }
 
   if (!selection) {

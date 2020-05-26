@@ -452,7 +452,7 @@ export function endComposition(view, forceUpdate) {
   while (view.compositionNodes.length > 0) view.compositionNodes.pop().markParentsDirty()
   if (forceUpdate || view.docView.dirty) {
     let sel = selectionFromDOM(view)
-    if (!sel.eq(view.state.selection)) view.dispatch(view.state.tr.setSelection(sel))
+    if (sel && !sel.eq(view.state.selection)) view.dispatch(view.state.tr.setSelection(sel))
     else view.updateState(view.state)
     return true
   }

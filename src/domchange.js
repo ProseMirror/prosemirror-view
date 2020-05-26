@@ -77,7 +77,7 @@ export function readDOMChange(view, from, to, typeOver, addedNodes) {
   if (from < 0) {
     let origin = view.lastSelectionTime > Date.now() - 50 ? view.lastSelectionOrigin : null
     let newSel = selectionFromDOM(view, origin)
-    if (!view.state.selection.eq(newSel)) {
+    if (newSel && !view.state.selection.eq(newSel)) {
       let tr = view.state.tr.setSelection(newSel)
       if (origin == "pointer") tr.setMeta("pointer", true)
       else if (origin == "key") tr.scrollIntoView()
