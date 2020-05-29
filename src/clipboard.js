@@ -68,11 +68,17 @@ export async function parseFromClipboard(view, text, html, plainText, $context) 
     let paragraph = document.createElement("p")
     actorId && paragraph.setAttribute('data-actor-id', actorId)
     block.forEach(text => {
-      const textContent = text;
+      const lastCharacter = text.slice(-1)
       let queryElement = document.createElement("span")
       queryElement.setAttribute('data-query-id', nanoid())
+      if (lastCharacter === '.' || lastCharacter === '!' || lastCharacter === '?' ) {
+        queryElement.setAttribute('data-query-silence', 300)
+      } else {
+        queryElement.setAttribute('data-query-silence', 100)
+      }
+      
       queryElement.className = 'query'
-      queryElement.textContent = textContent
+      queryElement.textContent = text
 
       let separator = document.createElement('img')
       separator.setAttribute('src', 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAUAAAAVCAYAAACOuSR+AAAAFUlEQVR42mN8P1XsPwMaYBwVHPSCAMuUNqOQ9f+eAAAAAElFTkSuQmCC')
