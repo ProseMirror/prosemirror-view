@@ -240,14 +240,14 @@ export function posAtCoords(view, coords) {
   }
 
   let elt = root.elementFromPoint(coords.left, coords.top + 1), pos
-  // Safari's caretRangeFromPoint returns nonsense when on a draggable element
-  if (browser.safari && elt.draggable) node = offset = null
   if (!elt || !view.dom.contains(elt.nodeType != 1 ? elt.parentNode : elt)) {
     let box = view.dom.getBoundingClientRect()
     if (!inRect(coords, box)) return null
     elt = elementFromPoint(view.dom, coords, box)
     if (!elt) return null
   }
+  // Safari's caretRangeFromPoint returns nonsense when on a draggable element
+  if (browser.safari && elt.draggable) node = offset = null
   elt = targetKludge(elt, coords)
   if (node) {
     if (browser.gecko && node.nodeType == 1) {
