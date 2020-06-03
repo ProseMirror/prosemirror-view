@@ -762,7 +762,9 @@ class TextViewDesc extends NodeViewDesc {
   }
 
   parseRule() {
-    return {skip: this.nodeDOM.parentNode || true}
+    let skip = this.nodeDOM.parentNode
+    while (skip && skip != this.dom && !skip.pmIsDeco) skip = skip.parentNode
+    return {skip: skip || true}
   }
 
   update(node, outerDeco) {
@@ -930,6 +932,7 @@ function patchOuterDeco(outerDOM, nodeDOM, prevComputed, curComputed) {
         curDOM = parent
       } else {
         parent = document.createElement(deco.nodeName)
+        parent.pmIsDeco = true
         parent.appendChild(curDOM)
         prev = noDeco[0]
         curDOM = parent
