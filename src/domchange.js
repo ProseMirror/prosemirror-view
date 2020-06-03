@@ -168,6 +168,23 @@ export function readDOMChange(view, from, to, typeOver, addedNodes) {
     return
   }
 
+  // This tries to detect Android virtual keyboard
+  // enter-and-pick-suggestion action. That sometimes (see issue
+  // #1059) first fires a DOM mutation, before moving the selection to
+  // the newly created block. And then, because ProseMirror cleans up
+  // the DOM selection, it gives up moving the selection entirely,
+  // leaving the cursor in the wrong place. When that happens, we drop
+  // the new paragraph from the initial change, and fire a simulated
+  // enter key afterwards.
+  if (browser.android && !inlineChange && $from.start() != $to.start() && $to.parentOffset == 0 && $from.depth == $to.depth &&
+      parse.sel && parse.sel.anchor == parse.sel.head && parse.sel.head == change.endA) {
+    change.endB -= 2
+    $to = parse.doc.resolveNoCache(change.endB - parse.from)
+    setTimeout(() => {
+      view.someProp("handleKeyDown", function (f) { return f(view, keyEvent(13, "Enter")); })
+    }, 20)
+  }
+
   let chFrom = change.start, chTo = change.endA
 
   let tr, storedMarks, markChange, $from1
