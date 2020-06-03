@@ -1,3 +1,17 @@
+## 1.14.12 (2020-06-03)
+
+### Bug fixes
+
+Fix a crash when the editor tries to read a DOM selection outside of itself.
+
+Improve the way inline decorations covering non-leaf inline nodes are rendered. Ensure elt is defined before accessing it in posAtCoords
+
+Fix a crash in Safari when the browser's `elementFromPoint` returns null in `posAtCoords`. Handle case where Chrome flips the nesting order of edited inline nodes
+
+Fix the issue of `<a>` marks on decorated text being lost during editing because Chrome changes the nesting order of the link and the decoration `<span>` element in the DOM.
+
+Fix an issue where, when pressing enter with a bolded virtual keyboard suggestion on Android's Gboard, the cursor would stay on the wrong line.
+
 ## 1.14.11 (2020-05-19)
 
 ### Bug fixes
