@@ -1,3 +1,9 @@
+## 1.14.13 (2020-06-05)
+
+### Bug fixes
+
+Fix a bug where storing DOM nodes directly in widget decorations (not recommended) could cause the view to try and place the same DOM node multiple times.
+
 ## 1.14.12 (2020-06-03)
 
 ### Bug fixes
