@@ -1125,7 +1125,8 @@ class ViewTreeUpdater {
   }
 
   placeWidget(widget, view, pos) {
-    if (this.index < this.top.children.length && this.top.children[this.index].matchesWidget(widget)) {
+    let next = this.index < this.top.children.length ? this.top.children[this.index] : null
+    if (next && next.matchesWidget(widget) && (widget == next.widget || !next.widget.type.toDOM.parentNode)) {
       this.index++
     } else {
       let desc = new WidgetViewDesc(this.top, widget, view, pos)

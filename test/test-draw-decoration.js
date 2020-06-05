@@ -406,10 +406,11 @@ describe("Decoration drawing", () => {
   })
 
   it("doesn't redraw widgets with matching keys", () => {
+    let mkButton = () => document.createElement("button")
     let view = tempEditor({
       doc: doc(p("hi")),
       decorations(state) {
-        return DecorationSet.create(state.doc, [Decoration.widget(2, document.createElement("button"), {key: "myButton"})])
+        return DecorationSet.create(state.doc, [Decoration.widget(2, mkButton, {key: "myButton"})])
       }
     })
     let widgetDOM = view.dom.querySelector("button")
