@@ -24,6 +24,7 @@ export function initInput(view) {
   view.lastSelectionTime = 0
 
   view.lastIOSEnter = 0
+  view.lastIOSEnterFallbackTimeout = null
 
   view.composing = false
   view.composingTimeout = null
@@ -62,6 +63,7 @@ export function destroyInput(view) {
   for (let type in view.eventHandlers)
     view.dom.removeEventListener(type, view.eventHandlers[type])
   clearTimeout(view.composingTimeout)
+  clearTimeout(view.lastIOSEnterFallbackTimeout)
 }
 
 export function ensureListeners(view) {
@@ -107,12 +109,12 @@ editHandlers.keydown = (view, event) => {
   if (browser.ios && event.keyCode == 13 && !event.ctrlKey && !event.altKey && !event.metaKey) {
     let now = Date.now()
     view.lastIOSEnter = now
-    setTimeout(() => {
+    view.lastIOSEnterFallbackTimeout = setTimeout(() => {
       if (view.lastIOSEnter == now) {
         view.someProp("handleKeyDown", f => f(view, keyEvent(13, "Enter")))
         view.lastIOSEnter = 0
       }
-    }, 50)
+    }, 200)
   } else if (view.someProp("handleKeyDown", f => f(view, event)) || captureKeyDown(view, event)) {
     event.preventDefault()
   } else {
