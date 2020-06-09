@@ -151,7 +151,7 @@ export function readDOMChange(view, from, to, typeOver, addedNodes) {
   let nextSel
   // If this looks like the effect of pressing Enter (or was recorded
   // as being an iOS enter press), just dispatch an Enter key instead.
-  if (((browser.ios && view.lastIOSEnter > Date.now() - 100 &&
+  if (((browser.ios && view.lastIOSEnter > Date.now() - 225 &&
         (!inlineChange || addedNodes.some(n => n.nodeName == "DIV" || n.nodeName == "P"))) ||
        (!inlineChange && $from.pos < parse.doc.content.size &&
         (nextSel = Selection.findFrom(parse.doc.resolve($from.pos + 1), 1, true)) &&
