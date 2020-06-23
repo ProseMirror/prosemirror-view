@@ -516,10 +516,10 @@ function needChromeSelectionReset(context, root) {
 //   the clipboard. When not given, the value of the
 //   [`domParser`](#view.EditorProps.domParser) prop is used.
 //
-//   transformPastedText:: ?(text: string) → string
+//   transformPastedText:: ?(text: string, plainText: bool) → string
 //   Transform pasted plain text.
 //
-//   clipboardTextParser:: ?(text: string, $context: ResolvedPos) → Slice
+//   clipboardTextParser:: ?(text: string, $context: ResolvedPos, plainText: bool) → Slice
 //   A function to parse text from the clipboard into a document
 //   slice. Called after
 //   [`transformPastedText`](#view.EditorProps.transformPastedText).
