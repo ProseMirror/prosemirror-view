@@ -518,7 +518,7 @@ function needChromeSelectionReset(context, root) {
 //
 //   transformPastedText:: ?(text: string, plain: bool) → string
 //   Transform pasted plain text. The `plain` flag will be true when
-//   the text is pasted with shift held.
+//   the text is pasted as plain text.
 //
 //   clipboardTextParser:: ?(text: string, $context: ResolvedPos, plain: bool) → Slice
 //   A function to parse text from the clipboard into a document
@@ -527,8 +527,7 @@ function needChromeSelectionReset(context, root) {
 //   The default behavior is to split the text into lines, wrap them
 //   in `<p>` tags, and call
 //   [`clipboardParser`](#view.EditorProps.clipboardParser) on it.
-//   The `plain` flag will be true when the text is pasted with shift
-//   held.
+//   The `plain` flag will be true when the text is pasted as plain text.
 //
 //   transformPasted:: ?(Slice) → Slice
 //   Can be used to transform pasted content before it is applied to
