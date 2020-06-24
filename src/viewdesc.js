@@ -301,7 +301,7 @@ class ViewDesc {
         }
         if (fromOffset == -1) fromOffset = 0
       }
-      if (fromOffset > -1 && to <= end) {
+      if (fromOffset > -1 && (end > to || i == this.children.length - 1)) {
         to = end
         for (let j = i + 1; j < this.children.length; j++) {
           let next = this.children[j]
