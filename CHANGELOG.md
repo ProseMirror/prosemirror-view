@@ -1,3 +1,15 @@
+## 1.15.0 (2020-06-24)
+
+### Bug fixes
+
+Fix an issue where Enter on iOS might be handled twice on slow devices. Pass plain text flag to transformPastedText and clipboardTextParser props
+
+Fix a bug where typing in front of a mark could in some circumstances cause the editor to discard the new content.
+
+### New features
+
+The `transformPastedText` and `clipboardTextParser` props now receive an extra argument, `plain`, indicating whether the paste was forced as plain text.
+
 ## 1.14.13 (2020-06-05)
 
 ### Bug fixes
