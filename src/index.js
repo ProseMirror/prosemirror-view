@@ -415,14 +415,12 @@ function changedNodeViews(a, b) {
 
 function selectionContext(root) {
   let {focusOffset: offset, focusNode: node} = root.getSelection()
-  return node && node.nodeType == 1 ? [node, offset, node.childNodes[offset - 1], node.childNodes[offset]] : null
+  return node ? [node, offset, node.childNodes[offset - 1], node.childNodes[offset]] : null
 }
 
 function needChromeSelectionReset(context, root) {
   let newContext = selectionContext(root)
-  if (!newContext || newContext[0].nodeType == 3) return false
-  for (let i = 0; i < context.length; i++) if (newContext[i] != context[i]) return true
-  return false
+  return newContext && context.some((e, i) => e != newContext[i])
 }
 
 // EditorProps:: interface
