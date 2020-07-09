@@ -34,6 +34,8 @@ export class EditorView {
 
     this._root = null
     this.focused = false
+    // Kludge used to work around a Chrome bug
+    this.trackWrites = null
 
     // :: dom.Element
     // An editable DOM node containing the document. (You probably
@@ -144,13 +146,17 @@ export class EditorView {
       let forceSelUpdate = updateDoc && (browser.ie || browser.chrome) && !this.composing &&
           !prev.selection.empty && !state.selection.empty && selectionContextChanged(prev.selection, state.selection)
       if (updateDoc) {
-        let selContext = browser.chrome && selectionContext(this.root)
+        // If the node that the selection points into is written to,
+        // Chrome sometimes starts misreporting the selection, so this
+        // tracks that and forces a selection reset when our update
+        // did write to the node.
+        let chromeKludge = browser.chrome ? (this.trackWrites = this.root.getSelection().focusNode) : null
         if (redraw || !this.docView.update(state.doc, outerDeco, innerDeco, this)) {
           this.docView.updateOuterDeco([])
           this.docView.destroy()
           this.docView = docViewDesc(state.doc, outerDeco, innerDeco, this.dom, this)
         }
-        if (selContext && needChromeSelectionReset(selContext, this.root)) forceSelUpdate = true
+        if (chromeKludge && !this.trackWrites) forceSelUpdate = true
       }
       // Work around for an issue where an update arriving right between
       // a DOM selection change and the "selectionchange" event for it
@@ -411,16 +417,6 @@ function changedNodeViews(a, b) {
   }
   for (let _ in b) nB++
   return nA != nB
-}
-
-function selectionContext(root) {
-  let {focusOffset: offset, focusNode: node} = root.getSelection()
-  return node ? [node, offset, node.childNodes[offset - 1], node.childNodes[offset]] : null
-}
-
-function needChromeSelectionReset(context, root) {
-  let newContext = selectionContext(root)
-  return newContext && context.some((e, i) => e != newContext[i])
 }
 
 // EditorProps:: interface

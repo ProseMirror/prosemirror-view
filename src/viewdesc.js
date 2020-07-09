@@ -657,13 +657,9 @@ class NodeViewDesc extends ViewDesc {
     if (updater.changed || this.dirty == CONTENT_DIRTY) {
       // May have to protect focused DOM from being changed if a composition is active
       if (composition) this.protectLocalComposition(view, composition)
-      this.renderChildren()
+      renderDescs(this.contentDOM, this.children, view)
+      if (browser.ios) iosHacks(this.dom)
     }
-  }
-
-  renderChildren() {
-    renderDescs(this.contentDOM, this.children, NodeViewDesc.is)
-    if (browser.ios) iosHacks(this.dom)
   }
 
   localCompositionNode(view, pos) {
@@ -767,12 +763,14 @@ class TextViewDesc extends NodeViewDesc {
     return {skip: skip || true}
   }
 
-  update(node, outerDeco) {
+  update(node, outerDeco, _, view) {
     if (this.dirty == NODE_DIRTY || (this.dirty != NOT_DIRTY && !this.inParent()) ||
         !node.sameMarkup(this.node)) return false
     this.updateOuterDeco(outerDeco)
-    if ((this.dirty != NOT_DIRTY || node.text != this.node.text) && node.text != this.nodeDOM.nodeValue)
+    if ((this.dirty != NOT_DIRTY || node.text != this.node.text) && node.text != this.nodeDOM.nodeValue) {
       this.nodeDOM.nodeValue = node.text
+      if (view.trackWrites == this.nodeDOM) view.trackWrites = null
+    }
     this.node = node
     this.dirty = NOT_DIRTY
     return true
@@ -867,23 +865,25 @@ class CustomNodeViewDesc extends NodeViewDesc {
 // Sync the content of the given DOM node with the nodes associated
 // with the given array of view descs, recursing into mark descs
 // because this should sync the subtree for a whole node at a time.
-function renderDescs(parentDOM, descs) {
-  let dom = parentDOM.firstChild
+function renderDescs(parentDOM, descs, view) {
+  let dom = parentDOM.firstChild, written = false
   for (let i = 0; i < descs.length; i++) {
     let desc = descs[i], childDOM = desc.dom
     if (childDOM.parentNode == parentDOM) {
-      while (childDOM != dom) dom = rm(dom)
+      while (childDOM != dom) { dom = rm(dom); written = true }
       dom = dom.nextSibling
     } else {
+      written = true
       parentDOM.insertBefore(childDOM, dom)
     }
     if (desc instanceof MarkViewDesc) {
       let pos = dom ? dom.previousSibling : parentDOM.lastChild
-      renderDescs(desc.contentDOM, desc.children)
+      renderDescs(desc.contentDOM, desc.children, view)
       dom = pos ? pos.nextSibling : parentDOM.firstChild
     }
   }
-  while (dom) dom = rm(dom)
+  while (dom) { dom = rm(dom); written = true }
+  if (written && view.trackWrites == parentDOM) view.trackWrites = null
 }
 
 function OuterDecoLevel(nodeName) {
