@@ -1,3 +1,9 @@
+## 1.15.2 (2020-07-09)
+
+### Bug fixes
+
+Adjust the workaround for Chrome's DOM selection corruption bug to cover more cases.
+
 ## 1.15.1 (2020-07-09)
 
 ### Bug fixes
