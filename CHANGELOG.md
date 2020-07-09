@@ -1,3 +1,9 @@
+## 1.15.1 (2020-07-09)
+
+### Bug fixes
+
+Work around another issue where Chrome misreports the DOM selection.
+
 ## 1.15.0 (2020-06-24)
 
 ### Bug fixes
