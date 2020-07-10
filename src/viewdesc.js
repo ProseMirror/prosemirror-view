@@ -357,11 +357,18 @@ class ViewDesc {
         isEquivalentPosition(headDOM.node, headDOM.offset, domSel.focusNode, domSel.focusOffset))
       return
 
+    // On Firefox, using Selection.collapse to put the cursor after a
+    // BR node for some reason doesn't always work (#1073)
+    let geckoKludge = false
+    if (browser.gecko && anchor == head) {
+      let prev = anchorDOM.node.childNodes[anchorDOM.offset - 1]
+      if (prev && prev.nodeName == "BR") geckoKludge = true
+    }
     // Selection.extend can be used to create an 'inverted' selection
     // (one where the focus is before the anchor), but not all
     // browsers support it yet.
     let domSelExtended = false
-    if (domSel.extend || anchor == head) {
+    if ((domSel.extend || anchor == head) && !geckoKludge) {
       domSel.collapse(anchorDOM.node, anchorDOM.offset)
       try {
         if (anchor != head) domSel.extend(headDOM.node, headDOM.offset)
