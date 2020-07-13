@@ -3,7 +3,7 @@ import {NodeSelection} from "prosemirror-state"
 import {scrollRectIntoView, posAtCoords, coordsAtPos, endOfTextblock, storeScrollPos,
         resetScrollPos, focusPreventScroll} from "./domcoords"
 import {docViewDesc} from "./viewdesc"
-import {initInput, destroyInput, dispatchEvent, ensureListeners} from "./input"
+import {initInput, destroyInput, dispatchEvent, ensureListeners, doPaste} from "./input"
 import {selectionToDOM, anchorInRightPlace, syncNodeSelection} from "./selection"
 import {Decoration, viewDecorations} from "./decoration"
 import browser from "./browser"
@@ -13,6 +13,7 @@ export {Decoration, DecorationSet} from "./decoration"
 // Exported for testing
 export {serializeForClipboard as __serializeForClipboard, parseFromClipboard as __parseFromClipboard} from "./clipboard"
 export {endComposition as __endComposition} from "./input"
+export {doPaste}
 
 // ::- An editor view manages the DOM structure that represents an
 // editable document. Its state and behavior are determined by its

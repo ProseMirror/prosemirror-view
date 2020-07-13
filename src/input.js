@@ -519,6 +519,7 @@ editHandlers.paste = (view, e) => {
     capturePaste(view, e)
   }
 }
+export {doPaste}
 
 class Dragging {
   constructor(slice, move) {
