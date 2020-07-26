@@ -527,7 +527,7 @@ function changedNodeViews(a, b) {
 //   Can be used to transform pasted content before it is applied to
 //   the document.
 //
-//   nodeViews:: ?Object<(node: Node, view: EditorView, getPos: () → number, decorations: [Decoration]) → NodeView>
+//   nodeViews:: ?Object<(node: union<Node, Mark>, view: EditorView, getPos: union<() → number, bool>, decorations: [Decoration]) → NodeView>
 //   Allows you to pass custom rendering and behavior logic for nodes
 //   and marks. Should map node and mark names to constructor
 //   functions that produce a [`NodeView`](#view.NodeView) object
