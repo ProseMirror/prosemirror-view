@@ -35,6 +35,8 @@ export class EditorView {
 
     this._root = null
     this.focused = false
+    // Kludge used to work around a Chrome bug
+    this.trackWrites = null
 
     // :: dom.Element
     // An editable DOM node containing the document. (You probably
@@ -141,14 +143,21 @@ export class EditorView {
       // the DOM around an active selection puts it into a broken
       // state where the thing the user sees differs from the
       // selection reported by the Selection object (#710, #973,
-      // #1011, #1013).
-      let forceSelUpdate = updateDoc && (browser.ie || browser.chrome) &&
+      // #1011, #1013, #1035).
+      let forceSelUpdate = updateDoc && (browser.ie || browser.chrome) && !this.composing &&
           !prev.selection.empty && !state.selection.empty && selectionContextChanged(prev.selection, state.selection)
       if (updateDoc) {
+        // If the node that the selection points into is written to,
+        // Chrome sometimes starts misreporting the selection, so this
+        // tracks that and forces a selection reset when our update
+        // did write to the node.
+        let chromeKludge = browser.chrome ? (this.trackWrites = this.root.getSelection().focusNode) : null
         if (redraw || !this.docView.update(state.doc, outerDeco, innerDeco, this)) {
+          this.docView.updateOuterDeco([])
           this.docView.destroy()
           this.docView = docViewDesc(state.doc, outerDeco, innerDeco, this.dom, this)
         }
+        if (chromeKludge && !this.trackWrites) forceSelUpdate = true
       }
       // Work around for an issue where an update arriving right between
       // a DOM selection change and the "selectionchange" event for it
@@ -374,24 +383,12 @@ function computeDocDeco(view) {
 }
 
 function updateCursorWrapper(view) {
-  let {$head, $anchor, visible} = view.state.selection
   if (view.markCursor) {
     let dom = document.createElement("img")
     dom.setAttribute("mark-placeholder", "true")
-    view.cursorWrapper = {dom, deco: Decoration.widget($head.pos, dom, {raw: true, marks: view.markCursor})}
-  } else if (visible || $head.pos != $anchor.pos) {
-    view.cursorWrapper = null
+    view.cursorWrapper = {dom, deco: Decoration.widget(view.state.selection.head, dom, {raw: true, marks: view.markCursor})}
   } else {
-    let dom
-    if (!view.cursorWrapper || view.cursorWrapper.dom.childNodes.length) {
-      dom = document.createElement("div")
-      dom.style.position = "absolute"
-      dom.style.left = "-100000px"
-    } else if (view.cursorWrapper.deco.pos != $head.pos) {
-      dom = view.cursorWrapper.dom
-    }
-    if (dom)
-      view.cursorWrapper = {dom, deco: Decoration.widget($head.pos, dom, {raw: true})}
+    view.cursorWrapper = null
   }
 }
 
@@ -401,7 +398,7 @@ function getEditable(view) {
 
 function selectionContextChanged(sel1, sel2) {
   let depth = Math.min(sel1.$anchor.sharedDepth(sel1.head), sel2.$anchor.sharedDepth(sel2.head))
-  return sel1.$anchor.node(depth) != sel2.$anchor.node(depth)
+  return sel1.$anchor.start(depth) != sel2.$anchor.start(depth)
 }
 
 function buildNodeViews(view) {
@@ -479,7 +476,7 @@ function changedNodeViews(a, b) {
 //   handleTripleClick:: ?(view: EditorView, pos: number, event: dom.MouseEvent) → bool
 //   Called when the editor is triple-clicked, after `handleTripleClickOn`.
 //
-//   handlePaste:: ?(view: EditorView, event: dom.Event, slice: Slice) → bool
+//   handlePaste:: ?(view: EditorView, event: dom.ClipboardEvent, slice: Slice) → bool
 //   Can be used to override the behavior of pasting. `slice` is the
 //   pasted content parsed by the editor, but you can directly access
 //   the event to get at the raw content.
@@ -514,16 +511,18 @@ function changedNodeViews(a, b) {
 //   the clipboard. When not given, the value of the
 //   [`domParser`](#view.EditorProps.domParser) prop is used.
 //
-//   transformPastedText:: ?(text: string) → string
-//   Transform pasted plain text.
+//   transformPastedText:: ?(text: string, plain: bool) → string
+//   Transform pasted plain text. The `plain` flag will be true when
+//   the text is pasted as plain text.
 //
-//   clipboardTextParser:: ?(text: string, $context: ResolvedPos) → Slice
+//   clipboardTextParser:: ?(text: string, $context: ResolvedPos, plain: bool) → Slice
 //   A function to parse text from the clipboard into a document
 //   slice. Called after
 //   [`transformPastedText`](#view.EditorProps.transformPastedText).
 //   The default behavior is to split the text into lines, wrap them
 //   in `<p>` tags, and call
 //   [`clipboardParser`](#view.EditorProps.clipboardParser) on it.
+//   The `plain` flag will be true when the text is pasted as plain text.
 //
 //   transformPasted:: ?(Slice) → Slice
 //   Can be used to transform pasted content before it is applied to

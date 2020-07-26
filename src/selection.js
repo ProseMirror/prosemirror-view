@@ -1,22 +1,27 @@
 import {TextSelection, NodeSelection} from "prosemirror-state"
 
 import browser from "./browser"
-import {selectionCollapsed, isEquivalentPosition, domIndex} from "./dom"
+import {selectionCollapsed, isEquivalentPosition, domIndex, isOnEdge} from "./dom"
 
 export function selectionFromDOM(view, origin) {
   let domSel = view.root.getSelection(), doc = view.state.doc
+  if (!domSel.focusNode) return null
   let nearestDesc = view.docView.nearestDesc(domSel.focusNode), inWidget = nearestDesc && nearestDesc.size == 0
   let head = view.docView.posFromDOM(domSel.focusNode, domSel.focusOffset)
+  if (head < 0) return null
   let $head = doc.resolve(head), $anchor, selection
   if (selectionCollapsed(domSel)) {
     $anchor = $head
     while (nearestDesc && !nearestDesc.node) nearestDesc = nearestDesc.parent
-    if (nearestDesc && nearestDesc.node.isAtom && NodeSelection.isSelectable(nearestDesc.node) && nearestDesc.parent) {
+    if (nearestDesc && nearestDesc.node.isAtom && NodeSelection.isSelectable(nearestDesc.node) && nearestDesc.parent
+        && !(nearestDesc.node.isInline && isOnEdge(domSel.focusNode, domSel.focusOffset, nearestDesc.dom))) {
       let pos = nearestDesc.posBefore
       selection = new NodeSelection(head == pos ? $head : doc.resolve(pos))
     }
   } else {
-    $anchor = doc.resolve(view.docView.posFromDOM(domSel.anchorNode, domSel.anchorOffset))
+    let anchor = view.docView.posFromDOM(domSel.anchorNode, domSel.anchorOffset)
+    if (anchor < 0) return null
+    $anchor = doc.resolve(anchor)
   }
 
   if (!selection) {
@@ -30,7 +35,8 @@ export function selectionToDOM(view, force) {
   let sel = view.state.selection
   syncNodeSelection(view, sel)
 
-  if (view.editable ? !view.hasFocus() : !(hasSelection(view) && document.activeElement.contains(view.dom))) return
+  if (view.editable ? !view.hasFocus() :
+      !(hasSelection(view) && document.activeElement && document.activeElement.contains(view.dom))) return
 
   view.domObserver.disconnectSelection()
 
@@ -46,12 +52,12 @@ export function selectionToDOM(view, force) {
     }
     view.docView.setSelection(anchor, head, view.root, force)
     if (brokenSelectBetweenUneditable) {
-      if (resetEditableFrom) resetEditableFrom.contentEditable = "false"
-      if (resetEditableTo) resetEditableTo.contentEditable = "false"
+      if (resetEditableFrom) resetEditable(resetEditableFrom)
+      if (resetEditableTo) resetEditable(resetEditableTo)
     }
     if (sel.visible) {
       view.dom.classList.remove("ProseMirror-hideselection")
-    } else if (anchor != head) {
+    } else {
       view.dom.classList.add("ProseMirror-hideselection")
       if ("onselectionchange" in document) removeClassOnSelectionChange(view)
     }
@@ -71,15 +77,22 @@ function temporarilyEditableNear(view, pos) {
   let {node, offset} = view.docView.domFromPos(pos)
   let after = offset < node.childNodes.length ? node.childNodes[offset] : null
   let before = offset ? node.childNodes[offset - 1] : null
+  if (browser.safari && after && after.contentEditable == "false") return setEditable(after)
   if ((!after || after.contentEditable == "false") && (!before || before.contentEditable == "false")) {
-    if (after) {
-      after.contentEditable = "true"
-      return after
-    } else if (before) {
-      before.contentEditable = "true"
-      return before
-    }
+    if (after) return setEditable(after)
+    else if (before) return setEditable(before)
   }
+}
+
+function setEditable(element) {
+  element.contentEditable = "true"
+  if (browser.safari && element.draggable) { element.draggable = false; element.wasDraggable = true }
+  return element
+}
+
+function resetEditable(element) {
+  element.contentEditable = "false"
+  if (element.wasDraggable) { element.draggable = true; element.wasDraggable = null }
 }
 
 function removeClassOnSelectionChange(view) {

@@ -1,3 +1,177 @@
+## 1.15.2 (2020-07-09)
+
+### Bug fixes
+
+Adjust the workaround for Chrome's DOM selection corruption bug to cover more cases.
+
+## 1.15.1 (2020-07-09)
+
+### Bug fixes
+
+Work around another issue where Chrome misreports the DOM selection.
+
+## 1.15.0 (2020-06-24)
+
+### Bug fixes
+
+Fix an issue where Enter on iOS might be handled twice on slow devices. Pass plain text flag to transformPastedText and clipboardTextParser props
+
+Fix a bug where typing in front of a mark could in some circumstances cause the editor to discard the new content.
+
+### New features
+
+The `transformPastedText` and `clipboardTextParser` props now receive an extra argument, `plain`, indicating whether the paste was forced as plain text.
+
+## 1.14.13 (2020-06-05)
+
+### Bug fixes
+
+Fix a bug where storing DOM nodes directly in widget decorations (not recommended) could cause the view to try and place the same DOM node multiple times.
+
+## 1.14.12 (2020-06-03)
+
+### Bug fixes
+
+Fix a crash when the editor tries to read a DOM selection outside of itself.
+
+Improve the way inline decorations covering non-leaf inline nodes are rendered. Ensure elt is defined before accessing it in posAtCoords
+
+Fix a crash in Safari when the browser's `elementFromPoint` returns null in `posAtCoords`. Handle case where Chrome flips the nesting order of edited inline nodes
+
+Fix the issue of `<a>` marks on decorated text being lost during editing because Chrome changes the nesting order of the link and the decoration `<span>` element in the DOM.
+
+Fix an issue where, when pressing enter with a bolded virtual keyboard suggestion on Android's Gboard, the cursor would stay on the wrong line.
+
+## 1.14.11 (2020-05-19)
+
+### Bug fixes
+
+Fix bug in the way the editor handles Cmd-arrow presses on macOS.
+
+## 1.14.10 (2020-05-18)
+
+### Bug fixes
+
+Fix an issue where the editor would override behavior for Cmd-arrow key presses on macOS the wrong way in some situations.
+
+Fix handling of copy and paste in IE when top-level elements can't be focused.
+
+## 1.14.9 (2020-05-06)
+
+### Bug fixes
+
+Fix a crash on IE, which sets `document.activeElement` to null in some circumstances.
+
+## 1.14.8 (2020-05-01)
+
+### Bug fixes
+
+Work around an issue in Safari where you couldn't click inside a selected element to put the cursor there.
+
+Fix enter at start of paragraph in iOS inserting two new paragraphs.
+
+Scrolling the cursor into view now makes sure it doesn't end up below a scrollbar.
+
+## 1.14.7 (2020-04-20)
+
+### Bug fixes
+
+Fix a crash on Chrome during selection updates when `Selection.collapse` inexplicably leaves the selection empty. Update documented type for handlePaste event arg
+
+Fix another issue that could break decoration set mapping in deeply nested nodes.
+
+## 1.14.6 (2020-03-25)
+
+### Bug fixes
+
+Fix superfluous cursor showing up in Chrome when there is a gap cursor or similar custom empty selection active.
+
+Fix an issue where `DecorationSet.remove` would ignore the positions of its argument decorations, and only compare by type.
+
+## 1.14.5 (2020-03-23)
+
+### Bug fixes
+
+Work around Chrome Android issue where pasting would close the virtual keyboard.
+
+Fix an issue where some kinds of changes would cause nodes to show up twice in the DOM.
+
+## 1.14.4 (2020-03-17)
+
+### Bug fixes
+
+Improve return values from `coordsAtPos` on line breaks in Safari and Firefox.
+
+Make sure enter on iOS is handled even when the native behavior has no effect.
+
+## 1.14.3 (2020-03-16)
+
+### Bug fixes
+
+Fix mismatch between DOM and state selection bug at compositionend in IE11.
+
+Make sure `handleDrop`](https://prosemirror.net/docs/ref/#view.EditorProps.handleDrop) is called even when there's nothing on the clipboard.
+
+Fix a bug where reconfiguring a view in a way that changed both the active node views and the attributes of the top node left the old attributes active.
+
+Work around another case where Chrome lies to the script about its current DOM selection state.
+
+Avoid redrawing nodes when both their content and a widget in front of them is updated in the same transaction.
+
+Fix issue where scrolling with multiple scrollable containers sometimes moves to the wrong position.
+
+## 1.14.2 (2020-02-10)
+
+### Bug fixes
+
+Fix bug when starting a composition after a link, when the composition started with the character that ended the link.
+
+## 1.14.1 (2020-02-08)
+
+### Bug fixes
+
+Fix issue where scrolling the cursor into view in a scrollable editor would sometimes inappropriately scroll an outer container as well.
+
+## 1.14.0 (2020-02-07)
+
+### Bug fixes
+
+Fix parsing of `tbody`, `tfoot`, and `caption` elements in pasted HTML content. Fix bug in selection-is-at-edge check
+
+Fix an issue where moving focus to the editor with the keyboard or the DOM `focus` method would leave the DOM and state selections inconsistent.
+
+### New features
+
+Widget decorations can now take an `ignoreSelection` option, that causes the editor to leave selections inside them alone.
+
+## 1.13.11 (2020-01-31)
+
+### Bug fixes
+
+Fix an issue that could lead to the editor making regular content uneditable on Safari.
+
+## 1.13.10 (2020-01-29)
+
+### Bug fixes
+
+Fix a crash on Firefox when starting a composition after a marked non-text node.
+
+## 1.13.9 (2020-01-29)
+
+### Bug fixes
+
+Make sure to reset the selection when the browser moves it into an uneditable node.
+
+Fix issue where the editor would fail to create a meaningful DOM selection for a node selection on Safari.
+
+Makes sure the iOS virtual keyboard gets its internal state (autocorrection, autocapitalization) updated when the user presses enter.
+
+## 1.13.8 (2020-01-24)
+
+### Bug fixes
+
+Fix bug that would sometimes cause widget decorations to be drawn with marks from the node after the text node they were inside of.
+
 ## 1.13.7 (2019-12-16)
 
 ### Bug fixes

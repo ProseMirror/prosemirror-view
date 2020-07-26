@@ -1,23 +1,30 @@
 import {nodeSize, textRange, parentNode} from "./dom"
 import browser from "./browser"
 
-function windowRect(win) {
-  return {left: 0, right: win.innerWidth,
-          top: 0, bottom: win.innerHeight}
+function windowRect(doc) {
+  return {left: 0, right: doc.documentElement.clientWidth,
+          top: 0, bottom: doc.documentElement.clientHeight}
 }
 
 function getSide(value, side) {
   return typeof value == "number" ? value : value[side]
 }
 
+function clientRect(node) {
+  let rect = node.getBoundingClientRect()
+  // Make sure scrollbar width isn't included in the rectangle
+  return {left: rect.left, right: rect.left + node.clientWidth,
+          top: rect.top, bottom: rect.top + node.clientHeight}
+}
+
 export function scrollRectIntoView(view, rect, startDOM) {
   let scrollThreshold = view.someProp("scrollThreshold") || 0, scrollMargin = view.someProp("scrollMargin") || 5
-  let doc = view.dom.ownerDocument, win = doc.defaultView
+  let doc = view.dom.ownerDocument
   for (let parent = startDOM || view.dom;; parent = parentNode(parent)) {
     if (!parent) break
     if (parent.nodeType != 1) continue
     let atTop = parent == doc.body || parent.nodeType != 1
-    let bounding = atTop ? windowRect(win) : parent.getBoundingClientRect()
+    let bounding = atTop ? windowRect(doc) : clientRect(parent)
     let moveX = 0, moveY = 0
     if (rect.top < bounding.top + getSide(scrollThreshold, "top"))
       moveY = -(bounding.top - rect.top + getSide(scrollMargin, "top"))
@@ -29,10 +36,13 @@ export function scrollRectIntoView(view, rect, startDOM) {
       moveX = rect.right - bounding.right + getSide(scrollMargin, "right")
     if (moveX || moveY) {
       if (atTop) {
-        win.scrollBy(moveX, moveY)
+        doc.defaultView.scrollBy(moveX, moveY)
       } else {
+        let startX = parent.scrollLeft, startY = parent.scrollTop
         if (moveY) parent.scrollTop += moveY
         if (moveX) parent.scrollLeft += moveX
+        let dX = parent.scrollLeft - startX, dY = parent.scrollTop - startY
+        rect = {left: rect.left - dX, top: rect.top - dY, right: rect.right - dX, bottom: rect.bottom - dY}
       }
     }
     if (atTop) break
@@ -236,6 +246,8 @@ export function posAtCoords(view, coords) {
     elt = elementFromPoint(view.dom, coords, box)
     if (!elt) return null
   }
+  // Safari's caretRangeFromPoint returns nonsense when on a draggable element
+  if (browser.safari && elt.draggable) node = offset = null
   elt = targetKludge(elt, coords)
   if (node) {
     if (browser.gecko && node.nodeType == 1) {
@@ -280,16 +292,17 @@ export function coordsAtPos(view, pos) {
   let {node, offset} = view.docView.domFromPos(pos)
 
   // These browsers support querying empty text ranges
-  if (node.nodeType == 3 && (browser.chrome || browser.gecko)) {
+  if (node.nodeType == 3 && (browser.webkit || browser.gecko)) {
     let rect = singleRect(textRange(node, offset, offset), 0)
     // Firefox returns bad results (the position before the space)
     // when querying a position directly after line-broken
     // whitespace. Detect this situation and and kludge around it
     if (browser.gecko && offset && /\s/.test(node.nodeValue[offset - 1]) && offset < node.nodeValue.length) {
       let rectBefore = singleRect(textRange(node, offset - 1, offset - 1), -1)
-      if (Math.abs(rectBefore.left - rect.left) < 1 && rectBefore.top == rect.top) {
+      if (rectBefore.top == rect.top) {
         let rectAfter = singleRect(textRange(node, offset, offset + 1), -1)
-        return flattenV(rectAfter, rectAfter.left < rectBefore.left)
+        if (rectAfter.top != rect.top)
+          return flattenV(rectAfter, rectAfter.left < rectBefore.left)
       }
     }
     return rect
@@ -358,7 +371,7 @@ function withFlushedState(view, state, f) {
     return f()
   } finally {
     if (viewState != state) view.updateState(viewState)
-    if (active != view.dom) active.focus()
+    if (active != view.dom && active) active.focus()
   }
 }
 

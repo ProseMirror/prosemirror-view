@@ -34,7 +34,7 @@ export class DOMObserver {
     this.view = view
     this.handleDOMChange = handleDOMChange
     this.queue = []
-    this.flushingSoon = false
+    this.flushingSoon = -1
     this.observer = window.MutationObserver &&
       new window.MutationObserver(mutations => {
         for (let i = 0; i < mutations.length; i++) this.queue.push(mutations[i])
@@ -61,9 +61,15 @@ export class DOMObserver {
   }
 
   flushSoon() {
-    if (!this.flushingSoon) {
-      this.flushingSoon = true
-      window.setTimeout(() => { this.flushingSoon = false; this.flush() }, 20)
+    if (this.flushingSoon < 0)
+      this.flushingSoon = window.setTimeout(() => { this.flushingSoon = -1; this.flush() }, 20)
+  }
+
+  forceFlush() {
+    if (this.flushingSoon > -1) {
+      window.clearTimeout(this.flushingSoon)
+      this.flushingSoon = -1
+      this.flush()
     }
   }
 
@@ -124,11 +130,14 @@ export class DOMObserver {
     if (sel.rangeCount == 0) return true
     let container = sel.getRangeAt(0).commonAncestorContainer
     let desc = this.view.docView.nearestDesc(container)
-    return desc && desc.ignoreMutation({type: "selection", target: container.nodeType == 3 ? container.parentNode : container})
+    if (desc && desc.ignoreMutation({type: "selection", target: container.nodeType == 3 ? container.parentNode : container})) {
+      this.setCurSelection()
+      return true
+    }
   }
 
   flush() {
-    if (!this.view.docView || this.flushingSoon) return
+    if (!this.view.docView || this.flushingSoon > -1) return
     let mutations = this.observer ? this.observer.takeRecords() : []
     if (this.queue.length) {
       mutations = this.queue.concat(mutations)
@@ -145,7 +154,7 @@ export class DOMObserver {
         if (result) {
           from = from < 0 ? result.from : Math.min(result.from, from)
           to = to < 0 ? result.to : Math.max(result.to, to)
-          if (result.typeOver && !this.view.composing) typeOver = true
+          if (result.typeOver) typeOver = true
         }
       }
     }
@@ -164,7 +173,7 @@ export class DOMObserver {
         this.view.docView.markDirty(from, to)
         checkCSS(this.view)
       }
-      this.handleDOMChange(from, to, typeOver)
+      this.handleDOMChange(from, to, typeOver, added)
       if (this.view.docView.dirty) this.view.updateState(this.view.state)
       else if (!this.currentSelection.eq(sel)) selectionToDOM(this.view)
     }

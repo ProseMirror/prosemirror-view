@@ -73,11 +73,11 @@ function ruleFromNode(dom) {
   }
 }
 
-export function readDOMChange(view, from, to, typeOver) {
+export function readDOMChange(view, from, to, typeOver, addedNodes) {
   if (from < 0) {
     let origin = view.lastSelectionTime > Date.now() - 50 ? view.lastSelectionOrigin : null
     let newSel = selectionFromDOM(view, origin)
-    if (!view.state.selection.eq(newSel)) {
+    if (newSel && !view.state.selection.eq(newSel)) {
       let tr = view.state.tr.setSelection(newSel)
       if (origin == "pointer") tr.setMeta("pointer", true)
       else if (origin == "key") tr.scrollIntoView()
@@ -147,14 +147,19 @@ export function readDOMChange(view, from, to, typeOver) {
 
   let $from = parse.doc.resolveNoCache(change.start - parse.from)
   let $to = parse.doc.resolveNoCache(change.endB - parse.from)
+  let inlineChange = $from.sameParent($to) && $from.parent.inlineContent
   let nextSel
-  // If this looks like the effect of pressing Enter, just dispatch an
-  // Enter key instead.
-  if (!$from.sameParent($to) && $from.pos < parse.doc.content.size &&
-      (nextSel = Selection.findFrom(parse.doc.resolve($from.pos + 1), 1, true)) &&
-      nextSel.head == $to.pos &&
-      view.someProp("handleKeyDown", f => f(view, keyEvent(13, "Enter"))))
+  // If this looks like the effect of pressing Enter (or was recorded
+  // as being an iOS enter press), just dispatch an Enter key instead.
+  if (((browser.ios && view.lastIOSEnter > Date.now() - 225 &&
+        (!inlineChange || addedNodes.some(n => n.nodeName == "DIV" || n.nodeName == "P"))) ||
+       (!inlineChange && $from.pos < parse.doc.content.size &&
+        (nextSel = Selection.findFrom(parse.doc.resolve($from.pos + 1), 1, true)) &&
+        nextSel.head == $to.pos)) &&
+      view.someProp("handleKeyDown", f => f(view, keyEvent(13, "Enter")))) {
+    view.lastIOSEnter = 0
     return
+  }
   // Same for backspace
   if (view.state.selection.anchor > change.start &&
       looksLikeJoin(doc, change.start, change.endA, $from, $to) &&
@@ -163,10 +168,27 @@ export function readDOMChange(view, from, to, typeOver) {
     return
   }
 
+  // This tries to detect Android virtual keyboard
+  // enter-and-pick-suggestion action. That sometimes (see issue
+  // #1059) first fires a DOM mutation, before moving the selection to
+  // the newly created block. And then, because ProseMirror cleans up
+  // the DOM selection, it gives up moving the selection entirely,
+  // leaving the cursor in the wrong place. When that happens, we drop
+  // the new paragraph from the initial change, and fire a simulated
+  // enter key afterwards.
+  if (browser.android && !inlineChange && $from.start() != $to.start() && $to.parentOffset == 0 && $from.depth == $to.depth &&
+      parse.sel && parse.sel.anchor == parse.sel.head && parse.sel.head == change.endA) {
+    change.endB -= 2
+    $to = parse.doc.resolveNoCache(change.endB - parse.from)
+    setTimeout(() => {
+      view.someProp("handleKeyDown", function (f) { return f(view, keyEvent(13, "Enter")); })
+    }, 20)
+  }
+
   let chFrom = change.start, chTo = change.endA
 
   let tr, storedMarks, markChange, $from1
-  if ($from.sameParent($to) && $from.parent.inlineContent) {
+  if (inlineChange) {
     if ($from.pos == $to.pos) { // Deletion
       // IE11 sometimes weirdly moves the DOM selection around after
       // backspacing out the first element in a textblock
@@ -201,7 +223,8 @@ export function readDOMChange(view, from, to, typeOver) {
     // happening, don't update the selection.
     // Edge just doesn't move the cursor forward when you start typing
     // in an empty block or between br nodes.
-    if (sel && !(browser.chrome && browser.android && view.composing && sel.empty && sel.head == chFrom ||
+    if (sel && !(browser.chrome && browser.android && view.composing && sel.empty &&
+                   (sel.head == chFrom || sel.head == tr.mapping.map(chTo) - 1) ||
                  browser.ie && sel.empty && sel.head == chFrom))
       tr.setSelection(sel)
   }

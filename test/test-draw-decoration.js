@@ -1,4 +1,4 @@
-const {doc, p, hr, em, strong, img, blockquote, schema} = require("prosemirror-test-builder")
+const {doc, p, h1, hr, em, strong, img, blockquote, schema} = require("prosemirror-test-builder")
 const {Plugin, TextSelection} = require("prosemirror-state")
 const {tempEditor} = require("./view")
 const {DecorationSet, Decoration} = require("..")
@@ -305,6 +305,15 @@ describe("Decoration drawing", () => {
     ist(lastP.style.color, "red")
   })
 
+  it("doesn't redraw nodes when a widget before them is replaced", () => {
+    let w0 = make("3-widget")
+    let view = tempEditor({doc: doc(h1("a"), p("b")), plugins: [decoPlugin([w0])]})
+    let initialP = view.dom.querySelector("p")
+    view.dispatch(view.state.tr.setMeta("updateDecorations", {add: [make("3-widget")], remove: [w0]})
+                  .insertText("c", 5))
+    ist(view.dom.querySelector("p"), initialP)
+  })
+
   it("can add and remove inline style", () => {
     let deco = Decoration.inline(1, 6, {style: "color: rgba(0,10,200,.4); text-decoration: underline"})
     let view = tempEditor({doc: doc(p("al", img, "lo")),
@@ -397,10 +406,11 @@ describe("Decoration drawing", () => {
   })
 
   it("doesn't redraw widgets with matching keys", () => {
+    let mkButton = () => document.createElement("button")
     let view = tempEditor({
       doc: doc(p("hi")),
       decorations(state) {
-        return DecorationSet.create(state.doc, [Decoration.widget(2, document.createElement("button"), {key: "myButton"})])
+        return DecorationSet.create(state.doc, [Decoration.widget(2, mkButton, {key: "myButton"})])
       }
     })
     let widgetDOM = view.dom.querySelector("button")

@@ -7,7 +7,7 @@ import {captureKeyDown} from "./capturekeys"
 import {readDOMChange} from "./domchange"
 import {parseFromClipboard, serializeForClipboard} from "./clipboard"
 import {DOMObserver} from "./domobserver"
-import {selectionBetween} from "./selection"
+import {selectionBetween, selectionToDOM, selectionFromDOM} from "./selection"
 import {keyEvent} from "./dom"
 
 // A collection of DOM events that occur within the editor, and callback functions
@@ -23,12 +23,15 @@ export function initInput(view) {
   view.lastSelectionOrigin = null
   view.lastSelectionTime = 0
 
+  view.lastIOSEnter = 0
+  view.lastIOSEnterFallbackTimeout = null
+
   view.composing = false
   view.composingTimeout = null
   view.compositionNodes = []
   view.compositionEndedAt = -2e8
 
-  view.domObserver = new DOMObserver(view, (from, to, typeOver) => readDOMChange(view, from, to, typeOver))
+  view.domObserver = new DOMObserver(view, (from, to, typeOver, added) => readDOMChange(view, from, to, typeOver, added))
   view.domObserver.start()
   // Used by hacks like the beforeinput handler to check whether anything happened in the DOM
   view.domChangeCount = 0
@@ -60,6 +63,7 @@ export function destroyInput(view) {
   for (let type in view.eventHandlers)
     view.dom.removeEventListener(type, view.eventHandlers[type])
   clearTimeout(view.composingTimeout)
+  clearTimeout(view.lastIOSEnterFallbackTimeout)
 }
 
 export function ensureListeners(view) {
@@ -95,12 +99,27 @@ export function dispatchEvent(view, event) {
 editHandlers.keydown = (view, event) => {
   view.shiftKey = event.keyCode == 16 || event.shiftKey
   if (inOrNearComposition(view, event)) return
+  view.domObserver.forceFlush()
   view.lastKeyCode = event.keyCode
   view.lastKeyCodeTime = Date.now()
-  if (view.someProp("handleKeyDown", f => f(view, event)) || captureKeyDown(view, event))
+  // On iOS, if we preventDefault enter key presses, the virtual
+  // keyboard gets confused. So the hack here is to set a flag that
+  // makes the DOM change code recognize that what just happens should
+  // be replaced by whatever the Enter key handlers do.
+  if (browser.ios && event.keyCode == 13 && !event.ctrlKey && !event.altKey && !event.metaKey) {
+    let now = Date.now()
+    view.lastIOSEnter = now
+    view.lastIOSEnterFallbackTimeout = setTimeout(() => {
+      if (view.lastIOSEnter == now) {
+        view.someProp("handleKeyDown", f => f(view, keyEvent(13, "Enter")))
+        view.lastIOSEnter = 0
+      }
+    }, 200)
+  } else if (view.someProp("handleKeyDown", f => f(view, event)) || captureKeyDown(view, event)) {
     event.preventDefault()
-  else
+  } else {
     setSelectionOrigin(view, "key")
+  }
 }
 
 editHandlers.keyup = (view, e) => {
@@ -305,7 +324,7 @@ class MouseDown {
     this.view.root.removeEventListener("mousemove", this.move)
     if (this.mightDrag && this.target) {
       this.view.domObserver.stop()
-      if (this.mightDrag.addAttr) this.target.draggable = false
+      if (this.mightDrag.addAttr) this.target.removeAttribute("draggable")
       if (this.mightDrag.setUneditable) this.target.removeAttribute("contentEditable")
       this.view.domObserver.start()
     }
@@ -326,6 +345,8 @@ class MouseDown {
     } else if (handleSingleClick(this.view, pos.pos, pos.inside, event, this.selectNode)) {
       event.preventDefault()
     } else if (this.flushed ||
+               // Safari ignores clicks on draggable elements
+               (browser.safari && this.mightDrag && !this.mightDrag.node.isAtom) ||
                // Chrome will sometimes treat a node selection as a
                // cursor, but still report that the node is selected
                // when asked through getSelection. You'll then get a
@@ -398,6 +419,7 @@ editHandlers.compositionstart = editHandlers.compositionupdate = view => {
         let sel = view.root.getSelection()
         for (let node = sel.focusNode, offset = sel.focusOffset; node && node.nodeType == 1 && offset != 0;) {
           let before = offset < 0 ? node.lastChild : node.childNodes[offset - 1]
+          if (!before) break
           if (before.nodeType == 3) {
             sel.collapse(before, before.nodeValue.length)
             break
@@ -427,10 +449,13 @@ function scheduleComposeEnd(view, delay) {
 }
 
 export function endComposition(view, forceUpdate) {
+  view.domObserver.forceFlush()
   view.composing = false
   while (view.compositionNodes.length > 0) view.compositionNodes.pop().markParentsDirty()
   if (forceUpdate || view.docView.dirty) {
-    view.updateState(view.state)
+    let sel = selectionFromDOM(view)
+    if (sel && !sel.eq(view.state.selection)) view.dispatch(view.state.tr.setSelection(sel))
+    else view.updateState(view.state)
     return true
   }
   return false
@@ -439,11 +464,11 @@ export function endComposition(view, forceUpdate) {
 function captureCopy(view, dom) {
   // The extra wrapper is somehow necessary on IE/Edge to prevent the
   // content from being mangled when it is put onto the clipboard
-  let doc = view.dom.ownerDocument
-  let wrap = doc.body.appendChild(doc.createElement("div"))
+  if (!view.dom.parentNode) return
+  let wrap = view.dom.parentNode.appendChild(document.createElement("div"))
   wrap.appendChild(dom)
   wrap.style.cssText = "position: fixed; left: -10000px; top: 10px"
-  let sel = getSelection(), range = doc.createRange()
+  let sel = getSelection(), range = document.createRange()
   range.selectNodeContents(dom)
   // Done because IE will fire a selectionchange moving the selection
   // to its start when removeAllRanges is called and the editor still
@@ -452,7 +477,7 @@ function captureCopy(view, dom) {
   sel.removeAllRanges()
   sel.addRange(range)
   setTimeout(() => {
-    doc.body.removeChild(wrap)
+    if (wrap.parentNode) wrap.parentNode.removeChild(wrap)
     view.focus()
   }, 50)
 }
@@ -486,15 +511,15 @@ function sliceSingleNode(slice) {
 }
 
 function capturePaste(view, e) {
-  let doc = view.dom.ownerDocument
+  if (!view.dom.parentNode) return
   let plainText = view.shiftKey || view.state.selection.$from.parent.type.spec.code
-  let target = doc.body.appendChild(doc.createElement(plainText ? "textarea" : "div"))
+  let target = view.dom.parentNode.appendChild(document.createElement(plainText ? "textarea" : "div"))
   if (!plainText) target.contentEditable = "true"
   target.style.cssText = "position: fixed; left: -10000px; top: 10px"
   target.focus()
   setTimeout(() => {
     view.focus()
-    doc.body.removeChild(target)
+    if (target.parentNode) target.parentNode.removeChild(target)
     if (plainText) doPaste(view, target.value, null, e)
     else doPaste(view, target.textContent, target.innerHTML, e)
   }, 50)
@@ -572,10 +597,13 @@ editHandlers.drop = (view, e) => {
   let slice = dragging && dragging.slice ||
       parseFromClipboard(view, e.dataTransfer.getData(brokenClipboardAPI ? "Text" : "text/plain"),
                          brokenClipboardAPI ? null : e.dataTransfer.getData("text/html"), false, $mouse)
+  if (view.someProp("handleDrop", f => f(view, e, slice || Slice.empty, dragging && dragging.move))) {
+    e.preventDefault()
+    return
+  }
   if (!slice) return
 
   e.preventDefault()
-  if (view.someProp("handleDrop", f => f(view, e, slice, dragging && dragging.move))) return
   let insertPos = slice ? dropPoint(view.state.doc, $mouse.pos, slice) : $mouse.pos
   if (insertPos == null) insertPos = $mouse.pos
 
@@ -607,6 +635,10 @@ handlers.focus = view => {
     view.dom.classList.add("ProseMirror-focused")
     view.domObserver.start()
     view.focused = true
+    setTimeout(() => {
+      if (view.docView && view.hasFocus() && !view.domObserver.currentSelection.eq(view.root.getSelection()))
+        selectionToDOM(view)
+    }, 20)
   }
 }
 

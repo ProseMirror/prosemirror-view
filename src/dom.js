@@ -40,6 +40,7 @@ function scanFor(node, off, targetNode, targetOff, dir) {
       node = parent
     } else if (node.nodeType == 1) {
       node = node.childNodes[off + (dir < 0 ? -1 : 0)]
+      if (node.contentEditable == "false") return false
       off = dir < 0 ? nodeSize(node) : 0
     } else {
       return false
@@ -49,6 +50,17 @@ function scanFor(node, off, targetNode, targetOff, dir) {
 
 export function nodeSize(node) {
   return node.nodeType == 3 ? node.nodeValue.length : node.childNodes.length
+}
+
+export function isOnEdge(node, offset, parent) {
+  for (let atStart = offset == 0, atEnd = offset == nodeSize(node); atStart || atEnd;) {
+    if (node == parent) return true
+    let index = domIndex(node)
+    node = node.parentNode
+    if (!node) return false
+    atStart = atStart && index == 0
+    atEnd = atEnd && index == nodeSize(node)
+  }
 }
 
 function hasBlockDesc(dom) {

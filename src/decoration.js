@@ -95,8 +95,8 @@ export class Decoration {
     return new Decoration(from, to, this.type)
   }
 
-  eq(other) {
-    return this.type.eq(other.type) && this.from == other.from && this.to == other.to
+  eq(other, offset = 0) {
+    return this.type.eq(other.type) && this.from + offset == other.from && this.to + offset == other.to
   }
 
   map(mapping, offset, oldOffset) {
@@ -136,6 +136,11 @@ export class Decoration {
   //     stopEvent:: ?(event: dom.Event) → bool
   //     Can be used to control which DOM events, when they bubble out
   //     of this widget, the editor view should ignore.
+  //
+  //     ignoreSelection:: ?bool
+  //     When set (defaults to false), selection changes inside the
+  //     widget are ignored, and don't cause ProseMirror to try and
+  //     re-sync the selection with its selection state.
   //
   //     key:: ?string
   //     When comparing decorations of this type (in order to decide
@@ -341,7 +346,7 @@ export class DecorationSet {
       }
     }
     if (local.length) for (let i = 0, span; i < decorations.length; i++) if (span = decorations[i]) {
-      for (let j = 0; j < local.length; j++) if (local[j].type.eq(span.type)) {
+      for (let j = 0; j < local.length; j++) if (local[j].eq(span, offset)) {
         if (local == this.local) local = this.local.slice()
         local.splice(j--, 1)
       }
@@ -481,7 +486,7 @@ function mapChildren(oldChildren, newLocal, mapping, node, offset, oldOffset, op
       if (end == -1 || oldStart > end + oldOffset) continue
       if (oldEnd >= children[i] + oldOffset) {
         children[i + 1] = -1
-      } else if (dSize = (newEnd - newStart) - (oldEnd - oldStart) + (oldOffset - offset)) {
+      } else if (newStart >= offset && (dSize = (newEnd - newStart) - (oldEnd - oldStart))) {
         children[i] += dSize
         children[i + 1] += dSize
       }
