@@ -194,6 +194,8 @@ export class Decoration {
   // The spec provided when creating this decoration. Can be useful
   // if you've stored extra information in that object.
   get spec() { return this.type.spec }
+
+  get inline() { return this.type instanceof InlineType }
 }
 
 // DecorationAttrs:: interface

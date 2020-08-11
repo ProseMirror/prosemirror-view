@@ -1226,7 +1226,8 @@ function iterDeco(parent, deco, onWidget, onNode) {
     }
 
     for (let i = 0; i < active.length; i++) if (active[i].to <= offset) active.splice(i--, 1)
-    while (decoIndex < locals.length && locals[decoIndex].from <= offset && locals[decoIndex].to > offset) active.push(locals[decoIndex++])
+    while (decoIndex < locals.length && locals[decoIndex].from <= offset && locals[decoIndex].to > offset)
+      active.push(locals[decoIndex++])
 
     let end = offset + child.nodeSize
     if (child.isText) {
@@ -1241,7 +1242,10 @@ function iterDeco(parent, deco, onWidget, onNode) {
       }
     }
 
-    onNode(child, active.length ? active.slice() : nothing, deco.forChild(offset, child), index)
+    let outerDeco = !active.length ? nothing
+        : child.isInline && !child.isLeaf ? outerDeco.filter(d => !d.inline)
+        : active.slice()
+    onNode(child, outerDeco, deco.forChild(offset, child), index)
     offset = end
   }
 }

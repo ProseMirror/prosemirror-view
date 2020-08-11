@@ -1,5 +1,6 @@
 const {doc, p, h1, hr, em, strong, img, blockquote, schema} = require("prosemirror-test-builder")
 const {Plugin, TextSelection} = require("prosemirror-state")
+const {Schema} = require("prosemirror-model")
 const {tempEditor} = require("./view")
 const {DecorationSet, Decoration} = require("..")
 const ist = require("ist")
@@ -439,5 +440,26 @@ describe("Decoration drawing", () => {
     }})
     view.dispatch(view.state.tr.setSelection(TextSelection.create(view.state.doc, 5)))
     ist(view.dom.textContent, "abab")
+  })
+
+  it("only draws inline decorations on the innermost level", () => {
+    let s = new Schema({
+      nodes: {
+        doc: {content: "(text | thing)*"},
+        text: {},
+        thing: {inline: true,
+                content: "text*",
+                toDOM: () => ["strong", 0],
+                parseDOM: [{tag: "strong"}]}
+      }
+    })
+    let view = tempEditor({
+      doc: s.node("doc", null, [s.text("abc"), s.node("thing", null, [s.text("def")]), s.text("ghi")]),
+      decorations: s => DecorationSet.create(s.doc, [Decoration.inline(1, 10, {class: "dec"})])
+    })
+    let styled = view.dom.querySelectorAll(".dec")
+    ist(styled.length, 3)
+    ist(Array.prototype.map.call(styled, n => n.textContent).join(), "bc,def,gh")
+    ist(styled[1].parentNode.nodeName, "STRONG")
   })
 })
