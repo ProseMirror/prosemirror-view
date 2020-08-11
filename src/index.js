@@ -3,7 +3,7 @@ import {NodeSelection} from "prosemirror-state"
 import {scrollRectIntoView, posAtCoords, coordsAtPos, endOfTextblock, storeScrollPos,
         resetScrollPos, focusPreventScroll} from "./domcoords"
 import {docViewDesc} from "./viewdesc"
-import {initInput, destroyInput, dispatchEvent, ensureListeners} from "./input"
+import {initInput, destroyInput, dispatchEvent, ensureListeners, clearComposition} from "./input"
 import {selectionToDOM, anchorInRightPlace, syncNodeSelection} from "./selection"
 import {Decoration, viewDecorations} from "./decoration"
 import browser from "./browser"
@@ -115,7 +115,13 @@ export class EditorView {
   }
 
   updateStateInner(state, reconfigured) {
-    let prev = this.state, redraw = false
+    let prev = this.state, redraw = false, updateSel = false
+    // When stored marks are added, stop composition, so that they can
+    // be displayed.
+    if (state.storedMarks && this.composing) {
+      clearComposition(this)
+      updateSel = true
+    }
     this.state = state
     if (reconfigured) {
       let nodeViews = buildNodeViews(this)
@@ -133,7 +139,7 @@ export class EditorView {
     let scroll = reconfigured ? "reset"
         : state.scrollToSelection > prev.scrollToSelection ? "to selection" : "preserve"
     let updateDoc = redraw || !this.docView.matchesNode(state.doc, outerDeco, innerDeco)
-    let updateSel = updateDoc || !state.selection.eq(prev.selection)
+    if (updateDoc || !state.selection.eq(prev.selection)) updateSel = true
     let oldScrollPos = scroll == "preserve" && updateSel && this.dom.style.overflowAnchor == null && storeScrollPos(this)
 
     if (updateSel) {

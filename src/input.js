@@ -448,10 +448,14 @@ function scheduleComposeEnd(view, delay) {
   if (delay > -1) view.composingTimeout = setTimeout(() => endComposition(view), delay)
 }
 
-export function endComposition(view, forceUpdate) {
-  view.domObserver.forceFlush()
+export function clearComposition(view) {
   view.composing = false
   while (view.compositionNodes.length > 0) view.compositionNodes.pop().markParentsDirty()
+}
+
+export function endComposition(view, forceUpdate) {
+  view.domObserver.forceFlush()
+  clearComposition(view)
   if (forceUpdate || view.docView.dirty) {
     let sel = selectionFromDOM(view)
     if (sel && !sel.eq(view.state.selection)) view.dispatch(view.state.tr.setSelection(sel))
