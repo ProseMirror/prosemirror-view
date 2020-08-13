@@ -1243,7 +1243,7 @@ function iterDeco(parent, deco, onWidget, onNode) {
     }
 
     let outerDeco = !active.length ? nothing
-        : child.isInline && !child.isLeaf ? outerDeco.filter(d => !d.inline)
+        : child.isInline && !child.isLeaf ? active.filter(d => !d.inline)
         : active.slice()
     onNode(child, outerDeco, deco.forChild(offset, child), index)
     offset = end
