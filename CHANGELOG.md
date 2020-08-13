@@ -1,3 +1,9 @@
+## 1.15.4 (2020-08-13)
+
+### Bug fixes
+
+Fix a crash that occurred when inline decorations covered inline nodes that weren't leaf nodes.
+
 ## 1.15.3 (2020-08-11)
 
 ### Bug fixes
