@@ -61,6 +61,18 @@ export class EditorView {
     // When editor content is being dragged, this object contains
     // information about the dragged slice and whether it is being
     // copied or moved. At any other time, it is null.
+    // Whether move is true depends on what the `e.transferData.dropEffect`
+    // is set to during the event (`"copy"` will set move to `false`, all other values
+    // will set move to `true`).
+    // Note that ProseMirror will patch `dropEffect` for events it has handled
+    // (e.g. [stopEvent](#view.NodeView.stopEvent) will have the patched value,
+    // but not [handleDOMEvents](#view.EditorProps.handleDOMEvents) which run
+    // before prosemirror handles any events). If it receives `"none"` it will fall back
+    // to checking the platform specific drag modifier keys and set
+    // `e.transferData.dropEffect` accordingly, otherwise it will use the value set
+    // on the event. This means intentionally setting it to `"none"`
+    // (e.g.in a [handleDOMEvents](#view.EditorProps.handleDOMEvents) handler) will
+    // have no effect. To prevent a drop, you can just `e.preventDefault(); return true;`.
     this.dragging = null
 
     initInput(this)
