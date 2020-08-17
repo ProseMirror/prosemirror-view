@@ -558,10 +558,44 @@ class Dragging {
 
 const dragCopyModifier = browser.mac ? "altKey" : "ctrlKey"
 
+/**
+ * Patches this chromium issue as much as possible:
+ * https://bugs.chromium.org/p/chromium/issues/detail?id=509752&q=39399
+ * The patch makes it impossible to set the dropEffect to "none",
+ * but if we don't want the drop to happen,
+ * we can always just preventDefault() the event.
+ */
+let globalChromiumDropEffect = "none"
+const isChromiumBased = window.chrome !== undefined
+function patchChromiumDropEffect(e, { reset = false } = {}) {
+  if (isChromiumBased && e.dataTransfer) {
+    if (e.dataTransfer.dropEffect === "none") {
+      e.dataTransfer.dropEffect = e[dragCopyModifier] ? "copy" : "move"
+    }
+    globalChromiumDropEffect = e.dataTransfer.dropEffect
+  }
+  if (reset) {
+    window.setTimeout(() => {
+      globalChromiumDropEffect = "none"
+    }, 0)
+  }
+}
+
+function dragModifierIsPressed(e) {
+  if (!e.dataTransfer) return false
+  if (isChromiumBased) {
+    return globalChromiumDropEffect === "copy"
+  } else {
+    return e.dataTransfer.dropEffect === "copy"
+  }
+}
+
 handlers.dragstart = (view, e) => {
   let mouseDown = view.mouseDown
   if (mouseDown) mouseDown.done()
   if (!e.dataTransfer) return
+
+  patchChromiumDropEffect(e)
 
   let sel = view.state.selection
   let pos = sel.empty ? null : view.posAtCoords(eventCoords(e))
@@ -578,16 +612,23 @@ handlers.dragstart = (view, e) => {
   e.dataTransfer.clearData()
   e.dataTransfer.setData(brokenClipboardAPI ? "Text" : "text/html", dom.innerHTML)
   if (!brokenClipboardAPI) e.dataTransfer.setData("text/plain", text)
-  view.dragging = new Dragging(slice, !e[dragCopyModifier])
+  view.dragging = new Dragging(slice, !dragModifierIsPressed(e))
 }
 
 handlers.dragend = view => {
   window.setTimeout(() => view.dragging = null, 50)
 }
 
-editHandlers.dragover = editHandlers.dragenter = (_, e) => e.preventDefault()
+
+editHandlers.dragover = editHandlers.dragenter = (view, e) => {
+  patchChromiumDropEffect(e)
+  if (view.dragging) view.dragging.move = !dragModifierIsPressed(e)
+  e.preventDefault()
+}
 
 editHandlers.drop = (view, e) => {
+  patchChromiumDropEffect(e, {reset: true})
+  view.dragging.move = !dragModifierIsPressed(e)
   let dragging = view.dragging
   view.dragging = null
 
