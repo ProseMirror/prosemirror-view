@@ -552,40 +552,30 @@ editHandlers.paste = (view, e) => {
 class Dragging {
   constructor(slice, move) {
     this.slice = slice
-    this.move = move
+    this._move = move
+    // Ideally view.dragging.move would be set by `e.dataTransfer.dropEffect`
+    // but due to a bug in chrome the fix to make it work is confusing
+    // so for now we ignore it completely, but allow any event handlers with
+    // access to the view to change how that move will be handled by setting `overrideMove`.
+    // Unlike (the correct implementation of) `dropEffect`, `overrideMove` is not
+    // reset/calculated (or in the case of chrome, reset) with every event handler.
+    this.overrideMove = undefined
+  }
+  get move() {
+    // `move` now indicates whether prosemirror was told to move the content or not.
+    // If `overrideMove` is undefined it will return whether the drag modifier key is (not) pressed.
+    // Developers can check `e.alt/ctrlKey` manually or use `e.dataTransfer.dropEffect`
+    // (after patching it for chrome) to keep track of whether the drag modifier key is being held.
+    return this.overrideMove !== undefined ? this.overrideMove : this._move
   }
 }
 
 const dragCopyModifier = browser.mac ? "altKey" : "ctrlKey"
 
-// Patches this chromium issue as much as possible:
-// https://bugs.chromium.org/p/chromium/issues/detail?id=509752&q=39399
-// Applies to all browsers for consistency.
-// The patch makes it impossible to set the dropEffect to "none" and only
-// affects events first handled by prosemirror. See view.dragging docs.
-let globalDropEffect = "none"
-
-function patchDropEffect(e, { reset = false } = {}) {
-  if (e.dataTransfer) {
-    if (e.dataTransfer.dropEffect === "none") {
-      e.dataTransfer.dropEffect = e[dragCopyModifier] ? "copy" : "move"
-    }
-    globalDropEffect = e.dataTransfer.dropEffect
-  }
-  if (reset) {
-    window.setTimeout(() => {
-      globalDropEffect = "none"
-    }, 0)
-  }
-}
-
-
 handlers.dragstart = (view, e) => {
   let mouseDown = view.mouseDown
   if (mouseDown) mouseDown.done()
   if (!e.dataTransfer) return
-
-  patchDropEffect(e)
 
   let sel = view.state.selection
   let pos = sel.empty ? null : view.posAtCoords(eventCoords(e))
@@ -602,7 +592,7 @@ handlers.dragstart = (view, e) => {
   e.dataTransfer.clearData()
   e.dataTransfer.setData(brokenClipboardAPI ? "Text" : "text/html", dom.innerHTML)
   if (!brokenClipboardAPI) e.dataTransfer.setData("text/plain", text)
-  view.dragging = new Dragging(slice, globalDropEffect !== "copy")
+  view.dragging = new Dragging(slice, !e[dragCopyModifier])
 }
 
 handlers.dragend = view => {
@@ -611,14 +601,12 @@ handlers.dragend = view => {
 
 
 editHandlers.dragover = editHandlers.dragenter = (view, e) => {
-  patchDropEffect(e)
-  if (view.dragging) view.dragging.move = globalDropEffect !== "copy"
+  if (view.dragging) view.dragging._move = !e[dragCopyModifier]
   e.preventDefault()
 }
 
-editHandlers.drop = (e) => {
-  patchDropEffect(e, {reset: true})
-  view.dragging.move = globalDropEffect !== "copy"
+editHandlers.drop = (view, e) => {
+  view.dragging._move = !e[dragCopyModifier]
   let dragging = view.dragging
   view.dragging = null
 
