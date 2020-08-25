@@ -1,6 +1,7 @@
 const ist = require("ist")
 const {schema, doc, p, h1, li, ul, blockquote} = require("prosemirror-test-builder")
-const {Transform} = require("prosemirror-transform")
+const {Transform, ReplaceAroundStep} = require("prosemirror-transform")
+const {Slice} = require("prosemirror-model")
 
 const {Decoration, DecorationSet} = require("..")
 
@@ -225,6 +226,15 @@ describe("DecorationSet", () => {
       let set = build(d, {pos: 14})
       let tr = new Transform(d).delete(2, 6).delete(8, 12)
       ist(set.map(tr.mapping, tr.doc).find().length, 0)
+    })
+
+    it("can map the content of nodes that moved in the same transaction", () => {
+      let d = doc(ul(li(p("a"))), p("bc"))
+      let set = build(d, {from: 8, to: 10})
+      let tr = new Transform(d).step(new ReplaceAroundStep(0, 7, 2, 5, Slice.empty, 0, true))
+      let mapped = set.map(tr.mapping, tr.doc).find()[0]
+      ist(mapped.from, 4)
+      ist(mapped.to, 6)
     })
   })
 

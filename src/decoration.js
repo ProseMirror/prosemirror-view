@@ -500,7 +500,7 @@ function mapChildren(oldChildren, newLocal, mapping, node, offset, oldOffset, op
   // recursively call mapInner on them and update their positions.
   let mustRebuild = false
   for (let i = 0; i < children.length; i += 3) if (children[i + 1] == -1) { // Touched nodes
-    let from = mapping.map(children[i] + oldOffset), fromLocal = from - offset
+    let from = mapping.map(oldChildren[i] + oldOffset), fromLocal = from - offset
     if (fromLocal < 0 || fromLocal >= node.content.size) {
       mustRebuild = true
       continue
@@ -510,7 +510,7 @@ function mapChildren(oldChildren, newLocal, mapping, node, offset, oldOffset, op
     let {index, offset: childOffset} = node.content.findIndex(fromLocal)
     let childNode = node.maybeChild(index)
     if (childNode && childOffset == fromLocal && childOffset + childNode.nodeSize == toLocal) {
-      let mapped = children[i + 2].mapInner(mapping, childNode, from + 1, children[i] + oldOffset + 1, options)
+      let mapped = children[i + 2].mapInner(mapping, childNode, from + 1, oldChildren[i] + oldOffset + 1, options)
       if (mapped != empty) {
         children[i] = fromLocal
         children[i + 1] = toLocal
