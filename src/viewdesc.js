@@ -379,6 +379,7 @@ class ViewDesc {
         // it is difficult to isolate. If this happens fallback to the old path
         // without using extend.
         if (!(err instanceof DOMException)) throw err
+        // declare global: DOMException
       }
     }
     if (!domSelExtended) {

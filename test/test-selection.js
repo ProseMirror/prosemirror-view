@@ -272,6 +272,7 @@ describe("EditorView", () => {
   it("sets selection even if Selection.extend throws DOMException", () => {
     let originalExtend = window.Selection.prototype.extend
     window.Selection.prototype.extend = () => {
+      // declare global: DOMException
       throw new DOMException("failed")
     }
     try {
