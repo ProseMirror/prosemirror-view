@@ -1,3 +1,9 @@
+## 1.15.5 (2020-08-25)
+
+### Bug fixes
+
+Fix an issue where mapping a decoration set could corrupt the decoration positions in specific cases.
+
 ## 1.15.4 (2020-08-13)
 
 ### Bug fixes
