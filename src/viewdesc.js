@@ -362,7 +362,7 @@ class ViewDesc {
     let geckoKludge = false
     if (browser.gecko && anchor == head) {
       let prev = anchorDOM.node.childNodes[anchorDOM.offset - 1]
-      if (prev && prev.nodeName == "BR") geckoKludge = true
+      if (prev && (prev.nodeName == "BR" || prev.contentEditable == "false")) geckoKludge = true
     }
     // Selection.extend can be used to create an 'inverted' selection
     // (one where the focus is before the anchor), but not all
