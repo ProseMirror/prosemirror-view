@@ -1,3 +1,13 @@
+## 1.15.6 (2020-09-03)
+
+### Bug fixes
+
+Fix issue where the DOM selection could end up in an invalid state after a keyboard cursor motion event that had no effect.
+
+Fix an issue where some types of drop events would fail to select the dropped content.
+
+Work around Safari issues when pressing shift-down with the cursor before an uneditable element.
+
 ## 1.15.5 (2020-08-25)
 
 ### Bug fixes
