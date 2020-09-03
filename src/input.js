@@ -624,10 +624,13 @@ editHandlers.drop = (view, e) => {
 
   let $pos = tr.doc.resolve(pos)
   if (isNode && NodeSelection.isSelectable(slice.content.firstChild) &&
-      $pos.nodeAfter && $pos.nodeAfter.sameMarkup(slice.content.firstChild))
+      $pos.nodeAfter && $pos.nodeAfter.sameMarkup(slice.content.firstChild)) {
     tr.setSelection(new NodeSelection($pos))
-  else
-    tr.setSelection(selectionBetween(view, $pos, tr.doc.resolve(tr.mapping.map(insertPos))))
+  } else {
+    let end = tr.mapping.map(insertPos)
+    tr.mapping.maps[tr.mapping.maps.length - 1].forEach((_from, _to, _newFrom, newTo) => end = newTo)
+    tr.setSelection(selectionBetween(view, $pos, tr.doc.resolve(end)))
+  }
   view.focus()
   view.dispatch(tr.setMeta("uiEvent", "drop"))
 }
