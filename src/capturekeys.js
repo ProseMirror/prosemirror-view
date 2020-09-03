@@ -1,6 +1,7 @@
 import {Selection, NodeSelection, TextSelection} from "prosemirror-state"
 import browser from "./browser"
 import {domIndex, selectionCollapsed} from "./dom"
+import {selectionToDOM} from "./selection"
 
 function moveSelectionBlock(state, dir) {
   let {$anchor, $head} = state.selection
@@ -161,6 +162,11 @@ function setSelFocus(view, sel, node, offset) {
     sel.extend(node, offset)
   }
   view.domObserver.setCurSelection()
+  let {state} = view
+  // If no state update ends up happening, reset the selection.
+  setTimeout(() => {
+    if (view.state == state) selectionToDOM(view)
+  }, 50)
 }
 
 // : (EditorState, number)
