@@ -1,3 +1,11 @@
+## 1.15.7 (2020-09-11)
+
+### Bug fixes
+
+Fix an issue where, when inserting `<br>` nodes, Safari would briefly show the cursor before the inserted break, though the DOM selection had already been set after it.
+
+When dragging inside the editor, whether the operation copies or moves is now determined by the modifiers held on drop, not on drag start.
+
 ## 1.15.6 (2020-09-03)
 
 ### Bug fixes
