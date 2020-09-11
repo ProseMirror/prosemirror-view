@@ -600,7 +600,8 @@ editHandlers.drop = (view, e) => {
   let slice = dragging && dragging.slice ||
       parseFromClipboard(view, e.dataTransfer.getData(brokenClipboardAPI ? "Text" : "text/plain"),
                          brokenClipboardAPI ? null : e.dataTransfer.getData("text/html"), false, $mouse)
-  if (view.someProp("handleDrop", f => f(view, e, slice || Slice.empty, dragging && dragging.move))) {
+  let move = dragging && !e[dragCopyModifier]
+  if (view.someProp("handleDrop", f => f(view, e, slice || Slice.empty, move))) {
     e.preventDefault()
     return
   }
@@ -611,7 +612,7 @@ editHandlers.drop = (view, e) => {
   if (insertPos == null) insertPos = $mouse.pos
 
   let tr = view.state.tr
-  if (dragging && dragging.move) tr.deleteSelection()
+  if (move) tr.deleteSelection()
 
   let pos = tr.mapping.map(insertPos)
   let isNode = slice.openStart == 0 && slice.openEnd == 0 && slice.content.childCount == 1
