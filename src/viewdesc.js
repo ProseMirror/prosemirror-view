@@ -352,23 +352,26 @@ class ViewDesc {
     let anchorDOM = this.domFromPos(anchor), headDOM = this.domFromPos(head)
     let domSel = root.getSelection()
 
-    if (!force &&
+    let brKludge = false
+    // On Firefox, using Selection.collapse to put the cursor after a
+    // BR node for some reason doesn't always work (#1073). On Safari,
+    // the cursor sometimes inexplicable visually lags behind its
+    // reported position in such situations (#1092).
+    if ((browser.gecko || browser.safari) && anchor == head) {
+      let prev = anchorDOM.node.childNodes[anchorDOM.offset - 1]
+      brKludge = prev && (prev.nodeName == "BR" || prev.contentEditable == "false")
+    }
+
+    if (!(force || brKludge && browser.safari) &&
         isEquivalentPosition(anchorDOM.node, anchorDOM.offset, domSel.anchorNode, domSel.anchorOffset) &&
         isEquivalentPosition(headDOM.node, headDOM.offset, domSel.focusNode, domSel.focusOffset))
       return
 
-    // On Firefox, using Selection.collapse to put the cursor after a
-    // BR node for some reason doesn't always work (#1073)
-    let geckoKludge = false
-    if (browser.gecko && anchor == head) {
-      let prev = anchorDOM.node.childNodes[anchorDOM.offset - 1]
-      if (prev && (prev.nodeName == "BR" || prev.contentEditable == "false")) geckoKludge = true
-    }
     // Selection.extend can be used to create an 'inverted' selection
     // (one where the focus is before the anchor), but not all
     // browsers support it yet.
     let domSelExtended = false
-    if ((domSel.extend || anchor == head) && !geckoKludge) {
+    if ((domSel.extend || anchor == head) && !brKludge) {
       domSel.collapse(anchorDOM.node, anchorDOM.offset)
       try {
         if (anchor != head) domSel.extend(headDOM.node, headDOM.offset)
