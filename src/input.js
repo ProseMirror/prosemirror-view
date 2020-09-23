@@ -582,7 +582,10 @@ handlers.dragstart = (view, e) => {
 }
 
 handlers.dragend = view => {
-  window.setTimeout(() => view.dragging = null, 50)
+  let dragging = view.dragging
+  window.setTimeout(() => {
+    if (view.dragging == dragging)  view.dragging = null
+  }, 50)
 }
 
 editHandlers.dragover = editHandlers.dragenter = (_, e) => e.preventDefault()
