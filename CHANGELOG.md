@@ -1,3 +1,13 @@
+## 1.16.0 (2020-10-01)
+
+### Bug fixes
+
+Fix an issue where a drag starting briefly after an aborted drag could confuse the view and break the second drag. Allow callers of coordsAtPos to specify a side
+
+### New features
+
+`EditorView.coordsAtPos` now takes a `side` argument that determines which side of the position to look, if ambiguous.
+
 ## 1.15.7 (2020-09-11)
 
 ### Bug fixes
