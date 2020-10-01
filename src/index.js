@@ -189,7 +189,7 @@ export class EditorView {
       else if (state.selection instanceof NodeSelection)
         scrollRectIntoView(this, this.docView.domAfterPos(state.selection.from).getBoundingClientRect(), startDOM)
       else
-        scrollRectIntoView(this, this.coordsAtPos(state.selection.head), startDOM)
+        scrollRectIntoView(this, this.coordsAtPos(state.selection.head, 1), startDOM)
     } else if (oldScrollPos) {
       resetScrollPos(oldScrollPos)
     }
@@ -275,12 +275,15 @@ export class EditorView {
     return posAtCoords(this, coords)
   }
 
-  // :: (number) → {left: number, right: number, top: number, bottom: number}
-  // Returns the viewport rectangle at a given document position. `left`
-  // and `right` will be the same number, as this returns a flat
-  // cursor-ish rectangle.
-  coordsAtPos(pos) {
-    return coordsAtPos(this, pos)
+  // :: (number, number) → {left: number, right: number, top: number, bottom: number}
+  // Returns the viewport rectangle at a given document position.
+  // `left` and `right` will be the same number, as this returns a
+  // flat cursor-ish rectangle. If the position is between two things
+  // that aren't directly adjacent, `side` determines which element is
+  // used. When < 0, the element before the position is used,
+  // otherwise the element after.
+  coordsAtPos(pos, side = 1) {
+    return coordsAtPos(this, pos, side)
   }
 
   // :: (number) → {node: dom.Node, offset: number}

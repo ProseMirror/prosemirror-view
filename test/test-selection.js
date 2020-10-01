@@ -165,14 +165,45 @@ describe("EditorView", () => {
   it("produces sensible screen coordinates around line breaks", () => {
     let view = tempEditor({doc: doc(p("one two three four five-six-seven-eight"))})
     view.dom.style.width = "4em"
-    allPositions(view.state.doc);[9].forEach(pos => {
-      let coords = view.coordsAtPos(pos)
+    let prevBefore, prevAfter
+    allPositions(view.state.doc).forEach(pos => {
+      let coords = view.coordsAtPos(pos, 1)
+      if (prevAfter)
+        ist(prevAfter.top < coords.top || prevAfter.top == coords.top && prevAfter.left < coords.left)
+      prevAfter = coords
       let found = view.posAtCoords({top: coords.top + 1, left: coords.left}).pos
       ist(found, pos)
+      let coordsBefore = view.coordsAtPos(pos, -1)
+      if (prevBefore)
+        ist(prevBefore.top < coordsBefore.top || prevBefore.top == coordsBefore.top && prevBefore.left < coordsBefore.left)
+      prevBefore = coordsBefore
     })
   })
 
-  it("can go back and forth between screen coords and document positions", () => {
+  it("can find coordinates on node boundaries", () => {
+    let view = tempEditor({doc: doc(p("one ", em("two"), " ", em(strong("three"))))})
+    let prev
+    allPositions(view.state.doc).forEach(pos => {
+      let coords = view.coordsAtPos(pos, 1)
+      if (prev)
+        ist(prev.top < coords.top || Math.abs(prev.top - coords.top) < 4 && prev.left < coords.left)
+      prev = coords
+    })
+  })
+
+  it("finds proper coordinates in RTL text", () => {
+    let view = tempEditor({doc: doc(p("مرآة نثرية"))})
+    view.dom.style.direction = "rtl"
+    let prev
+    allPositions(view.state.doc).forEach(pos => {
+      let coords = view.coordsAtPos(pos, 1)
+      if (prev)
+        ist(prev.top < coords.top || Math.abs(prev.top - coords.top) < 4 && prev.left > coords.left)
+      prev = coords
+    })
+  })
+
+  it("can go back and forth between screen coordsa and document positions", () => {
     let view = tempEditor({doc: doc(p("one"), blockquote(p("two"), p("three")))})
     ;[1, 2, 4, 7, 14, 15].forEach(pos => {
       let coords = view.coordsAtPos(pos)

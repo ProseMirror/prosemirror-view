@@ -1,4 +1,4 @@
-import {nodeSize, textRange, parentNode} from "./dom"
+import {nodeSize, textRange, parentNode, domIndex} from "./dom"
 import browser from "./browser"
 
 function windowRect(doc) {
@@ -285,15 +285,20 @@ function singleRect(object, bias) {
   return !rects.length ? object.getBoundingClientRect() : rects[bias < 0 ? 0 : rects.length - 1]
 }
 
-// : (EditorView, number) → {left: number, top: number, right: number, bottom: number}
+const BIDI = /[\u0590-\u05f4\u0600-\u06ff\u0700-\u08ac]/
+
+// : (EditorView, number, number) → {left: number, top: number, right: number, bottom: number}
 // Given a position in the document model, get a bounding box of the
 // character at that position, relative to the window.
-export function coordsAtPos(view, pos) {
+export function coordsAtPos(view, pos, side) {
   let {node, offset} = view.docView.domFromPos(pos)
+  let $pos = view.state.doc.resolve(pos), inline = $pos.parent.inlineContent
 
-  // These browsers support querying empty text ranges
-  if (node.nodeType == 3 && (browser.webkit || browser.gecko)) {
-    let rect = singleRect(textRange(node, offset, offset), 0)
+  // These browsers support querying empty text ranges. Prefer that in
+  // bidi context.
+  let supportEmptyRange = browser.webkit || browser.gecko
+  if (node.nodeType == 3 && supportEmptyRange && BIDI.test(node.nodeValue)) {
+    let rect = singleRect(textRange(node, offset, offset), side)
     // Firefox returns bad results (the position before the space)
     // when querying a position directly after line-broken
     // whitespace. Detect this situation and and kludge around it
@@ -308,47 +313,53 @@ export function coordsAtPos(view, pos) {
     return rect
   }
 
-  if (node.nodeType == 1 && !view.state.doc.resolve(pos).parent.inlineContent) {
-    // Return a horizontal line in block context
-    let top = true, rect
-    if (offset < node.childNodes.length) {
-      let after = node.childNodes[offset]
-      if (after.nodeType == 1) rect = after.getBoundingClientRect()
+  // Move up the DOM as far as possible when in inline context.
+  if (inline) {
+    let parent = $pos.depth ? view.docView.domAfterPos($pos.before()) : view.dom
+    while (side < 0 && !offset && node != parent) {
+      offset = domIndex(node)
+      node = node.parentNode
     }
-    if (!rect && offset) {
-      let before = node.childNodes[offset - 1]
-      if (before.nodeType == 1) { rect = before.getBoundingClientRect(); top = false }
+    while (side >= 0 && offset == nodeSize(node) && node != parent) {
+      offset = domIndex(node) + 1
+      node = node.parentNode
     }
-    return flattenH(rect || node.getBoundingClientRect(), top)
   }
 
-  // Not Firefox/Chrome, or not in a text node, so we have to use
-  // actual element/character rectangles to get a solution (this part
-  // is not very bidi-safe)
-  //
-  // Try the left side first, fall back to the right one if that
-  // doesn't work.
-  for (let dir = -1; dir < 2; dir += 2) {
-    if (dir < 0 && offset) {
-      let prev, target = node.nodeType == 3 ? textRange(node, offset - 1, offset)
-          : (prev = node.childNodes[offset - 1]).nodeType == 3 ? textRange(prev)
-          : prev.nodeType == 1 && prev.nodeName != "BR" ? prev : null // BR nodes tend to only return the rectangle before them
-      if (target) {
-        let rect = singleRect(target, 1)
-        if (rect.top < rect.bottom) return flattenV(rect, false)
-      }
-    } else if (dir > 0 && offset < nodeSize(node)) {
-      let next, target = node.nodeType == 3 ? textRange(node, offset, offset + 1)
-          : (next = node.childNodes[offset]).nodeType == 3 ? textRange(next)
-          : next.nodeType == 1 ? next : null
-      if (target) {
-        let rect = singleRect(target, -1)
-        if (rect.top < rect.bottom) return flattenV(rect, true)
-      }
+  if (node.nodeType == 3) {
+    if (side < 0) return flattenV(singleRect(textRange(node, offset - 1, offset), 1), false)
+    return flattenV(singleRect(textRange(node, offset, offset + 1), -1), true)
+  }
+
+  // Return a horizontal line in block context
+  if (!inline) {
+    if (offset && (side < 0 || offset == nodeSize(node))) {
+      let before = node.childNodes[offset - 1]
+      if (before.nodeType == 1) return flattenH(before.getBoundingClientRect(), false)
     }
+    if (offset < nodeSize(node)) {
+      let after = node.childNodes[offset]
+      if (after.nodeType == 1) return flattenH(after.getBoundingClientRect(), true)
+    }
+    return flattenH(node.getBoundingClientRect(), side >= 0)
+  }
+
+  // Inline, not in text node (this is not Bidi-safe)
+  if (offset && (side < 0 || offset == nodeSize(node))) {
+    let before = node.childNodes[offset - 1]
+    let target = before.nodeType == 3 ? textRange(before, nodeSize(before) - (supportEmptyRange ? 0 : 1))
+        // BR nodes tend to only return the rectangle before them
+        : before.nodeType == 1 && before.nodeName != "BR" ? before : null
+    if (target) return flattenV(singleRect(target, 1), false)
+  }
+  if (offset < nodeSize(node)) {
+    let after = node.childNodes[offset]
+    let target = after.nodeType == 3 ? textRange(after, 0, (supportEmptyRange ? 0 : 1))
+        : after.nodeType == 1 ? after : null
+    if (target) return flattenV(singleRect(target, -1), true)
   }
   // All else failed, just try to get a rectangle for the target node
-  return flattenV(singleRect(node.nodeType == 3 ? textRange(node) : node, 0), false)
+  return flattenV(singleRect(node.nodeType == 3 ? textRange(node) : node, -side), side >= 0)
 }
 
 function flattenV(rect, left) {
@@ -389,7 +400,7 @@ function endOfTextblockVertical(view, state, dir) {
       if (nearest.node.isBlock) { dom = nearest.dom; break }
       dom = nearest.dom.parentNode
     }
-    let coords = coordsAtPos(view, $pos.pos)
+    let coords = coordsAtPos(view, $pos.pos, 1)
     for (let child = dom.firstChild; child; child = child.nextSibling) {
       let boxes
       if (child.nodeType == 1) boxes = child.getClientRects()
