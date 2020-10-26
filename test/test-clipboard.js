@@ -73,4 +73,11 @@ describe("Clipboard interface", () => {
     ist(parseFromClipboard(view, "abc", null, false, view.state.doc.resolve(1)),
         new Slice(p("ABC").content, 0, 0), eq)
   })
+
+  it("preserves attributes", () => {
+    let d = doc(ol({order: 3}, li(p("f<a>o<b>o"))))
+    let view = tempEditor({doc: d})
+    let {dom, text} = serializeForClipboard(view, TextSelection.create(d, d.tag.a, d.tag.b).content())
+    ist(parseFromClipboard(view, text, dom.innerHTML, false, d.resolve(1)), d.slice(d.tag.a, d.tag.b, true), eq)
+  })
 })

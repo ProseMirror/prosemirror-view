@@ -6,7 +6,7 @@ export function serializeForClipboard(view, slice) {
     openStart--
     openEnd--
     let node = content.firstChild
-    context.push(node.type.name, node.type.hasRequiredAttrs() ? node.attrs : null)
+    context.push(node.type.name, node.attrs != node.type.defaultAttrs ? node.attrs : null)
     content = node.content
   }
 
