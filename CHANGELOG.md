@@ -1,3 +1,9 @@
+## 1.16.1 (2020-10-26)
+
+### Bug fixes
+
+Fix an issue where the attributes of defining nodes were dropped when copying to the clipboard.
+
 ## 1.16.0 (2020-10-01)
 
 ### Bug fixes
