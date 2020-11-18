@@ -19,7 +19,7 @@ describe("Clipboard interface", () => {
     let d = doc(blockquote(ul(li(p("fo<a>o"), p("b<b>ar")))))
     let view = tempEditor({doc: d})
     let slice = TextSelection.create(d, d.tag.a, d.tag.b).content(), {dom, text} = serializeForClipboard(view, slice)
-    ist(dom.innerHTML, '<li data-pm-slice="2 2 [&quot;blockquote&quot;,null,&quot;bullet_list&quot;,null]"><p>o</p><p>b</p></li>')
+    ist(dom.innerHTML, '<li data-pm-slice="2 2 [&quot;blockquote&quot;,{},&quot;bullet_list&quot;,{}]"><p>o</p><p>b</p></li>')
     ist(parseFromClipboard(view, text, dom.innerHTML, false, d.resolve(1)), d.slice(d.tag.a, d.tag.b, true), eq)
     ist(parseFromClipboard(view, text, dom.innerHTML, true, d.resolve(1)), new Slice(doc(p("o"), p("b")).content, 1, 1), eq)
   })
