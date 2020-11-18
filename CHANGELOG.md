@@ -1,3 +1,9 @@
+## 1.16.2 (2020-11-18)
+
+### Bug fixes
+
+Fix a bug where overlapping inline decorations would get drawn incorrectly (and even corrupt the drawing of unrelated content).
+
 ## 1.16.1 (2020-10-26)
 
 ### Bug fixes
