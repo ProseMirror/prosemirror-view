@@ -462,4 +462,13 @@ describe("Decoration drawing", () => {
     ist(Array.prototype.map.call(styled, n => n.textContent).join(), "bc,def,gh")
     ist(styled[1].parentNode.nodeName, "STRONG")
   })
+
+  it("can handle nodeName decoration overlapping with classes", () => {
+    let view = tempEditor({
+      doc: doc(p("one two three")),
+      plugins: [decoPlugin([Decoration.inline(2, 13, {class: "foo"}),
+                            Decoration.inline(5, 8, {nodeName: "em"})])]
+    })
+    ist(view.dom.firstChild.innerHTML, 'o<span class="foo">ne </span><em class="foo">two</em><span class="foo"> thre</span>e')
+  })
 })

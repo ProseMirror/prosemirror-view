@@ -910,19 +910,19 @@ function computeOuterDeco(outerDeco, node, needsWrap) {
   let top = needsWrap ? noDeco[0] : new OuterDecoLevel, result = [top]
 
   for (let i = 0; i < outerDeco.length; i++) {
-    let attrs = outerDeco[i].type.attrs, cur = top
+    let attrs = outerDeco[i].type.attrs
     if (!attrs) continue
     if (attrs.nodeName)
-      result.push(cur = new OuterDecoLevel(attrs.nodeName))
+      result.push(top = new OuterDecoLevel(attrs.nodeName))
 
     for (let name in attrs) {
       let val = attrs[name]
       if (val == null) continue
       if (needsWrap && result.length == 1)
-        result.push(cur = top = new OuterDecoLevel(node.isInline ? "span" : "div"))
-      if (name == "class") cur.class = (cur.class ? cur.class + " " : "") + val
-      else if (name == "style") cur.style = (cur.style ? cur.style + ";" : "") + val
-      else if (name != "nodeName") cur[name] = val
+        result.push(top = new OuterDecoLevel(node.isInline ? "span" : "div"))
+      if (name == "class") top.class = (top.class ? top.class + " " : "") + val
+      else if (name == "style") top.style = (top.style ? top.style + ";" : "") + val
+      else if (name != "nodeName") top[name] = val
     }
   }
 
