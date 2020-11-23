@@ -1,3 +1,9 @@
+## 1.16.3 (2020-11-23)
+
+### Bug fixes
+
+Fix an issue where pressing enter at the start of a line in a code block would leave the visible cursor in the wrong place on Firefox.
+
 ## 1.16.2 (2020-11-18)
 
 ### Bug fixes
