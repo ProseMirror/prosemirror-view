@@ -10,5 +10,5 @@ module.exports = {
     sourcemap: true
   }],
   plugins: [require('@rollup/plugin-buble')()],
-  external(id) { return !/^[\.\/]/.test(id) }
+  external(id) { return id[0] != "." && !require("path").isAbsolute(id) }
 }
