@@ -1,3 +1,9 @@
+## 1.16.4 (2020-12-02)
+
+### Bug fixes
+
+Fix an issue where the cursor ended up in the wrong place when pressing enter in an empty heading on iOS.
+
 ## 1.16.3 (2020-11-23)
 
 ### Bug fixes
