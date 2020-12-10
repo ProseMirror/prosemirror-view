@@ -14,7 +14,8 @@ if (typeof navigator != "undefined" && typeof document != "undefined") {
   let chrome = !ie && /Chrome\/(\d+)/.exec(navigator.userAgent)
   result.chrome = !!chrome
   result.chrome_version = chrome && +chrome[1]
-  result.ios = !ie && /AppleWebKit/.test(navigator.userAgent) && /Mobile\/\w+/.test(navigator.userAgent)
+  // Is true for both iOS and iPadOS for convenience
+  result.ios = !ie && /AppleWebKit/.test(navigator.userAgent) && (/Mobile\/\w+/.test(navigator.userAgent) || !!(navigator.maxTouchPoints && navigator.maxTouchPoints > 2))
   result.android = /Android \d/.test(navigator.userAgent)
   result.webkit = "webkitFontSmoothing" in document.documentElement.style
   result.safari = /Apple Computer/.test(navigator.vendor)
