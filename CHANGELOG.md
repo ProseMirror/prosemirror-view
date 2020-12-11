@@ -1,3 +1,9 @@
+## 1.16.5 (2020-12-11)
+
+### Bug fixes
+
+Fix platform detection on recent iPadOS versions, restoring several workarounds for bugs that were accidentally turned off there.
+
 ## 1.16.4 (2020-12-02)
 
 ### Bug fixes
