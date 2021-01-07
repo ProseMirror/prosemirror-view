@@ -405,7 +405,8 @@ editHandlers.compositionstart = editHandlers.compositionupdate = view => {
     view.domObserver.flush()
     let {state} = view, $pos = state.selection.$from
     if (state.selection.empty &&
-        (state.storedMarks || (!$pos.textOffset && $pos.parentOffset && $pos.nodeBefore.marks.some(m => m.type.spec.inclusive === false)))) {
+        (state.storedMarks ||
+         (!$pos.textOffset && $pos.parentOffset && $pos.nodeBefore.marks.some(m => m.type.spec.inclusive === false)))) {
       // Need to wrap the cursor in mark nodes different from the ones in the DOM context
       view.markCursor = view.state.storedMarks || $pos.marks()
       endComposition(view, true)

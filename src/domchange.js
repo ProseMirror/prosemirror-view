@@ -93,6 +93,13 @@ export function readDOMChange(view, from, to, typeOver, addedNodes) {
 
   let sel = view.state.selection
   let parse = parseBetween(view, from, to)
+  // Chrome sometimes leaves the cursor before the inserted text when
+  // composing after a cursor wrapper. This moves it forward.
+  if (browser.chrome && view.cursorWrapper && parse.sel && parse.sel.anchor == view.cursorWrapper.deco.from) {
+    let text = view.cursorWrapper.deco.type.toDOM.nextSibling
+    let size = text && text.nodeValue ? text.nodeValue.length : 1
+    parse.sel = {anchor: parse.sel.anchor + size, head: parse.sel.anchor + size}
+  }
 
   let doc = view.state.doc, compare = doc.slice(parse.from, parse.to)
   let preferredPos, preferredSide
