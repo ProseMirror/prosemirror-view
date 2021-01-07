@@ -258,18 +258,23 @@ class ViewDesc {
     }
   }
 
-  // : (number) → {node: dom.Node, offset: number}
-  domFromPos(pos) {
+  // : (number, number) → {node: dom.Node, offset: number}
+  domFromPos(pos, side) {
     if (!this.contentDOM) return {node: this.dom, offset: 0}
-    for (let offset = 0, i = 0;; i++) {
-      if (offset == pos) {
-        while (i < this.children.length && (this.children[i].beforePosition || this.children[i].dom.parentNode != this.contentDOM)) i++
-        return {node: this.contentDOM,
-                offset: i == this.children.length ? this.contentDOM.childNodes.length : domIndex(this.children[i].dom)}
+    for (let offset = 0, i = 0, first = true;; i++, first = false) {
+      // Skip removed or always-before children
+      while (i < this.children.length && (this.children[i].beforePosition ||
+                                          this.children[i].dom.parentNode != this.contentDOM))
+        offset += this.children[i++].size
+      let child = i == this.children.length ? null : this.children[i]
+      if (offset == pos && (side == 0 || !child || child.border || (side < 0 && first))) return {
+        node: this.contentDOM,
+        offset: child ? domIndex(child.dom) : this.contentDOM.childNodes.length
       }
-      if (i == this.children.length) throw new Error("Invalid position " + pos)
-      let child = this.children[i], end = offset + child.size
-      if (pos < end) return child.domFromPos(pos - offset - child.border)
+      if (!child) throw new Error("Invalid position " + pos)
+      let end = offset + child.size
+      if (side < 0 && !child.border ? end >= pos : end > pos)
+        return child.domFromPos(pos - offset - child.border, side)
       offset = end
     }
   }
@@ -327,7 +332,7 @@ class ViewDesc {
 
   // : (number) → dom.Node
   domAfterPos(pos) {
-    let {node, offset} = this.domFromPos(pos)
+    let {node, offset} = this.domFromPos(pos, 0)
     if (node.nodeType != 1 || offset == node.childNodes.length)
       throw new RangeError("No node after pos " + pos)
     return node.childNodes[offset]
@@ -349,7 +354,8 @@ class ViewDesc {
       offset = end
     }
 
-    let anchorDOM = this.domFromPos(anchor), headDOM = this.domFromPos(head)
+    let anchorDOM = this.domFromPos(anchor, anchor ? -1 : 1)
+    let headDOM = head == anchor ? anchorDOM : this.domFromPos(head, head ? -1 : 1)
     let domSel = root.getSelection()
 
     let brKludge = false

@@ -286,13 +286,17 @@ export class EditorView {
     return coordsAtPos(this, pos, side)
   }
 
-  // :: (number) → {node: dom.Node, offset: number}
+  // :: (number, number) → {node: dom.Node, offset: number}
   // Find the DOM position that corresponds to the given document
-  // position. Note that you should **not** mutate the editor's
-  // internal DOM, only inspect it (and even that is usually not
-  // necessary).
-  domAtPos(pos) {
-    return this.docView.domFromPos(pos)
+  // position. When `side` is negative, find the position as close as
+  // possible to the content before the position. When positive,
+  // prefer positions close to the content after the position. When
+  // zero, prefer as shallow a position as possible.
+  //
+  // Note that you should **not** mutate the editor's internal DOM,
+  // only inspect it (and even that is usually not necessary).
+  domAtPos(pos, side = 0) {
+    return this.docView.domFromPos(pos, side)
   }
 
   // :: (number) → ?dom.Node

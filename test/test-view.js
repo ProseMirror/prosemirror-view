@@ -1,4 +1,4 @@
-const {schema, doc, ul, li, p, strong, hr} = require("prosemirror-test-builder")
+const {schema, doc, ul, li, p, strong, em, hr} = require("prosemirror-test-builder")
 const {EditorState} = require("prosemirror-state")
 const {Schema} = require("prosemirror-model")
 const {EditorView} = require("..")
@@ -66,6 +66,26 @@ describe("EditorView", () => {
     let afterP = view.domAtPos(7)
     ist(afterP.offset, 1)
     ist(afterP.node.nodeName, "LI")
+  })
+
+  it("can bias DOM position queries to enter nodes", () => {
+    let view = tempEditor({doc: doc(p(em(strong("a"), "b"), "c"))})
+    let get = (pos, bias) => {
+      let r = view.domAtPos(pos, bias)
+      return (r.node.nodeType == 1 ? r.node.nodeName : r.node.nodeValue) + "@" + r.offset
+    }
+    ist(get(1, 0), "P@0")
+    ist(get(1, -1), "P@0")
+    ist(get(1, 1), "a@0")
+    ist(get(2, -1), "a@1")
+    ist(get(2, 0), "EM@1")
+    ist(get(2, 1), "b@0")
+    ist(get(3, -1), "b@1")
+    ist(get(3, 0), "P@1")
+    ist(get(3, 1), "c@0")
+    ist(get(4, -1), "c@1")
+    ist(get(4, 0), "P@2")
+    ist(get(4, 1), "P@2")
   })
 
   it("can be queried for a node's DOM representation", () => {

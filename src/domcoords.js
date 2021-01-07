@@ -291,7 +291,7 @@ const BIDI = /[\u0590-\u05f4\u0600-\u06ff\u0700-\u08ac]/
 // Given a position in the document model, get a bounding box of the
 // character at that position, relative to the window.
 export function coordsAtPos(view, pos, side) {
-  let {node, offset} = view.docView.domFromPos(pos)
+  let {node, offset} = view.docView.domFromPos(pos, 0)
   let $pos = view.state.doc.resolve(pos), inline = $pos.parent.inlineContent
 
   // These browsers support querying empty text ranges. Prefer that in
@@ -391,9 +391,9 @@ function withFlushedState(view, state, f) {
 // from a position would leave a text block.
 function endOfTextblockVertical(view, state, dir) {
   let sel = state.selection
-  let $pos = dir == "up" ? sel.$anchor.min(sel.$head) : sel.$anchor.max(sel.$head)
+  let $pos = dir == "up" ? sel.$from : sel.$to
   return withFlushedState(view, state, () => {
-    let {node: dom} = view.docView.domFromPos($pos.pos)
+    let {node: dom} = view.docView.domFromPos($pos.pos, dir == "up" ? -1 : 1)
     for (;;) {
       let nearest = view.docView.nearestDesc(dom, true)
       if (!nearest) break

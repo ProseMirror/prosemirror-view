@@ -74,7 +74,7 @@ export function selectionToDOM(view, force) {
 const brokenSelectBetweenUneditable = browser.safari || browser.chrome && browser.chrome_version < 63
 
 function temporarilyEditableNear(view, pos) {
-  let {node, offset} = view.docView.domFromPos(pos)
+  let {node, offset} = view.docView.domFromPos(pos, 0)
   let after = offset < node.childNodes.length ? node.childNodes[offset] : null
   let before = offset ? node.childNodes[offset - 1] : null
   if (browser.safari && after && after.contentEditable == "false") return setEditable(after)
@@ -174,7 +174,7 @@ export function hasSelection(view) {
 }
 
 export function anchorInRightPlace(view) {
-  let anchorDOM = view.docView.domFromPos(view.state.selection.anchor)
+  let anchorDOM = view.docView.domFromPos(view.state.selection.anchor, 0)
   let domSel = view.root.getSelection()
   return isEquivalentPosition(anchorDOM.node, anchorDOM.offset, domSel.anchorNode, domSel.anchorOffset)
 }
