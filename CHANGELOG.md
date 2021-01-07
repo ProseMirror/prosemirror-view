@@ -1,3 +1,13 @@
+## 1.17.0 (2021-01-07)
+
+### Bug fixes
+
+Fix an issue where starting a composition with stored marks would sometimes create the wrong steps (and thus break the mark) on Chrome.
+
+### New features
+
+`EditorView.domAtPos` now takes a second parameter that can be used to control whether it should enter DOM nodes on the side of the given position.
+
 ## 1.16.5 (2020-12-11)
 
 ### Bug fixes
