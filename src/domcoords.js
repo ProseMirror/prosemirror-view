@@ -1,4 +1,4 @@
-import {nodeSize, textRange, parentNode, domIndex} from "./dom"
+import {nodeSize, textRange, parentNode} from "./dom"
 import browser from "./browser"
 
 function windowRect(doc) {
@@ -291,48 +291,38 @@ const BIDI = /[\u0590-\u05f4\u0600-\u06ff\u0700-\u08ac]/
 // Given a position in the document model, get a bounding box of the
 // character at that position, relative to the window.
 export function coordsAtPos(view, pos, side) {
-  let {node, offset} = view.docView.domFromPos(pos, 0)
-  let $pos = view.state.doc.resolve(pos), inline = $pos.parent.inlineContent
+  let {node, offset} = view.docView.domFromPos(pos, side < 0 ? -1 : 1)
 
-  // These browsers support querying empty text ranges. Prefer that in
-  // bidi context.
   let supportEmptyRange = browser.webkit || browser.gecko
-  if (node.nodeType == 3 && supportEmptyRange && BIDI.test(node.nodeValue)) {
-    let rect = singleRect(textRange(node, offset, offset), side)
-    // Firefox returns bad results (the position before the space)
-    // when querying a position directly after line-broken
-    // whitespace. Detect this situation and and kludge around it
-    if (browser.gecko && offset && /\s/.test(node.nodeValue[offset - 1]) && offset < node.nodeValue.length) {
-      let rectBefore = singleRect(textRange(node, offset - 1, offset - 1), -1)
-      if (rectBefore.top == rect.top) {
-        let rectAfter = singleRect(textRange(node, offset, offset + 1), -1)
-        if (rectAfter.top != rect.top)
-          return flattenV(rectAfter, rectAfter.left < rectBefore.left)
-      }
-    }
-    return rect
-  }
-
-  // Move up the DOM as far as possible when in inline context.
-  if (inline) {
-    let parent = $pos.depth ? view.docView.domAfterPos($pos.before()) : view.dom
-    while (side < 0 && !offset && node != parent) {
-      offset = domIndex(node)
-      node = node.parentNode
-    }
-    while (side >= 0 && offset == nodeSize(node) && node != parent) {
-      offset = domIndex(node) + 1
-      node = node.parentNode
-    }
-  }
-
   if (node.nodeType == 3) {
-    if (side < 0) return flattenV(singleRect(textRange(node, offset - 1, offset), 1), false)
-    return flattenV(singleRect(textRange(node, offset, offset + 1), -1), true)
+    // These browsers support querying empty text ranges. Prefer that in
+    // bidi context or when at the end of a node.
+    if (supportEmptyRange && (BIDI.test(node.nodeValue) || (side < 0 ? !offset : offset == node.nodeValue.length))) {
+      let rect = singleRect(textRange(node, offset, offset), side)
+      // Firefox returns bad results (the position before the space)
+      // when querying a position directly after line-broken
+      // whitespace. Detect this situation and and kludge around it
+      if (browser.gecko && offset && /\s/.test(node.nodeValue[offset - 1]) && offset < node.nodeValue.length) {
+        let rectBefore = singleRect(textRange(node, offset - 1, offset - 1), -1)
+        if (rectBefore.top == rect.top) {
+          let rectAfter = singleRect(textRange(node, offset, offset + 1), -1)
+          if (rectAfter.top != rect.top)
+            return flattenV(rectAfter, rectAfter.left < rectBefore.left)
+        }
+      }
+      return rect
+    } else {
+      let from = offset, to = offset, takeSide = side < 0 ? 1 : -1
+      if (side < 0 && !offset) { to++; takeSide = -1 }
+      else if (side >= 0 && offset == node.nodeValue.length) { from--; takeSide = 1 }
+      else if (side < 0) { from-- }
+      else { to ++ }
+      return flattenV(singleRect(textRange(node, from, to), takeSide), takeSide < 0)
+    }
   }
 
   // Return a horizontal line in block context
-  if (!inline) {
+  if (!view.state.doc.resolve(pos).parent.inlineContent) {
     if (offset && (side < 0 || offset == nodeSize(node))) {
       let before = node.childNodes[offset - 1]
       if (before.nodeType == 1) return flattenH(before.getBoundingClientRect(), false)
