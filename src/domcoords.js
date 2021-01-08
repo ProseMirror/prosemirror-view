@@ -338,8 +338,9 @@ export function coordsAtPos(view, pos, side) {
   if (offset && (side < 0 || offset == nodeSize(node))) {
     let before = node.childNodes[offset - 1]
     let target = before.nodeType == 3 ? textRange(before, nodeSize(before) - (supportEmptyRange ? 0 : 1))
-        // BR nodes tend to only return the rectangle before them
-        : before.nodeType == 1 && before.nodeName != "BR" ? before : null
+        // BR nodes tend to only return the rectangle before them.
+        // Only use them if they are the last element in their parent
+        : before.nodeType == 1 && (before.nodeName != "BR" || !before.nextSibling) ? before : null
     if (target) return flattenV(singleRect(target, 1), false)
   }
   if (offset < nodeSize(node)) {

@@ -1,4 +1,4 @@
-const {doc, blockquote, p, em, img: img_, strong, code, br, hr, ul, li} = require("prosemirror-test-builder")
+const {doc, blockquote, p, em, img: img_, strong, code, code_block, br, hr, ul, li} = require("prosemirror-test-builder")
 const ist = require("ist")
 const {Selection, NodeSelection} = require("prosemirror-state")
 const {tempEditor, findTextNode} = require("./view")
@@ -126,6 +126,22 @@ describe("EditorView", () => {
     ist(p03.left, p01.left, ">")
     ist(p10.top, p00.top, ">")
     ist(p13.left, p10.left, ">")
+  })
+
+  it("returns proper coordinates in code blocks", () => {
+    let view = tempEditor({doc: doc(code_block("a\nb\n"))}), p = []
+    for (let i = 1; i <= 5; i++) p.push(view.coordsAtPos(i))
+    let [p0, p1, p2, p3, p4] = p
+    ist(p0.top, p1.top)
+    ist(p0.left, p1.left, "<")
+    ist(p2.top, p1.top, ">")
+    ist(p2.top, p3.top)
+    ist(p2.left, p3.left, "<")
+    ist(p2.left, p0.left)
+    ist(p4.top, p3.top, ">")
+    // This one shows a small (0.01 pixel) difference in Firefox for
+    // some reason.
+    ist(Math.round(p4.left), Math.round(p2.left))
   })
 
   it("produces sensible screen coordinates in corner cases", () => {
