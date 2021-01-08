@@ -1,3 +1,9 @@
+## 1.17.1 (2021-01-08)
+
+### Bug fixes
+
+Fix a regression in `coordsAtPos` when used on an empty line at the end of a code block.
+
 ## 1.17.0 (2021-01-07)
 
 ### Bug fixes
