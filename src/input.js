@@ -542,7 +542,9 @@ function doPaste(view, text, html, e) {
 editHandlers.paste = (view, e) => {
   let data = brokenClipboardAPI ? null : e.clipboardData
   let html = data && data.getData("text/html"), text = data && data.getData("text/plain")
-  if (data && (html || text || data.files.length)) {
+  if (data.items && data.items.length > 0 && data.items[0].type === "image/png") {
+    capturePaste(view, e)
+  } else if (data && (html || text || data.files.length)) {
     doPaste(view, text, html, e)
     e.preventDefault()
   } else {
