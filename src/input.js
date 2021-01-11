@@ -532,22 +532,19 @@ function capturePaste(view, e) {
 
 function doPaste(view, text, html, e) {
   let slice = parseFromClipboard(view, text, html, view.shiftKey, view.state.selection.$from)
-  if (view.someProp("handlePaste", f => f(view, e, slice || Slice.empty)) || !slice) return
+  if (view.someProp("handlePaste", f => f(view, e, slice || Slice.empty))) return true
+  if (!slice) return false
 
   let singleNode = sliceSingleNode(slice)
   let tr = singleNode ? view.state.tr.replaceSelectionWith(singleNode, view.shiftKey) : view.state.tr.replaceSelection(slice)
   view.dispatch(tr.scrollIntoView().setMeta("paste", true).setMeta("uiEvent", "paste"))
+  return true
 }
 
 editHandlers.paste = (view, e) => {
   let data = brokenClipboardAPI ? null : e.clipboardData
-  let html = data && data.getData("text/html"), text = data && data.getData("text/plain")
-  if (data && (html || text || data.files.length)) {
-    doPaste(view, text, html, e)
-    e.preventDefault()
-  } else {
-    capturePaste(view, e)
-  }
+  if (data && doPaste(view, data.getData("text/plain"), data.getData("text/html"), e)) e.preventDefault()
+  else capturePaste(view, e)
 }
 
 class Dragging {
