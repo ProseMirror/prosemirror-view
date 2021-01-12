@@ -1,3 +1,11 @@
+## 1.17.2 (2021-01-12)
+
+### Bug fixes
+
+The library will now always let the browser perform its native pasting behavior when the clipboard data is empty and no paste handler handles the event.
+
+Fix a bug where `domAtPos` (and thus cursor placement) would pick positions inside uneditable DOM or atom nodes.
+
 ## 1.17.1 (2021-01-08)
 
 ### Bug fixes
