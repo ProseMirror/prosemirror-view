@@ -267,13 +267,14 @@ class ViewDesc {
                                           this.children[i].dom.parentNode != this.contentDOM))
         offset += this.children[i++].size
       let child = i == this.children.length ? null : this.children[i]
-      if (offset == pos && (side == 0 || !child || child.border || (side < 0 && first))) return {
+      if (offset == pos && (side == 0 || !child || child.border || (side < 0 && first)) ||
+          child && child.domAtom && pos < offset + child.size) return {
         node: this.contentDOM,
         offset: child ? domIndex(child.dom) : this.contentDOM.childNodes.length
       }
       if (!child) throw new Error("Invalid position " + pos)
       let end = offset + child.size
-      if (side < 0 && !child.border ? end >= pos : end > pos)
+      if (!child.domAtom && (side < 0 && !child.border ? end >= pos : end > pos))
         return child.domFromPos(pos - offset - child.border, side)
       offset = end
     }
@@ -443,6 +444,8 @@ class ViewDesc {
       if (node.dirty < dirty) node.dirty = dirty
     }
   }
+
+  get domAtom() { return false }
 }
 
 // Reused array to avoid allocating fresh arrays for things that will
@@ -491,6 +494,8 @@ class WidgetViewDesc extends ViewDesc {
   ignoreMutation(mutation) {
     return mutation.type != "selection" || this.widget.spec.ignoreSelection
   }
+
+  get domAtom() { return true }
 }
 
 class CompositionViewDesc extends ViewDesc {
@@ -764,6 +769,8 @@ class NodeViewDesc extends ViewDesc {
     this.nodeDOM.classList.remove("ProseMirror-selectednode")
     if (this.contentDOM || !this.node.type.spec.draggable) this.dom.removeAttribute("draggable")
   }
+
+  get domAtom() { return this.node.isAtom }
 }
 
 // Create a view desc for the top-level document node, to be exported
@@ -820,6 +827,8 @@ class TextViewDesc extends NodeViewDesc {
     let node = this.node.cut(from, to), dom = document.createTextNode(node.text)
     return new TextViewDesc(this.parent, node, this.outerDeco, this.innerDeco, dom, dom, view)
   }
+
+  get domAtom() { return false }
 }
 
 // A dummy desc used to tag trailing BR or span nodes created to work
@@ -827,6 +836,7 @@ class TextViewDesc extends NodeViewDesc {
 class BRHackViewDesc extends ViewDesc {
   parseRule() { return {ignore: true} }
   matchesHack() { return this.dirty == NOT_DIRTY }
+  get domAtom() { return true }
 }
 
 // A separate subclass is used for customized node views, so that the
