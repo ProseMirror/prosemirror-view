@@ -313,6 +313,10 @@ export class DecorationSet {
         children.splice(childIndex, 0, childOffset, childOffset + childNode.nodeSize, buildTree(found, childNode, baseOffset + 1, noSpec))
       childIndex += 3
     })
+    for (let i = 0; i < decorations.length; i++) {
+      let deco = decorations[i]
+      if (deco && !deco.type.valid(doc, deco)) { decorations[i] = null; childIndex = 1 }
+    }
 
     let local = moveSpans(childIndex ? withoutNulls(decorations) : decorations, -offset)
     return new DecorationSet(local.length ? this.local.concat(local).sort(byPos) : this.local,
