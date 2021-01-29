@@ -1,3 +1,9 @@
+## 1.17.3 (2021-01-29)
+
+### Bug fixes
+
+Fix a bug where adding invalid decorations (for example zero-length inline decorations) with `DecorationSet.add` would fail to drop those.
+
 ## 1.17.2 (2021-01-12)
 
 ### Bug fixes
