@@ -365,10 +365,15 @@ class ViewDesc {
     // the cursor sometimes inexplicable visually lags behind its
     // reported position in such situations (#1092).
     if ((browser.gecko || browser.safari) && anchor == head) {
-      if (anchorDOM.node.nodeType == 3) {
-        brKludge = anchorDOM.offset && anchorDOM.node.nodeValue[anchorDOM.offset - 1] == "\n"
+      let {node, offset} = anchorDOM
+      if (node.nodeType == 3) {
+        brKludge = offset && node.nodeValue[offset - 1] == "\n"
+        // Issue #1128
+        if (brKludge && offset == node.nodeValue.length &&
+            node.nextSibling && node.nextSibling.nodeName == "BR")
+          anchorDOM = headDOM = {node: node.parentNode, offset: domIndex(node) + 1}
       } else {
-        let prev = anchorDOM.node.childNodes[anchorDOM.offset - 1]
+        let prev = node.childNodes[offset - 1]
         brKludge = prev && (prev.nodeName == "BR" || prev.contentEditable == "false")
       }
     }
