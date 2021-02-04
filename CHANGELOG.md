@@ -1,3 +1,13 @@
+## 1.17.4 (2021-02-04)
+
+### Bug fixes
+
+Add another kludge to work around an issue where Firefox displays the cursor in the wrong place in code blocks.
+
+Fix a bug where validation of decorations passed to `DecorationSet.add` sometimes passed the wrong offsets to the validator.
+
+Fix bad selection position in empty textblocks. Solves several issues with editing in Firefox Android.
+
 ## 1.17.3 (2021-01-29)
 
 ### Bug fixes
