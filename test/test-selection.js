@@ -331,4 +331,11 @@ describe("EditorView", () => {
       window.Selection.prototype.extend = originalExtend
     }
   })
+
+  it("doesn't put the cursor after BR hack nodes", () => {
+    if (!document.hasFocus()) return
+    let view = tempEditor({doc: doc(p())})
+    view.focus()
+    ist(getSelection().focusOffset, 0)
+  })
 })

@@ -267,7 +267,7 @@ class ViewDesc {
                                           this.children[i].dom.parentNode != this.contentDOM))
         offset += this.children[i++].size
       let child = i == this.children.length ? null : this.children[i]
-      if (offset == pos && (side == 0 || !child || child.border || (side < 0 && first)) ||
+      if (offset == pos && (side == 0 || !child || !child.size || child.border || (side < 0 && first)) ||
           child && child.domAtom && pos < offset + child.size) return {
         node: this.contentDOM,
         offset: child ? domIndex(child.dom) : this.contentDOM.childNodes.length
