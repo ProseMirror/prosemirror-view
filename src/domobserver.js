@@ -176,6 +176,7 @@ export class DOMObserver {
       this.handleDOMChange(from, to, typeOver, added)
       if (this.view.docView.dirty) this.view.updateState(this.view.state)
       else if (!this.currentSelection.eq(sel)) selectionToDOM(this.view)
+      this.currentSelection.set(sel)
     }
   }
 
