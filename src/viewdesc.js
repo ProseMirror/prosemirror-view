@@ -72,7 +72,7 @@ import browser from "./browser"
 //
 //   destroy:: ?()
 //   Called when the node view is removed from the editor or the whole
-//   editor is destroyed.
+//   editor is destroyed. (Not available for marks.)
 
 // View descriptions are data structures that describe the DOM that is
 // used to represent the editor's content. They are used for:
