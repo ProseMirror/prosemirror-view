@@ -1,3 +1,9 @@
+## 1.17.5 (2021-02-05)
+
+### Bug fixes
+
+Fix an issue where the view could go into an endless DOM flush loop in specific circumstances involving asynchronous DOM mutation.
+
 ## 1.17.4 (2021-02-04)
 
 ### Bug fixes
