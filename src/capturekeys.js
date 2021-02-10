@@ -186,7 +186,7 @@ function selectVertically(view, dir, mods) {
   }
   if (!$from.parent.inlineContent) {
     let beyond = Selection.findFrom(dir < 0 ? $from : $to, dir)
-    return beyond ? apply(view, beyond) : true
+    return beyond ? apply(view, beyond) : false
   }
   return false
 }
