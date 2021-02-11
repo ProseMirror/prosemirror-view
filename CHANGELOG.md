@@ -1,3 +1,9 @@
+## 1.17.6 (2021-02-11)
+
+### Bug fixes
+
+Fix an issue where using the vertical arrow keys after select-all didn't update the selection.
+
 ## 1.17.5 (2021-02-05)
 
 ### Bug fixes
