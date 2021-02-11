@@ -1,4 +1,4 @@
-import {Selection, NodeSelection, TextSelection} from "prosemirror-state"
+import {Selection, NodeSelection, TextSelection, AllSelection} from "prosemirror-state"
 import browser from "./browser"
 import {domIndex, selectionCollapsed} from "./dom"
 import {selectionToDOM} from "./selection"
@@ -185,7 +185,8 @@ function selectVertically(view, dir, mods) {
       return apply(view, next)
   }
   if (!$from.parent.inlineContent) {
-    let beyond = Selection.findFrom(dir < 0 ? $from : $to, dir)
+    let side = dir < 0 ? $from : $to
+    let beyond = sel instanceof AllSelection ? Selection.near(side, dir) : Selection.findFrom(side, dir)
     return beyond ? apply(view, beyond) : false
   }
   return false
