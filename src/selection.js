@@ -103,7 +103,7 @@ function removeClassOnSelectionChange(view) {
   doc.addEventListener("selectionchange", view.hideSelectionGuard = () => {
     if (domSel.anchorNode != node || domSel.anchorOffset != offset) {
       doc.removeEventListener("selectionchange", view.hideSelectionGuard)
-      view.dom.classList.remove("ProseMirror-hideselection")
+      view.state.selection.visible && view.dom.classList.remove("ProseMirror-hideselection")
     }
   })
 }
