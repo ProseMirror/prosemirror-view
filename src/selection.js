@@ -31,12 +31,16 @@ export function selectionFromDOM(view, origin) {
   return selection
 }
 
+function editorOwnsSelection(view) {
+  return view.editable ? view.hasFocus() :
+    hasSelection(view) && document.activeElement && document.activeElement.contains(view.dom)
+}
+
 export function selectionToDOM(view, force) {
   let sel = view.state.selection
   syncNodeSelection(view, sel)
 
-  if (view.editable ? !view.hasFocus() :
-      !(hasSelection(view) && document.activeElement && document.activeElement.contains(view.dom))) return
+  if (!editorOwnsSelection(view)) return
 
   view.domObserver.disconnectSelection()
 
@@ -103,7 +107,10 @@ function removeClassOnSelectionChange(view) {
   doc.addEventListener("selectionchange", view.hideSelectionGuard = () => {
     if (domSel.anchorNode != node || domSel.anchorOffset != offset) {
       doc.removeEventListener("selectionchange", view.hideSelectionGuard)
-      view.dom.classList.remove("ProseMirror-hideselection")
+      setTimeout(() => {
+        if (!editorOwnsSelection(view) || view.state.selection.visible)
+          view.dom.classList.remove("ProseMirror-hideselection")
+      }, 20)
     }
   })
 }
