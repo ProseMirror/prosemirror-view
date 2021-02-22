@@ -1,3 +1,11 @@
+## 1.17.7 (2021-02-22)
+
+### Bug fixes
+
+Fix an issue where the `ProseMirror-hideselection` element class would be briefly removed and then restored when moving from one invisible selection to another.
+
+Fix an issue where the cursor could end up on the wrong side of a widget with `side` < 0.
+
 ## 1.17.6 (2021-02-11)
 
 ### Bug fixes
