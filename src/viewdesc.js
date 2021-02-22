@@ -274,7 +274,8 @@ class ViewDesc {
       }
       if (!child) throw new Error("Invalid position " + pos)
       let end = offset + child.size
-      if (!child.domAtom && (side < 0 && !child.border ? end >= pos : end > pos))
+      if (!child.domAtom && (side < 0 && !child.border ? end >= pos : end > pos) &&
+          (end > pos || i + 1 >= this.children.length || !this.children[i + 1].beforePosition))
         return child.domFromPos(pos - offset - child.border, side)
       offset = end
     }
