@@ -192,6 +192,8 @@ export class DOMObserver {
     if (!desc || desc.ignoreMutation(mut)) return null
 
     if (mut.type == "childList") {
+      if (desc.contentDOM && desc.contentDOM != desc.dom && !desc.contentDOM.contains(mut.target))
+        return {from: desc.posBefore, to: desc.posAfter}
       let prev = mut.previousSibling, next = mut.nextSibling
       if (browser.ie && browser.ie_version <= 11 && mut.addedNodes.length) {
         // IE11 gives us incorrect next/prev siblings for some

@@ -199,7 +199,9 @@ class ViewDesc {
     // parameter, to determine whether to return the position at the
     // start or at the end of this view desc.
     let atEnd
-    if (this.contentDOM && this.contentDOM != this.dom && this.dom.contains(this.contentDOM)) {
+    if (dom == this.dom) {
+      atEnd = offset > domIndex(this.contentDOM)
+    } else if (this.contentDOM && this.contentDOM != this.dom && this.dom.contains(this.contentDOM)) {
       atEnd = dom.compareDocumentPosition(this.contentDOM) & 2
     } else if (this.dom.firstChild) {
       if (offset == 0) for (let search = dom;; search = search.parentNode) {
