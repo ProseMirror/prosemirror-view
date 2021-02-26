@@ -1,3 +1,9 @@
+## 1.17.8 (2021-02-26)
+
+### Bug fixes
+
+Fix an issue where some user actions (such as enter on iOS) in a node whose content DOM element isn't it's top element could leave the DOM in a damaged state.
+
 ## 1.17.7 (2021-02-22)
 
 ### Bug fixes
