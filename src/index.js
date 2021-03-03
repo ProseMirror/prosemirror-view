@@ -540,7 +540,7 @@ function changedNodeViews(a, b) {
 //   Can be used to transform pasted content before it is applied to
 //   the document.
 //
-//   nodeViews:: ?Object<(node: Node, view: EditorView, getPos: () → number, decorations: [Decoration]) → NodeView>
+//   nodeViews:: ?Object<(node: Node, view: EditorView, getPos: () → number, decorations: [Decoration], innerDecorations: DecorationSet) → NodeView>
 //   Allows you to pass custom rendering and behavior logic for nodes
 //   and marks. Should map node and mark names to constructor
 //   functions that produce a [`NodeView`](#view.NodeView) object
@@ -555,6 +555,11 @@ function changedNodeViews(a, b) {
 //   normal way, and you will usually just want to ignore this, but
 //   they can also be used as a way to provide context information to
 //   the node view without adding it to the document itself.
+//
+//   `decorationSet` is a DecorationSet containing the decorations that
+//   are active within the node's range. These may be useful if the
+//   NodeView being rendered needs access to decorations, perhaps to
+//   pass them to a nested Prosemirror instance.
 //
 //   clipboardSerializer:: ?DOMSerializer
 //   The DOM serializer to use when putting content onto the
