@@ -30,12 +30,14 @@ import browser from "./browser"
 //   is not present, the node view itself is responsible for rendering
 //   (or deciding not to render) its child nodes.
 //
-//   update:: ?(node: Node, decorations: [Decoration]) → bool
+//   update:: ?(node: Node, decorations: [Decoration], innerDecorations: DecorationSet) → bool
 //   When given, this will be called when the view is updating itself.
-//   It will be given a node (possibly of a different type), and an
-//   array of active decorations (which are automatically drawn, and
-//   the node view may ignore if it isn't interested in them), and
-//   should return true if it was able to update to that node, and
+//   It will be given a node (possibly of a different type), an
+//   array of active decorations around the node (which are automatically
+//   drawn, and the node view may ignore if it isn't interested in them),
+//   and a DecorationSet that represents any decorations that apply to
+//   the range covered by the given node (which again may be ignored).
+//   It should return true if it was able to update to that node, and
 //   false otherwise. If the node view has a `contentDOM` property (or
 //   no `dom` property), updating its child nodes will be handled by
 //   ProseMirror.
@@ -597,7 +599,7 @@ class NodeViewDesc extends ViewDesc {
       // own position)
       if (!descObj) return pos
       if (descObj.parent) return descObj.parent.posBeforeChild(descObj)
-    }, outerDeco)
+    }, outerDeco, innerDeco)
 
     let dom = spec && spec.dom, contentDOM = spec && spec.contentDOM
     if (node.isText) {
@@ -855,7 +857,7 @@ class CustomNodeViewDesc extends NodeViewDesc {
   update(node, outerDeco, innerDeco, view) {
     if (this.dirty == NODE_DIRTY) return false
     if (this.spec.update) {
-      let result = this.spec.update(node, outerDeco)
+      let result = this.spec.update(node, outerDeco, innerDeco)
       if (result) this.updateInner(node, outerDeco, innerDeco, view)
       return result
     } else if (!this.contentDOM && !node.isLeaf) {
