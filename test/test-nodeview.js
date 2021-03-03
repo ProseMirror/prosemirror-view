@@ -129,4 +129,66 @@ describe("nodeViews prop", () => {
     view.dispatch(view.state.tr.setMeta("setDeco", "bar"))
     ist(view.dom.querySelector("var").textContent, "bar")
   })
+
+  it("provides access to inner decorations that cover its range in the constructor", () => {
+    let innerDecos = []
+    const decos = [
+      Decoration.inline(2, 3, {someattr: "ok"}),
+      Decoration.node(0, 5, {otherattr: "ok"})
+    ]
+    const decoPlugin = new Plugin({
+      state: {
+        init() { return null },
+        apply(tr, prev) { return tr.getMeta("setDeco") || prev }
+      },
+      props: {
+        decorations(state) {
+          return DecorationSet.create(state.doc, decos.slice())
+        }
+      }
+    })
+    tempEditor({
+      doc: doc(p("foo")),
+      plugins: [decoPlugin],
+      nodeViews: {paragraph(node, _, __, ___, innerDecoSet) {
+        let dom = document.createElement("p")
+        innerDecos = innerDecoSet.find()
+        return {dom, contentDOM: dom, update(node_) {
+          return node.sameMarkup(node_)
+        }}
+      }}
+    })
+
+    ist(innerDecos.length, 1)
+    ist(innerDecos[0].from, 1)
+    ist(innerDecos[0].to, 2)
+  })
+
+  it("provides access to inner decorations that cover its range in the update method", () => {
+    let innerDecos = []
+    let view = tempEditor({
+      doc: doc(p("foo")),
+      nodeViews: {paragraph(node) {
+        let dom = document.createElement("p")
+        return {dom, contentDOM: dom, update(node_, _, innerDecoSet) {
+          innerDecos = innerDecoSet.find()
+          return node.sameMarkup(node_)
+        }}
+      }}
+    })
+
+    const decos = [
+      Decoration.inline(2, 3, {someattr: "ok"}),
+      Decoration.node(0, 5, {otherattr: "ok"})
+    ]
+    view.setProps({
+      decorations(state) {
+        return DecorationSet.create(state.doc, decos.slice())
+      }
+    })
+
+    ist(innerDecos.length, 1)
+    ist(innerDecos[0].from, 1)
+    ist(innerDecos[0].to, 2)
+  })
 })
