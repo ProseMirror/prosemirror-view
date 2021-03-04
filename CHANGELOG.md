@@ -1,3 +1,13 @@
+## 1.18.0 (2021-03-04)
+
+### Bug fixes
+
+Fix a crash in `posAtDOM`.
+
+### New features
+
+Node view constructors and `update` methods are now passed the inner decorations of the node.
+
 ## 1.17.8 (2021-02-26)
 
 ### Bug fixes
