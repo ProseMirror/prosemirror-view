@@ -216,7 +216,8 @@ export class Decoration {
 
 const none = [], noSpec = {}
 
-// ::- A collection of [decorations](#view.Decoration), organized in
+// :: class extends DecorationSource
+// A collection of [decorations](#view.Decoration), organized in
 // such a way that the drawing algorithm can efficiently use and
 // compare them. This is a persistent data structure—it is not
 // modified, updates create a new value.
@@ -412,6 +413,11 @@ export class DecorationSet {
     return result
   }
 }
+
+// DecorationSource:: interface
+// An object that can [provide](#view.EditorProps.decorations)
+// decorations. Implemented by [`DecorationSet`](#view.DecorationSet),
+// and passed to [node views](#view.EditorProps.nodeViews).
 
 const empty = new DecorationSet()
 

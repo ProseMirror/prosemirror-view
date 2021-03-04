@@ -30,17 +30,17 @@ import browser from "./browser"
 //   is not present, the node view itself is responsible for rendering
 //   (or deciding not to render) its child nodes.
 //
-//   update:: ?(node: Node, decorations: [Decoration], innerDecorations: DecorationSet) → bool
+//   update:: ?(node: Node, decorations: [Decoration], innerDecorations: DecorationSource) → bool
 //   When given, this will be called when the view is updating itself.
-//   It will be given a node (possibly of a different type), an
-//   array of active decorations around the node (which are automatically
-//   drawn, and the node view may ignore if it isn't interested in them),
-//   and a DecorationSet that represents any decorations that apply to
-//   the range covered by the given node (which again may be ignored).
-//   It should return true if it was able to update to that node, and
-//   false otherwise. If the node view has a `contentDOM` property (or
-//   no `dom` property), updating its child nodes will be handled by
-//   ProseMirror.
+//   It will be given a node (possibly of a different type), an array
+//   of active decorations around the node (which are automatically
+//   drawn, and the node view may ignore if it isn't interested in
+//   them), and a [decoration source](#view.DecorationSource) that
+//   represents any decorations that apply to the content of the node
+//   (which again may be ignored). It should return true if it was
+//   able to update to that node, and false otherwise. If the node
+//   view has a `contentDOM` property (or no `dom` property), updating
+//   its child nodes will be handled by ProseMirror.
 //
 //   selectNode:: ?()
 //   Can be used to override the way the node's selected status (as a
@@ -581,7 +581,7 @@ class MarkViewDesc extends ViewDesc {
 // correspond to an actual node in the document. Unlike mark descs,
 // they populate their child array themselves.
 class NodeViewDesc extends ViewDesc {
-  // : (?ViewDesc, Node, [Decoration], DecorationSet, dom.Node, ?dom.Node, EditorView)
+  // : (?ViewDesc, Node, [Decoration], DecorationSource, dom.Node, ?dom.Node, EditorView)
   constructor(parent, node, outerDeco, innerDeco, dom, contentDOM, nodeDOM, view, pos) {
     super(parent, node.isLeaf ? nothing : [], dom, contentDOM)
     this.nodeDOM = nodeDOM
@@ -736,7 +736,7 @@ class NodeViewDesc extends ViewDesc {
     this.children = replaceNodes(this.children, pos, pos + text.length, view, desc)
   }
 
-  // : (Node, [Decoration], DecorationSet, EditorView) → bool
+  // : (Node, [Decoration], DecorationSource, EditorView) → bool
   // If this desc be updated to match the given node decoration,
   // do so and return true.
   update(node, outerDeco, innerDeco, view) {
@@ -853,7 +853,7 @@ class BRHackViewDesc extends ViewDesc {
 // extra checks only have to be made for nodes that are actually
 // customized.
 class CustomNodeViewDesc extends NodeViewDesc {
-  // : (?ViewDesc, Node, [Decoration], DecorationSet, dom.Node, ?dom.Node, NodeView, EditorView)
+  // : (?ViewDesc, Node, [Decoration], DecorationSource, dom.Node, ?dom.Node, NodeView, EditorView)
   constructor(parent, node, outerDeco, innerDeco, dom, contentDOM, nodeDOM, spec, view, pos) {
     super(parent, node, outerDeco, innerDeco, dom, contentDOM, nodeDOM, view, pos)
     this.spec = spec
@@ -1107,7 +1107,7 @@ class ViewTreeUpdater {
     }
   }
 
-  // : (Node, [Decoration], DecorationSet) → bool
+  // : (Node, [Decoration], DecorationSource) → bool
   // Try to find a node desc matching the given data. Skip over it and
   // return true when successful.
   findNodeMatch(node, outerDeco, innerDeco, index) {
@@ -1129,7 +1129,7 @@ class ViewTreeUpdater {
     return true
   }
 
-  // : (Node, [Decoration], DecorationSet, EditorView, Fragment, number) → bool
+  // : (Node, [Decoration], DecorationSource, EditorView, Fragment, number) → bool
   // Try to update the next node, if any, to the given data. Checks
   // pre-matches to avoid overwriting nodes that could still be used.
   updateNextNode(node, outerDeco, innerDeco, view, index) {
@@ -1158,7 +1158,7 @@ class ViewTreeUpdater {
     return false
   }
 
-  // : (Node, [Decoration], DecorationSet, EditorView)
+  // : (Node, [Decoration], DecorationSource, EditorView)
   // Insert the node as a newly created node desc.
   addNode(node, outerDeco, innerDeco, view, pos) {
     this.top.children.splice(this.index++, 0, NodeViewDesc.create(this.top, node, outerDeco, innerDeco, view, pos))
@@ -1216,7 +1216,7 @@ function preMatch(frag, descs) {
 
 function compareSide(a, b) { return a.type.side - b.type.side }
 
-// : (ViewDesc, DecorationSet, (Decoration, number), (Node, [Decoration], DecorationSet, number))
+// : (ViewDesc, DecorationSource, (Decoration, number), (Node, [Decoration], DecorationSource, number))
 // This function abstracts iterating over the nodes and decorations in
 // a fragment. Calls `onNode` for each node, with its local and child
 // decorations. Splits text nodes when there is a decoration starting

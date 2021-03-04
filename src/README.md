@@ -24,3 +24,5 @@ drawn, without actually changing the document.
 @DecorationAttrs
 
 @DecorationSet
+
+@DecorationSource

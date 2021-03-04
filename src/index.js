@@ -540,7 +540,7 @@ function changedNodeViews(a, b) {
 //   Can be used to transform pasted content before it is applied to
 //   the document.
 //
-//   nodeViews:: ?Object<(node: Node, view: EditorView, getPos: () → number, decorations: [Decoration], innerDecorations: DecorationSet) → NodeView>
+//   nodeViews:: ?Object<(node: Node, view: EditorView, getPos: () → number, decorations: [Decoration], innerDecorations: DecorationSource) → NodeView>
 //   Allows you to pass custom rendering and behavior logic for nodes
 //   and marks. Should map node and mark names to constructor
 //   functions that produce a [`NodeView`](#view.NodeView) object
@@ -556,10 +556,12 @@ function changedNodeViews(a, b) {
 //   they can also be used as a way to provide context information to
 //   the node view without adding it to the document itself.
 //
-//   `decorationSet` is a DecorationSet containing the decorations that
-//   are active within the node's range. These may be useful if the
-//   NodeView being rendered needs access to decorations, perhaps to
-//   pass them to a nested Prosemirror instance.
+//   `innerDecorations` holds the decorations for the node's content.
+//   You can safely ignore this if your view has no content or a
+//   `contentDOM` property, since the editor will draw the decorations
+//   on the content. But if you, for example, want to create a nested
+//   editor with the content, it may make sense to provide it with the
+//   inner decorations.
 //
 //   clipboardSerializer:: ?DOMSerializer
 //   The DOM serializer to use when putting content onto the
@@ -573,7 +575,7 @@ function changedNodeViews(a, b) {
 //   editor will use [`textBetween`](#model.Node.textBetween) on the
 //   selected range.
 //
-//   decorations:: ?(state: EditorState) → ?DecorationSet
+//   decorations:: ?(state: EditorState) → ?DecorationSource
 //   A set of [document decorations](#view.Decoration) to show in the
 //   view.
 //

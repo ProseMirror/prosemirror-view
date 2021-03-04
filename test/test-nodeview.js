@@ -130,65 +130,44 @@ describe("nodeViews prop", () => {
     ist(view.dom.querySelector("var").textContent, "bar")
   })
 
-  it("provides access to inner decorations that cover its range in the constructor", () => {
-    let innerDecos = []
-    const decos = [
-      Decoration.inline(2, 3, {someattr: "ok"}),
-      Decoration.node(0, 5, {otherattr: "ok"})
-    ]
-    const decoPlugin = new Plugin({
-      state: {
-        init() { return null },
-        apply(tr, prev) { return tr.getMeta("setDeco") || prev }
-      },
-      props: {
-        decorations(state) {
-          return DecorationSet.create(state.doc, decos.slice())
-        }
-      }
-    })
+  it("provides access to inner decorations in the constructor", () => {
     tempEditor({
       doc: doc(p("foo")),
-      plugins: [decoPlugin],
-      nodeViews: {paragraph(node, _, __, ___, innerDecoSet) {
+      nodeViews: {paragraph(node, _v, _pos, _outer, innerDeco) {
         let dom = document.createElement("p")
-        innerDecos = innerDecoSet.find()
-        return {dom, contentDOM: dom, update(node_) {
-          return node.sameMarkup(node_)
-        }}
-      }}
+        ist(innerDeco.find().map(d => `${d.from}-${d.to}`).join(), "1-2")
+      }},
+      decorations(state) {
+        return DecorationSet.create(state.doc, [
+          Decoration.inline(2, 3, {someattr: "ok"}),
+          Decoration.node(0, 5, {otherattr: "ok"})
+        ])
+      }
     })
-
-    ist(innerDecos.length, 1)
-    ist(innerDecos[0].from, 1)
-    ist(innerDecos[0].to, 2)
   })
 
-  it("provides access to inner decorations that cover its range in the update method", () => {
+  it("provides access to inner decorations in the update method", () => {
     let innerDecos = []
     let view = tempEditor({
       doc: doc(p("foo")),
       nodeViews: {paragraph(node) {
         let dom = document.createElement("p")
         return {dom, contentDOM: dom, update(node_, _, innerDecoSet) {
-          innerDecos = innerDecoSet.find()
+          innerDecos = innerDecoSet.find().map(d => `${d.from}-${d.to}`)
           return node.sameMarkup(node_)
         }}
       }}
     })
 
-    const decos = [
-      Decoration.inline(2, 3, {someattr: "ok"}),
-      Decoration.node(0, 5, {otherattr: "ok"})
-    ]
     view.setProps({
       decorations(state) {
-        return DecorationSet.create(state.doc, decos.slice())
+        return DecorationSet.create(state.doc, [
+          Decoration.inline(2, 3, {someattr: "ok"}),
+          Decoration.node(0, 5, {otherattr: "ok"})
+        ])
       }
     })
 
-    ist(innerDecos.length, 1)
-    ist(innerDecos[0].from, 1)
-    ist(innerDecos[0].to, 2)
+    ist(innerDecos.join(), "1-2")
   })
 })
