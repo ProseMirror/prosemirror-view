@@ -133,9 +133,10 @@ describe("nodeViews prop", () => {
   it("provides access to inner decorations in the constructor", () => {
     tempEditor({
       doc: doc(p("foo")),
-      nodeViews: {paragraph(node, _v, _pos, _outer, innerDeco) {
+      nodeViews: {paragraph(_node, _v, _pos, _outer, innerDeco) {
         let dom = document.createElement("p")
         ist(innerDeco.find().map(d => `${d.from}-${d.to}`).join(), "1-2")
+        return {dom, contentDOM: dom}
       }},
       decorations(state) {
         return DecorationSet.create(state.doc, [
