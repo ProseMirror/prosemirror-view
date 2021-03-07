@@ -12,9 +12,12 @@ function getSide(value, side) {
 
 function clientRect(node) {
   let rect = node.getBoundingClientRect()
+  // Adjust for elements with style "transform: scale()"
+  let scaleX = (rect.width / node.offsetWidth) || 1
+  let scaleY = (rect.height / node.offsetHeight) || 1
   // Make sure scrollbar width isn't included in the rectangle
-  return {left: rect.left, right: rect.left + node.clientWidth,
-          top: rect.top, bottom: rect.top + node.clientHeight}
+  return {left: rect.left, right: rect.left + node.clientWidth * scaleX,
+          top: rect.top, bottom: rect.top + node.clientHeight * scaleY}
 }
 
 export function scrollRectIntoView(view, rect, startDOM) {
