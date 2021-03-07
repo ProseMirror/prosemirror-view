@@ -13,7 +13,7 @@ function getSide(value, side) {
 function clientRect(node) {
   let rect = node.getBoundingClientRect()
   // Adjust for elements with style "transform: scale()"
-  let scale = (rect.width / node.offsetWidth) || 1;
+  let scale = (rect.width / node.offsetWidth) || 1
   // Make sure scrollbar width isn't included in the rectangle
   return {left: rect.left, right: rect.left + node.clientWidth * scale,
           top: rect.top, bottom: rect.top + node.clientHeight * scale}
