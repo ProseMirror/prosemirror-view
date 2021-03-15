@@ -992,8 +992,8 @@ function patchAttributes(dom, prev, cur) {
     if (name != "class" && name != "style" && name != "nodeName" && cur[name] != prev[name])
       dom.setAttribute(name, cur[name])
   if (prev.class != cur.class) {
-    let prevList = prev.class ? prev.class.split(" ") : nothing
-    let curList = cur.class ? cur.class.split(" ") : nothing
+    let prevList = prev.class ? prev.class.trim().split(" ") : nothing
+    let curList = cur.class ? cur.class.trim().split(" ") : nothing
     for (let i = 0; i < prevList.length; i++) if (curList.indexOf(prevList[i]) == -1)
       dom.classList.remove(prevList[i])
     for (let i = 0; i < curList.length; i++) if (prevList.indexOf(curList[i]) == -1)
