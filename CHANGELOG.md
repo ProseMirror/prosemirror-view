@@ -1,3 +1,11 @@
+## 1.18.1 (2021-03-15)
+
+### Bug fixes
+
+Fix the scrolling-into-view logic in the case where a scale transformation is applied to the editor. Strip carriage return chars from text pasted as code
+
+Remove carriage return characters when pasting text into code blocks.
+
 ## 1.18.0 (2021-03-04)
 
 ### Bug fixes
