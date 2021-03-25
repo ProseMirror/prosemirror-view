@@ -1,3 +1,11 @@
+## 1.18.2 (2021-03-25)
+
+### Bug fixes
+
+Properly handle CSS class name strings with extra spaces in decorations.
+
+Fix a performance bug when updating nodes with thousands of children.
+
 ## 1.18.1 (2021-03-15)
 
 ### Bug fixes
