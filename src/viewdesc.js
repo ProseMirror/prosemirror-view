@@ -1044,13 +1044,7 @@ class ViewTreeUpdater {
     // Tracks whether anything was changed
     this.changed = false
 
-    let pre = preMatch(top.node.content, top.children)
-    this.preMatched = pre.nodes
-    this.preMatchOffset = pre.offset
-  }
-
-  getPreMatch(index) {
-    return index >= this.preMatchOffset ? this.preMatched[index - this.preMatchOffset] : null
+    this.preMatch = preMatch(top.node.content, top.children)
   }
 
   // Destroy and remove the children between the given indices in
@@ -1111,13 +1105,16 @@ class ViewTreeUpdater {
   // Try to find a node desc matching the given data. Skip over it and
   // return true when successful.
   findNodeMatch(node, outerDeco, innerDeco, index) {
-    let found = -1, preMatch = index < 0 ? undefined : this.getPreMatch(index), children = this.top.children
-    if (preMatch && preMatch.matchesNode(node, outerDeco, innerDeco)) {
-      found = children.indexOf(preMatch)
+    let children = this.top.children, found = -1
+    if (index >= this.preMatch.index) {
+      for (let i = this.index; i < children.length; i++) if (children[i].matchesNode(node, outerDeco, innerDeco)) {
+        found = i
+        break
+      }
     } else {
-      for (let i = this.index, e = Math.min(children.length, i + 5); i < e; i++) {
+      for (let i = this.index, e = Math.min(children.length, i + 1); i < e; i++) {
         let child = children[i]
-        if (child.matchesNode(node, outerDeco, innerDeco) && this.preMatched.indexOf(child) < 0) {
+        if (child.matchesNode(node, outerDeco, innerDeco) && !this.preMatch.matched.has(child)) {
           found = i
           break
         }
@@ -1136,8 +1133,8 @@ class ViewTreeUpdater {
     for (let i = this.index; i < this.top.children.length; i++) {
       let next = this.top.children[i]
       if (next instanceof NodeViewDesc) {
-        let preMatch = this.preMatched.indexOf(next)
-        if (preMatch > -1 && preMatch + this.preMatchOffset != index) return false
+        let preMatch = this.preMatch.matched.get(next)
+        if (preMatch != null && preMatch != index) return false
         let nextDOM = next.dom
 
         // Can't update if nextDOM is or contains this.lock, except if
@@ -1196,22 +1193,22 @@ class ViewTreeUpdater {
   }
 }
 
-// : (Fragment, [ViewDesc]) → [ViewDesc]
+// : (Fragment, [ViewDesc]) → {index: number, matched: Map<ViewDesc, number>}
 // Iterate from the end of the fragment and array of descs to find
-// directly matching ones, in order to avoid overeagerly reusing
-// those for other nodes. Returns an array whose positions correspond
-// to node positions in the fragment, and whose elements are either
-// descs matched to the child at that index, or empty.
+// directly matching ones, in order to avoid overeagerly reusing those
+// for other nodes. Returns the fragment index of the first node that
+// is part of the sequence of matched nodes at the end of the
+// fragment.
 function preMatch(frag, descs) {
-  let result = [], end = frag.childCount
-  for (let i = descs.length - 1; end > 0 && i >= 0; i--) {
-    let desc = descs[i], node = desc.node
+  let fI = frag.childCount, dI = descs.length, matched = new Map
+  for (; fI > 0 && dI > 0; dI--) {
+    let desc = descs[dI - 1], node = desc.node
     if (!node) continue
-    if (node != frag.child(end - 1)) break
-    result.push(desc)
-    --end
+    if (node != frag.child(fI - 1)) break
+    --fI
+    matched.set(desc, fI)
   }
-  return {nodes: result.reverse(), offset: end}
+  return {index: fI, matched}
 }
 
 function compareSide(a, b) { return a.type.side - b.type.side }
