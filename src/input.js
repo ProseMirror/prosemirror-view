@@ -25,6 +25,7 @@ export function initInput(view) {
 
   view.lastIOSEnter = 0
   view.lastIOSEnterFallbackTimeout = null
+  view.lastAndroidDelete = 0
 
   view.composing = false
   view.composingTimeout = null

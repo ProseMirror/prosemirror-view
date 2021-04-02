@@ -11,8 +11,6 @@ import browser from "./browser"
 // the modification is mapped over those before it is applied, in
 // readDOMChange.
 
-let lastAndroidDelete = 0
-
 function parseBetween(view, from_, to_) {
   let {node: parent, fromOffset, toOffset, from, to} = view.docView.parseRange(from_, to_)
 
@@ -186,7 +184,7 @@ export function readDOMChange(view, from, to, typeOver, addedNodes) {
   // entire composition and then immediately insert it again. This is
   // used to detect that situation.
   if (browser.chrome && browser.android && change.toB == change.from)
-    lastAndroidDelete = Date.now()
+    view.lastAndroidDelete = Date.now()
 
   // This tries to detect Android virtual keyboard
   // enter-and-pick-suggestion action. That sometimes (see issue
@@ -244,7 +242,7 @@ export function readDOMChange(view, from, to, typeOver, addedNodes) {
     // Edge just doesn't move the cursor forward when you start typing
     // in an empty block or between br nodes.
     if (sel && !(browser.chrome && browser.android && view.composing && sel.empty &&
-                 (change.from != change.toB || lastAndroidDelete < Date.now() - 100) &&
+                 (change.from != change.toB || view.lastAndroidDelete < Date.now() - 100) &&
                  (sel.head == chFrom || sel.head == tr.mapping.map(chTo) - 1) ||
                  browser.ie && sel.empty && sel.head == chFrom))
       tr.setSelection(sel)
