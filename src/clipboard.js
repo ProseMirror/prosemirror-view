@@ -167,16 +167,14 @@ function detachedDoc() {
 }
 
 function readHTML(html) {
-  let metas = /(\s*<meta [^>]*>)*/.exec(html)
+  let metas = /^(\s*<meta [^>]*>)*/.exec(html)
   if (metas) html = html.slice(metas[0].length)
   let elt = detachedDoc().createElement("div")
-  let firstTag = /(?:<meta [^>]*>)*<([a-z][^>\s]+)/i.exec(html), wrap, depth = 0
-  if (wrap = firstTag && wrapMap[firstTag[1].toLowerCase()]) {
+  let firstTag = /<([a-z][^>\s]+)/i.exec(html), wrap
+  if (wrap = firstTag && wrapMap[firstTag[1].toLowerCase()])
     html = wrap.map(n => "<" + n + ">").join("") + html + wrap.map(n => "</" + n + ">").reverse().join("")
-    depth = wrap.length
-  }
   elt.innerHTML = html
-  for (let i = 0; i < depth; i++) elt = elt.firstChild
+  if (wrap) for (let i = 0; i < wrap.length; i++) elt = elt.querySelector(wrap[i]) || (console.log("!") || elt)
   return elt
 }
 
