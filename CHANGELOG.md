@@ -1,3 +1,13 @@
+## 1.18.3 (2021-04-13)
+
+### Bug fixes
+
+Fix an issue where, when pressing enter or space at the start of a composition, the cursor would jump to the end of the composition on Chrome Android.
+
+Fix an issue that would cause Enter presses to be dropped on Android when in a node whose DOM representation nested more than one element.
+
+Fix a bug where pasting specific types of HTML could cause a crash.
+
 ## 1.18.2 (2021-03-25)
 
 ### Bug fixes
