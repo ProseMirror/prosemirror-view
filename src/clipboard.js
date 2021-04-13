@@ -174,7 +174,7 @@ function readHTML(html) {
   if (wrap = firstTag && wrapMap[firstTag[1].toLowerCase()])
     html = wrap.map(n => "<" + n + ">").join("") + html + wrap.map(n => "</" + n + ">").reverse().join("")
   elt.innerHTML = html
-  if (wrap) for (let i = 0; i < wrap.length; i++) elt = elt.querySelector(wrap[i]) || (console.log("!") || elt)
+  if (wrap) for (let i = 0; i < wrap.length; i++) elt = elt.querySelector(wrap[i]) || elt
   return elt
 }
 
