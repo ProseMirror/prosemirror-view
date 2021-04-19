@@ -311,7 +311,9 @@ class MouseDown {
       this.view.domObserver.stop()
       if (this.mightDrag.addAttr) this.target.draggable = true
       if (this.mightDrag.setUneditable)
-        setTimeout(() => this.target.setAttribute("contentEditable", "false"), 20)
+        setTimeout(() => {
+          if (this.view.mouseDown == this) this.target.setAttribute("contentEditable", "false")
+        }, 20)
       this.view.domObserver.start()
     }
 
