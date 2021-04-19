@@ -576,6 +576,8 @@ handlers.dragstart = (view, e) => {
   let slice = view.state.selection.content(), {dom, text} = serializeForClipboard(view, slice)
   e.dataTransfer.clearData()
   e.dataTransfer.setData(brokenClipboardAPI ? "Text" : "text/html", dom.innerHTML)
+  // See https://github.com/ProseMirror/prosemirror/issues/1156
+  e.dataTransfer.effectAllowed = "copyMove"
   if (!brokenClipboardAPI) e.dataTransfer.setData("text/plain", text)
   view.dragging = new Dragging(slice, !e[dragCopyModifier])
 }
