@@ -25,7 +25,7 @@ function parseBetween(view, from_, to_) {
   if (browser.chrome && view.lastKeyCode === 8) {
     for (let off = toOffset; off > fromOffset; off--) {
       let node = parent.childNodes[off - 1], desc = node.pmViewDesc
-      if (node.nodeType == "BR" && !desc) { toOffset = off; break }
+      if (node.nodeName == "BR" && !desc) { toOffset = off; break }
       if (!desc || desc.size) break
     }
   }
