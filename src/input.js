@@ -266,12 +266,14 @@ handlers.mousedown = (view, event) => {
   let pos = view.posAtCoords(eventCoords(event))
   if (!pos) return
 
-  if (type == "singleClick")
+  if (type == "singleClick") {
+    if (view.mouseDown) view.mouseDown.done()
     view.mouseDown = new MouseDown(view, pos, event, flushed)
-  else if ((type == "doubleClick" ? handleDoubleClick : handleTripleClick)(view, pos.pos, pos.inside, event))
+  } else if ((type == "doubleClick" ? handleDoubleClick : handleTripleClick)(view, pos.pos, pos.inside, event)) {
     event.preventDefault()
-  else
+  } else {
     setSelectionOrigin(view, "pointer")
+  }
 }
 
 class MouseDown {
@@ -371,6 +373,7 @@ class MouseDown {
                                Math.abs(this.event.y - event.clientY) > 4))
       this.allowDefault = true
     setSelectionOrigin(this.view, "pointer")
+    if (event.buttons == 0) this.done()
   }
 }
 
