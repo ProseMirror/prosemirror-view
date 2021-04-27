@@ -1,3 +1,17 @@
+## 1.18.4 (2021-04-27)
+
+### Bug fixes
+
+Fix incorrect drag cursor in Chrome on some platforms.
+
+Fix an issue where a race condition could leave a node uneditable when clicked.
+
+Fix scroll handling when the editor is placed through a DOM component slot.
+
+Fix a typo in the Chrome backspace workaround.
+
+Fixes an issue where, when mouseup events weren't being delivered, the editor could leak event handlers.
+
 ## 1.18.3 (2021-04-13)
 
 ### Bug fixes
