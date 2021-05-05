@@ -382,6 +382,12 @@ class ViewDesc {
         brKludge = prev && (prev.nodeName == "BR" || prev.contentEditable == "false")
       }
     }
+    // Firefox can act strangely when the selection is in front of an
+    // uneditable node. See #1163 and https://bugzilla.mozilla.org/show_bug.cgi?id=1709536
+    if (browser.gecko && domSel.focusNode && domSel.focusNode != headDOM.node && domSel.focusNode.nodeType == 1) {
+      let after = domSel.focusNode.childNodes[domSel.focusOffset]
+      if (after && after.contentEditable == "false") force = true
+    }
 
     if (!(force || brKludge && browser.safari) &&
         isEquivalentPosition(anchorDOM.node, anchorDOM.offset, domSel.anchorNode, domSel.anchorOffset) &&
