@@ -371,8 +371,10 @@ export class EditorView {
   // easily passed around.
   dispatch(tr) {
     let dispatchTransaction = this._props.dispatchTransaction
-    if (dispatchTransaction) dispatchTransaction.call(this, tr)
-    else this.updateState(this.state.apply(tr))
+    if (dispatchTransaction) {
+        return  dispatchTransaction.call(this, tr)
+    }
+    else return this.updateState(this.state.apply(tr))
   }
 }
 
