@@ -847,9 +847,9 @@ class TextViewDesc extends NodeViewDesc {
   get domAtom() { return false }
 }
 
-// A dummy desc used to tag trailing BR or span nodes created to work
+// A dummy desc used to tag trailing BR or IMG nodes created to work
 // around contentEditable terribleness.
-class BRHackViewDesc extends ViewDesc {
+class TrailingHackViewDesc extends ViewDesc {
   parseRule() { return {ignore: true} }
   matchesHack() { return this.dirty == NOT_DIRTY }
   get domAtom() { return true }
@@ -1191,8 +1191,8 @@ class ViewTreeUpdater {
       if (this.index < this.top.children.length && this.top.children[this.index].matchesHack()) {
         this.index++
       } else {
-        let dom = document.createElement("br")
-        this.top.children.splice(this.index++, 0, new BRHackViewDesc(this.top, nothing, dom, null))
+        let dom = document.createElement(browser.chrome && lastChild && lastChild.dom.contentEditable == "false" ? "img" : "br")
+        this.top.children.splice(this.index++, 0, new TrailingHackViewDesc(this.top, nothing, dom, null))
         this.changed = true
       }
     }
