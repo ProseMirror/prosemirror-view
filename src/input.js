@@ -360,7 +360,7 @@ class MouseDown {
                // thus doesn't get a reaction from ProseMirror. This
                // works around that.
                (browser.chrome && !(this.view.state.selection instanceof TextSelection) &&
-                (pos.pos == this.view.state.selection.from || pos.pos == this.view.state.selection.to))) {
+                Math.min(Math.abs(pos.pos - this.view.state.selection.from), Math.abs(pos.pos - view.state.selection.to)) <= 2)) {
       updateSelection(this.view, Selection.near(this.view.state.doc.resolve(pos.pos)), "pointer")
       event.preventDefault()
     } else {
