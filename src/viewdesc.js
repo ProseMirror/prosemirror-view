@@ -1191,7 +1191,7 @@ class ViewTreeUpdater {
       if (this.index < this.top.children.length && this.top.children[this.index].matchesHack()) {
         this.index++
       } else {
-        let dom = document.createElement(browser.chrome && lastChild && lastChild.dom.contentEditable == "false" ? "img" : "br")
+        let dom = document.createElement("br")
         this.top.children.splice(this.index++, 0, new TrailingHackViewDesc(this.top, nothing, dom, null))
         this.changed = true
       }
