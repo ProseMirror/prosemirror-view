@@ -1,3 +1,13 @@
+## 1.18.5 (2021-05-17)
+
+### Bug fixes
+
+Work around a Firefox bug where backspace sometimes deletes the node after the cursor.
+
+Fix a bug that prevented `transformPasted` hooks from being called on content dragged within the editor.
+
+Fixes an issue where clicking near a node or other special selection on Chrome would in some cases do nothing.
+
 ## 1.18.4 (2021-04-27)
 
 ### Bug fixes
