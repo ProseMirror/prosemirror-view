@@ -1,3 +1,9 @@
+## 1.18.6 (2021-05-17)
+
+### Bug fixes
+
+Fix a crash in mouse click handling introduced in the previous version.
+
 ## 1.18.5 (2021-05-17)
 
 ### Bug fixes
