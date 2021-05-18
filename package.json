@@ -28,7 +28,9 @@
     "moduleserve": "^0.7.0",
     "prosemirror-test-builder": "^1.0.0",
     "rollup": "^2.26.3",
-    "@rollup/plugin-buble": "^0.21.3"
+    "@rollup/plugin-buble": "^0.21.3",
+    "prosemirror-schema-basic": "^1.1.2",
+    "prosemirror-schema-list": "^1.1.4"
   },
   "scripts": {
     "test": "FIXME autorun browser tests",
