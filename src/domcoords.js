@@ -250,7 +250,10 @@ export function posAtCoords(view, coords) {
     if (!elt) return null
   }
   // Safari's caretRangeFromPoint returns nonsense when on a draggable element
-  if (browser.safari && elt.draggable) node = offset = null
+  if (browser.safari) {
+    for (let p = elt; node && p; p = parentNode(p))
+      if (p.draggable) node = offset = null
+  }
   elt = targetKludge(elt, coords)
   if (node) {
     if (browser.gecko && node.nodeType == 1) {

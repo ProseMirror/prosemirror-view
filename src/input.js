@@ -302,8 +302,9 @@ class MouseDown {
     const targetDesc = target ? view.docView.nearestDesc(target, true) : null
     this.target = targetDesc ? targetDesc.dom : null
 
+    let {selection} = view.state
     if (targetNode.type.spec.draggable && targetNode.type.spec.selectable !== false ||
-        view.state.selection instanceof NodeSelection && targetPos == view.state.selection.from)
+        selection instanceof NodeSelection && selection.from <= targetPos && selection.to > targetPos)
       this.mightDrag = {node: targetNode,
                         pos: targetPos,
                         addAttr: this.target && !this.target.draggable,
