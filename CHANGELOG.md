@@ -1,3 +1,11 @@
+## 1.18.7 (2021-05-20)
+
+### Bug fixes
+
+Fix a bug where clicking on a textblock that had a node-selected parent didn't set a cursor selection.
+
+Fix a bug that caused a workaround for a Chrome Android issue to not work correctly, leading to bad cursor placement after some types of text input.
+
 ## 1.18.6 (2021-05-17)
 
 ### Bug fixes
