@@ -47,7 +47,7 @@ export function initInput(view) {
   view.eventHandlers = Object.create(null);
   for (let event in handlers) {
     let handler = handlers[event];
-    view.dom.addEventListener(
+    window.addEventListener(
       event,
       (view.eventHandlers[event] = (event) => {
         if (
@@ -64,7 +64,7 @@ export function initInput(view) {
   // event handler makes an issue where the composition vanishes when
   // you press enter go away.
   if (browser.safari)
-    view.dom.addEventListener('input', () => null, { capture: true });
+    window.addEventListener('input', () => null, { capture: true });
 
   ensureListeners(view);
 }
@@ -77,7 +77,7 @@ function setSelectionOrigin(view, origin) {
 export function destroyInput(view) {
   view.domObserver.stop();
   for (let type in view.eventHandlers)
-    view.dom.removeEventListener(type, view.eventHandlers[type], {
+    window.removeEventListener(type, view.eventHandlers[type], {
       capture: true,
     });
   clearTimeout(view.composingTimeout);
@@ -88,7 +88,7 @@ export function ensureListeners(view) {
   view.someProp('handleDOMEvents', (currentHandlers) => {
     for (let type in currentHandlers)
       if (!view.eventHandlers[type])
-        view.dom.addEventListener(
+        window.addEventListener(
           type,
           (view.eventHandlers[type] = (event) => runCustomHandler(view, event)),
           { capture: true }
@@ -426,20 +426,18 @@ class MouseDown {
       this.view.domObserver.start();
     }
 
-    view.root.addEventListener('mouseup', (this.up = this.up.bind(this)), {
+    window.addEventListener('mouseup', (this.up = this.up.bind(this)), {
       capture: true,
     });
-    view.root.addEventListener(
-      'mousemove',
-      (this.move = this.move.bind(this)),
-      { capture: true }
-    );
+    window.addEventListener('mousemove', (this.move = this.move.bind(this)), {
+      capture: true,
+    });
     setSelectionOrigin(view, 'pointer');
   }
 
   done() {
-    this.view.root.removeEventListener('mouseup', this.up, { capture: true });
-    this.view.root.removeEventListener('mousemove', this.move, {
+    window.removeEventListener('mouseup', this.up, { capture: true });
+    window.removeEventListener('mousemove', this.move, {
       capture: true,
     });
     if (this.mightDrag && this.target) {
