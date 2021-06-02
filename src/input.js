@@ -51,9 +51,9 @@ export function initInput(view) {
       event,
       (view.eventHandlers[event] = (event) => {
         if (
-          eventBelongsToView(view, event) &&
-          !runCustomHandler(view, event) &&
-          (view.editable || !(event.type in editHandlers))
+          // eventBelongsToView(view, event) &&
+          !runCustomHandler(view, event)
+          //&& (view.editable || !(event.type in editHandlers))
         )
           handler(view, event);
       }),
