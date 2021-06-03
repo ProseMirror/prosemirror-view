@@ -50,12 +50,12 @@ export function initInput(view) {
     window.addEventListener(
       event,
       (view.eventHandlers[event] = (event) => {
-        if (
-          // eventBelongsToView(view, event) &&
-          !runCustomHandler(view, event)
-          //&& (view.editable || !(event.type in editHandlers))
-        )
-          handler(view, event);
+        // if (
+        // eventBelongsToView(view, event) &&
+        // !runCustomHandler(view, event)
+        //&& (view.editable || !(event.type in editHandlers))
+        // )
+        handler(view, event);
       }),
       { capture: true }
     );
