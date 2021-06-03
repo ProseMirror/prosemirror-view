@@ -47,24 +47,22 @@ export function initInput(view) {
   view.eventHandlers = Object.create(null);
   for (let event in handlers) {
     let handler = handlers[event];
-    window.addEventListener(
+    view.dom.addEventListener(
       event,
       (view.eventHandlers[event] = (event) => {
-        // if (
-        // eventBelongsToView(view, event) &&
-        // !runCustomHandler(view, event)
-        //&& (view.editable || !(event.type in editHandlers))
-        // )
-        handler(view, event);
-      }),
-      { capture: true }
+        if (
+          // eventBelongsToView(view, event) &&
+          !runCustomHandler(view, event) &&
+          (view.editable || !(event.type in editHandlers))
+        )
+          handler(view, event);
+      })
     );
   }
   // On Safari, for reasons beyond my understanding, adding an input
   // event handler makes an issue where the composition vanishes when
   // you press enter go away.
-  if (browser.safari)
-    window.addEventListener('input', () => null, { capture: true });
+  if (browser.safari) view.dom.addEventListener('input', () => null);
 
   ensureListeners(view);
 }
@@ -77,7 +75,7 @@ function setSelectionOrigin(view, origin) {
 export function destroyInput(view) {
   view.domObserver.stop();
   for (let type in view.eventHandlers)
-    window.removeEventListener(type, view.eventHandlers[type], {
+    view.dom.removeEventListener(type, view.eventHandlers[type], {
       capture: true,
     });
   clearTimeout(view.composingTimeout);
@@ -88,10 +86,9 @@ export function ensureListeners(view) {
   view.someProp('handleDOMEvents', (currentHandlers) => {
     for (let type in currentHandlers)
       if (!view.eventHandlers[type])
-        window.addEventListener(
+        view.dom.addEventListener(
           type,
-          (view.eventHandlers[type] = (event) => runCustomHandler(view, event)),
-          { capture: true }
+          (view.eventHandlers[type] = (event) => runCustomHandler(view, event))
         );
   });
 }
@@ -426,20 +423,14 @@ class MouseDown {
       this.view.domObserver.start();
     }
 
-    window.addEventListener('mouseup', (this.up = this.up.bind(this)), {
-      capture: true,
-    });
-    window.addEventListener('mousemove', (this.move = this.move.bind(this)), {
-      capture: true,
-    });
+    view.root.addEventListener('mouseup', (this.up = this.up.bind(this)));
+    view.root.addEventListener('mousemove', (this.move = this.move.bind(this)));
     setSelectionOrigin(view, 'pointer');
   }
 
   done() {
-    window.removeEventListener('mouseup', this.up, { capture: true });
-    window.removeEventListener('mousemove', this.move, {
-      capture: true,
-    });
+    view.root.removeEventListener('mouseup', this.up);
+    view.root.removeEventListener('mousemove', this.move);
     if (this.mightDrag && this.target) {
       this.view.domObserver.stop();
       if (this.mightDrag.addAttr) this.target.removeAttribute('draggable');
