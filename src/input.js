@@ -100,7 +100,7 @@ export function dispatchEvent(view, event) {
 editHandlers.keydown = (view, event) => {
   view.shiftKey = event.keyCode == 16 || event.shiftKey
   if (inOrNearComposition(view, event)) return
-  view.domObserver.forceFlush()
+  if (event.keyCode != 229) view.domObserver.forceFlush()
   view.lastKeyCode = event.keyCode
   view.lastKeyCodeTime = Date.now()
   // On iOS, if we preventDefault enter key presses, the virtual
