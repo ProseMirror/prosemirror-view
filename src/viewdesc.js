@@ -844,6 +844,12 @@ class TextViewDesc extends NodeViewDesc {
     return new TextViewDesc(this.parent, node, this.outerDeco, this.innerDeco, dom, dom, view)
   }
 
+  markDirty(from, to) {
+    super.markDirty(from, to)
+    if (this.dom != this.nodeDOM && (from == 0 || to == this.nodeDOM.nodeValue.length))
+      this.dirty = NODE_DIRTY
+  }
+
   get domAtom() { return false }
 }
 
