@@ -113,7 +113,7 @@ class ViewDesc {
   matchesWidget() { return false }
   matchesMark() { return false }
   matchesNode() { return false }
-  matchesHack() { return false }
+  matchesHack(_nodeName) { return false }
 
   get beforePosition() { return false }
 
@@ -851,7 +851,7 @@ class TextViewDesc extends NodeViewDesc {
 // around contentEditable terribleness.
 class TrailingHackViewDesc extends ViewDesc {
   parseRule() { return {ignore: true} }
-  matchesHack() { return this.dirty == NOT_DIRTY }
+  matchesHack(nodeName) { return this.dirty == NOT_DIRTY && this.dom.nodeName == nodeName }
   get domAtom() { return true }
 }
 
@@ -1188,13 +1188,20 @@ class ViewTreeUpdater {
     if (!lastChild || // Empty textblock
         !(lastChild instanceof TextViewDesc) ||
         /\n$/.test(lastChild.node.text)) {
-      if (this.index < this.top.children.length && this.top.children[this.index].matchesHack()) {
-        this.index++
-      } else {
-        let dom = document.createElement("br")
-        this.top.children.splice(this.index++, 0, new TrailingHackViewDesc(this.top, nothing, dom, null))
-        this.changed = true
-      }
+      // Avoid a bug in Safari's cursor drawing (#1165)
+      if (browser.safari && lastChild.dom.contentEditable == "false")
+        this.addHackNode("IMG")
+      this.addHackNode("BR")
+    }
+  }
+
+  addHackNode(nodeName) {
+    if (this.index < this.top.children.length && this.top.children[this.index].matchesHack(nodeName)) {
+      this.index++
+    } else {
+      let dom = document.createElement(nodeName)
+      this.top.children.splice(this.index++, 0, new TrailingHackViewDesc(this.top, nothing, dom, null))
+      this.changed = true
     }
   }
 }
