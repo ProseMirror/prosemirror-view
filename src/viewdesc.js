@@ -374,9 +374,17 @@ class ViewDesc {
       if (node.nodeType == 3) {
         brKludge = offset && node.nodeValue[offset - 1] == "\n"
         // Issue #1128
-        if (brKludge && offset == node.nodeValue.length &&
-            node.nextSibling && node.nextSibling.nodeName == "BR")
-          anchorDOM = headDOM = {node: node.parentNode, offset: domIndex(node) + 1}
+        if (brKludge && offset == node.nodeValue.length) {
+          for (let scan = node, after; scan; scan = scan.parentNode) {
+            if (after = scan.nextSibling) {
+              if (after.nodeName == "BR")
+                anchorDOM = headDOM = {node: after.parentNode, offset: domIndex(after) + 1}
+              break
+            }
+            let desc = scan.pmViewDesc
+            if (desc && desc.node && desc.node.isBlock) break
+          }
+        }
       } else {
         let prev = node.childNodes[offset - 1]
         brKludge = prev && (prev.nodeName == "BR" || prev.contentEditable == "false")
