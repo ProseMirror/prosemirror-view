@@ -1,3 +1,15 @@
+## 1.18.8 (2021-06-23)
+
+### Bug fixes
+
+Work around a Safari bug where it draws the cursor at the start of the line when it is after an uneditable node at the end of the line.
+
+Fix an issue where the DOM could get out of sync when editing decorated text.
+
+Work around an issue where Firefox draws the cursor on the wrong line when after a newline.
+
+Fix a bug where double-clicking with the left mouse button and then pressing another mouse button was treated as a triple click.
+
 ## 1.18.7 (2021-05-20)
 
 ### Bug fixes
