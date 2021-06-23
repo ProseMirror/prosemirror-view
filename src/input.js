@@ -220,10 +220,11 @@ function handleDoubleClick(view, pos, inside, event) {
 function handleTripleClick(view, pos, inside, event) {
   return runHandlerOnContext(view, "handleTripleClickOn", pos, inside, event) ||
     view.someProp("handleTripleClick", f => f(view, pos, event)) ||
-    defaultTripleClick(view, inside)
+    defaultTripleClick(view, inside, event)
 }
 
-function defaultTripleClick(view, inside) {
+function defaultTripleClick(view, inside, event) {
+  if (event.button != 0) return false
   let doc = view.state.doc
   if (inside == -1) {
     if (doc.inlineContent) {
@@ -284,7 +285,7 @@ class MouseDown {
     this.event = event
     this.flushed = flushed
     this.selectNode = event[selectNodeModifier]
-    this.allowDefault = event.shiftKey
+    this.allowDefault = event.shiftKey || event.button != 0
 
     let targetNode, targetPos
     if (pos.inside > -1) {
@@ -303,7 +304,8 @@ class MouseDown {
     this.target = targetDesc ? targetDesc.dom : null
 
     let {selection} = view.state
-    if (targetNode.type.spec.draggable && targetNode.type.spec.selectable !== false ||
+    if (event.button == 0 &&
+        targetNode.type.spec.draggable && targetNode.type.spec.selectable !== false ||
         selection instanceof NodeSelection && selection.from <= targetPos && selection.to > targetPos)
       this.mightDrag = {node: targetNode,
                         pos: targetPos,
