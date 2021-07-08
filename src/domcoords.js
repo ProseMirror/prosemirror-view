@@ -73,7 +73,7 @@ export function storeScrollPos(view) {
   return {refDOM, refTop, stack: scrollStack(view.dom)}
 }
 
-function scrollStack(dom) {
+export function scrollStack(dom) {
   let stack = [], doc = dom.ownerDocument
   for (; dom; dom = parentNode(dom)) {
     stack.push({dom, top: dom.scrollTop, left: dom.scrollLeft})
@@ -89,7 +89,7 @@ export function resetScrollPos({refDOM, refTop, stack}) {
   restoreScrollStack(stack, newRefTop == 0 ? 0 : newRefTop - refTop)
 }
 
-function restoreScrollStack(stack, dTop) {
+export function restoreScrollStack(stack, dTop) {
   for (let i = 0; i < stack.length; i++) {
     let {dom, top, left} = stack[i]
     if (dom.scrollTop != top + dTop) dom.scrollTop = top + dTop

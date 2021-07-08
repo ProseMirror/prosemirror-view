@@ -3,6 +3,7 @@ import {Selection, TextSelection} from "prosemirror-state"
 
 import {selectionBetween, selectionFromDOM, selectionToDOM} from "./selection"
 import {selectionCollapsed, keyEvent} from "./dom"
+import {restoreScrollStack} from "./domcoords"
 import browser from "./browser"
 
 // Note that all referencing and parsing is done with the
@@ -78,6 +79,15 @@ export function readDOMChange(view, from, to, typeOver, addedNodes) {
     let origin = view.lastSelectionTime > Date.now() - 50 ? view.lastSelectionOrigin : null
     let newSel = selectionFromDOM(view, origin)
     if (newSel && !view.state.selection.eq(newSel)) {
+      // Chrome has an issue where it'll sometimes move the cursor to
+      // the very end or start of the document when vertical cursor
+      // motion would move the cursor into a line-wrapped uneditable
+      // widget.
+      if (browser.chrome && view.lastKeyCodeTime > Date.now() - 100 &&
+          (view.lastKeyCode == 38 && newSel.eq(Selection.atStart(view.state.doc)) ||
+           view.lastKeyCode == 40 && newSel.eq(Selection.atEnd(view.state.doc))))
+        newSel = handleChromeCursorJumpBug(view, view.lastKeyCode == 38, newSel)
+
       let tr = view.state.tr.setSelection(newSel)
       if (origin == "pointer") tr.setMeta("pointer", true)
       else if (origin == "key") tr.scrollIntoView()
@@ -340,4 +350,37 @@ function findDiff(a, b, pos, preferredPos, preferredSide) {
     endB = start
   }
   return {start, endA, endB}
+}
+
+function handleChromeCursorJumpBug(view, up, newSel) {
+  let {$head} = view.state.selection, $head2 = newSel.$head
+  let from = Math.min($head.pos, $head2.pos), to = Math.max($head.pos, $head2.pos)
+  // Double-check if this may be a legitimate vertical motion (no blocks skipped)
+  let near = true
+  view.state.doc.nodesBetween(from, to, (node, pos) => {
+    if (!near) return false
+    if (node.isBlock && pos >= from && pos + node.nodeSize <= to) near = false
+  })
+  if (near || !$head.parent.isTextblock) return newSel
+
+  // Find the nearest uneditable widget past the old cursor position
+  let nearestPos = -1
+  function scan(desc, pos) {
+    if (up ? pos > $head.pos : nearestPos > -1) return
+    if (desc.dom.contentEditable == "false") {
+      if (up ? pos < $head.pos : pos > $head.pos)
+        nearestPos = up ? pos : pos + desc.size
+    } else {
+      for (let i = 0, off = desc.border; i < desc.children.length; i++) {
+        let ch = desc.children[i]
+        scan(ch, pos + off)
+        off += ch.size
+      }
+    }
+  }
+  scan(view.docView.descAt($head.before()), $head.before())
+  if (nearestPos < 0) return newSel
+
+  restoreScrollStack(view.chromeLastVertArrowScrollStack, 0)
+  return Selection.near(view.state.doc.resolve(nearestPos + (up ? -1 : 1)), up ? -1 : 1)
 }

@@ -5,6 +5,7 @@ import {Slice} from "prosemirror-model"
 import browser from "./browser"
 import {captureKeyDown} from "./capturekeys"
 import {readDOMChange} from "./domchange"
+import {scrollStack} from "./domcoords"
 import {parseFromClipboard, serializeForClipboard} from "./clipboard"
 import {DOMObserver} from "./domobserver"
 import {selectionBetween, selectionToDOM, selectionFromDOM} from "./selection"
@@ -19,6 +20,7 @@ export function initInput(view) {
   view.mouseDown = null
   view.lastKeyCode = null
   view.lastKeyCodeTime = 0
+  view.chromeLastVertArrowScrollStack = []
   view.lastClick = {time: 0, x: 0, y: 0, type: ""}
   view.lastSelectionOrigin = null
   view.lastSelectionTime = 0
@@ -103,6 +105,8 @@ editHandlers.keydown = (view, event) => {
   if (event.keyCode != 229) view.domObserver.forceFlush()
   view.lastKeyCode = event.keyCode
   view.lastKeyCodeTime = Date.now()
+  if (browser.chrome && (event.keyCode == 38 || event.keyCode == 40))
+    view.chromeLastVertArrowScrollStack = scrollStack(view.dom)
   // On iOS, if we preventDefault enter key presses, the virtual
   // keyboard gets confused. So the hack here is to set a flag that
   // makes the DOM change code recognize that what just happens should
