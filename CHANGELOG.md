@@ -1,3 +1,9 @@
+## 1.18.9 (2021-07-11)
+
+### Bug fixes
+
+Fix a bug in the previous release where `handleClickOn` wasn't fired anymore for clicks with the middle or right mouse button.
+
 ## 1.18.8 (2021-06-23)
 
 ### Bug fixes
