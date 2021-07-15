@@ -1,3 +1,9 @@
+## 1.18.10 (2021-07-15)
+
+### Bug fixes
+
+Fix an issue where dragging from just outside a draggable node on Chrome would cause odd dragging behavior.
+
 ## 1.18.9 (2021-07-11)
 
 ### Bug fixes
