@@ -1,7 +1,7 @@
 import {Selection, NodeSelection, TextSelection, AllSelection} from "prosemirror-state"
 import browser from "./browser"
 import {domIndex, selectionCollapsed} from "./dom"
-import {selectionToDOM} from "./selection"
+import {selectionToDOM, hasFocusAndSelection} from "./selection"
 
 function moveSelectionBlock(state, dir) {
   let {$anchor, $head} = state.selection
@@ -61,6 +61,7 @@ function isIgnorable(dom) {
 // Make sure the cursor isn't directly after one or more ignored
 // nodes, which will confuse the browser's cursor motion logic.
 function skipIgnoredNodesLeft(view) {
+  if (!hasFocusAndSelection(view)) return
   let sel = view.root.getSelection()
   let node = sel.focusNode, offset = sel.focusOffset
   if (!node) return
@@ -109,6 +110,7 @@ function skipIgnoredNodesLeft(view) {
 // Make sure the cursor isn't directly before one or more ignored
 // nodes.
 function skipIgnoredNodesRight(view) {
+  if (!hasFocusAndSelection(view)) return
   let sel = view.root.getSelection()
   let node = sel.focusNode, offset = sel.focusOffset
   if (!node) return
