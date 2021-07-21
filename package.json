@@ -17,10 +17,11 @@
     "type": "git",
     "url": "git://github.com/prosemirror/prosemirror-view.git"
   },
-  "dependencies": {
-    "prosemirror-model": "^1.1.0",
-    "prosemirror-state": "^1.0.0",
-    "prosemirror-transform": "^1.1.0"
+  
+  "peerDependencies": {
+    "prosemirror-model": "*",
+    "prosemirror-state": "*,
+    "prosemirror-transform": "*"
   },
   "devDependencies": {
     "ist": "^1.0.0",
@@ -28,7 +29,10 @@
     "moduleserve": "^0.7.0",
     "prosemirror-test-builder": "^1.0.0",
     "rollup": "^2.26.3",
-    "@rollup/plugin-buble": "^0.21.3"
+    "@rollup/plugin-buble": "^0.21.3",
+    "prosemirror-model": "^1.1.0",
+    "prosemirror-state": "^1.0.0",
+    "prosemirror-transform": "^1.1.0"
   },
   "scripts": {
     "test": "FIXME autorun browser tests",
