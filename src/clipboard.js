@@ -1,4 +1,5 @@
 import {Slice, Fragment, DOMParser, DOMSerializer} from "prosemirror-model"
+import browser from "./browser"
 
 export function serializeForClipboard(view, slice) {
   let context = [], {content, openStart, openEnd} = slice
@@ -54,6 +55,7 @@ export function parseFromClipboard(view, text, html, plainText, $context) {
   } else {
     view.someProp("transformPastedHTML", f => { html = f(html) })
     dom = readHTML(html)
+    if (browser.webkit) restoreReplacedSpaces(dom)
   }
 
   let contextNode = dom && dom.querySelector("[data-pm-slice]")
@@ -176,6 +178,20 @@ function readHTML(html) {
   elt.innerHTML = html
   if (wrap) for (let i = 0; i < wrap.length; i++) elt = elt.querySelector(wrap[i]) || elt
   return elt
+}
+
+// Webkit browsers do some hard-to-predict replacement of regular
+// spaces with non-breaking spaces when putting content on the
+// clipboard. This tries to convert such non-breaking spaces (which
+// will be wrapped in a plain span on Chrome, a span with class
+// Apple-converted-space on Safari) back to regular spaces.
+function restoreReplacedSpaces(dom, selector) {
+  let nodes = dom.querySelectorAll(browser.chrome ? "span:not([class]):not([style])" : "span.Apple-converted-space")
+  for (let i = 0; i < nodes.length; i++) {
+    let node = nodes[i]
+    if (node.childNodes.length == 1 && node.textContent == "\u00a0" && node.parentNode)
+      node.parentNode.replaceChild(dom.ownerDocument.createTextNode(" "), node)
+  }
 }
 
 function addContext(slice, context) {
