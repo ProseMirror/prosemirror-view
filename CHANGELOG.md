@@ -1,3 +1,13 @@
+## 1.18.11 (2021-07-22)
+
+### Bug fixes
+
+Work around an issue where Chrome and Safari will replace some spaces with non-breaking spaces when putting HTML on the clipboard.
+
+When pasting as plain text (shift-mod-v) apply the marks at the selection to the inserted content.
+
+Fix flaky behavior when starting a composition with a selection that spans multiple blocks.
+
 ## 1.18.10 (2021-07-15)
 
 ### Bug fixes
