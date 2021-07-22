@@ -187,7 +187,7 @@ function readHTML(html) {
 // clipboard. This tries to convert such non-breaking spaces (which
 // will be wrapped in a plain span on Chrome, a span with class
 // Apple-converted-space on Safari) back to regular spaces.
-function restoreReplacedSpaces(dom, selector) {
+function restoreReplacedSpaces(dom) {
   let nodes = dom.querySelectorAll(browser.chrome ? "span:not([class]):not([style])" : "span.Apple-converted-space")
   for (let i = 0; i < nodes.length; i++) {
     let node = nodes[i]

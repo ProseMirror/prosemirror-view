@@ -453,7 +453,7 @@ class ViewDesc {
           else child.markDirty(from - startInside, to - startInside)
           return
         } else {
-          child.dirty = NODE_DIRTY
+          child.dirty = child.dom == child.contentDOM && child.dom.parentNode == this.contentDOM ? CONTENT_DIRTY : NODE_DIRTY
         }
       }
       offset = end
@@ -676,8 +676,10 @@ class NodeViewDesc extends ViewDesc {
   // `this.children`.
   updateChildren(view, pos) {
     let inline = this.node.inlineContent, off = pos
-    let composition = inline && view.composing && this.localCompositionNode(view, pos)
-    let updater = new ViewTreeUpdater(this, composition && composition.node)
+    let composition = view.composing && this.localCompositionInfo(view, pos)
+    let localComposition = composition && composition.pos > -1 ? composition : null
+    let compositionInChild = composition && composition.pos < 0
+    let updater = new ViewTreeUpdater(this, localComposition && localComposition.node)
     iterDeco(this.node, this.innerDeco, (widget, i, insideNode) => {
       if (widget.spec.marks)
         updater.syncToMarks(widget.spec.marks, inline, view)
@@ -689,13 +691,21 @@ class NodeViewDesc extends ViewDesc {
     }, (child, outerDeco, innerDeco, i) => {
       // Make sure the wrapping mark descs match the node's marks.
       updater.syncToMarks(child.marks, inline, view)
-      // Either find an existing desc that exactly matches this node,
-      // and drop the descs before it.
-      updater.findNodeMatch(child, outerDeco, innerDeco, i) ||
-        // Or try updating the next desc to reflect this node.
-        updater.updateNextNode(child, outerDeco, innerDeco, view, i) ||
-        // Or just add it as a new desc.
+      // Try several strategies for drawing this node
+      let compIndex
+      if (updater.findNodeMatch(child, outerDeco, innerDeco, i)) {
+        // Found precise match with existing node view
+      } else if (compositionInChild && view.state.selection.from > off &&
+                 view.state.selection.to < off + child.nodeSize &&
+                 (compIndex = updater.findIndexWithChild(composition.node)) > -1 &&
+                 updater.updateNodeAt(child, outerDeco, innerDeco, compIndex, view)) {
+        // Updated the specific node that holds the composition
+      } else if (updater.updateNextNode(child, outerDeco, innerDeco, view, i)) {
+        // Could update an existing node to reflect this node
+      } else {
+        // Add it as a new view
         updater.addNode(child, outerDeco, innerDeco, view, off)
+      }
       off += child.nodeSize
     })
     // Drop all remaining descs after the current position.
@@ -706,29 +716,31 @@ class NodeViewDesc extends ViewDesc {
     // Sync the DOM if anything changed
     if (updater.changed || this.dirty == CONTENT_DIRTY) {
       // May have to protect focused DOM from being changed if a composition is active
-      if (composition) this.protectLocalComposition(view, composition)
+      if (localComposition) this.protectLocalComposition(view, localComposition)
       renderDescs(this.contentDOM, this.children, view)
       if (browser.ios) iosHacks(this.dom)
     }
   }
 
-  localCompositionNode(view, pos) {
+  localCompositionInfo(view, pos) {
     // Only do something if both the selection and a focused text node
-    // are inside of this node, and the node isn't already part of a
-    // view that's a child of this view
+    // are inside of this node
     let {from, to} = view.state.selection
     if (!(view.state.selection instanceof TextSelection) || from < pos || to > pos + this.node.content.size) return
     let sel = view.root.getSelection()
     let textNode = nearbyTextNode(sel.focusNode, sel.focusOffset)
     if (!textNode || !this.dom.contains(textNode.parentNode)) return
 
-    // Find the text in the focused node in the node, stop if it's not
-    // there (may have been modified through other means, in which
-    // case it should overwritten)
-    let text = textNode.nodeValue
-    let textPos = findTextInFragment(this.node.content, text, from - pos, to - pos)
-
-    return textPos < 0 ? null : {node: textNode, pos: textPos, text}
+    if (this.node.inlineContent) {
+      // Find the text in the focused node in the node, stop if it's not
+      // there (may have been modified through other means, in which
+      // case it should overwritten)
+      let text = textNode.nodeValue
+      let textPos = findTextInFragment(this.node.content, text, from - pos, to - pos)
+      return textPos < 0 ? null : {node: textNode, pos: textPos, text}
+    } else {
+      return {node: textNode, pos: -1}
+    }
   }
 
   protectLocalComposition(view, {node, pos, text}) {
@@ -1144,6 +1156,29 @@ class ViewTreeUpdater {
     this.destroyBetween(this.index, found)
     this.index++
     return true
+  }
+
+  updateNodeAt(node, outerDeco, innerDeco, index, view) {
+    let child = this.top.children[index]
+    if (!child.update(node, outerDeco, innerDeco, view)) return false
+    this.destroyBetween(this.index, index)
+    this.index = index + 1
+    return true
+  }
+
+  findIndexWithChild(domNode) {
+    for (;;) {
+      let parent = domNode.parentNode
+      if (!parent) return -1
+      if (parent == this.top.contentDOM) {
+        let desc = domNode.pmViewDesc
+        if (desc) for (let i = this.index; i < this.top.children.length; i++) {
+          if (this.top.children[i] == desc) return i
+        }
+        return -1
+      }
+      domNode = parent
+    }
   }
 
   // : (Node, [Decoration], DecorationSource, EditorView, Fragment, number) → bool
