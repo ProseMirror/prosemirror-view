@@ -461,7 +461,10 @@ function scheduleComposeEnd(view, delay) {
 }
 
 export function clearComposition(view) {
-  view.composing = false
+  if (view.composing) {
+    view.composing = false
+    view.compositionEndedAt = new CustomEvent("compositionend").timeStamp
+  }
   while (view.compositionNodes.length > 0) view.compositionNodes.pop().markParentsDirty()
 }
 
