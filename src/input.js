@@ -464,7 +464,7 @@ export function clearComposition(view) {
   if (view.composing) {
     view.composing = false
     let event = browser.ie ? document.createEvent("CompositionEvent") : new CompositionEvent("compositionend")
-    view.compositionEndedAt = event.timeStamp;
+    view.compositionEndedAt = event.timeStamp
   }
   while (view.compositionNodes.length > 0) view.compositionNodes.pop().markParentsDirty()
 }
