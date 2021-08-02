@@ -463,10 +463,19 @@ function scheduleComposeEnd(view, delay) {
 export function clearComposition(view) {
   if (view.composing) {
     view.composing = false
-    let event = browser.ie ? document.createEvent("CompositionEvent") : new CompositionEvent("compositionend")
-    view.compositionEndedAt = event.timeStamp
+    view.compositionEndedAt = timestampFromCustomEvent()
   }
   while (view.compositionNodes.length > 0) view.compositionNodes.pop().markParentsDirty()
+}
+
+function timestampFromCustomEvent() {
+  try {
+    return new CompositionEvent("compositionend").timeStamp
+  } catch (e) {
+    let event = document.createEvent("CompositionEvent", {})
+    event.initCompositionEvent("compoositionend", true, true, window, {}, null)
+    return event.timeStamp
+  }
 }
 
 export function endComposition(view, forceUpdate) {
