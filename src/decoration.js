@@ -243,6 +243,10 @@ export class DecorationSet {
   // assumed to match.
   find(start, end, predicate) {
     let result = []
+    if (typeof start === "function" && end == null && predicate == null) {
+      predicate = start
+      start = null
+    }    
     this.findInner(start == null ? 0 : start, end == null ? 1e9 : end, result, 0, predicate)
     return result
   }
