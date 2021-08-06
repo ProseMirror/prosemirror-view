@@ -469,13 +469,9 @@ export function clearComposition(view) {
 }
 
 function timestampFromCustomEvent() {
-  try {
-    return new CompositionEvent("compositionend").timeStamp
-  } catch (e) {
-    let event = document.createEvent("CompositionEvent", {})
-    event.initCompositionEvent("compoositionend", true, true, window, {}, null)
-    return event.timeStamp
-  }
+  let event = document.createEvent("Event")
+  event.initEvent("event", true, true)
+  return event.timeStamp
 }
 
 export function endComposition(view, forceUpdate) {
