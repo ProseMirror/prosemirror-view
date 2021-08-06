@@ -600,7 +600,7 @@ function withoutNulls(array) {
 
 // : ([Decoration], Node, number) → DecorationSet
 // Build up a tree that corresponds to a set of decorations. `offset`
-// is a base offset that should be subtractet from the `from` and `to`
+// is a base offset that should be subtracted from the `from` and `to`
 // positions in the spans (so that we don't have to allocate new spans
 // for recursive calls).
 function buildTree(spans, node, offset, options) {
