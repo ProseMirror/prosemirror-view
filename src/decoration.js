@@ -418,6 +418,17 @@ export class DecorationSet {
 // An object that can [provide](#view.EditorProps.decorations)
 // decorations. Implemented by [`DecorationSet`](#view.DecorationSet),
 // and passed to [node views](#view.EditorProps.nodeViews).
+//
+// map:: (Mapping, Node, ?Object) → DecorationSet
+// Map the set of decorations in response to a change in the
+// document.
+//
+//   options::- An optional set of options.
+//
+//     onRemove:: ?(decorationSpec: Object)
+//     When given, this function will be called for each decoration
+//     that gets dropped as a result of the mapping, passing the
+//     spec of that decoration.
 
 const empty = new DecorationSet()
 
@@ -433,6 +444,14 @@ DecorationSet.removeOverlap = removeOverlap
 class DecorationGroup {
   constructor(members) {
     this.members = members
+  }
+
+  map(mapping, doc, options) {
+    const mappedMembers = [];
+    for (let i = 0; i < this.members.length; i++) {
+      mappedMembers.push(this.members[i].map(mapping, doc, options))
+    }
+    return DecorationGroup.from(mappedMembers)
   }
 
   forChild(offset, child) {
