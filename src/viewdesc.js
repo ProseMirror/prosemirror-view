@@ -611,7 +611,7 @@ class NodeViewDesc extends ViewDesc {
   // the way the node works.
   //
   // (Using subclassing for this was intentionally decided against,
-  // since it'd require exposing a whole slew of finnicky
+  // since it'd require exposing a whole slew of finicky
   // implementation details to the user code that they probably will
   // never need.)
   static create(parent, node, outerDeco, innerDeco, view, pos) {
