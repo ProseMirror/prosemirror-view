@@ -419,16 +419,9 @@ export class DecorationSet {
 // decorations. Implemented by [`DecorationSet`](#view.DecorationSet),
 // and passed to [node views](#view.EditorProps.nodeViews).
 //
-// map:: (Mapping, Node, ?Object) → DecorationSet
+// map:: (Mapping, Node) → DecorationSet
 // Map the set of decorations in response to a change in the
 // document.
-//
-//   options::- An optional set of options.
-//
-//     onRemove:: ?(decorationSpec: Object)
-//     When given, this function will be called for each decoration
-//     that gets dropped as a result of the mapping, passing the
-//     spec of that decoration.
 
 const empty = new DecorationSet()
 
@@ -446,7 +439,7 @@ class DecorationGroup {
     this.members = members
   }
 
-  map(mapping, doc, options) {
+  map(mapping, doc) {
     const mappedMembers = [];
     for (let i = 0; i < this.members.length; i++) {
       mappedMembers.push(this.members[i].map(mapping, doc, options))
