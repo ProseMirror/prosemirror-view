@@ -419,7 +419,7 @@ export class DecorationSet {
 // decorations. Implemented by [`DecorationSet`](#view.DecorationSet),
 // and passed to [node views](#view.EditorProps.nodeViews).
 //
-// map:: (Mapping, Node) → DecorationSet
+// map:: (Mapping, Node) → DecorationSource
 // Map the set of decorations in response to a change in the
 // document.
 
@@ -440,11 +440,10 @@ class DecorationGroup {
   }
 
   map(mapping, doc) {
-    const mappedMembers = [];
-    for (let i = 0; i < this.members.length; i++) {
-      mappedMembers.push(this.members[i].map(mapping, doc, options))
-    }
-    return DecorationGroup.from(mappedMembers)
+    const mappedDecos = this.members.map(
+      member => member.map(mapping, doc, noSpec)
+    )
+    return DecorationGroup.from(mappedDecos)
   }
 
   forChild(offset, child) {
