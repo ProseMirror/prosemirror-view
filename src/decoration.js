@@ -418,6 +418,10 @@ export class DecorationSet {
 // An object that can [provide](#view.EditorProps.decorations)
 // decorations. Implemented by [`DecorationSet`](#view.DecorationSet),
 // and passed to [node views](#view.EditorProps.nodeViews).
+//
+// map:: (Mapping, Node) → DecorationSource
+// Map the set of decorations in response to a change in the
+// document.
 
 const empty = new DecorationSet()
 
@@ -433,6 +437,13 @@ DecorationSet.removeOverlap = removeOverlap
 class DecorationGroup {
   constructor(members) {
     this.members = members
+  }
+
+  map(mapping, doc) {
+    const mappedDecos = this.members.map(
+      member => member.map(mapping, doc, noSpec)
+    )
+    return DecorationGroup.from(mappedDecos)
   }
 
   forChild(offset, child) {
