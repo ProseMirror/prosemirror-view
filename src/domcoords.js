@@ -419,7 +419,7 @@ function endOfTextblockHorizontal(view, state, dir) {
   let {$head} = state.selection
   if (!$head.parent.isTextblock) return false
   let offset = $head.parentOffset, atStart = !offset, atEnd = offset == $head.parent.content.size
-  let sel = getSelection()
+  let sel = view.root.getSelection()
   // If the textblock is all LTR, or the browser doesn't support
   // Selection.modify (Edge), fall back to a primitive approach
   if (!maybeRTL.test($head.parent.textContent) || !sel.modify)
