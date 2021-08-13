@@ -1,3 +1,17 @@
+## 1.19.0 (2021-08-13)
+
+### Bug fixes
+
+Add a  DOM attribute to the content element to avoid automatic translation services from messing with the editable text.
+
+Fix a bug where copy-pasting table content sometimes carried along superfluous table markup.
+
+Fix issue where end-of-textblock detection didn't use the correct selection when in a shadow root.
+
+### New features
+
+The `DecorationSource` interface now exposes a `map` method. Add a translate=no attribute to the editor element by default
+
 ## 1.18.11 (2021-07-22)
 
 ### Bug fixes
