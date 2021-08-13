@@ -21,6 +21,8 @@ export function serializeForClipboard(view, slice) {
       let wrapper = doc.createElement(needsWrap[i])
       while (wrap.firstChild) wrapper.appendChild(wrap.firstChild)
       wrap.appendChild(wrapper)
+      openStart++
+      openEnd++
     }
     firstChild = wrap.firstChild
   }
