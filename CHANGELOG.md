@@ -1,3 +1,9 @@
+## 1.19.1 (2021-08-16)
+
+### Bug fixes
+
+Fix another issue around copy-pasting table structure, causing inappropriate opening of copied cell selections.
+
 ## 1.19.0 (2021-08-13)
 
 ### Bug fixes
