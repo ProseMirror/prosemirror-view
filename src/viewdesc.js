@@ -1237,8 +1237,8 @@ class ViewTreeUpdater {
     if (!lastChild || // Empty textblock
         !(lastChild instanceof TextViewDesc) ||
         /\n$/.test(lastChild.node.text)) {
-      // Avoid a bug in Safari's cursor drawing (#1165)
-      if (browser.safari && lastChild && lastChild.dom.contentEditable == "false")
+      // Avoid bugs in Safari's cursor drawing (#1165) and Chrome's mouse selection (#1152)
+      if ((browser.safari || browser.chrome) && lastChild && lastChild.dom.contentEditable == "false")
         this.addHackNode("IMG")
       this.addHackNode("BR")
     }
