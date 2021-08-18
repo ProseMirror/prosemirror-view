@@ -286,6 +286,7 @@ class MouseDown {
     this.flushed = flushed
     this.selectNode = event[selectNodeModifier]
     this.allowDefault = event.shiftKey
+    this.delayedSelectionSync = false
 
     let targetNode, targetPos
     if (pos.inside > -1) {
@@ -336,6 +337,7 @@ class MouseDown {
       if (this.mightDrag.setUneditable) this.target.removeAttribute("contentEditable")
       this.view.domObserver.start()
     }
+    if (this.delayedSelectionSync) setTimeout(() => selectionToDOM(this.view))
     this.view.mouseDown = null
   }
 

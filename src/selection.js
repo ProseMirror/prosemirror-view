@@ -42,6 +42,12 @@ export function selectionToDOM(view, force) {
 
   if (!editorOwnsSelection(view)) return
 
+  if (!force && view.mouseDown && view.mouseDown.allowDefault) {
+    view.mouseDown.delayedSelectionSync = true
+    view.domObserver.setCurSelection()
+    return
+  }
+
   view.domObserver.disconnectSelection()
 
   if (view.cursorWrapper) {
