@@ -1,3 +1,9 @@
+## 1.19.2 (2021-08-19)
+
+### Bug fixes
+
+Avoid some bugs around drag-selecting by delaying synchronization between the DOM and the state selection until the end of the drag.
+
 ## 1.19.1 (2021-08-16)
 
 ### Bug fixes
