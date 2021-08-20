@@ -1,3 +1,11 @@
+## 1.19.3 (2021-08-20)
+
+### Bug fixes
+
+Fix an issue where generic styles for  elements could cause separator nodes created by the editor to impact layout.
+
+Fix an issue where moving to another tab and back could clear a node selection.
+
 ## 1.19.2 (2021-08-19)
 
 ### Bug fixes
