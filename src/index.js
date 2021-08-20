@@ -398,6 +398,7 @@ function computeDocDeco(view) {
 function updateCursorWrapper(view) {
   if (view.markCursor) {
     let dom = document.createElement("img")
+    dom.className = "ProseMirror-separator"
     dom.setAttribute("mark-placeholder", "true")
     view.cursorWrapper = {dom, deco: Decoration.widget(view.state.selection.head, dom, {raw: true, marks: view.markCursor})}
   } else {
