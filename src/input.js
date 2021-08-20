@@ -678,12 +678,13 @@ handlers.focus = view => {
   }
 }
 
-handlers.blur = view => {
+handlers.blur = (view, e) => {
   if (view.focused) {
     view.domObserver.stop()
     view.dom.classList.remove("ProseMirror-focused")
     view.domObserver.start()
-    view.domObserver.currentSelection.set({})
+    if (e.relatedTarget && view.dom.contains(e.relatedTarget))
+      view.domObserver.currentSelection.set({})
     view.focused = false
   }
 }
