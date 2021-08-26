@@ -419,9 +419,9 @@ export class DecorationSet {
 // decorations. Implemented by [`DecorationSet`](#view.DecorationSet),
 // and passed to [node views](#view.EditorProps.nodeViews).
 //
-// map:: (Mapping, Node) → DecorationSource
-// Map the set of decorations in response to a change in the
-// document.
+//   map:: (Mapping, Node) → DecorationSource
+//   Map the set of decorations in response to a change in the
+//   document.
 
 const empty = new DecorationSet()
 
