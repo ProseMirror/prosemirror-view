@@ -30,6 +30,9 @@ export class EditorView {
     // The view's current [state](#state.EditorState).
     this.state = props.state
 
+    this.directPlugins = props.plugins || []
+    this.directPlugins.forEach(checkStateComponent)
+
     this.dispatch = this.dispatch.bind(this)
 
     this._root = null
@@ -65,6 +68,7 @@ export class EditorView {
 
     initInput(this)
 
+    this.prevDirectPlugins = []
     this.pluginViews = []
     this.updatePluginViews()
   }
@@ -92,6 +96,10 @@ export class EditorView {
   update(props) {
     if (props.handleDOMEvents != this._props.handleDOMEvents) ensureListeners(this)
     this._props = props
+    if (props.plugins) {
+      props.plugins.forEach(checkStateComponent)
+      this.directPlugins = props.plugins
+    }
     this.updateStateInner(props.state, true)
   }
 
@@ -201,8 +209,13 @@ export class EditorView {
   }
 
   updatePluginViews(prevState) {
-    if (!prevState || prevState.plugins != this.state.plugins) {
+    if (!prevState || prevState.plugins != this.state.plugins || this.directPlugins != this.prevDirectPlugins) {
+      this.prevDirectPlugins = this.directPlugins
       this.destroyPluginViews()
+      for (let i = 0; i < this.directPlugins.length; i++) {
+        let plugin = this.directPlugins[i]
+        if (plugin.spec.view) this.pluginViews.push(plugin.spec.view(this))
+      }
       for (let i = 0; i < this.state.plugins.length; i++) {
         let plugin = this.state.plugins[i]
         if (plugin.spec.view) this.pluginViews.push(plugin.spec.view(this))
@@ -217,14 +230,18 @@ export class EditorView {
 
   // :: (string, ?(prop: *) → *) → *
   // Goes over the values of a prop, first those provided directly,
-  // then those from plugins (in order), and calls `f` every time a
-  // non-undefined value is found. When `f` returns a truthy value,
-  // that is immediately returned. When `f` isn't provided, it is
-  // treated as the identity function (the prop value is returned
-  // directly).
+  // then those from plugins given to the view, then from plugins in
+  // the state (in order), and calls `f` every time a non-undefined
+  // value is found. When `f` returns a truthy value, that is
+  // immediately returned. When `f` isn't provided, it is treated as
+  // the identity function (the prop value is returned directly).
   someProp(propName, f) {
     let prop = this._props && this._props[propName], value
     if (prop != null && (value = f ? f(prop) : prop)) return value
+    for (let i = 0; i < this.directPlugins.length; i++) {
+      let prop = this.directPlugins[i].props[propName]
+      if (prop != null && (value = f ? f(prop) : prop)) return value
+    }
     let plugins = this.state.plugins
     if (plugins) for (let i = 0; i < plugins.length; i++) {
       let prop = plugins[i].props[propName]
@@ -434,6 +451,11 @@ function changedNodeViews(a, b) {
   return nA != nB
 }
 
+function checkStateComponent(plugin) {
+  if (plugin.spec.state || plugin.spec.filterTransaction || plugin.spec.appendTransaction)
+    throw new RangeError("Plugins passed directly to the view must not have a state component")
+}
+
 // EditorProps:: interface
 //
 // Props are configuration values that can be passed to an editor view
@@ -611,6 +633,15 @@ function changedNodeViews(a, b) {
 //
 //   state:: EditorState
 //   The current state of the editor.
+//
+//   plugins:: [Plugin]
+//   A set of plugins to use in the view, applying their [plugin
+//   view](#state.PluginSpec.view) and
+//   [props](#state.PluginSpec.props). Passing plugins with a state
+//   component (a [state field](#state.PluginSpec.state) field or a
+//   [transaction)[#state.PluginSpec.filterTransaction] filter or
+//   appender) will result in an error, since such plugins must be
+//   present in the state to work.
 //
 //   dispatchTransaction:: ?(tr: Transaction)
 //   The callback over which to send transactions (state updates)
