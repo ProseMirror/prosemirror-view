@@ -1,3 +1,9 @@
+## 1.20.0 (2021-09-03)
+
+### New features
+
+It is now possible to pass plugins directly to the view with the `plugins` direct prop.
+
 ## 1.19.3 (2021-08-20)
 
 ### Bug fixes
