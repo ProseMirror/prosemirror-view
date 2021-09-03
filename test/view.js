@@ -22,11 +22,11 @@ function tempEditor(inProps) {
   }
 
   let props = {}
-  for (let n in inProps) props[n] = inProps[n]
+  for (let n in inProps) if (n != "plugins") props[n] = inProps[n]
   props.state = EditorState.create({doc: props.doc,
                                     schema,
                                     selection: props.doc && selFor(props.doc),
-                                    plugins: props.plugins})
+                                    plugins: inProps && inProps.plugins})
   return tempView = new EditorView(space, props)
 }
 exports.tempEditor = tempEditor
