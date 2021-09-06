@@ -33,7 +33,7 @@ li.ProseMirror-selectednode {
   outline: none;
 }
 
-li.ProseMirror-selectednode:after {
+li.ProseMirror-selectednode::after {
   content: "";
   position: absolute;
   left: -32px;
