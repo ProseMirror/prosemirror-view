@@ -65,8 +65,8 @@ class NodeType {
   }
 
   valid(node, span) {
-    let {index, offset} = node.content.findIndex(span.from)
-    return offset == span.from && offset + node.child(index).nodeSize == span.to
+    let {index, offset} = node.content.findIndex(span.from), child
+    return offset == span.from && !(child = node.child(index)).isText && offset + child.nodeSize == span.to
   }
 
   eq(other) {
