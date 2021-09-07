@@ -42,8 +42,17 @@ export function initInput(view) {
     let handler = handlers[event]
     view.dom.addEventListener(event, view.eventHandlers[event] = event => {
       if (eventBelongsToView(view, event) && !runCustomHandler(view, event) &&
-          (view.editable || !(event.type in editHandlers)))
-        handler(view, event)
+        (view.editable || !(event.type in editHandlers))) {
+            // Right click would not change table selection
+            if (
+              event.type === 'mousedown' &&
+              event.target.parentElement.className === 'selectedCell'
+            ) {
+              event.preventDefault()
+            } else {
+              handler(view, event)
+            }
+      }
     })
   }
   // On Safari, for reasons beyond my understanding, adding an input
