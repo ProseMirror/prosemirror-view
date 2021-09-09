@@ -1,3 +1,13 @@
+## 1.20.1 (2021-09-09)
+
+### Bug fixes
+
+The library accidentally allowed node decorations on text nodes. It no longer does.
+
+Fix an issue on Chrome and Safari where coordinates for positions between uneditable nodes and the end of a textblock would return zero-height rectangles.
+
+Fix a bug where vertical `endOfTextblock` queries could inappropriately return true when a small line height is used.
+
 ## 1.20.0 (2021-09-03)
 
 ### New features
