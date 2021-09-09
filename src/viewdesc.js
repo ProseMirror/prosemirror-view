@@ -479,6 +479,8 @@ class ViewDesc {
   }
 
   get domAtom() { return false }
+
+  get ignoreForCoords() { return false }
 }
 
 // Reused array to avoid allocating fresh arrays for things that will
@@ -884,6 +886,7 @@ class TrailingHackViewDesc extends ViewDesc {
   parseRule() { return {ignore: true} }
   matchesHack(nodeName) { return this.dirty == NOT_DIRTY && this.dom.nodeName == nodeName }
   get domAtom() { return true }
+  get ignoreForCoords() { return this.dom.nodeName == "IMG" }
 }
 
 // A separate subclass is used for customized node views, so that the

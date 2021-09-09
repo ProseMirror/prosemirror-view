@@ -159,6 +159,12 @@ describe("EditorView", () => {
     })
   })
 
+  it("doesn't return zero-height rectangles after leaves", () => {
+    let view = tempEditor({doc: doc(p(img))})
+    let coords = view.coordsAtPos(2, 1)
+    ist(coords.bottom - coords.top, 5, ">")
+  })
+
   it("produces horizontal rectangles for positions between blocks", () => {
     let view = tempEditor({doc: doc(p("ha"), hr, blockquote(p("ba")))})
     let a = view.coordsAtPos(0)

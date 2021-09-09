@@ -351,7 +351,8 @@ export function coordsAtPos(view, pos, side) {
   }
   if (offset < nodeSize(node)) {
     let after = node.childNodes[offset]
-    let target = after.nodeType == 3 ? textRange(after, 0, (supportEmptyRange ? 0 : 1))
+    while (after.pmViewDesc && after.pmViewDesc.ignoreForCoords) after = after.nextSibling
+    let target = !after ? null : after.nodeType == 3 ? textRange(after, 0, (supportEmptyRange ? 0 : 1))
         : after.nodeType == 1 ? after : null
     if (target) return flattenV(singleRect(target, -1), true)
   }
