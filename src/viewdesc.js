@@ -115,8 +115,6 @@ class ViewDesc {
   matchesNode() { return false }
   matchesHack(_nodeName) { return false }
 
-  get beforePosition() { return false }
-
   // : () → ?ParseRule
   // When parsing in-editor content (in domchange.js), we allow
   // descriptions to determine the parse rules that should be used to
@@ -265,23 +263,34 @@ class ViewDesc {
   // : (number, number) → {node: dom.Node, offset: number}
   domFromPos(pos, side) {
     if (!this.contentDOM) return {node: this.dom, offset: 0}
-    for (let offset = 0, i = 0, first = true;; i++, first = false) {
-      // Skip removed or always-before children
-      while (i < this.children.length && (this.children[i].beforePosition ||
-                                          this.children[i].dom.parentNode != this.contentDOM))
-        offset += this.children[i++].size
-      let child = i == this.children.length ? null : this.children[i]
-      if (offset == pos && (side == 0 || !child || !child.size || child.border || (side < 0 && first)) ||
-          child && child.domAtom && pos < offset + child.size) return {
-        node: this.contentDOM,
-        offset: child ? domIndex(child.dom) : this.contentDOM.childNodes.length
+    // First find the position in the child array
+    let i = 0, offset = 0
+    for (let curPos = 0; i < this.children.length; i++) {
+      let child = this.children[i], end = curPos + child.size
+      if (end > pos || child instanceof TrailingHackViewDesc) { offset = pos - curPos; break }
+      curPos = end
+    }
+    // If this points into the middle of a child, call through
+    if (offset) return this.children[i].domFromPos(offset - this.children[i].border, side)
+    // Go back if there were any zero-length widgets with side >= 0 before this point
+    for (let prev; i && !(prev = this.children[i - 1]).size && prev instanceof WidgetViewDesc && prev.widget.type.side >= 0; i--) {}
+    // Scan towards the first useable node
+    if (side <= 0) {
+      let prev, enter = true
+      for (;; i--, enter = false) {
+        prev = i ? this.children[i - 1] : null
+        if (!prev || prev.dom.parentNode == this.contentDOM) break
       }
-      if (!child) throw new Error("Invalid position " + pos)
-      let end = offset + child.size
-      if (!child.domAtom && (side < 0 && !child.border ? end >= pos : end > pos) &&
-          (end > pos || i + 1 >= this.children.length || !this.children[i + 1].beforePosition))
-        return child.domFromPos(pos - offset - child.border, side)
-      offset = end
+      if (prev && side && enter && !prev.border && !prev.domAtom) return prev.domFromPos(prev.size, side)
+      return {node: this.contentDOM, offset: prev ? domIndex(prev.dom) + 1 : 0}
+    } else {
+      let next, enter = true
+      for (;; i++, enter = false) {
+        next = i < this.children.length ? this.children[i] : null
+        if (!next || next.dom.parentNode == this.contentDOM) break
+      }
+      if (next && enter && !next.border && !next.domAtom) return next.domFromPos(0, side)
+      return {node: this.contentDOM, offset: next ? domIndex(next.dom) : this.contentDOM.childNodes.length}
     }
   }
 
@@ -498,10 +507,6 @@ class WidgetViewDesc extends ViewDesc {
     super(parent, nothing, dom, null)
     this.widget = widget
     self = this
-  }
-
-  get beforePosition() {
-    return this.widget.type.side < 0
   }
 
   matchesWidget(widget) {
