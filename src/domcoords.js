@@ -406,7 +406,9 @@ function endOfTextblockVertical(view, state, dir) {
       else continue
       for (let i = 0; i < boxes.length; i++) {
         let box = boxes[i]
-        if (box.bottom > box.top && (dir == "up" ? box.bottom < coords.top + 1 : box.top > coords.bottom - 1))
+        if (box.bottom > box.top + 1 &&
+            (dir == "up" ? coords.top - box.top > (box.bottom - coords.top) * 2
+             : box.bottom - coords.bottom > (coords.bottom - box.top) * 2))
           return false
       }
     }
