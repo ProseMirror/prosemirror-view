@@ -1258,6 +1258,7 @@ class ViewTreeUpdater {
     } else {
       let dom = document.createElement(nodeName)
       if (nodeName == "IMG") dom.className = "ProseMirror-separator"
+      if (nodeName == "BR") dom.className = "ProseMirror-trailingBreak"
       this.top.children.splice(this.index++, 0, new TrailingHackViewDesc(this.top, nothing, dom, null))
       this.changed = true
     }
