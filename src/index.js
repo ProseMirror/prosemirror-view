@@ -146,7 +146,7 @@ export class EditorView {
 
     let scroll = reconfigured ? "reset"
         : state.scrollToSelection > prev.scrollToSelection ? "to selection" : "preserve"
-    let updateDoc = redraw || !this.docView.matchesNode(state.doc, outerDeco, innerDeco)
+    let updateDoc = redraw || this.docView && !this.docView.matchesNode(state.doc, outerDeco, innerDeco)
     if (updateDoc || !state.selection.eq(prev.selection)) updateSel = true
     let oldScrollPos = scroll == "preserve" && updateSel && this.dom.style.overflowAnchor == null && storeScrollPos(this)
 
