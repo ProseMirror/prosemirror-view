@@ -230,19 +230,19 @@ function elementFromPoint(element, coords, box) {
 
 // Given an x,y position on the editor, get the position in the document.
 export function posAtCoords(view, coords) {
-  let root = view.root, node, offset
-  if (root.caretPositionFromPoint) {
+  let doc = view.dom.ownerDocument, node, offset
+  if (doc.caretPositionFromPoint) {
     try { // Firefox throws for this call in hard-to-predict circumstances (#994)
-      let pos = root.caretPositionFromPoint(coords.left, coords.top)
+      let pos = doc.caretPositionFromPoint(coords.left, coords.top)
       if (pos) ({offsetNode: node, offset} = pos)
     } catch (_) {}
   }
-  if (!node && root.caretRangeFromPoint) {
-    let range = root.caretRangeFromPoint(coords.left, coords.top)
+  if (!node && doc.caretRangeFromPoint) {
+    let range = doc.caretRangeFromPoint(coords.left, coords.top)
     if (range) ({startContainer: node, startOffset: offset} = range)
   }
 
-  let elt = root.elementFromPoint(coords.left, coords.top + 1), pos
+  let elt = (view.root.elementFromPoint ? view.root : doc).elementFromPoint(coords.left, coords.top + 1), pos
   if (!elt || !view.dom.contains(elt.nodeType != 1 ? elt.parentNode : elt)) {
     let box = view.dom.getBoundingClientRect()
     if (!inRect(coords, box)) return null
