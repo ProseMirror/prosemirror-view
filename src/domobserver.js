@@ -169,10 +169,7 @@ export class DOMObserver {
     }
 
     if (from > -1 || newSel) {
-      if (from > -1) {
-        this.view.docView.markDirty(from, to)
-        checkCSS(this.view)
-      }
+      if (from > -1) this.view.docView.markDirty(from, to)
       this.handleDOMChange(from, to, typeOver, added)
       if (this.view.docView.dirty) this.view.updateState(this.view.state)
       else if (!this.currentSelection.eq(sel)) selectionToDOM(this.view)
@@ -226,13 +223,4 @@ export class DOMObserver {
       }
     }
   }
-}
-
-let cssChecked = false
-
-function checkCSS(view) {
-  if (cssChecked) return
-  cssChecked = true
-  if (getComputedStyle(view.dom).whiteSpace == "normal")
-    console["warn"]("ProseMirror expects the CSS white-space property to be set, preferably to 'pre-wrap'. It is recommended to load style/prosemirror.css from the prosemirror-view package.")
 }
