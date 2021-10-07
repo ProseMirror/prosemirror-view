@@ -46,7 +46,7 @@ export function parseFromClipboard(view, text, html, plainText, $context) {
   let asText = text && (plainText || inCode || !html)
   if (asText) {
     view.someProp("transformPastedText", f => { text = f(text, inCode || plainText) })
-    if (inCode) return new Slice(Fragment.from(view.state.schema.text(text.replace(/\r\n?/g, "\n"))), 0, 0)
+    if (inCode) return text ? new Slice(Fragment.from(view.state.schema.text(text.replace(/\r\n?/g, "\n"))), 0, 0) : Slice.empty
     let parsed = view.someProp("clipboardTextParser", f => f(text, $context, plainText))
     if (parsed) {
       slice = parsed
@@ -55,7 +55,8 @@ export function parseFromClipboard(view, text, html, plainText, $context) {
       let {schema} = view.state, serializer = DOMSerializer.fromSchema(schema)
       dom = document.createElement("div")
       text.trim().split(/(?:\r\n?|\n)+/).forEach(block => {
-        dom.appendChild(document.createElement("p")).appendChild(serializer.serializeNode(schema.text(block, marks)))
+        let p = dom.appendChild(document.createElement("p"))
+        if (block) p.appendChild(serializer.serializeNode(schema.text(block, marks)))
       })
     }
   } else {
