@@ -1,3 +1,9 @@
+## 1.20.2 (2021-10-07)
+
+### Bug fixes
+
+Fix a crash when pasting whitespace-only content as text.
+
 ## 1.20.1 (2021-09-09)
 
 ### Bug fixes
