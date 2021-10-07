@@ -54,7 +54,7 @@ export function parseFromClipboard(view, text, html, plainText, $context) {
       let marks = $context.marks()
       let {schema} = view.state, serializer = DOMSerializer.fromSchema(schema)
       dom = document.createElement("div")
-      text.trim().split(/(?:\r\n?|\n)+/).forEach(block => {
+      text.split(/(?:\r\n?|\n)+/).forEach(block => {
         let p = dom.appendChild(document.createElement("p"))
         if (block) p.appendChild(serializer.serializeNode(schema.text(block, marks)))
       })
