@@ -71,10 +71,19 @@ export function parseFromClipboard(view, text, html, plainText, $context) {
     let parser = view.someProp("clipboardParser") || view.someProp("domParser") || DOMParser.fromSchema(view.state.schema)
     slice = parser.parseSlice(dom, {preserveWhitespace: !!(asText || sliceData), context: $context})
   }
-  if (sliceData)
+  if (sliceData) {
     slice = addContext(closeSlice(slice, +sliceData[1], +sliceData[2]), sliceData[3])
-  else // HTML wasn't created by ProseMirror. Make sure top-level siblings are coherent
-    slice = Slice.maxOpen(normalizeSiblings(slice.content, $context), false)
+  } else { // HTML wasn't created by ProseMirror. Make sure top-level siblings are coherent
+    slice = Slice.maxOpen(normalizeSiblings(slice.content, $context), true)
+    if (slice.openStart || slice.openEnd) {
+      let openStart = 0, openEnd = 0
+      for (let node = slice.content.firstChild; openStart < slice.openStart && !node.type.spec.isolating;
+           openStart++, node = node.firstChild) {}
+      for (let node = slice.content.lastChild; openEnd < slice.openEnd && !node.type.spec.isolating;
+           openEnd++, node = node.lastChild) {}
+      slice = closeSlice(slice, openStart, openEnd)
+    }
+  }
 
   view.someProp("transformPasted", f => { slice = f(slice) })
   return slice
