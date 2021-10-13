@@ -1,3 +1,11 @@
+## 1.20.3 (2021-10-13)
+
+### Bug fixes
+
+Stop removing leading/trailing whitespace from pasted plain text.
+
+Fix an issue that could cause invalid content to be produced when pasting HTML with isolating nodes in it.
+
 ## 1.20.2 (2021-10-07)
 
 ### Bug fixes
