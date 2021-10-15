@@ -24,7 +24,7 @@
   },
   "devDependencies": {
     "ist": "^1.0.0",
-    "mocha": "^3.0.2",
+    "mocha": "^9.1.2",
     "moduleserve": "^0.7.0",
     "prosemirror-test-builder": "^1.0.0",
     "rollup": "^2.26.3",
