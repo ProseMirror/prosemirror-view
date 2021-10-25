@@ -68,6 +68,13 @@ describe("EditorView draw", () => {
     ist(view.dom.classList.contains("baz"))
   })
 
+  it("adds style from the attributes prop", () => {
+    let view = tempEditor({doc: doc(p()), attributes: {style: "border: 1px solid red;"}, plugins: [new Plugin({props: { attributes: {style: "background: red;"}}}), new Plugin({props: { attributes: {style: "color: red;"}}})]})
+    ist(view.dom.style.border, "1px solid red")
+    ist(view.dom.style.backgroundColor, "red")
+    ist(view.dom.style.color, "red")
+  })
+  
   it("can set other attributes", () => {
     let view = tempEditor({doc: doc(p()), attributes: {spellcheck: "false", "aria-label": "hello"}})
     ist(view.dom.spellcheck, false)
