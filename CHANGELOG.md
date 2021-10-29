@@ -1,3 +1,13 @@
+## 1.21.0 (2021-10-29)
+
+### Bug fixes
+
+Fix issue where recent Mobile Safari versions weren't treated as Mac platforms.
+
+### New features
+
+Multiple `style` properties provided through the `attributes` prop are now merged. Adjust mac detection for recent changes to navigator.platform on iOS
+
 ## 1.20.3 (2021-10-13)
 
 ### Bug fixes
