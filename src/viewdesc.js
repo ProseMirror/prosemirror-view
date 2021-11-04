@@ -1147,9 +1147,11 @@ class ViewTreeUpdater {
   findNodeMatch(node, outerDeco, innerDeco, index) {
     let children = this.top.children, found = -1
     if (index >= this.preMatch.index) {
-      for (let i = this.index; i < children.length; i++) if (children[i].matchesNode(node, outerDeco, innerDeco)) {
-        found = i
-        break
+      for (let i = this.index; i < children.length; i++) {
+        if (this.preMatch.matched.get(children[i]) == index) {
+          if (children[i].matchesNode(node, outerDeco, innerDeco)) found = i
+          break
+        }
       }
     } else {
       for (let i = this.index, e = Math.min(children.length, i + 1); i < e; i++) {
