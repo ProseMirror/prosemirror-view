@@ -642,7 +642,7 @@ function checkStateComponent(plugin) {
 //   view](#state.PluginSpec.view) and
 //   [props](#state.PluginSpec.props). Passing plugins with a state
 //   component (a [state field](#state.PluginSpec.state) field or a
-//   [transaction)[#state.PluginSpec.filterTransaction] filter or
+//   [transaction](#state.PluginSpec.filterTransaction) filter or
 //   appender) will result in an error, since such plugins must be
 //   present in the state to work.
 //
