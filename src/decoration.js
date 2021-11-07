@@ -160,6 +160,10 @@ export class Decoration {
   //     key are interchangeable—if widgets differ in, for example,
   //     the behavior of some event handler, they should get
   //     different keys.
+  //    
+  //     destroy:: ?()
+  //     Called when the widget decoration is removed as a result of
+  //     mapping
   static widget(pos, toDOM, spec) {
     return new Decoration(pos, pos, new WidgetType(toDOM, spec))
   }
