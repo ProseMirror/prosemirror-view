@@ -1038,6 +1038,8 @@ function patchAttributes(dom, prev, cur) {
       dom.classList.remove(prevList[i])
     for (let i = 0; i < curList.length; i++) if (prevList.indexOf(curList[i]) == -1)
       dom.classList.add(curList[i])
+    if (dom.classList.length == 0)
+      dom.removeAttribute("class")
   }
   if (prev.style != cur.style) {
     if (prev.style) {
