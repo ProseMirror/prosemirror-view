@@ -14,7 +14,11 @@ class WidgetType {
 
   map(mapping, span, offset, oldOffset) {
     let {pos, deleted} = mapping.mapResult(span.from + oldOffset, this.side < 0 ? -1 : 1)
-    return deleted ? null : new Decoration(pos - offset, pos - offset, this)
+    if (deleted) {
+      this.destroy()
+      return null
+    }
+    return new Decoration(pos - offset, pos - offset, this)
   }
 
   valid() { return true }
@@ -24,6 +28,10 @@ class WidgetType {
       (other instanceof WidgetType &&
        (this.spec.key && this.spec.key == other.spec.key ||
         this.toDOM == other.toDOM && compareObjs(this.spec, other.spec)))
+  }
+
+  destroy () {
+    if (this.spec.destroy) this.spec.destroy()
   }
 }
 
