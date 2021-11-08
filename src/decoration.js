@@ -156,7 +156,7 @@ export class Decoration {
   //     key are interchangeable—if widgets differ in, for example,
   //     the behavior of some event handler, they should get
   //     different keys.
-  //    
+  //
   //     destroy:: ?(node: dom.Node)
   //     Called when the widget decoration is removed as a result of
   //     mapping

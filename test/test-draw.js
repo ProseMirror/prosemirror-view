@@ -74,7 +74,7 @@ describe("EditorView draw", () => {
     ist(view.dom.style.backgroundColor, "red")
     ist(view.dom.style.color, "red")
   })
-  
+
   it("can set other attributes", () => {
     let view = tempEditor({doc: doc(p()), attributes: {spellcheck: "false", "aria-label": "hello"}})
     ist(view.dom.spellcheck, false)
