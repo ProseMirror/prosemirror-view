@@ -124,6 +124,21 @@ describe("Decoration drawing", () => {
     ist(view.dom.querySelectorAll("button").length, 2)
   })
 
+  it("calls widget destroy methods", () => {
+    let destroyed = false
+    let view = tempEditor({
+      doc: doc(p("abc")),
+      plugins: [decoPlugin([Decoration.widget(2, document.createElement("BUTTON"), {
+        destroy: (node) => {
+          destroyed = true
+          ist(node.tagName, "BUTTON")
+        }
+      })])]
+    })
+    view.dispatch(view.state.tr.delete(1, 4))
+    ist(destroyed)
+  })
+
   it("draws inline decorations spanning multiple parents", () => {
     let view = tempEditor({doc: doc(p("long first ", em("p"), "aragraph"), p("two")),
                            plugins: [decoPlugin(["7-25-foo"])]})
