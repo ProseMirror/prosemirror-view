@@ -1,3 +1,13 @@
+## 1.22.0 (2021-11-08)
+
+### Bug fixes
+
+Fix an issue where some types of node decoration changes could cause an unnecessary cascade of node redraws.
+
+### New features
+
+Widget decorations now accept a `destroy` option, which will be called when the widget is removed from the view.
+
 ## 1.21.0 (2021-10-29)
 
 ### Bug fixes
