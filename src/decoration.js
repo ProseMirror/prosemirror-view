@@ -25,6 +25,10 @@ class WidgetType {
        (this.spec.key && this.spec.key == other.spec.key ||
         this.toDOM == other.toDOM && compareObjs(this.spec, other.spec)))
   }
+
+  destroy () {
+    if (this.spec.destroy) this.spec.destroy()
+  }
 }
 
 class InlineType {
@@ -152,6 +156,10 @@ export class Decoration {
   //     key are interchangeable—if widgets differ in, for example,
   //     the behavior of some event handler, they should get
   //     different keys.
+  //    
+  //     destroy:: ?()
+  //     Called when the widget decoration is removed as a result of
+  //     mapping
   static widget(pos, toDOM, spec) {
     return new Decoration(pos, pos, new WidgetType(toDOM, spec))
   }
