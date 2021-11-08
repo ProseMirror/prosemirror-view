@@ -526,6 +526,11 @@ class WidgetViewDesc extends ViewDesc {
     return mutation.type != "selection" || this.widget.spec.ignoreSelection
   }
 
+  destroy() {
+    this.widget.destroy()
+    super.destroy()
+  }
+
   get domAtom() { return true }
 }
 

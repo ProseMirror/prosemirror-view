@@ -14,11 +14,7 @@ class WidgetType {
 
   map(mapping, span, offset, oldOffset) {
     let {pos, deleted} = mapping.mapResult(span.from + oldOffset, this.side < 0 ? -1 : 1)
-    if (deleted) {
-      this.destroy()
-      return null
-    }
-    return new Decoration(pos - offset, pos - offset, this)
+    return deleted ? null : new Decoration(pos - offset, pos - offset, this)
   }
 
   valid() { return true }
