@@ -26,8 +26,8 @@ class WidgetType {
         this.toDOM == other.toDOM && compareObjs(this.spec, other.spec)))
   }
 
-  destroy () {
-    if (this.spec.destroy) this.spec.destroy()
+  destroy(node) {
+    if (this.spec.destroy) this.spec.destroy(node)
   }
 }
 
@@ -157,7 +157,7 @@ export class Decoration {
   //     the behavior of some event handler, they should get
   //     different keys.
   //    
-  //     destroy:: ?()
+  //     destroy:: ?(node: dom.Node)
   //     Called when the widget decoration is removed as a result of
   //     mapping
   static widget(pos, toDOM, spec) {
