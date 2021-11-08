@@ -527,7 +527,7 @@ class WidgetViewDesc extends ViewDesc {
   }
 
   destroy() {
-    this.widget.destroy()
+    this.widget.type.destroy(this.dom)
     super.destroy()
   }
 
