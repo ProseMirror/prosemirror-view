@@ -73,8 +73,7 @@ export function parseFromClipboard(view, text, html, plainText, $context) {
       preserveWhitespace: !!(asText || sliceData),
       context: $context,
       ruleFromNode(dom) {
-        if (dom.nodeName == "BR" && !dom.nextSibling && (!dom.previousSibling || dom.previousSibling.nodeName == "BR"))
-          return {ignore: true}
+        if (dom.nodeName == "BR" && !dom.nextSibling) return {ignore: true}
       }
     })
   }
