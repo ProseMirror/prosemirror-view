@@ -69,7 +69,14 @@ export function parseFromClipboard(view, text, html, plainText, $context) {
   let sliceData = contextNode && /^(\d+) (\d+) (.*)/.exec(contextNode.getAttribute("data-pm-slice"))
   if (!slice) {
     let parser = view.someProp("clipboardParser") || view.someProp("domParser") || DOMParser.fromSchema(view.state.schema)
-    slice = parser.parseSlice(dom, {preserveWhitespace: !!(asText || sliceData), context: $context})
+    slice = parser.parseSlice(dom, {
+      preserveWhitespace: !!(asText || sliceData),
+      context: $context,
+      ruleFromNode(dom) {
+        if (dom.nodeName == "BR" && !dom.nextSibling && (!dom.previousSibling || dom.previousSibling.nodeName == "BR"))
+          return {ignore: true}
+      }
+    })
   }
   if (sliceData) {
     slice = addContext(closeSlice(slice, +sliceData[1], +sliceData[2]), sliceData[3])
