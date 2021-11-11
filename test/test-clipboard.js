@@ -48,8 +48,8 @@ describe("Clipboard interface", () => {
 
   it("will sanely clean up top-level nodes in HTML", () => {
     let view = tempEditor(), $p = view.state.doc.resolve(1)
-    ist(parseFromClipboard(view, "", "<ul><li>foo</li></ul>bar<br>", false, $p),
-        new Slice(doc(ul(li(p("foo"))), p("bar", br)).content, 3, 1), eq)
+    ist(parseFromClipboard(view, "", "<ul><li>foo</li></ul>bar<br>baz", false, $p),
+        new Slice(doc(ul(li(p("foo"))), p("bar", br, "baz")).content, 3, 1), eq)
     ist(parseFromClipboard(view, "", "<ul><li>foo</li></ul>bar<br><p>x</p>", false, $p),
         new Slice(doc(ul(li(p("foo"))), p("bar", br), p("x")).content, 3, 1), eq)
     ist(parseFromClipboard(view, "", "<li>foo</li><li>bar</li><p>x</p>", false, $p),
