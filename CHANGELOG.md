@@ -1,3 +1,13 @@
+## 1.23.0 (2021-11-11)
+
+### Bug fixes
+
+When parsing clipboard content, ignore trailing BR nodes that look like they might be there as a contenteditable kludge.
+
+### New features
+
+`EditorView` now exposes an `isDestroyed` property that can be used to test if the view has been destroyed.
+
 ## 1.22.0 (2021-11-08)
 
 ### Bug fixes
