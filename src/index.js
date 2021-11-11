@@ -373,6 +373,14 @@ export class EditorView {
     this.docView = null
   }
 
+  // :: boolean
+  // This is true when the view has been
+  // [destroyed](#view.EditorView.destroy) (and thus should not be
+  // used anymore).
+  get isDestroyed() {
+    return this.docView == null
+  }
+
   // Used for testing.
   dispatchEvent(event) {
     return dispatchEvent(this, event)
