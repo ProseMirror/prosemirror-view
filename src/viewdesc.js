@@ -1161,7 +1161,7 @@ class ViewTreeUpdater {
         }
       }
     } else {
-      for (let i = this.index, e = Math.min(children.length, i + 1); i < e; i++) {
+      for (let i = this.index, e = Math.min(children.length, i + 5); i < e; i++) {
         let child = children[i]
         if (child.matchesNode(node, outerDeco, innerDeco) && !this.preMatch.matched.has(child)) {
           found = i
