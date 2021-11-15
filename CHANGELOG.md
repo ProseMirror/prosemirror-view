@@ -1,3 +1,9 @@
+## 1.23.1 (2021-11-15)
+
+### Bug fixes
+
+Restore accidentally reduced lookahead distance in view updating algorithm.
+
 ## 1.23.0 (2021-11-11)
 
 ### Bug fixes
