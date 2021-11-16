@@ -1,5 +1,6 @@
 const {doc, strong, pre, h1, p, hr, schema} = require("prosemirror-test-builder")
 const {Plugin} = require("prosemirror-state")
+const {Schema} = require("prosemirror-model")
 const {tempEditor} = require("./view")
 const ist = require("ist")
 
@@ -139,5 +140,37 @@ describe("EditorView draw", () => {
     let view = tempEditor({doc: doc(p(strong("one"), " two ", strong("three")))})
     view.dispatch(view.state.tr.removeMark(1, 4, schema.marks.strong))
     ist(view.dom.querySelectorAll("strong").length, 1)
+  })
+
+  it("doesn't redraw too much when marks are present", () => {
+    let s = new Schema({
+      nodes: {
+        doc: {content: "paragraph+", marks: "m"},
+        text: {group: "inline"},
+        paragraph: schema.spec.nodes.get("paragraph")
+      },
+      marks: {
+        m: {
+          toDOM: () => ["div", {class: "m"}, 0],
+          parseDOM: [{tag: "div.m"}]
+        }
+      }
+    })
+    let paragraphs = []
+    for (let i = 1; i <= 10; i++)
+      paragraphs.push(s.node("paragraph", null, [s.text("para " + i)], [s.mark("m")]))
+    let view = tempEditor({
+      doc: s.node("doc", null, paragraphs),
+    })
+    let initialChildren = Array.from(view.dom.querySelectorAll("p"))
+    let newParagraphs = []
+    for (let i = -6; i < 0; i++)
+      newParagraphs.push(s.node("paragraph", null, [s.text("para " + i)], [s.mark("m")]))
+    view.dispatch(view.state.tr.replaceWith(0, 8, newParagraphs))
+    let currentChildren = Array.from(view.dom.querySelectorAll("p")), sameAtEnd = 0
+    while (sameAtEnd < currentChildren.length && sameAtEnd < initialChildren.length &&
+           currentChildren[currentChildren.length - sameAtEnd - 1] == initialChildren[initialChildren.length - sameAtEnd - 1])
+      sameAtEnd++
+    ist(sameAtEnd, 9)
   })
 })

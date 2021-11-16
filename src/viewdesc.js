@@ -1091,7 +1091,7 @@ class ViewTreeUpdater {
     // Tracks whether anything was changed
     this.changed = false
 
-    this.preMatch = preMatch(top.node.content, top.children)
+    this.preMatch = preMatch(top.node.content, top)
   }
 
   // Destroy and remove the children between the given indices in
@@ -1152,17 +1152,14 @@ class ViewTreeUpdater {
   // Try to find a node desc matching the given data. Skip over it and
   // return true when successful.
   findNodeMatch(node, outerDeco, innerDeco, index) {
-    let children = this.top.children, found = -1
-    if (index >= this.preMatch.index) {
-      for (let i = this.index; i < children.length; i++) {
-        if (this.preMatch.matched.get(children[i]) == index) {
-          if (children[i].matchesNode(node, outerDeco, innerDeco)) found = i
-          break
-        }
-      }
+    let found = -1, targetDesc
+    if (index >= this.preMatch.index &&
+        (targetDesc = this.preMatch.matches[index - this.preMatch.index]).parent == this.top &&
+        targetDesc.matchesNode(node, outerDeco, innerDeco)) {
+      found = this.top.children.indexOf(targetDesc, this.index)
     } else {
-      for (let i = this.index, e = Math.min(children.length, i + 5); i < e; i++) {
-        let child = children[i]
+      for (let i = this.index, e = Math.min(this.top.children.length, i + 5); i < e; i++) {
+        let child = this.top.children[i]
         if (child.matchesNode(node, outerDeco, innerDeco) && !this.preMatch.matched.has(child)) {
           found = i
           break
@@ -1274,22 +1271,44 @@ class ViewTreeUpdater {
   }
 }
 
-// : (Fragment, [ViewDesc]) → {index: number, matched: Map<ViewDesc, number>}
+// : (Fragment, [ViewDesc]) → {index: number, matched: Map<ViewDesc, number>, matches: ViewDesc[]}
 // Iterate from the end of the fragment and array of descs to find
 // directly matching ones, in order to avoid overeagerly reusing those
 // for other nodes. Returns the fragment index of the first node that
 // is part of the sequence of matched nodes at the end of the
 // fragment.
-function preMatch(frag, descs) {
-  let fI = frag.childCount, dI = descs.length, matched = new Map
-  for (; fI > 0 && dI > 0; dI--) {
-    let desc = descs[dI - 1], node = desc.node
+function preMatch(frag, parentDesc) {
+  let curDesc = parentDesc, descI = curDesc.children.length
+  let fI = frag.childCount, matched = new Map, matches = []
+  outer: while (fI > 0) {
+    let desc
+    for (;;) {
+      if (descI) {
+        let next = curDesc.children[descI - 1]
+        if (next instanceof MarkViewDesc) {
+          curDesc = next
+          descI = next.children.length
+        } else {
+          desc = next
+          descI--
+          break
+        }
+      } else if (curDesc == parentDesc) {
+        break outer
+      } else {
+        // FIXME
+        descI = curDesc.parent.children.indexOf(curDesc)
+        curDesc = curDesc.parent
+      }
+    }
+    let node = desc.node
     if (!node) continue
     if (node != frag.child(fI - 1)) break
     --fI
     matched.set(desc, fI)
+    matches.push(desc)
   }
-  return {index: fI, matched}
+  return {index: fI, matched, matches: matches.reverse()}
 }
 
 function compareSide(a, b) { return a.type.side - b.type.side }
