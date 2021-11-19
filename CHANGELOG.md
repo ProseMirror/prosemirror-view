@@ -1,3 +1,9 @@
+## 1.23.2 (2021-11-19)
+
+### Bug fixes
+
+Avoid some unnecessary node redraws when marks are present in sibling nodes.
+
 ## 1.23.1 (2021-11-15)
 
 ### Bug fixes
