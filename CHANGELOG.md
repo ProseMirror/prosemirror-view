@@ -1,3 +1,9 @@
+## 1.23.3 (2021-11-26)
+
+### Bug fixes
+
+The clipboard parser will no longer drop trailing `<br>` nodes that appear in an inline parent element.
+
 ## 1.23.2 (2021-11-19)
 
 ### Bug fixes
