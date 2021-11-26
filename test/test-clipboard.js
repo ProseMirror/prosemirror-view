@@ -1,5 +1,5 @@
 const ist = require("ist")
-const {eq, doc, p, blockquote, ul, ol, li, hr, br} = require("prosemirror-test-builder")
+const {eq, doc, p, strong, blockquote, ul, ol, li, hr, br} = require("prosemirror-test-builder")
 const {NodeSelection, TextSelection} = require("prosemirror-state")
 const {Slice, Fragment} = require("prosemirror-model")
 const {tempEditor} = require("./view")
@@ -54,6 +54,12 @@ describe("Clipboard interface", () => {
         new Slice(doc(ul(li(p("foo"))), p("bar", br), p("x")).content, 3, 1), eq)
     ist(parseFromClipboard(view, "", "<li>foo</li><li>bar</li><p>x</p>", false, $p),
         new Slice(doc(ol(li(p("foo")), li(p("bar"))), p("x")).content, 3, 1), eq)
+  })
+
+  it("only drops trailing br nodes in block parents", () => {
+    let view = tempEditor()
+    ist(parseFromClipboard(view, "", "<p><strong>a<br></strong> b</p>", false, view.state.doc.resolve(1)),
+        new Slice(doc(p(strong("a"), strong(br), " b")).content, 1, 1), eq)
   })
 
   it("will call transformPastedHTML", () => {

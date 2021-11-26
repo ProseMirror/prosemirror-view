@@ -73,7 +73,8 @@ export function parseFromClipboard(view, text, html, plainText, $context) {
       preserveWhitespace: !!(asText || sliceData),
       context: $context,
       ruleFromNode(dom) {
-        if (dom.nodeName == "BR" && !dom.nextSibling) return {ignore: true}
+        if (dom.nodeName == "BR" && !dom.nextSibling &&
+            dom.parentNode && !inlineParents.test(dom.parentNode.nodeName)) return {ignore: true}
       }
     })
   }
@@ -94,6 +95,8 @@ export function parseFromClipboard(view, text, html, plainText, $context) {
   view.someProp("transformPasted", f => { slice = f(slice) })
   return slice
 }
+
+const inlineParents = /^(a|abbr|acronym|b|cite|code|del|em|i|ins|kbd|label|output|q|ruby|s|samp|span|strong|sub|sup|time|u|tt|var)$/i
 
 // Takes a slice parsed with parseSlice, which means there hasn't been
 // any content-expression checking done on the top nodes, tries to
