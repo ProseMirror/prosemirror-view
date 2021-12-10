@@ -100,9 +100,14 @@ export function dispatchEvent(view, event) {
 editHandlers.keydown = (view, event) => {
   view.shiftKey = event.keyCode == 16 || event.shiftKey
   if (inOrNearComposition(view, event)) return
-  if (event.keyCode != 229) view.domObserver.forceFlush()
   view.lastKeyCode = event.keyCode
   view.lastKeyCodeTime = Date.now()
+  // Suppress enter key events on Chrome Android, because those tend
+  // to be part of a confused sequence of composition events fired,
+  // and handling them eagerly tends to corrupt the input.
+  if (browser.android && browser.chrome && event.keyCode == 13) return
+  if (event.keyCode != 229) view.domObserver.forceFlush()
+
   // On iOS, if we preventDefault enter key presses, the virtual
   // keyboard gets confused. So the hack here is to set a flag that
   // makes the DOM change code recognize that what just happens should
@@ -477,6 +482,7 @@ function timestampFromCustomEvent() {
 }
 
 export function endComposition(view, forceUpdate) {
+  if (browser.android && view.domObserver.flushingSoon >= 0) return
   view.domObserver.forceFlush()
   clearComposition(view)
   if (forceUpdate || view.docView.dirty) {
@@ -696,6 +702,7 @@ handlers.beforeinput = (view, event) => {
   // Very specific hack to deal with backspace sometimes failing on
   // Chrome Android when after an uneditable node.
   if (browser.chrome && browser.android && event.inputType == "deleteContentBackward") {
+    view.domObserver.flushSoon()
     let {domChangeCount} = view
     setTimeout(() => {
       if (view.domChangeCount != domChangeCount) return // Event already had some effect
