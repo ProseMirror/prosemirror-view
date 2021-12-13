@@ -570,6 +570,11 @@ function doPaste(view, text, html, e) {
 }
 
 editHandlers.paste = (view, e) => {
+  // Handling paste from JavaScript during composition is very poorly
+  // handled by browsers, so as a dodgy but preferable kludge, we just
+  // let the browser do its native thing there, except on Android,
+  // where the editor is almost always composing.
+  if (view.composing && !browser.android) return
   let data = brokenClipboardAPI ? null : e.clipboardData
   if (data && doPaste(view, data.getData("text/plain"), data.getData("text/html"), e)) e.preventDefault()
   else capturePaste(view, e)
