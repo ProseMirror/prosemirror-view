@@ -43,9 +43,13 @@ export function selectionToDOM(view, force) {
   if (!editorOwnsSelection(view)) return
 
   if (!force && view.mouseDown && view.mouseDown.allowDefault) {
-    view.mouseDown.delayedSelectionSync = true
-    view.domObserver.setCurSelection()
-    return
+    let domSel = view.root.getSelection(), curSel = view.domObserver.currentSelection
+    if (domSel.anchorNode && isEquivalentPosition(domSel.anchorNode, domSel.anchorOffset,
+                                                  curSel.anchorNode, curSel.anchorOffset)) {
+      view.mouseDown.delayedSelectionSync = true
+      view.domObserver.setCurSelection()
+      return
+    }
   }
 
   view.domObserver.disconnectSelection()
