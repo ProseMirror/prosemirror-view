@@ -1,3 +1,13 @@
+## 1.23.4 (2021-12-22)
+
+### Bug fixes
+
+Improve the way the editor handles the mess of events produced when pressing Enter before a word that was just typed on Chrome + GBoard.
+
+Fix an issue where compositions right before another instance of the composed text could cause the editor to crash.
+
+Fix an issue where, if decorations changed during a pointer drag selection, the selection anchor might move around inappropriately.
+
 ## 1.23.3 (2021-11-26)
 
 ### Bug fixes
