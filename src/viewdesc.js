@@ -667,7 +667,7 @@ class NodeViewDesc extends ViewDesc {
     // attrs in the dom, that won't be picked up. Not entirely sure
     // whether this is a problem
     let rule = {node: this.node.type.name, attrs: this.node.attrs}
-    if (this.node.type.spec.code) rule.preserveWhitespace = "full"
+    if (this.node.type.whitespace == "pre") rule.preserveWhitespace = "full"
     if (this.contentDOM && !this.contentLost) rule.contentElement = this.contentDOM
     else rule.getContent = () => this.contentDOM ? Fragment.empty : this.node.content
     return rule
