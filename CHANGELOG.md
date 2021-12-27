@@ -1,3 +1,9 @@
+## 1.23.5 (2021-12-27)
+
+### Bug fixes
+
+Use the `whitespace` node prop where appropriate.
+
 ## 1.23.4 (2021-12-22)
 
 ### Bug fixes
