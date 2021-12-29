@@ -462,7 +462,8 @@ class ViewDesc {
           else child.markDirty(from - startInside, to - startInside)
           return
         } else {
-          child.dirty = child.dom == child.contentDOM && child.dom.parentNode == this.contentDOM ? CONTENT_DIRTY : NODE_DIRTY
+          child.dirty = child.dom == child.contentDOM && child.dom.parentNode == this.contentDOM && !child.children.length
+            ? CONTENT_DIRTY : NODE_DIRTY
         }
       }
       offset = end
