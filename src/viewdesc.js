@@ -578,7 +578,10 @@ class MarkViewDesc extends ViewDesc {
     return new MarkViewDesc(parent, mark, spec.dom, spec.contentDOM || spec.dom)
   }
 
-  parseRule() { return {mark: this.mark.type.name, attrs: this.mark.attrs, contentElement: this.contentDOM} }
+  parseRule() {
+    if ((this.dirty & NODE_DIRTY) || this.mark.type.spec.reparseInView) return null
+    return {mark: this.mark.type.name, attrs: this.mark.attrs, contentElement: this.contentDOM}
+  }
 
   matchesMark(mark) { return this.dirty != NODE_DIRTY && this.mark.eq(mark) }
 
