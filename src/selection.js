@@ -42,7 +42,10 @@ export function selectionToDOM(view, force) {
 
   if (!editorOwnsSelection(view)) return
 
-  if (!force && view.mouseDown && view.mouseDown.allowDefault) {
+  // The delayed drag selection causes issues with Cell Selections
+  // in Safari. And the drag selection delay is to workarond issues
+  // which only present in Chrome.
+  if (!force && view.mouseDown && view.mouseDown.allowDefault && browser.chrome) {
     let domSel = view.root.getSelection(), curSel = view.domObserver.currentSelection
     if (domSel.anchorNode && isEquivalentPosition(domSel.anchorNode, domSel.anchorOffset,
                                                   curSel.anchorNode, curSel.anchorOffset)) {
