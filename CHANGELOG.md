@@ -1,3 +1,13 @@
+## 1.23.6 (2022-01-13)
+
+### Bug fixes
+
+Fix an issue that could cause pieces of DOM to not be synchronized with the document after some kind of changes around marks.
+
+Fix a bug where marks rendered with nested elements would in some situations suppress new input.
+
+Disable Chrome-specific drag-selection workaround in non-Chrome browsers because it affected table cell selection in Safari.
+
 ## 1.23.5 (2021-12-27)
 
 ### Bug fixes
