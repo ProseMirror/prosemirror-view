@@ -485,7 +485,7 @@ export function endComposition(view, forceUpdate) {
   if (browser.android && view.domObserver.flushingSoon >= 0) return
   view.domObserver.forceFlush()
   clearComposition(view)
-  if (forceUpdate || view.docView.dirty) {
+  if (forceUpdate || view.docView && view.docView.dirty) {
     let sel = selectionFromDOM(view)
     if (sel && !sel.eq(view.state.selection)) view.dispatch(view.state.tr.setSelection(sel))
     else view.updateState(view.state)
