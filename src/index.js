@@ -602,7 +602,10 @@ function checkStateComponent(plugin) {
 //   The DOM serializer to use when putting content onto the
 //   clipboard. If not given, the result of
 //   [`DOMSerializer.fromSchema`](#model.DOMSerializer^fromSchema)
-//   will be used.
+//   will be used. This object will only have its
+//   [`serializeFragment`](#model.DOMSerializer.serializeFragment)
+//   method called, and you may provide an alternative object type
+//   implementing a compatible method.
 //
 //   clipboardTextSerializer:: ?(Slice) → string
 //   A function that will be called to get the text for the current
