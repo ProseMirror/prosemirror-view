@@ -1,3 +1,11 @@
+## 1.23.7 (2022-02-25)
+
+### Bug fixes
+
+Fix a crash when a view was being destroyed during input reading.
+
+Fix a crash on Firefox when replacing text in some specific types of document structure.
+
 ## 1.23.6 (2022-01-13)
 
 ### Bug fixes
