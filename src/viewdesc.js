@@ -1426,10 +1426,13 @@ function findTextInFragment(frag, text, from, to) {
       if (!next.isText) break
       str += next.text
     }
-    if (pos >= from && childStart < to) {
-      let found = str.lastIndexOf(text, to - childStart - 1)
+    if (pos >= from) {
+      let found = childStart < to ? str.lastIndexOf(text, to - childStart - 1) : -1
       if (found >= 0 && found + text.length + childStart >= from)
         return childStart + found
+      if (from == to && str.length >= (to + text.length) - childStart &&
+          str.slice(to - childStart, to - childStart + text.length) == text)
+        return to
     }
   }
   return -1
