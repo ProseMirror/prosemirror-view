@@ -1,3 +1,9 @@
+## 1.23.8 (2022-03-10)
+
+### Bug fixes
+
+Fix an issue where the editor needlessly interrupted composition with IME systems that keep the cursor at the start of the composition, such as some Pinyin input methods.
+
 ## 1.23.7 (2022-02-25)
 
 ### Bug fixes
