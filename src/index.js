@@ -428,6 +428,7 @@ function updateCursorWrapper(view) {
     let dom = document.createElement("img")
     dom.className = "ProseMirror-separator"
     dom.setAttribute("mark-placeholder", "true")
+    dom.setAttribute("alt", "")
     view.cursorWrapper = {dom, deco: Decoration.widget(view.state.selection.head, dom, {raw: true, marks: view.markCursor})}
   } else {
     view.cursorWrapper = null
