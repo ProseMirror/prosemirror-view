@@ -1,3 +1,9 @@
+## 1.23.9 (2022-03-11)
+
+### Bug fixes
+
+Make sure screen readers don't read the `<img>` nodes added as kludge for cursor behavior.
+
 ## 1.23.8 (2022-03-10)
 
 ### Bug fixes
