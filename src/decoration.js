@@ -512,9 +512,10 @@ function mapChildren(oldChildren, newLocal, mapping, node, offset, oldOffset, op
   let shift = (oldStart, oldEnd, newStart, newEnd) => {
     for (let i = 0; i < children.length; i += 3) {
       let end = children[i + 1], dSize
-      if (end == -1 || oldStart > end + oldOffset) continue
-      if (oldEnd >= children[i] + oldOffset) {
-        children[i + 1] = -1
+      if (end < 0 || oldStart > end + oldOffset) continue
+      let start = children[i] + oldOffset
+      if (oldEnd >= start) {
+        children[i + 1] = oldStart <= start ? -2 : -1
       } else if (newStart >= offset && (dSize = (newEnd - newStart) - (oldEnd - oldStart))) {
         children[i] += dSize
         children[i + 1] += dSize
@@ -526,7 +527,12 @@ function mapChildren(oldChildren, newLocal, mapping, node, offset, oldOffset, op
   // Find the child nodes that still correspond to a single node,
   // recursively call mapInner on them and update their positions.
   let mustRebuild = false
-  for (let i = 0; i < children.length; i += 3) if (children[i + 1] == -1) { // Touched nodes
+  for (let i = 0; i < children.length; i += 3) if (children[i + 1] < 0) { // Touched nodes
+    if (children[i + 1] == -2) {
+      mustRebuild = true
+      children[i + 1] = -1
+      continue
+    }
     let from = mapping.map(oldChildren[i] + oldOffset), fromLocal = from - offset
     if (fromLocal < 0 || fromLocal >= node.content.size) {
       mustRebuild = true

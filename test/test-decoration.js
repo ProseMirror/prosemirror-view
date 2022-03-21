@@ -1,7 +1,7 @@
 const ist = require("ist")
 const {schema, doc, p, h1, li, ul, blockquote} = require("prosemirror-test-builder")
-const {Transform, ReplaceAroundStep} = require("prosemirror-transform")
-const {Slice} = require("prosemirror-model")
+const {Transform, ReplaceAroundStep, liftTarget} = require("prosemirror-transform")
+const {Slice, NodeRange} = require("prosemirror-model")
 
 const {Decoration, DecorationSet} = require("..")
 
@@ -235,6 +235,17 @@ describe("DecorationSet", () => {
       let mapped = set.map(tr.mapping, tr.doc).find()[0]
       ist(mapped.from, 4)
       ist(mapped.to, 6)
+    })
+
+    it("can handle nodes moving up multiple levels", () => {
+      let d = doc(ul(li(p())))
+      let set = build(d, {node: true, from: 2, to: 4})
+      let range = new NodeRange(d.resolve(2), d.resolve(4), 2)
+      let tr = new Transform(d).lift(range, liftTarget(range))
+      let mapped = set.map(tr.mapping, tr.doc).find()
+      ist(mapped.length, 1)
+      ist(mapped[0].from, 0)
+      ist(mapped[0].to, 2)
     })
   })
 
