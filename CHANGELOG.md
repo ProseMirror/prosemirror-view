@@ -1,3 +1,9 @@
+## 1.23.10 (2022-03-22)
+
+### Bug fixes
+
+Fix a crash in `DecorationSet.map` that could occur with some kinds of lift transformations.
+
 ## 1.23.9 (2022-03-11)
 
 ### Bug fixes
