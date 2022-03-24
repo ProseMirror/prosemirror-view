@@ -132,6 +132,7 @@ export function readDOMChange(view, from, to, typeOver, addedNodes) {
       return
     }
   }
+  console.log("parsed", parse.doc + "", "from", view.dom.innerHTML)
   view.domChangeCount++
   // Handle the case where overwriting a selection by typing matches
   // the start or end of the selected content, creating a change

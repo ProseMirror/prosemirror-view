@@ -672,8 +672,23 @@ class NodeViewDesc extends ViewDesc {
     // whether this is a problem
     let rule = {node: this.node.type.name, attrs: this.node.attrs}
     if (this.node.type.whitespace == "pre") rule.preserveWhitespace = "full"
-    if (this.contentDOM && !this.contentLost) rule.contentElement = this.contentDOM
-    else rule.getContent = () => this.contentDOM ? Fragment.empty : this.node.content
+    if (!this.contentDOM) {
+      rule.getContent = () => this.node.content
+    } else if (!this.contentLost) {
+      rule.contentElement = this.contentDOM
+    } else {
+      // Chrome likes to randomly recreate parent nodes when
+      // backspacing things. When that happens, this tries to find the
+      // new parent.
+      for (let i = this.children.length - 1; i >= 0; i--) {
+        let child = this.children[i]
+        if (this.dom.contains(child.dom.parentNode)) {
+          rule.contentElement = child.dom.parentNode
+          break
+        }
+      }
+      if (!rule.contentElement) rule.getContent = () => Fragment.empty
+    }
     return rule
   }
 
