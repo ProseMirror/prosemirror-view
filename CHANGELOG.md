@@ -1,3 +1,9 @@
+## 1.23.11 (2022-03-31)
+
+### Bug fixes
+
+Fix an issue where a node view with a separate content wrapper node could sometimes lose its content on Chrome when backspacing out content due to unexpected DOM element recreation.
+
 ## 1.23.10 (2022-03-22)
 
 ### Bug fixes
