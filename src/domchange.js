@@ -120,7 +120,7 @@ export function readDOMChange(view, from, to, typeOver, addedNodes) {
         !view.composing && !(parse.sel && parse.sel.anchor != parse.sel.head)) {
       change = {start: sel.from, endA: sel.to, endB: sel.to}
     } else if ((browser.ios && view.lastIOSEnter > Date.now() - 225 || browser.android) &&
-               addedNodes.some(n => n.nodeName == "DIV" || n.nodeName == "P") &&
+               addedNodes.some(n => n.nodeName == "DIV" || n.nodeName == "P" || n.nodeName == "CODE") &&
                view.someProp("handleKeyDown", f => f(view, keyEvent(13, "Enter")))) {
       view.lastIOSEnter = 0
       return
@@ -167,7 +167,7 @@ export function readDOMChange(view, from, to, typeOver, addedNodes) {
   // If this looks like the effect of pressing Enter (or was recorded
   // as being an iOS enter press), just dispatch an Enter key instead.
   if (((browser.ios && view.lastIOSEnter > Date.now() - 225 &&
-        (!inlineChange || addedNodes.some(n => n.nodeName == "DIV" || n.nodeName == "P"))) ||
+        (!inlineChange || addedNodes.some(n => n.nodeName == "DIV" || n.nodeName == "P" || n.nodeName == "CODE"))) ||
        (!inlineChange && $from.pos < parse.doc.content.size &&
         (nextSel = Selection.findFrom(parse.doc.resolve($from.pos + 1), 1, true)) &&
         nextSel.head == $to.pos)) &&
