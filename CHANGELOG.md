@@ -1,3 +1,9 @@
+## 1.23.12 (2022-04-08)
+
+### Bug fixes
+
+Fix an issue where enter on Chrome Android could, in textblock nodes rendered with an inner content element, delete the text after the cursor.
+
 ## 1.23.11 (2022-03-31)
 
 ### Bug fixes
