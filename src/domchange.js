@@ -115,15 +115,17 @@ export function readDOMChange(view, from, to, typeOver, addedNodes) {
   view.lastKeyCode = null
 
   let change = findDiff(compare.content, parse.doc.content, parse.from, preferredPos, preferredSide)
+  if ((browser.ios && view.lastIOSEnter > Date.now() - 225 || browser.android) &&
+      addedNodes.some(n => n.nodeName == "DIV" || n.nodeName == "P") &&
+      (!change || change.endA >= change.endB) &&
+      view.someProp("handleKeyDown", f => f(view, keyEvent(13, "Enter")))) {
+    view.lastIOSEnter = 0
+    return
+  }
   if (!change) {
     if (typeOver && sel instanceof TextSelection && !sel.empty && sel.$head.sameParent(sel.$anchor) &&
         !view.composing && !(parse.sel && parse.sel.anchor != parse.sel.head)) {
       change = {start: sel.from, endA: sel.to, endB: sel.to}
-    } else if ((browser.ios && view.lastIOSEnter > Date.now() - 225 || browser.android) &&
-               addedNodes.some(n => n.nodeName == "DIV" || n.nodeName == "P") &&
-               view.someProp("handleKeyDown", f => f(view, keyEvent(13, "Enter")))) {
-      view.lastIOSEnter = 0
-      return
     } else {
       if (parse.sel) {
         let sel = resolveSelection(view, view.state.doc, parse.sel)
