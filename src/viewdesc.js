@@ -1272,12 +1272,12 @@ class ViewTreeUpdater {
         /\n$/.test(lastChild.node.text)) {
       // Avoid bugs in Safari's cursor drawing (#1165) and Chrome's mouse selection (#1152)
       if ((browser.safari || browser.chrome) && lastChild && lastChild.dom.contentEditable == "false")
-        this.addHackNode("IMG")
+        this.addHackNode("IMG", lastChild)
       this.addHackNode("BR")
     }
   }
 
-  addHackNode(nodeName) {
+  addHackNode(nodeName, insertAfter) {
     if (this.index < this.top.children.length && this.top.children[this.index].matchesHack(nodeName)) {
       this.index++
     } else {
@@ -1287,7 +1287,16 @@ class ViewTreeUpdater {
         dom.alt = ""
       }
       if (nodeName == "BR") dom.className = "ProseMirror-trailingBreak"
-      this.top.children.splice(this.index++, 0, new TrailingHackViewDesc(this.top, nothing, dom, null))
+
+      if (insertAfter) {
+        const siblings = insertAfter.parent.children
+        siblings.splice(siblings.indexOf(insertAfter) + 1, 0, new TrailingHackViewDesc(insertAfter.parent, nothing, dom, null))
+        if (insertAfter.parent === this.top) {
+          this.index++
+        }
+      } else {
+        this.top.children.splice(this.index++, 0, new TrailingHackViewDesc(this.top, nothing, dom, null))
+      }
       this.changed = true
     }
   }
