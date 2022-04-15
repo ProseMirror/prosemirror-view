@@ -1264,21 +1264,24 @@ class ViewTreeUpdater {
   // Make sure a textblock looks and behaves correctly in
   // contentEditable.
   addTextblockHacks() {
-    let lastChild = this.top.children[this.index - 1]
-    while (lastChild instanceof MarkViewDesc) lastChild = lastChild.children[lastChild.children.length - 1]
+    let lastChild = this.top.children[this.index - 1], parent = this.top
+    while (lastChild instanceof MarkViewDesc) {
+      parent = lastChild
+      lastChild = parent.children[parent.children.length - 1]
+    }
 
     if (!lastChild || // Empty textblock
         !(lastChild instanceof TextViewDesc) ||
         /\n$/.test(lastChild.node.text)) {
       // Avoid bugs in Safari's cursor drawing (#1165) and Chrome's mouse selection (#1152)
       if ((browser.safari || browser.chrome) && lastChild && lastChild.dom.contentEditable == "false")
-        this.addHackNode("IMG")
-      this.addHackNode("BR")
+        this.addHackNode("IMG", parent)
+      this.addHackNode("BR", this.top)
     }
   }
 
-  addHackNode(nodeName) {
-    if (this.index < this.top.children.length && this.top.children[this.index].matchesHack(nodeName)) {
+  addHackNode(nodeName, parent) {
+    if (parent == this.top && this.index < parent.children.length && parent.children[this.index].matchesHack(nodeName)) {
       this.index++
     } else {
       let dom = document.createElement(nodeName)
@@ -1287,7 +1290,9 @@ class ViewTreeUpdater {
         dom.alt = ""
       }
       if (nodeName == "BR") dom.className = "ProseMirror-trailingBreak"
-      this.top.children.splice(this.index++, 0, new TrailingHackViewDesc(this.top, nothing, dom, null))
+      let hack = new TrailingHackViewDesc(this.top, nothing, dom, null)
+      if (parent != this.top) parent.children.push(hack)
+      else parent.children.splice(this.index++, 0, hack)
       this.changed = true
     }
   }
