@@ -75,7 +75,7 @@ export class EditorView {
 
   // composing:: boolean
   // Holds `true` when a
-  // [composition](https://developer.mozilla.org/en-US/docs/Mozilla/IME_handling_guide)
+  // [composition](https://w3c.github.io/uievents/#events-compositionevents)
   // is active.
 
   // :: DirectEditorProps
