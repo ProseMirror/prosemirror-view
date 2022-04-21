@@ -643,7 +643,7 @@ function checkStateComponent(plugin) {
 
 // DirectEditorProps:: interface extends EditorProps
 //
-// The props object given directly to the editor view supports two
+// The props object given directly to the editor view supports some
 // fields that can't be used in plugins:
 //
 //   state:: EditorState
