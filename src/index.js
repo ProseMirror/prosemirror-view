@@ -436,7 +436,7 @@ function updateCursorWrapper(view) {
 }
 
 function getEditable(view) {
-  return !view.someProp("editable", value => value(view.state) === false)
+  return !view.someProp("editable", value => (typeof value == 'function' ? value(view.state) : value) === false)
 }
 
 function selectionContextChanged(sel1, sel2) {
@@ -618,11 +618,11 @@ function checkStateComponent(plugin) {
 //   A set of [document decorations](#view.Decoration) to show in the
 //   view.
 //
-//   editable:: ?(state: EditorState) → bool
+//   editable:: ?union<bool, (state: EditorState) → bool>
 //   When this returns false, the content of the view is not directly
 //   editable.
 //
-//   attributes:: ?union<Object<string>, (EditorState) → ?Object<string>>
+//   attributes:: ?union<Object<string>, (state: EditorState) → ?Object<string>>
 //   Control the DOM attributes of the editable element. May be either
 //   an object or a function going from an editor state to an object.
 //   By default, the element will get a class `"ProseMirror"`, and
