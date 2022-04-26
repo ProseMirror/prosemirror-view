@@ -1,3 +1,9 @@
+## 1.23.13 (2022-04-26)
+
+### Bug fixes
+
+Work around a hidden cursor issue in Chrome when a textblock ends in an uneditable node wrapped in a mark.
+
 ## 1.23.12 (2022-04-08)
 
 ### Bug fixes
