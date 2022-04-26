@@ -1,6 +1,6 @@
 import browser from "./browser"
 import {domIndex, isEquivalentPosition} from "./dom"
-import {hasFocusAndSelection, hasSelection, selectionToDOM} from "./selection"
+import {hasFocusAndSelection, selectionToDOM} from "./selection"
 
 const observeOptions = {
   childList: true,
@@ -145,7 +145,7 @@ export class DOMObserver {
     }
 
     let sel = this.view.root.getSelection()
-    let newSel = !this.suppressingSelectionUpdates && !this.currentSelection.eq(sel) && hasSelection(this.view) && !this.ignoreSelectionChange(sel)
+    let newSel = !this.suppressingSelectionUpdates && !this.currentSelection.eq(sel) && hasFocusAndSelection(this.view) && !this.ignoreSelectionChange(sel)
 
     let from = -1, to = -1, typeOver = false, added = []
     if (this.view.editable) {
