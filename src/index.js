@@ -649,7 +649,7 @@ function checkStateComponent(plugin) {
 //   state:: EditorState
 //   The current state of the editor.
 //
-//   plugins:: [Plugin]
+//   plugins:: ?[Plugin]
 //   A set of plugins to use in the view, applying their [plugin
 //   view](#state.PluginSpec.view) and
 //   [props](#state.PluginSpec.props). Passing plugins with a state
