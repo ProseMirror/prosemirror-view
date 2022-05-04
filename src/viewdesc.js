@@ -637,6 +637,7 @@ class NodeViewDesc extends ViewDesc {
       // own position)
       if (!descObj) return pos
       if (descObj.parent) return descObj.parent.posBeforeChild(descObj)
+      return pos
     }, outerDeco, innerDeco)
 
     let dom = spec && spec.dom, contentDOM = spec && spec.contentDOM
