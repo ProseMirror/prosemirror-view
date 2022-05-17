@@ -1,12 +1,12 @@
-const {doc, p, br, blockquote} = require("prosemirror-test-builder")
-const {Plugin} = require("prosemirror-state")
-const {tempEditor} = require("./view")
-const {DecorationSet, Decoration} = require("..")
-const ist = require("ist")
+import {doc, p, br, blockquote} from "prosemirror-test-builder"
+import {Plugin} from "prosemirror-state"
+import {DecorationSet, Decoration} from "prosemirror-view"
+import ist from "ist"
+import {tempEditor} from "./view"
 
 describe("nodeViews prop", () => {
   it("can replace a node's representation", () => {
-    let view = tempEditor({doc: doc(p("foo", br)),
+    let view = tempEditor({doc: doc(p("foo", br())),
                            nodeViews: {hard_break() { return {dom: document.createElement("var")}}}})
     ist(view.dom.querySelector("var"))
   })
@@ -20,9 +20,9 @@ describe("nodeViews prop", () => {
         return {dom}
       }}
     })
-    ist(view.dom.querySelector("p").textContent, "FOO")
+    ist(view.dom.querySelector("p")!.textContent, "FOO")
     view.dispatch(view.state.tr.insertText("a"))
-    ist(view.dom.querySelector("p").textContent, "AFOO")
+    ist(view.dom.querySelector("p")!.textContent, "AFOO")
   })
 
   it("can register its own update method", () => {
@@ -34,7 +34,7 @@ describe("nodeViews prop", () => {
         return {dom, update(node) { dom.textContent = node.textContent.toUpperCase(); return true }}
       }}
     })
-    let para = view.dom.querySelector("p")
+    let para = view.dom.querySelector("p")!
     view.dispatch(view.state.tr.insertText("a"))
     ist(view.dom.querySelector("p"), para)
     ist(para.textContent, "AFOO")
@@ -68,7 +68,7 @@ describe("nodeViews prop", () => {
         return {dom, contentDOM: dom}
       }}
     })
-    let para = view.dom.querySelector("p")
+    let para = view.dom.querySelector("p")!
     view.dispatch(view.state.tr.insertText("a"))
     ist(view.dom.querySelector("p"), para)
     ist(para.textContent, "afoo")
@@ -76,8 +76,8 @@ describe("nodeViews prop", () => {
 
   it("has its destroy method called", () => {
     let destroyed = false, view = tempEditor({
-      doc: doc(p("foo", br)),
-      nodeViews: {hard_break() { return {destroy: () => destroyed = true}}}
+      doc: doc(p("foo", br())),
+      nodeViews: {hard_break() { return {dom: document.createElement("br"), destroy: () => destroyed = true}}}
     })
     ist(!destroyed)
     view.dispatch(view.state.tr.delete(3, 5))
@@ -85,17 +85,17 @@ describe("nodeViews prop", () => {
   })
 
   it("can query its own position", () => {
-    let get, view = tempEditor({
-      doc: doc(blockquote(p("abc"), p("foo", br))),
+    let get: () => number | undefined, view = tempEditor({
+      doc: doc(blockquote(p("abc"), p("foo", br()))),
       nodeViews: {hard_break(_n, _v, getPos) {
         ist(getPos(), 10)
         get = getPos
-        return {}
+        return {dom: document.createElement("br")}
       }}
     })
-    ist(get(), 10)
+    ist(get!(), 10)
     view.dispatch(view.state.tr.insertText("a"))
-    ist(get(), 11)
+    ist(get!(), 11)
   })
 
   it("has access to outer decorations", () => {
@@ -105,29 +105,31 @@ describe("nodeViews prop", () => {
         apply(tr, prev) { return tr.getMeta("setDeco") || prev }
       },
       props: {
-        decorations(state) {
+        decorations(this: Plugin, state) {
           let deco = this.getState(state)
-          return deco && DecorationSet.create(state.doc, [Decoration.inline(0, state.doc.content.size, null, {name: deco})])
+          return deco && DecorationSet.create(state.doc, [
+            Decoration.inline(0, state.doc.content.size, {}, {name: deco} as any)
+          ])
         }
       }
     })
     let view = tempEditor({
-      doc: doc(p("foo", br)),
+      doc: doc(p("foo", br())),
       plugins: [plugin],
       nodeViews: {hard_break(_n, _v, _p, deco) {
         let dom = document.createElement("var")
-        function update(deco) {
+        function update(deco: readonly Decoration[]) {
           dom.textContent = deco.length ? deco[0].spec.name : "[]"
         }
         update(deco)
         return {dom, update(_, deco) { update(deco); return true }}
       }}
     })
-    ist(view.dom.querySelector("var").textContent, "[]")
+    ist(view.dom.querySelector("var")!.textContent, "[]")
     view.dispatch(view.state.tr.setMeta("setDeco", "foo"))
-    ist(view.dom.querySelector("var").textContent, "foo")
+    ist(view.dom.querySelector("var")!.textContent, "foo")
     view.dispatch(view.state.tr.setMeta("setDeco", "bar"))
-    ist(view.dom.querySelector("var").textContent, "bar")
+    ist(view.dom.querySelector("var")!.textContent, "bar")
   })
 
   it("provides access to inner decorations in the constructor", () => {
@@ -135,7 +137,7 @@ describe("nodeViews prop", () => {
       doc: doc(p("foo")),
       nodeViews: {paragraph(_node, _v, _pos, _outer, innerDeco) {
         let dom = document.createElement("p")
-        ist(innerDeco.find().map(d => `${d.from}-${d.to}`).join(), "1-2")
+        ist((innerDeco as DecorationSet).find().map(d => `${d.from}-${d.to}`).join(), "1-2")
         return {dom, contentDOM: dom}
       }},
       decorations(state) {
@@ -148,13 +150,13 @@ describe("nodeViews prop", () => {
   })
 
   it("provides access to inner decorations in the update method", () => {
-    let innerDecos = []
+    let innerDecos: string[] = []
     let view = tempEditor({
       doc: doc(p("foo")),
       nodeViews: {paragraph(node) {
         let dom = document.createElement("p")
         return {dom, contentDOM: dom, update(node_, _, innerDecoSet) {
-          innerDecos = innerDecoSet.find().map(d => `${d.from}-${d.to}`)
+          innerDecos = (innerDecoSet as DecorationSet).find().map(d => `${d.from}-${d.to}`)
           return node.sameMarkup(node_)
         }}
       }}

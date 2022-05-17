@@ -1,8 +1,8 @@
-const {doc, strong, pre, h1, p, hr, schema} = require("prosemirror-test-builder")
-const {Plugin} = require("prosemirror-state")
-const {Schema} = require("prosemirror-model")
-const {tempEditor} = require("./view")
-const ist = require("ist")
+import {doc, strong, pre, h1, p, hr, schema} from "prosemirror-test-builder"
+import {Plugin} from "prosemirror-state"
+import {Schema} from "prosemirror-model"
+import ist from "ist"
+import {tempEditor} from "./view"
 
 describe("EditorView draw", () => {
   it("updates the DOM", () => {
@@ -112,7 +112,7 @@ describe("EditorView draw", () => {
   })
 
   it("creates and destroys plugin views", () => {
-    let events = []
+    let events: string[] = []
     class PluginView {
       update() { events.push("update") }
       destroy() { events.push("destroy") }
@@ -127,7 +127,7 @@ describe("EditorView draw", () => {
   })
 
   it("redraws changed node views", () => {
-    let view = tempEditor({doc: doc(p("foo"), hr)})
+    let view = tempEditor({doc: doc(p("foo"), hr())})
     ist(view.dom.querySelector("hr"))
     view.setProps({nodeViews: {horizontal_rule: () => {
       return {dom: document.createElement("var")}
@@ -147,7 +147,7 @@ describe("EditorView draw", () => {
       nodes: {
         doc: {content: "paragraph+", marks: "m"},
         text: {group: "inline"},
-        paragraph: schema.spec.nodes.get("paragraph")
+        paragraph: schema.spec.nodes.get("paragraph")!
       },
       marks: {
         m: {

@@ -1,50 +1,53 @@
-const ist = require("ist")
-const {schema, doc, p, h1, li, ul, blockquote} = require("prosemirror-test-builder")
-const {Transform, ReplaceAroundStep, liftTarget} = require("prosemirror-transform")
-const {Slice, NodeRange} = require("prosemirror-model")
-
-const {Decoration, DecorationSet} = require("..")
+import ist from "ist"
+import {schema, doc, p, h1, li, ul, blockquote} from "prosemirror-test-builder"
+import {Transform, ReplaceAroundStep, liftTarget} from "prosemirror-transform"
+import {Slice, NodeRange, Node} from "prosemirror-model"
+import {Decoration, DecorationSet} from "prosemirror-view"
 
 let widget = document.createElement("button")
 
-function make(d) {
-  if (d.type) return d
-  if (d.pos != null) return Decoration.widget(d.pos, d.widget || widget, d)
-  if (d.node) return Decoration.node(d.from, d.to, d.attrs || {}, d)
-  return Decoration.inline(d.from, d.to, d.attrs || {}, d)
+type DecoSpec = Decoration
+  | {pos: number, name?: string, side?: number}
+  | {from: number, to: number, node?: boolean, attrs?: any, name?: string, inclusiveStart?: boolean, inclusiveEnd?: boolean}
+
+function make(d: DecoSpec) {
+  if ((d as Decoration).type) return d as Decoration
+  if ((d as any).pos != null) return Decoration.widget((d as {pos: number}).pos, widget, d as any)
+  if ((d as any).node) return Decoration.node((d as any).from, (d as any).to, (d as any).attrs || {}, d)
+  return Decoration.inline((d as any).from, (d as any).to, (d as any).attrs || {}, d as any)
 }
 
-function build(doc, ...decorations) {
+function build(doc: Node, ...decorations: DecoSpec[]) {
   return DecorationSet.create(doc, decorations.map(make))
 }
 
-function str(set) {
+function str(set: DecorationSet) {
   if (!set) return "[]"
   let s = "[" + set.local.map(d => d.from + "-" + d.to).join(", ")
   for (let i = 0; i < set.children.length; i += 3)
-    s += (s.length > 1 ? ", " : "") + set.children[i] + ": " + str(set.children[i + 2])
+    s += (s.length > 1 ? ", " : "") + set.children[i] + ": " + str(set.children[i + 2] as DecorationSet)
   return s + "]"
 }
 
-function arrayStr(arr) {
+function arrayStr(arr: readonly any[]) {
   return arr.map(d => d.from + "-" + d.to).join(", ")
 }
 
-function buildMap(doc, ...decorations) {
-  let f = decorations.pop()
-  let oldSet = build(doc, ...decorations)
-  let tr = f(new Transform(doc))
+function buildMap(doc: Node, ...decorations: (DecoSpec | ((tr: Transform) => Transform))[]) {
+  let f = decorations.pop()!
+  let oldSet = build(doc, ...decorations as DecoSpec[])
+  let tr = (f as any)(new Transform(doc))
   return {set: oldSet.map(tr.mapping, tr.doc), oldSet}
 }
 
-function buildAdd(doc, ...decorations) {
-  let toAdd = decorations.pop()
-  return build(doc, ...decorations).add(doc, Array.isArray(toAdd) ? toAdd.map(make) : [make(toAdd)])
+function buildAdd(doc: Node, ...decorations: (DecoSpec | DecoSpec[])[]) {
+  let toAdd = decorations.pop()!
+  return build(doc, ...decorations as DecoSpec[]).add(doc, Array.isArray(toAdd) ? toAdd.map(make) : [make(toAdd)])
 }
 
-function buildRem(doc, ...decorations) {
-  let toAdd = decorations.pop()
-  return build(doc, ...decorations).remove(Array.isArray(toAdd) ? toAdd.map(make) : [make(toAdd)])
+function buildRem(doc: Node, ...decorations: (DecoSpec | DecoSpec[])[]) {
+  let toAdd = decorations.pop()!
+  return build(doc, ...decorations as DecoSpec[]).remove(Array.isArray(toAdd) ? toAdd.map(make) : [make(toAdd)])
 }
 
 describe("DecorationSet", () => {
@@ -164,7 +167,7 @@ describe("DecorationSet", () => {
                                    tr => tr.delete(8, 9))
       ist(str(set), "[0: [1-2], 5: [4: [1-2]]]")
       ist(set.children[2], oldSet.children[2]) // FIXME sane accessors?
-      ist(set.children[5].children[2], oldSet.children[5].children[5])
+      ist((set as any).children[5].children[2], (oldSet as any).children[5].children[5])
     })
 
     it("rebuilds when a node is joined", () => {
@@ -190,10 +193,10 @@ describe("DecorationSet", () => {
     it("calls onRemove when dropping decorations", () => {
       let d = doc(blockquote(p("hello"), p("abc")))
       let set = build(d, {from: 3, to: 5, name: "a"}, {pos: 10, name: "b"})
-      let tr = new Transform(d).delete(2, 6), dropped = []
+      let tr = new Transform(d).delete(2, 6), dropped: string[] = []
       set.map(tr.mapping, tr.doc, {onRemove: o => dropped.push(o.name)})
       ist(JSON.stringify(dropped), '["a"]')
-      let tr2 = new Transform(d).delete(0, d.content.size), dropped2 = []
+      let tr2 = new Transform(d).delete(0, d.content.size), dropped2: string[] = []
       set.map(tr2.mapping, tr2.doc, {onRemove: o => dropped2.push(o.name)})
       ist(JSON.stringify(dropped2.sort()), '["a","b"]')
     })
@@ -241,7 +244,7 @@ describe("DecorationSet", () => {
       let d = doc(ul(li(p())))
       let set = build(d, {node: true, from: 2, to: 4})
       let range = new NodeRange(d.resolve(2), d.resolve(4), 2)
-      let tr = new Transform(d).lift(range, liftTarget(range))
+      let tr = new Transform(d).lift(range, liftTarget(range)!)
       let mapped = set.map(tr.mapping, tr.doc).find()
       ist(mapped.length, 1)
       ist(mapped[0].from, 0)
@@ -295,7 +298,7 @@ describe("DecorationSet", () => {
     })
 
     it("compares by both position and type when removing", () => {
-      let deco = DecorationSet.create(doc(p("one")), [[1, 2], [3, 4]].map(([from, to]) => Decoration.inline(from, to)))
+      let deco = DecorationSet.create(doc(p("one")), [[1, 2], [3, 4]].map(([from, to]) => Decoration.inline(from, to, {})))
       ist(deco.remove([deco.find()[0]]).find().length, 1)
     })
   })

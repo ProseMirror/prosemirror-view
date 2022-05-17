@@ -2,5 +2,4 @@
 .tern-port
 /dist
 /notes.txt
-/test/mocha.css
-webpack.config.js
+/test/*.js

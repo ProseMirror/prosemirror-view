@@ -1,23 +1,23 @@
-const result = {}
-export default result
+const nav = typeof navigator != "undefined" ? navigator : null
+const doc = typeof document != "undefined" ? document : null
+const agent = (nav && nav.userAgent) || ""
 
-if (typeof navigator != "undefined" && typeof document != "undefined") {
-  const ie_edge = /Edge\/(\d+)/.exec(navigator.userAgent)
-  const ie_upto10 = /MSIE \d/.test(navigator.userAgent)
-  const ie_11up = /Trident\/(?:[7-9]|\d{2,})\..*rv:(\d+)/.exec(navigator.userAgent)
+const ie_edge = /Edge\/(\d+)/.exec(agent)
+const ie_upto10 = /MSIE \d/.exec(agent)
+const ie_11up = /Trident\/(?:[7-9]|\d{2,})\..*rv:(\d+)/.exec(agent)
 
-  let ie = result.ie = !!(ie_upto10 || ie_11up || ie_edge)
-  result.ie_version = ie_upto10 ? document.documentMode || 6 : ie_11up ? +ie_11up[1] : ie_edge ? +ie_edge[1] : null
-  result.gecko = !ie && /gecko\/(\d+)/i.test(navigator.userAgent)
-  result.gecko_version = result.gecko && +(/Firefox\/(\d+)/.exec(navigator.userAgent) || [0, 0])[1]
-  let chrome = !ie && /Chrome\/(\d+)/.exec(navigator.userAgent)
-  result.chrome = !!chrome
-  result.chrome_version = chrome && +chrome[1]
-  // Is true for both iOS and iPadOS for convenience
-  result.safari = !ie && /Apple Computer/.test(navigator.vendor)
-  result.ios = result.safari && (/Mobile\/\w+/.test(navigator.userAgent) || navigator.maxTouchPoints > 2)
-  result.mac = result.ios || /Mac/.test(navigator.platform)
-  result.android = /Android \d/.test(navigator.userAgent)
-  result.webkit = "webkitFontSmoothing" in document.documentElement.style
-  result.webkit_version = result.webkit && +(/\bAppleWebKit\/(\d+)/.exec(navigator.userAgent) || [0, 0])[1]
-}
+export const ie = !!(ie_upto10 || ie_11up || ie_edge)
+export const ie_version = ie_upto10 ? (document as any).documentMode : ie_11up ? +ie_11up[1] : ie_edge ? +ie_edge[1] : 0
+export const gecko = !ie && /gecko\/(\d+)/i.test(agent)
+export const gecko_version = gecko && +(/Firefox\/(\d+)/.exec(agent) || [0, 0])[1]
+
+const _chrome = !ie && /Chrome\/(\d+)/.exec(agent)
+export const chrome = !!_chrome
+export const chrome_version = _chrome ? +_chrome[1] : 0
+export const safari = !ie && !!nav && /Apple Computer/.test(nav.vendor)
+// Is true for both iOS and iPadOS for convenience
+export const ios = safari && (/Mobile\/\w+/.test(agent) || !!nav && nav.maxTouchPoints > 2)
+export const mac = ios || (nav ? /Mac/.test(nav.platform) : false)
+export const android = /Android \d/.test(agent)
+export const webkit = !!doc && "webkitFontSmoothing" in doc.documentElement.style
+export const webkit_version = webkit ? +(/\bAppleWebKit\/(\d+)/.exec(navigator.userAgent) || [0, 0])[1] : 0
