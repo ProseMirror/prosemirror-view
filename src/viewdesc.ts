@@ -792,7 +792,7 @@ export class NodeViewDesc extends ViewDesc {
     this.children = replaceNodes(this.children, pos, pos + text.length, view, desc)
   }
 
-  // If this desc be updated to match the given node decoration,
+  // If this desc must be updated to match the given node decoration,
   // do so and return true.
   update(node: Node, outerDeco: readonly Decoration[], innerDeco: DecorationSource, view: EditorView) {
     if (this.dirty == NODE_DIRTY ||
@@ -1193,6 +1193,7 @@ class ViewTreeUpdater {
 
   updateNodeAt(node: Node, outerDeco: readonly Decoration[], innerDeco: DecorationSource, index: number, view: EditorView) {
     let child = this.top.children[index] as NodeViewDesc
+    if (child.dirty == NODE_DIRTY && child.dom == child.contentDOM) child.dirty = CONTENT_DIRTY
     if (!child.update(node, outerDeco, innerDeco, view)) return false
     this.destroyBetween(this.index, index)
     this.index = index + 1
