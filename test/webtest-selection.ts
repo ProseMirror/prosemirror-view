@@ -245,7 +245,7 @@ describe("EditorView", () => {
     let view = tempEditor({})
     let top = view.coordsAtPos(1), pos = 1, end: {left: number, top: number, right: number, bottom: number} | undefined
     for (let i = 0; i < 100; i++) {
-      view.dispatch(view.state.tr.insertText("abc def ghi "))
+      view.dispatch(view.state.tr.insertText("a bc de fg h"))
       pos += 12
       end = view.coordsAtPos(pos)!
       if (end.bottom > top.bottom + 4) break

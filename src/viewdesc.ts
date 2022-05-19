@@ -572,7 +572,7 @@ class MarkViewDesc extends ViewDesc {
   }
 
   parseRule(): ParseRule | null {
-    if ((this.dirty & NODE_DIRTY) || (this.mark.type.spec as any).reparseInView) return null
+    if ((this.dirty & NODE_DIRTY) || this.mark.type.spec.reparseInView) return null
     return {mark: this.mark.type.name, attrs: this.mark.attrs, contentElement: this.contentDOM || undefined}
   }
 
@@ -643,7 +643,7 @@ export class NodeViewDesc extends ViewDesc {
       if (!dom) dom = document.createTextNode(node.text!)
       else if (dom.nodeType != 3) throw new RangeError("Text must be rendered as a DOM text node")
     } else if (!dom) {
-      ;({dom, contentDOM} = DOMSerializer.renderSpec(document, (node.type.spec as any).toDOM(node)))
+      ;({dom, contentDOM} = DOMSerializer.renderSpec(document, node.type.spec.toDOM!(node)))
     }
     if (!contentDOM && !node.isText && dom.nodeName != "BR") { // Chrome gets confused by <br contenteditable=false>
       if (!(dom as HTMLElement).hasAttribute("contenteditable")) (dom as HTMLElement).contentEditable = "false"
@@ -664,7 +664,7 @@ export class NodeViewDesc extends ViewDesc {
 
   parseRule(): ParseRule | null {
     // Experimental kludge to allow opt-in re-parsing of nodes
-    if ((this.node.type.spec as any).reparseInView) return null
+    if (this.node.type.spec.reparseInView) return null
     // FIXME the assumption that this can always return the current
     // attrs means that if the user somehow manages to change the
     // attrs in the dom, that won't be picked up. Not entirely sure
