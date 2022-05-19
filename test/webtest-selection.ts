@@ -187,6 +187,9 @@ describe("EditorView", () => {
 
   it("produces sensible screen coordinates around line breaks", () => {
     let view = tempEditor({doc: doc(p("one two three four five-six-seven-eight"))})
+    function afterSpace(pos: number) {
+      return pos > 0 && view.state.doc.textBetween(pos - 1, pos) == " "
+    }
     view.dom.style.width = "4em"
     let prevBefore: {left: number, top: number, right: number, bottom: number} | undefined
     let prevAfter: {left: number, top: number, right: number, bottom: number} | undefined
@@ -199,7 +202,9 @@ describe("EditorView", () => {
       ist(found, pos)
       let coordsBefore = view.coordsAtPos(pos, -1)
       if (prevBefore)
-        ist(prevBefore.top < coordsBefore.top || prevBefore.top == coordsBefore.top && prevBefore.left < coordsBefore.left)
+        ist(prevBefore.top < coordsBefore.top ||
+            prevBefore.top == coordsBefore.top &&
+              (prevBefore.left < coordsBefore.left || (afterSpace(pos) && prevBefore.left == coordsBefore.left)))
       prevBefore = coordsBefore
     })
   })
