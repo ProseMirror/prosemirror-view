@@ -283,7 +283,7 @@ export class DecorationSet implements DecorationSource {
   /// `start` and `end` are omitted, all decorations in the set are
   /// considered. When `predicate` isn't given, all decorations are
   /// assumed to match.
-  find(start?: number, end?: number, predicate?: (spec: any) => boolean): readonly Decoration[] {
+  find(start?: number, end?: number, predicate?: (spec: any) => boolean): Decoration[] {
     let result: Decoration[] = []
     this.findInner(start == null ? 0 : start, end == null ? 1e9 : end, result, 0, predicate)
     return result
