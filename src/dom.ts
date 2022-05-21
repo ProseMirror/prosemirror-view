@@ -1,7 +1,7 @@
 import * as browser from "./browser"
 
-export type DOMNode = Node
-export type DOMSelection = Selection
+export type DOMNode = InstanceType<typeof window.Node>
+export type DOMSelection = InstanceType<typeof window.Selection>
 
 export const domIndex = function(node: Node) {
   for (var index = 0;; index++) {
