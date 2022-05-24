@@ -498,6 +498,13 @@ function checkStateComponent(plugin: Plugin) {
 type NodeViewConstructor = (node: Node, view: EditorView, getPos: () => number | undefined,
                             decorations: readonly Decoration[], innerDecorations: DecorationSource) => NodeView
 
+/// Helper type that maps event names to event object types, but
+/// includes events that TypeScript's HTMLElementEventMap doesn't know
+/// about.
+export interface DOMEventMap extends HTMLElementEventMap {
+  [event: string]: Event
+}
+
 /// Props are configuration values that can be passed to an editor view
 /// or included in a plugin. This interface lists the supported props.
 ///
@@ -519,7 +526,9 @@ export interface EditorProps {
   /// from such a function, you are responsible for calling
   /// `preventDefault` yourself (or not, if you want to allow the
   /// default behavior).
-  handleDOMEvents?: {[event: string]: (view: EditorView, event: Event) => boolean | void}
+  handleDOMEvents?: {
+    [event in string]: (view: EditorView, event: DOMEventMap[event]) => boolean | void
+  }
 
   /// Called when the editor receives a `keydown` event.
   handleKeyDown?: (view: EditorView, event: KeyboardEvent) => boolean | void
