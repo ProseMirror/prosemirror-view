@@ -16,22 +16,20 @@ export function serializeForClipboard(view: EditorView, slice: Slice) {
   let doc = detachedDoc(), wrap = doc.createElement("div")
   wrap.appendChild(serializer.serializeFragment(content, {document: doc}))
 
-  let firstChild = wrap.firstChild, needsWrap
+  let firstChild = wrap.firstChild, needsWrap, wrappers = 0
   while (firstChild && firstChild.nodeType == 1 && (needsWrap = wrapMap[firstChild.nodeName.toLowerCase()])) {
     for (let i = needsWrap.length - 1; i >= 0; i--) {
       let wrapper = doc.createElement(needsWrap[i])
       while (wrap.firstChild) wrapper.appendChild(wrap.firstChild)
       wrap.appendChild(wrapper)
-      if (needsWrap[i] != "tbody") {
-        openStart++
-        openEnd++
-      }
+      wrappers++
     }
     firstChild = wrap.firstChild
   }
 
   if (firstChild && firstChild.nodeType == 1)
-    (firstChild as HTMLElement).setAttribute("data-pm-slice", `${openStart} ${openEnd} ${JSON.stringify(context)}`)
+    (firstChild as HTMLElement).setAttribute(
+      "data-pm-slice", `${openStart} ${openEnd}${wrappers ? ` -${wrappers}` : ""} ${JSON.stringify(context)}`)
 
   let text = view.someProp("clipboardTextSerializer", f => f(slice)) ||
       slice.content.textBetween(0, slice.content.size, "\n\n")
@@ -67,7 +65,10 @@ export function parseFromClipboard(view: EditorView, text: string, html: string 
   }
 
   let contextNode = dom && dom.querySelector("[data-pm-slice]")
-  let sliceData = contextNode && /^(\d+) (\d+) (.*)/.exec(contextNode.getAttribute("data-pm-slice") || "")
+  let sliceData = contextNode && /^(\d+) (\d+)(?: -(\d+))? (.*)/.exec(contextNode.getAttribute("data-pm-slice") || "")
+  if (sliceData && sliceData[3]) for (let i = +sliceData[3]; i > 0 && dom!.firstChild; i--)
+    dom = dom!.firstChild as HTMLElement
+
   if (!slice) {
     let parser = view.someProp("clipboardParser") || view.someProp("domParser") || DOMParser.fromSchema(view.state.schema)
     slice = parser.parseSlice(dom!, {
@@ -81,7 +82,7 @@ export function parseFromClipboard(view: EditorView, text: string, html: string 
     })
   }
   if (sliceData) {
-    slice = addContext(closeSlice(slice, +sliceData[1], +sliceData[2]), sliceData[3])
+    slice = addContext(closeSlice(slice, +sliceData[1], +sliceData[2]), sliceData[4])
   } else { // HTML wasn't created by ProseMirror. Make sure top-level siblings are coherent
     slice = Slice.maxOpen(normalizeSiblings(slice.content, $context), true)
     if (slice.openStart || slice.openEnd) {

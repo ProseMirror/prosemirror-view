@@ -1,7 +1,7 @@
 import ist from "ist"
 import {eq, doc, p, strong, blockquote, ul, ol, li, hr, br} from "prosemirror-test-builder"
 import {NodeSelection, TextSelection} from "prosemirror-state"
-import {Slice, Fragment} from "prosemirror-model"
+import {Slice, Fragment, Schema} from "prosemirror-model"
 import {tempEditor} from "./view"
 
 import {__serializeForClipboard as serializeForClipboard, __parseFromClipboard as parseFromClipboard} from "prosemirror-view"
@@ -89,6 +89,28 @@ describe("Clipboard interface", () => {
         d.slice((d as any).tag.a, (d as any).tag.b, true), eq)
   })
 
+  function tableSchema() {
+    return new Schema({
+      nodes: {
+        td: {content: "text*", toDOM: () => ["td", 0], parseDOM: [{tag: "td"}]},
+        tr: {content: "td+", toDOM: () => ["tr", 0], parseDOM: [{tag: "tr"}]},
+        table: {content: "tr+", toDOM: () => ["table", ["tbody", 0]], parseDOM: [{tag: "table"}]},
+        doc: {content: "table+"},
+        text: {}
+      }
+    })
+  }
+
   it("adds necessary wrappers for parsing", () => {
+    let s = tableSchema()
+    let doc = s.node("doc", null, [s.node("table", null, [s.node("tr", null, [
+      s.node("td", null, [s.text("A")]),
+      s.node("td", null, [s.text("B")])
+    ])])])
+    let view = tempEditor({doc})
+    let slice = doc.slice(3, 4, true)
+    let html = serializeForClipboard(view, slice).dom.innerHTML
+    ist(/<table/.test(html))
+    ist(parseFromClipboard(view, "", html, false, doc.resolve(3)), slice, eq)
   })
 })
