@@ -167,7 +167,8 @@ export function readDOMChange(view: EditorView, from: number, to: number, typeOv
 
   let $from = parse.doc.resolveNoCache(change.start - parse.from)
   let $to = parse.doc.resolveNoCache(change.endB - parse.from)
-  let inlineChange = $from.sameParent($to) && $from.parent.inlineContent
+  let $fromA = doc.resolve(change.start)
+  let inlineChange = $from.sameParent($to) && $from.parent.inlineContent && $fromA.end() >= change.endA
   let nextSel
   // If this looks like the effect of pressing Enter (or was recorded
   // as being an iOS enter press), just dispatch an Enter key instead.
@@ -213,7 +214,7 @@ export function readDOMChange(view: EditorView, from: number, to: number, typeOv
 
   let chFrom = change.start, chTo = change.endA
 
-  let tr, storedMarks, markChange, $from1
+  let tr, storedMarks, markChange
   if (inlineChange) {
     if ($from.pos == $to.pos) { // Deletion
       // IE11 sometimes weirdly moves the DOM selection around after
@@ -225,9 +226,9 @@ export function readDOMChange(view: EditorView, from: number, to: number, typeOv
       tr = view.state.tr.delete(chFrom, chTo)
       storedMarks = doc.resolve(change.start).marksAcross(doc.resolve(change.endA))
     } else if ( // Adding or removing a mark
-      change.endA == change.endB && ($from1 = doc.resolve(change.start)) &&
+      change.endA == change.endB &&
       (markChange = isMarkChange($from.parent.content.cut($from.parentOffset, $to.parentOffset),
-                                 $from1.parent.content.cut($from1.parentOffset, change.endA - $from1.start())))
+                                 $fromA.parent.content.cut($fromA.parentOffset, change.endA - $fromA.start())))
     ) {
       tr = view.state.tr
       if (markChange.type == "add") tr.addMark(chFrom, chTo, markChange.mark)
