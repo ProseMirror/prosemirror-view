@@ -7,8 +7,14 @@
   "module": "dist/index.js",
   "types": "dist/index.d.ts",
   "exports": {
-    "import": "./dist/index.js",
-    "require": "./dist/index.cjs"
+    ".": {
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    },
+    "./style/prosemirror.css": {
+      "import": "./style/prosemirror.css",
+      "require": "./style/prosemirror.css"
+    }
   },
   "sideEffects": false,
   "style": "style/prosemirror.css",
