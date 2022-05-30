@@ -53,6 +53,8 @@ export class EditorView {
   private pluginViews: PluginView[] = []
   /// @internal
   domObserver!: DOMObserver
+  /// @internal
+  requiresGeckoHackNode: boolean = false
 
   /// The view's current [state](#state.EditorState).
   public state: EditorState
