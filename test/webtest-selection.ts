@@ -1,14 +1,15 @@
-const {doc, blockquote, p, em, img: img_, strong, code, code_block, br, hr, ul, li} = require("prosemirror-test-builder")
-const ist = require("ist")
-const {Selection, NodeSelection} = require("prosemirror-state")
-const {tempEditor, findTextNode} = require("./view")
-const {Decoration, DecorationSet} = require("..")
+import {doc, blockquote, p, em, img as img_, strong, code, code_block, br, hr, ul, li} from "prosemirror-test-builder"
+import ist from "ist"
+import {Selection, NodeSelection} from "prosemirror-state"
+import {Decoration, DecorationSet, EditorView} from "prosemirror-view"
+import {Node as PMNode} from "prosemirror-model"
+import {tempEditor, findTextNode} from "./view"
 
 const img = img_({src: "data:image/gif;base64,R0lGODlhBQAFAIABAAAAAP///yH5BAEKAAEALAAAAAAFAAUAAAIEjI+pWAA7"})
 
-function allPositions(doc) {
-  let found = []
-  function scan(node, start) {
+function allPositions(doc: PMNode) {
+  let found: number[] = []
+  function scan(node: PMNode, start: number) {
     if (node.isTextblock) {
       for (let i = 0; i <= node.content.size; i++) found.push(start + i)
     } else {
@@ -19,37 +20,37 @@ function allPositions(doc) {
   return found
 }
 
-function setDOMSel(node, offset) {
+function setDOMSel(node: Node, offset: number) {
   let range = document.createRange()
   range.setEnd(node, offset)
   range.setStart(node, offset)
-  let sel = window.getSelection()
+  let sel = window.getSelection()!
   sel.removeAllRanges()
   sel.addRange(range)
 }
 
 function getSel() {
-  let sel = window.getSelection()
+  let sel = window.getSelection()!
   let node = sel.focusNode, offset = sel.focusOffset
   while (node && node.nodeType != 3) {
     let after = offset < node.childNodes.length && node.childNodes[offset]
     let before = offset > 0 && node.childNodes[offset - 1]
     if (after) { node = after; offset = 0 }
-    else if (before) { node = before; offset = node.nodeType == 3 ? node.nodeValue.length : node.childNodes.length }
+    else if (before) { node = before; offset = node.nodeType == 3 ? node.nodeValue!.length : node.childNodes.length }
     else break
   }
   return {node: node, offset: offset}
 }
 
-function setSel(view, sel) {
+function setSel(view: EditorView, sel: number | Selection) {
   if (typeof sel == "number") sel = Selection.near(view.state.doc.resolve(sel))
   view.dispatch(view.state.tr.setSelection(sel))
 }
 
-function event(code) {
+function event(code: number) {
   let event = document.createEvent("Event")
   event.initEvent("keydown", true, true)
-  event.keyCode = code
+  ;(event as any).keyCode = code
   return event
 }
 const LEFT = 37, RIGHT = 39, UP = 38, DOWN = 40
@@ -61,24 +62,24 @@ describe("EditorView", () => {
     // disabled when the document doesn't have focus, since that causes this to fail
     if (!document.hasFocus()) return
 
-    let view = tempEditor({doc: doc(p("one"), hr, blockquote(p("two")))})
-    function test(node, offset, expected) {
+    let view = tempEditor({doc: doc(p("one"), hr(), blockquote(p("two")))})
+    function test(node: Node, offset: number, expected: number) {
       setDOMSel(node, offset)
       view.dom.focus()
       view.domObserver.flush()
       let sel = view.state.selection
       ist(sel.head == null ? sel.from : sel.head, expected)
     }
-    let one = findTextNode(view.dom, "one")
-    let two = findTextNode(view.dom, "two")
+    let one = findTextNode(view.dom, "one")!
+    let two = findTextNode(view.dom, "two")!
     test(one, 0, 1)
     test(one, 1, 2)
     test(one, 3, 4)
-    test(one.parentNode, 0, 1)
-    test(one.parentNode, 1, 4)
+    test(one.parentNode!, 0, 1)
+    test(one.parentNode!, 1, 4)
     test(two, 0, 8)
     test(two, 3, 11)
-    test(two.parentNode, 1, 11)
+    test(two.parentNode!, 1, 11)
     test(view.dom, 1, 4)
     test(view.dom, 2, 8)
     test(view.dom, 3, 11)
@@ -88,15 +89,15 @@ describe("EditorView", () => {
     // disabled when the document doesn't have focus, since that causes this to fail
     if (!document.hasFocus()) return
 
-    let view = tempEditor({doc: doc(p("one"), hr, blockquote(p("two")))})
-    function test(pos, node, offset) {
+    let view = tempEditor({doc: doc(p("one"), hr(), blockquote(p("two")))})
+    function test(pos: number, node: Node, offset: number) {
       setSel(view, pos)
       let sel = getSel()
       ist(sel.node, node)
       ist(sel.offset, offset)
     }
-    let one = findTextNode(view.dom, "one")
-    let two = findTextNode(view.dom, "two")
+    let one = findTextNode(view.dom, "one")!
+    let two = findTextNode(view.dom, "two")!
     view.focus()
     test(1, one, 0)
     test(2, one, 1)
@@ -145,16 +146,16 @@ describe("EditorView", () => {
   })
 
   it("produces sensible screen coordinates in corner cases", () => {
-    let view = tempEditor({doc: doc(p("one", em("two", strong("three"), img), br, code("foo")), p())})
+    let view = tempEditor({doc: doc(p("one", em("two", strong("three"), img), br(), code("foo")), p())})
     return new Promise(ok => {
       setTimeout(() => {
         allPositions(view.state.doc).forEach(pos => {
           let coords = view.coordsAtPos(pos)
-          let found = view.posAtCoords({top: coords.top + 1, left: coords.left}).pos
+          let found = view.posAtCoords({top: coords.top + 1, left: coords.left})!.pos
           ist(found, pos)
           setSel(view, pos)
         })
-        ok()
+        ok(null)
       }, 20)
     })
   })
@@ -166,10 +167,10 @@ describe("EditorView", () => {
   })
 
   it("produces horizontal rectangles for positions between blocks", () => {
-    let view = tempEditor({doc: doc(p("ha"), hr, blockquote(p("ba")))})
+    let view = tempEditor({doc: doc(p("ha"), hr(), blockquote(p("ba")))})
     let a = view.coordsAtPos(0)
     ist(a.top, a.bottom)
-    ist(a.top, view.dom.firstChild.getBoundingClientRect().top)
+    ist(a.top, (view.dom.firstChild as HTMLElement).getBoundingClientRect().top)
     ist(a.left, a.right, "<")
     let b = view.coordsAtPos(4)
     ist(b.top, b.bottom)
@@ -186,25 +187,31 @@ describe("EditorView", () => {
 
   it("produces sensible screen coordinates around line breaks", () => {
     let view = tempEditor({doc: doc(p("one two three four five-six-seven-eight"))})
+    function afterSpace(pos: number) {
+      return pos > 0 && view.state.doc.textBetween(pos - 1, pos) == " "
+    }
     view.dom.style.width = "4em"
-    let prevBefore, prevAfter
+    let prevBefore: {left: number, top: number, right: number, bottom: number} | undefined
+    let prevAfter: {left: number, top: number, right: number, bottom: number} | undefined
     allPositions(view.state.doc).forEach(pos => {
       let coords = view.coordsAtPos(pos, 1)
       if (prevAfter)
         ist(prevAfter.top < coords.top || prevAfter.top == coords.top && prevAfter.left < coords.left)
       prevAfter = coords
-      let found = view.posAtCoords({top: coords.top + 1, left: coords.left}).pos
+      let found = view.posAtCoords({top: coords.top + 1, left: coords.left})!.pos
       ist(found, pos)
       let coordsBefore = view.coordsAtPos(pos, -1)
       if (prevBefore)
-        ist(prevBefore.top < coordsBefore.top || prevBefore.top == coordsBefore.top && prevBefore.left < coordsBefore.left)
+        ist(prevBefore.top < coordsBefore.top ||
+            prevBefore.top == coordsBefore.top &&
+              (prevBefore.left < coordsBefore.left || (afterSpace(pos) && prevBefore.left == coordsBefore.left)))
       prevBefore = coordsBefore
     })
   })
 
   it("can find coordinates on node boundaries", () => {
     let view = tempEditor({doc: doc(p("one ", em("two"), " ", em(strong("three"))))})
-    let prev
+    let prev: {left: number, top: number, right: number, bottom: number}
     allPositions(view.state.doc).forEach(pos => {
       let coords = view.coordsAtPos(pos, 1)
       if (prev)
@@ -216,7 +223,7 @@ describe("EditorView", () => {
   it("finds proper coordinates in RTL text", () => {
     let view = tempEditor({doc: doc(p("مرآة نثرية"))})
     view.dom.style.direction = "rtl"
-    let prev
+    let prev: {left: number, top: number, right: number, bottom: number}
     allPositions(view.state.doc).forEach(pos => {
       let coords = view.coordsAtPos(pos, 1)
       if (prev)
@@ -229,21 +236,21 @@ describe("EditorView", () => {
     let view = tempEditor({doc: doc(p("one"), blockquote(p("two"), p("three")))})
     ;[1, 2, 4, 7, 14, 15].forEach(pos => {
       let coords = view.coordsAtPos(pos)
-      let found = view.posAtCoords({top: coords.top + 1, left: coords.left}).pos
+      let found = view.posAtCoords({top: coords.top + 1, left: coords.left})!.pos
       ist(found, pos)
     })
   })
 
   it("returns correct screen coordinates for wrapped lines", () => {
     let view = tempEditor({})
-    let top = view.coordsAtPos(1), pos = 1, end
+    let top = view.coordsAtPos(1), pos = 1, end: {left: number, top: number, right: number, bottom: number} | undefined
     for (let i = 0; i < 100; i++) {
-      view.dispatch(view.state.tr.insertText("abc def ghi "))
+      view.dispatch(view.state.tr.insertText("a bc de fg h"))
       pos += 12
-      end = view.coordsAtPos(pos)
+      end = view.coordsAtPos(pos)!
       if (end.bottom > top.bottom + 4) break
     }
-    ist(view.posAtCoords({left: end.left + 50, top: end.top + 5}).pos, pos)
+    ist(view.posAtCoords({left: end!.left + 50, top: end!.top + 5})!.pos, pos)
   })
 
   it("makes arrow motion go through selectable inline nodes", () => {
@@ -261,7 +268,7 @@ describe("EditorView", () => {
   })
 
   it("makes arrow motion go through selectable block nodes", () => {
-    let view = tempEditor({doc: doc(p("hello<a>"), hr, ul(li(p("there"))))})
+    let view = tempEditor({doc: doc(p("hello<a>"), hr(), ul(li(p("there"))))})
     view.dispatchEvent(event(DOWN))
     ist(view.state.selection.from, 7)
     setSel(view, 11)
@@ -270,7 +277,7 @@ describe("EditorView", () => {
   })
 
   it("supports arrow motion through adjacent blocks", () => {
-    let view = tempEditor({doc: doc(blockquote(p("hello<a>")), hr, hr, p("there"))})
+    let view = tempEditor({doc: doc(blockquote(p("hello<a>")), hr(), hr(), p("there"))})
     view.dispatchEvent(event(DOWN))
     ist(view.state.selection.from, 9)
     view.dispatchEvent(event(DOWN))
@@ -283,7 +290,7 @@ describe("EditorView", () => {
   })
 
   it("support horizontal motion through blocks", () => {
-    let view = tempEditor({doc: doc(p("foo<a>"), hr, hr, p("bar"))})
+    let view = tempEditor({doc: doc(p("foo<a>"), hr(), hr(), p("bar"))})
     view.dispatchEvent(event(RIGHT))
     ist(view.state.selection.from, 5)
     view.dispatchEvent(event(RIGHT))
@@ -299,7 +306,7 @@ describe("EditorView", () => {
   })
 
   it("allows moving directly from an inline node to a block node", () => {
-    let view = tempEditor({doc: doc(p("foo", img), hr, p(img, "bar"))})
+    let view = tempEditor({doc: doc(p("foo", img), hr(), p(img, "bar"))})
     setSel(view, NodeSelection.create(view.state.doc, 4))
     view.dispatchEvent(event(DOWN))
     ist(view.state.selection.from, 6)
@@ -314,10 +321,10 @@ describe("EditorView", () => {
     view.focus()
     let decos = DecorationSet.create(view.state.doc, [Decoration.inline(1, 4, {color: "green"})])
     view.setProps({decorations() { return decos }})
-    view.setProps({decorations: null})
+    view.setProps({decorations: undefined})
     view.setProps({decorations() { return decos }})
     let range = document.createRange()
-    range.setEnd(document.getSelection().anchorNode, document.getSelection().anchorOffset)
+    range.setEnd(document.getSelection()!.anchorNode!, document.getSelection()!.anchorOffset)
     range.setStart(view.dom, 0)
     ist(range.toString(), "foobar")
   })
@@ -329,7 +336,7 @@ describe("EditorView", () => {
       throw new DOMException("failed")
     }
     try {
-      let view = tempEditor({doc: doc(p("foo", img), hr, p(img, "bar"))})
+      let view = tempEditor({doc: doc(p("foo", img), hr(), p(img, "bar"))})
       setSel(view, NodeSelection.create(view.state.doc, 4))
       view.dispatchEvent(event(DOWN))
       ist(view.state.selection.from, 6)
@@ -342,6 +349,6 @@ describe("EditorView", () => {
     if (!document.hasFocus()) return
     let view = tempEditor({doc: doc(p())})
     view.focus()
-    ist(getSelection().focusOffset, 0)
+    ist(getSelection()!.focusOffset, 0)
   })
 })

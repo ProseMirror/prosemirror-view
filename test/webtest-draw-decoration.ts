@@ -1,13 +1,13 @@
-const {doc, p, h1, hr, em, strong, img, blockquote, schema} = require("prosemirror-test-builder")
-const {Plugin, TextSelection} = require("prosemirror-state")
-const {Schema} = require("prosemirror-model")
-const {tempEditor} = require("./view")
-const {DecorationSet, Decoration} = require("..")
-const ist = require("ist")
+import {doc, p, h1, hr, em, strong, img, blockquote, schema} from "prosemirror-test-builder"
+import {Plugin, TextSelection} from "prosemirror-state"
+import {Schema} from "prosemirror-model"
+import {DecorationSet, Decoration, EditorView} from "prosemirror-view"
+import {tempEditor} from "./view"
+import ist from "ist"
 
-function make(str) {
+function make(str: string | Decoration): Decoration {
   if (typeof str != "string") return str
-  let match = /^(\d+)(?:-(\d+))?-(.+)$/.exec(str)
+  let match = /^(\d+)(?:-(\d+))?-(.+)$/.exec(str)!
   if (match[3] == "widget") {
     let widget = document.createElement("button")
     widget.textContent = "ω"
@@ -16,10 +16,10 @@ function make(str) {
   return Decoration.inline(+match[1], +match[2], {class: match[3]})
 }
 
-function decoPlugin(decos) {
+function decoPlugin(decos: readonly (string | Decoration)[]) {
   return new Plugin({
     state: {
-      init(config) { return DecorationSet.create(config.doc, decos.map(make)) },
+      init(config) { return DecorationSet.create(config.doc!, decos.map(make)) },
       apply(tr, set, state) {
         if (tr.docChanged) set = set.map(tr.mapping, tr.doc)
         let change = tr.getMeta("updateDecorations")
@@ -31,12 +31,12 @@ function decoPlugin(decos) {
       }
     },
     props: {
-      decorations(state) { return this.getState(state) }
+      decorations(this: Plugin, state) { return this.getState(state) }
     }
   })
 }
 
-function updateDeco(view, add, remove) {
+function updateDeco(view: EditorView, add: readonly Decoration[] | null, remove?: readonly Decoration[]) {
   view.dispatch(view.state.tr.setMeta("updateDecorations", {add, remove}))
 }
 
@@ -44,7 +44,7 @@ describe("Decoration drawing", () => {
   it("draws inline decorations", () => {
     let view = tempEditor({doc: doc(p("foobar")),
                            plugins: [decoPlugin(["2-5-foo"])]})
-    let found = view.dom.querySelector(".foo")
+    let found = view.dom.querySelector(".foo")!
     ist(found)
     ist(found.textContent, "oob")
   })
@@ -62,7 +62,7 @@ describe("Decoration drawing", () => {
     let found = view.dom.querySelectorAll(".cls")
     ist(found.length, 1)
     ist(found[0].nodeName, "P")
-    ist(found[0].previousSibling.nodeName, "P")
+    ist(found[0].previousSibling!.nodeName, "P")
   })
 
   it("can update multi-level wrapping decorations", () => {
@@ -79,10 +79,10 @@ describe("Decoration drawing", () => {
   it("draws overlapping inline decorations", () => {
     let view = tempEditor({doc: doc(p("abcdef")),
                            plugins: [decoPlugin(["3-5-foo", "4-6-bar", "1-7-baz"])]})
-    let baz = view.dom.querySelectorAll(".baz")
+    let baz = view.dom.querySelectorAll(".baz") as any as HTMLElement[]
     ist(baz.length, 5)
     ist(Array.prototype.map.call(baz, x => x.textContent).join("-"), "ab-c-d-e-f")
-    function classes(n) { return n.className.split(" ").sort().join(" ") }
+    function classes(n: HTMLElement) { return n.className.split(" ").sort().join(" ") }
     ist(classes(baz[1]), "baz foo")
     ist(classes(baz[2]), "bar baz foo")
     ist(classes(baz[3]), "bar baz")
@@ -91,11 +91,11 @@ describe("Decoration drawing", () => {
   it("draws multiple widgets", () => {
     let view = tempEditor({doc: doc(p("foobar")),
                            plugins: [decoPlugin(["1-widget", "4-widget", "7-widget"])]})
-    let found = view.dom.querySelectorAll("button")
+    let found = view.dom.querySelectorAll("button") as any as HTMLElement[]
     ist(found.length, 3)
-    ist(found[0].nextSibling.textContent, "foo")
-    ist(found[1].nextSibling.textContent, "bar")
-    ist(found[2].previousSibling.textContent, "bar")
+    ist(found[0].nextSibling!.textContent, "foo")
+    ist(found[1].nextSibling!.textContent, "bar")
+    ist(found[2].previousSibling!.textContent, "bar")
   })
 
   it("orders widgets by their side option", () => {
@@ -122,6 +122,21 @@ describe("Decoration drawing", () => {
     let view = tempEditor({doc: doc(p("foo", em("bar"))),
                            plugins: [decoPlugin(["2-widget"]), decoPlugin(["6-widget"])]})
     ist(view.dom.querySelectorAll("button").length, 2)
+  })
+
+  it("calls widget destroy methods", () => {
+    let destroyed = false
+    let view = tempEditor({
+      doc: doc(p("abc")),
+      plugins: [decoPlugin([Decoration.widget(2, document.createElement("BUTTON"), {
+        destroy: (node) => {
+          destroyed = true
+          ist((node as HTMLElement).tagName, "BUTTON")
+        }
+      })])]
+    })
+    view.dispatch(view.state.tr.delete(1, 4))
+    ist(destroyed)
   })
 
   it("draws inline decorations spanning multiple parents", () => {
@@ -219,7 +234,7 @@ describe("Decoration drawing", () => {
     ist(view.dom.querySelector(".foo"))
     updateDeco(view, null, [dec])
     ist(view.dom.querySelector(".foo"), null)
-    ist(view.dom.firstChild.innerHTML, "abcd")
+    ist((view.dom.firstChild as HTMLElement).innerHTML, "abcd")
   })
 
   it("can remove the class for part of a text node", () => {
@@ -235,23 +250,23 @@ describe("Decoration drawing", () => {
   it("draws a widget added in the middle of a text node", () => {
     let view = tempEditor({doc: doc(p("foo")), plugins: [decoPlugin([])]})
     updateDeco(view, [make("3-widget")])
-    ist(view.dom.firstChild.textContent, "foωo")
+    ist((view.dom.firstChild as HTMLElement).textContent, "foωo")
   })
 
   it("can update a text node around a widget", () => {
     let view = tempEditor({doc: doc(p("bar")), plugins: [decoPlugin(["3-widget"])]})
     view.dispatch(view.state.tr.delete(1, 2))
     ist(view.dom.querySelectorAll("button").length, 1)
-    ist(view.dom.firstChild.textContent, "aωr")
+    ist((view.dom.firstChild as HTMLElement).textContent, "aωr")
   })
 
   it("can update a text node with an inline decoration", () => {
     let view = tempEditor({doc: doc(p("bar")), plugins: [decoPlugin(["1-3-foo"])]})
     view.dispatch(view.state.tr.delete(1, 2))
-    let foo = view.dom.querySelector(".foo")
+    let foo = view.dom.querySelector(".foo") as HTMLElement
     ist(foo)
     ist(foo.textContent, "a")
-    ist(foo.nextSibling.textContent, "r")
+    ist(foo.nextSibling!.textContent, "r")
   })
 
   it("correctly redraws a partially decorated node when a widget is added", () => {
@@ -283,7 +298,7 @@ describe("Decoration drawing", () => {
     let deco = Decoration.node(0, 5, {title: "title", class: "foo"})
     let view = tempEditor({doc: doc(p("foo")),
                            plugins: [decoPlugin([deco])]})
-    let para = view.dom.querySelector("p")
+    let para = view.dom.querySelector("p") as HTMLElement
     updateDeco(view, [Decoration.node(0, 5, {class: "foo bar"})], [deco])
     ist(view.dom.querySelector("p"), para)
     ist(para.className, "foo bar")
@@ -294,9 +309,9 @@ describe("Decoration drawing", () => {
     let deco = Decoration.node(0, 5, {style: '--my-custom-property:36px'})
     let view = tempEditor({doc: doc(p("foo")),
                            plugins: [decoPlugin([deco])]})
-    ist(view.dom.querySelector("p").style.getPropertyValue('--my-custom-property'), "36px")
+    ist(view.dom.querySelector("p")!.style.getPropertyValue('--my-custom-property'), "36px")
     updateDeco(view, null, [deco])
-    ist(view.dom.querySelector("p").style.getPropertyValue('--my-custom-property'), "")
+    ist(view.dom.querySelector("p")!.style.getPropertyValue('--my-custom-property'), "")
   })
 
   it("updates decorated nodes even if a widget is added before them", () => {
@@ -317,23 +332,25 @@ describe("Decoration drawing", () => {
 
   it("can add and remove inline style", () => {
     let deco = Decoration.inline(1, 6, {style: "color: rgba(0,10,200,.4); text-decoration: underline"})
-    let view = tempEditor({doc: doc(p("al", img, "lo")),
+    let view = tempEditor({doc: doc(p("al", img(), "lo")),
                            plugins: [decoPlugin([deco])]})
-    ist(/rgba/.test(view.dom.querySelector("img").style.color))
-    ist(view.dom.querySelector("img").previousSibling.style.textDecoration, "underline")
+    ist(/rgba/.test(view.dom.querySelector("img")!.style.color))
+    ist((view.dom.querySelector("img")!.previousSibling as HTMLElement).style.textDecoration, "underline")
     updateDeco(view, null, [deco])
-    ist(view.dom.querySelector("img").style.color, "")
-    ist(view.dom.querySelector("img").style.textDecoration, "")
+    ist(view.dom.querySelector("img")!.style.color, "")
+    ist(view.dom.querySelector("img")!.style.textDecoration, "")
   })
 
   it("passes decorations to a node view", () => {
     let current = ""
     let view = tempEditor({
-      doc: doc(p("foo"), hr),
+      doc: doc(p("foo"), hr()),
       plugins: [decoPlugin([])],
       nodeViews: {horizontal_rule: () => ({
+        dom: document.createElement("hr"),
         update(_, decos) {
           current = decos.map(d => d.spec.name).join()
+          return false
         }
       })}
     })
@@ -358,7 +375,7 @@ describe("Decoration drawing", () => {
       doc: doc(p(em("foo"), strong("bar"))),
       plugins: [decoPlugin([Decoration.widget(4, document.createElement("img"), {side: -1})]),
                 decoPlugin([Decoration.widget(4, document.createElement("br"))]),
-                decoPlugin([Decoration.widget(7, document.createElement("span"))], {side: 1})]
+                decoPlugin([Decoration.widget(7, document.createElement("span"), {side: 1})])]
     })
     ist(view.dom.querySelector("em img"))
     ist(!view.dom.querySelector("strong img"))
@@ -392,7 +409,7 @@ describe("Decoration drawing", () => {
   })
 
   it("supports widgets querying their own position", () => {
-    let get
+    let get: () => number | undefined
     tempEditor({
       doc: doc(p("hi")),
       decorations(state) {
@@ -403,7 +420,7 @@ describe("Decoration drawing", () => {
         })])
       }
     })
-    ist(get(), 3)
+    ist(get!(), 3)
   })
 
   it("doesn't redraw widgets with matching keys", () => {
@@ -460,7 +477,7 @@ describe("Decoration drawing", () => {
     let styled = view.dom.querySelectorAll(".dec")
     ist(styled.length, 3)
     ist(Array.prototype.map.call(styled, n => n.textContent).join(), "bc,def,gh")
-    ist(styled[1].parentNode.nodeName, "STRONG")
+    ist(styled[1].parentNode!.nodeName, "STRONG")
   })
 
   it("can handle nodeName decoration overlapping with classes", () => {
@@ -469,6 +486,7 @@ describe("Decoration drawing", () => {
       plugins: [decoPlugin([Decoration.inline(2, 13, {class: "foo"}),
                             Decoration.inline(5, 8, {nodeName: "em"})])]
     })
-    ist(view.dom.firstChild.innerHTML, 'o<span class="foo">ne </span><em class="foo">two</em><span class="foo"> thre</span>e')
+    ist((view.dom.firstChild as HTMLElement).innerHTML,
+        'o<span class="foo">ne </span><em class="foo">two</em><span class="foo"> thre</span>e')
   })
 })

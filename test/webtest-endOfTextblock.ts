@@ -1,8 +1,8 @@
-const {schema, doc, p, a} = require("prosemirror-test-builder")
-const ist = require("ist")
-const {tempEditor} = require("./view")
-const {Decoration, DecorationSet} = require("..")
-const {TextSelection} = require("prosemirror-state")
+import {schema, doc, p, a} from "prosemirror-test-builder"
+import ist from "ist"
+import {Decoration, DecorationSet} from "prosemirror-view"
+import {TextSelection} from "prosemirror-state"
+import {tempEditor} from "./view"
 
 describe("EditorView.endOfTextblock", () => {
   it("works at the left side of a textblock", () => {
@@ -68,16 +68,16 @@ describe("EditorView.endOfTextblock", () => {
                                       new Array(50).join("foo "), a("fo<c>o")))})
     ist(view.endOfTextblock("up"))
     ist(!view.endOfTextblock("down"))
-    view.dispatch(view.state.tr.setSelection(TextSelection.create(view.state.doc, view.state.doc.tag.b)))
+    view.dispatch(view.state.tr.setSelection(TextSelection.create(view.state.doc, (view.state.doc as any).tag.b)))
     ist(!view.endOfTextblock("up"))
     ist(!view.endOfTextblock("down"))
-    view.dispatch(view.state.tr.setSelection(TextSelection.create(view.state.doc, view.state.doc.tag.c)))
+    view.dispatch(view.state.tr.setSelection(TextSelection.create(view.state.doc, (view.state.doc as any).tag.c)))
     ist(!view.endOfTextblock("up"))
     ist(view.endOfTextblock("down"))
   })
 
   // Bidi functionality only works when the browser has Selection.modify
-  if (!getSelection().modify) return
+  if (!(getSelection() as any).modify) return
 
   it("works at the start of an RTL block", () => {
     let view = tempEditor({doc: doc(p("<a>مرآة"))})

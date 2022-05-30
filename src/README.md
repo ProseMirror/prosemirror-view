@@ -14,6 +14,8 @@ this module.
 
 @NodeView
 
+@DOMEventMap
+
 ### Decorations
 
 Decorations make it possible to influence the way the document is

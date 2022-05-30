@@ -1,6 +1,7 @@
-import browser from "./browser"
+import * as browser from "./browser"
 import {domIndex, isEquivalentPosition} from "./dom"
-import {hasFocusAndSelection, hasSelection, selectionToDOM} from "./selection"
+import {hasFocusAndSelection, selectionToDOM} from "./selection"
+import {EditorView} from "./index"
 
 const observeOptions = {
   childList: true,
@@ -14,27 +15,38 @@ const observeOptions = {
 const useCharData = browser.ie && browser.ie_version <= 11
 
 class SelectionState {
-  constructor() {
-    this.anchorNode = this.anchorOffset = this.focusNode = this.focusOffset = null
-  }
+  anchorNode: Node | null = null
+  anchorOffset: number = 0
+  focusNode: Node | null = null
+  focusOffset: number = 0
 
-  set(sel) {
+  set(sel: Selection) {
     this.anchorNode = sel.anchorNode; this.anchorOffset = sel.anchorOffset
     this.focusNode = sel.focusNode; this.focusOffset = sel.focusOffset
   }
 
-  eq(sel) {
+  clear() {
+    this.anchorNode = this.focusNode = null
+  }
+
+  eq(sel: Selection) {
     return sel.anchorNode == this.anchorNode && sel.anchorOffset == this.anchorOffset &&
       sel.focusNode == this.focusNode && sel.focusOffset == this.focusOffset
   }
 }
 
 export class DOMObserver {
-  constructor(view, handleDOMChange) {
-    this.view = view
-    this.handleDOMChange = handleDOMChange
-    this.queue = []
-    this.flushingSoon = -1
+  queue: MutationRecord[] = []
+  flushingSoon = -1
+  observer: MutationObserver | null = null
+  currentSelection = new SelectionState
+  onCharData: ((e: Event) => void) | null = null
+  suppressingSelectionUpdates = false
+
+  constructor(
+    readonly view: EditorView,
+    readonly handleDOMChange: (from: number, to: number, typeOver: boolean, added: Node[]) => void
+  ) {
     this.observer = window.MutationObserver &&
       new window.MutationObserver(mutations => {
         for (let i = 0; i < mutations.length; i++) this.queue.push(mutations[i])
@@ -44,20 +56,18 @@ export class DOMObserver {
         // ProseMirror to miss the change (see #930)
         if (browser.ie && browser.ie_version <= 11 && mutations.some(
           m => m.type == "childList" && m.removedNodes.length ||
-               m.type == "characterData" && m.oldValue.length > m.target.nodeValue.length))
+               m.type == "characterData" && m.oldValue!.length > m.target.nodeValue!.length))
           this.flushSoon()
         else
           this.flush()
       })
-    this.currentSelection = new SelectionState
     if (useCharData) {
       this.onCharData = e => {
-        this.queue.push({target: e.target, type: "characterData", oldValue: e.prevValue})
+        this.queue.push({target: e.target as Node, type: "characterData", oldValue: (e as any).prevValue} as MutationRecord)
         this.flushSoon()
       }
     }
     this.onSelectionChange = this.onSelectionChange.bind(this)
-    this.suppressingSelectionUpdates = false
   }
 
   flushSoon() {
@@ -76,7 +86,7 @@ export class DOMObserver {
   start() {
     if (this.observer)
       this.observer.observe(this.view.dom, observeOptions)
-    if (useCharData)
+    if (this.onCharData)
       this.view.dom.addEventListener("DOMCharacterDataModified", this.onCharData)
     this.connectSelection()
   }
@@ -90,7 +100,7 @@ export class DOMObserver {
       }
       this.observer.disconnect()
     }
-    if (useCharData) this.view.dom.removeEventListener("DOMCharacterDataModified", this.onCharData)
+    if (this.onCharData) this.view.dom.removeEventListener("DOMCharacterDataModified", this.onCharData)
     this.disconnectSelection()
   }
 
@@ -114,23 +124,26 @@ export class DOMObserver {
     // us a selection change event before the DOM changes are
     // reported.
     if (browser.ie && browser.ie_version <= 11 && !this.view.state.selection.empty) {
-      let sel = this.view.root.getSelection()
+      let sel = this.view.domSelection()
       // Selection.isCollapsed isn't reliable on IE
-      if (sel.focusNode && isEquivalentPosition(sel.focusNode, sel.focusOffset, sel.anchorNode, sel.anchorOffset))
+      if (sel.focusNode && isEquivalentPosition(sel.focusNode, sel.focusOffset, sel.anchorNode!, sel.anchorOffset))
         return this.flushSoon()
     }
     this.flush()
   }
 
   setCurSelection() {
-    this.currentSelection.set(this.view.root.getSelection())
+    this.currentSelection.set(this.view.domSelection())
   }
 
-  ignoreSelectionChange(sel) {
+  ignoreSelectionChange(sel: Selection) {
     if (sel.rangeCount == 0) return true
     let container = sel.getRangeAt(0).commonAncestorContainer
     let desc = this.view.docView.nearestDesc(container)
-    if (desc && desc.ignoreMutation({type: "selection", target: container.nodeType == 3 ? container.parentNode : container})) {
+    if (desc && desc.ignoreMutation({
+      type: "selection",
+      target: container.nodeType == 3 ? container.parentNode : container
+    } as any)) {
       this.setCurSelection()
       return true
     }
@@ -144,10 +157,10 @@ export class DOMObserver {
       this.queue.length = 0
     }
 
-    let sel = this.view.root.getSelection()
-    let newSel = !this.suppressingSelectionUpdates && !this.currentSelection.eq(sel) && hasSelection(this.view) && !this.ignoreSelectionChange(sel)
+    let sel = this.view.domSelection()
+    let newSel = !this.suppressingSelectionUpdates && !this.currentSelection.eq(sel) && hasFocusAndSelection(this.view) && !this.ignoreSelectionChange(sel)
 
-    let from = -1, to = -1, typeOver = false, added = []
+    let from = -1, to = -1, typeOver = false, added: Node[] = []
     if (this.view.editable) {
       for (let i = 0; i < mutations.length; i++) {
         let result = this.registerMutation(mutations[i], added)
@@ -162,7 +175,7 @@ export class DOMObserver {
     if (browser.gecko && added.length > 1) {
       let brs = added.filter(n => n.nodeName == "BR")
       if (brs.length == 2) {
-        let [a, b] = brs
+        let a = brs[0] as HTMLElement, b = brs[1] as HTMLElement
         if (a.parentNode && a.parentNode.parentNode == b.parentNode) b.remove()
         else a.remove()
       }
@@ -174,20 +187,20 @@ export class DOMObserver {
         checkCSS(this.view)
       }
       this.handleDOMChange(from, to, typeOver, added)
-      if (this.view.docView.dirty) this.view.updateState(this.view.state)
+      if (this.view.docView && this.view.docView.dirty) this.view.updateState(this.view.state)
       else if (!this.currentSelection.eq(sel)) selectionToDOM(this.view)
       this.currentSelection.set(sel)
     }
   }
 
-  registerMutation(mut, added) {
+  registerMutation(mut: MutationRecord, added: Node[]) {
     // Ignore mutations inside nodes that were already noted as inserted
     if (added.indexOf(mut.target) > -1) return null
     let desc = this.view.docView.nearestDesc(mut.target)
     if (mut.type == "attributes" &&
         (desc == this.view.docView || mut.attributeName == "contenteditable" ||
          // Firefox sometimes fires spurious events for null/empty styles
-         (mut.attributeName == "style" && !mut.oldValue && !mut.target.getAttribute("style"))))
+         (mut.attributeName == "style" && !mut.oldValue && !(mut.target as HTMLElement).getAttribute("style"))))
       return null
     if (!desc || desc.ignoreMutation(mut)) return null
 
@@ -230,7 +243,7 @@ export class DOMObserver {
 
 let cssChecked = false
 
-function checkCSS(view) {
+function checkCSS(view: EditorView) {
   if (cssChecked) return
   cssChecked = true
   if (getComputedStyle(view.dom).whiteSpace == "normal")

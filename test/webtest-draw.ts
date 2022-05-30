@@ -1,7 +1,8 @@
-const {doc, strong, pre, h1, p, hr, schema} = require("prosemirror-test-builder")
-const {Plugin} = require("prosemirror-state")
-const {tempEditor} = require("./view")
-const ist = require("ist")
+import {doc, strong, pre, h1, p, hr, schema} from "prosemirror-test-builder"
+import {Plugin} from "prosemirror-state"
+import {Schema} from "prosemirror-model"
+import ist from "ist"
+import {tempEditor} from "./view"
 
 describe("EditorView draw", () => {
   it("updates the DOM", () => {
@@ -68,6 +69,13 @@ describe("EditorView draw", () => {
     ist(view.dom.classList.contains("baz"))
   })
 
+  it("adds style from the attributes prop", () => {
+    let view = tempEditor({doc: doc(p()), attributes: {style: "border: 1px solid red;"}, plugins: [new Plugin({props: { attributes: {style: "background: red;"}}}), new Plugin({props: { attributes: {style: "color: red;"}}})]})
+    ist(view.dom.style.border, "1px solid red")
+    ist(view.dom.style.backgroundColor, "red")
+    ist(view.dom.style.color, "red")
+  })
+
   it("can set other attributes", () => {
     let view = tempEditor({doc: doc(p()), attributes: {spellcheck: "false", "aria-label": "hello"}})
     ist(view.dom.spellcheck, false)
@@ -104,7 +112,7 @@ describe("EditorView draw", () => {
   })
 
   it("creates and destroys plugin views", () => {
-    let events = []
+    let events: string[] = []
     class PluginView {
       update() { events.push("update") }
       destroy() { events.push("destroy") }
@@ -119,7 +127,7 @@ describe("EditorView draw", () => {
   })
 
   it("redraws changed node views", () => {
-    let view = tempEditor({doc: doc(p("foo"), hr)})
+    let view = tempEditor({doc: doc(p("foo"), hr())})
     ist(view.dom.querySelector("hr"))
     view.setProps({nodeViews: {horizontal_rule: () => {
       return {dom: document.createElement("var")}
@@ -132,5 +140,37 @@ describe("EditorView draw", () => {
     let view = tempEditor({doc: doc(p(strong("one"), " two ", strong("three")))})
     view.dispatch(view.state.tr.removeMark(1, 4, schema.marks.strong))
     ist(view.dom.querySelectorAll("strong").length, 1)
+  })
+
+  it("doesn't redraw too much when marks are present", () => {
+    let s = new Schema({
+      nodes: {
+        doc: {content: "paragraph+", marks: "m"},
+        text: {group: "inline"},
+        paragraph: schema.spec.nodes.get("paragraph")!
+      },
+      marks: {
+        m: {
+          toDOM: () => ["div", {class: "m"}, 0],
+          parseDOM: [{tag: "div.m"}]
+        }
+      }
+    })
+    let paragraphs = []
+    for (let i = 1; i <= 10; i++)
+      paragraphs.push(s.node("paragraph", null, [s.text("para " + i)], [s.mark("m")]))
+    let view = tempEditor({
+      doc: s.node("doc", null, paragraphs),
+    })
+    let initialChildren = Array.from(view.dom.querySelectorAll("p"))
+    let newParagraphs = []
+    for (let i = -6; i < 0; i++)
+      newParagraphs.push(s.node("paragraph", null, [s.text("para " + i)], [s.mark("m")]))
+    view.dispatch(view.state.tr.replaceWith(0, 8, newParagraphs))
+    let currentChildren = Array.from(view.dom.querySelectorAll("p")), sameAtEnd = 0
+    while (sameAtEnd < currentChildren.length && sameAtEnd < initialChildren.length &&
+           currentChildren[currentChildren.length - sameAtEnd - 1] == initialChildren[initialChildren.length - sameAtEnd - 1])
+      sameAtEnd++
+    ist(sameAtEnd, 9)
   })
 })

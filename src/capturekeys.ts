@@ -1,21 +1,22 @@
-import {Selection, NodeSelection, TextSelection, AllSelection} from "prosemirror-state"
-import browser from "./browser"
-import {domIndex, selectionCollapsed} from "./dom"
+import {Selection, NodeSelection, TextSelection, AllSelection, EditorState} from "prosemirror-state"
+import {EditorView} from "./index"
+import * as browser from "./browser"
+import {domIndex, selectionCollapsed, DOMSelection} from "./dom"
 import {selectionToDOM} from "./selection"
 
-function moveSelectionBlock(state, dir) {
+function moveSelectionBlock(state: EditorState, dir: number) {
   let {$anchor, $head} = state.selection
   let $side = dir > 0 ? $anchor.max($head) : $anchor.min($head)
   let $start = !$side.parent.inlineContent ? $side : $side.depth ? state.doc.resolve(dir > 0 ? $side.after() : $side.before()) : null
   return $start && Selection.findFrom($start, dir)
 }
 
-function apply(view, sel) {
+function apply(view: EditorView, sel: Selection) {
   view.dispatch(view.state.tr.setSelection(sel).scrollIntoView())
   return true
 }
 
-function selectHorizontally(view, dir, mods) {
+function selectHorizontally(view: EditorView, dir: number, mods: string) {
   let sel = view.state.selection
   if (sel instanceof TextSelection) {
     if (!sel.empty || mods.indexOf("s") > -1) {
@@ -49,22 +50,22 @@ function selectHorizontally(view, dir, mods) {
   }
 }
 
-function nodeLen(node) {
-  return node.nodeType == 3 ? node.nodeValue.length : node.childNodes.length
+function nodeLen(node: Node) {
+  return node.nodeType == 3 ? node.nodeValue!.length : node.childNodes.length
 }
 
-function isIgnorable(dom) {
+function isIgnorable(dom: Node) {
   let desc = dom.pmViewDesc
   return desc && desc.size == 0 && (dom.nextSibling || dom.nodeName != "BR")
 }
 
 // Make sure the cursor isn't directly after one or more ignored
 // nodes, which will confuse the browser's cursor motion logic.
-function skipIgnoredNodesLeft(view) {
-  let sel = view.root.getSelection()
-  let node = sel.focusNode, offset = sel.focusOffset
+function skipIgnoredNodesLeft(view: EditorView) {
+  let sel = view.domSelection()
+  let node = sel.focusNode!, offset = sel.focusOffset
   if (!node) return
-  let moveNode, moveOffset, force = false
+  let moveNode, moveOffset: number | undefined, force = false
   // Gecko will do odd things when the selection is directly in front
   // of a non-editable node, so in that case, move it into the next
   // node if possible. Issue prosemirror/prosemirror#832.
@@ -80,7 +81,7 @@ function skipIgnoredNodesLeft(view) {
           moveOffset = --offset
         } else if (before.nodeType == 3) {
           node = before
-          offset = node.nodeValue.length
+          offset = node.nodeValue!.length
         } else break
       }
     } else if (isBlockNode(node)) {
@@ -93,7 +94,7 @@ function skipIgnoredNodesLeft(view) {
         prev = prev.previousSibling
       }
       if (!prev) {
-        node = node.parentNode
+        node = node.parentNode!
         if (node == view.dom) break
         offset = 0
       } else {
@@ -103,17 +104,17 @@ function skipIgnoredNodesLeft(view) {
     }
   }
   if (force) setSelFocus(view, sel, node, offset)
-  else if (moveNode) setSelFocus(view, sel, moveNode, moveOffset)
+  else if (moveNode) setSelFocus(view, sel, moveNode, moveOffset!)
 }
 
 // Make sure the cursor isn't directly before one or more ignored
 // nodes.
-function skipIgnoredNodesRight(view) {
-  let sel = view.root.getSelection()
-  let node = sel.focusNode, offset = sel.focusOffset
+function skipIgnoredNodesRight(view: EditorView) {
+  let sel = view.domSelection()
+  let node = sel.focusNode!, offset = sel.focusOffset
   if (!node) return
   let len = nodeLen(node)
-  let moveNode, moveOffset
+  let moveNode, moveOffset: number | undefined
   for (;;) {
     if (offset < len) {
       if (node.nodeType != 1) break
@@ -133,7 +134,7 @@ function skipIgnoredNodesRight(view) {
         next = next.nextSibling
       }
       if (!next) {
-        node = node.parentNode
+        node = node.parentNode!
         if (node == view.dom) break
         offset = len = 0
       } else {
@@ -143,15 +144,15 @@ function skipIgnoredNodesRight(view) {
       }
     }
   }
-  if (moveNode) setSelFocus(view, sel, moveNode, moveOffset)
+  if (moveNode) setSelFocus(view, sel, moveNode, moveOffset!)
 }
 
-function isBlockNode(dom) {
+function isBlockNode(dom: Node) {
   let desc = dom.pmViewDesc
   return desc && desc.node && desc.node.isBlock
 }
 
-function setSelFocus(view, sel, node, offset) {
+function setSelFocus(view: EditorView, sel: DOMSelection, node: Node, offset: number) {
   if (selectionCollapsed(sel)) {
     let range = document.createRange()
     range.setEnd(node, offset)
@@ -169,11 +170,10 @@ function setSelFocus(view, sel, node, offset) {
   }, 50)
 }
 
-// : (EditorState, number)
 // Check whether vertical selection motion would involve node
 // selections. If so, apply it (if not, the result is left to the
 // browser)
-function selectVertically(view, dir, mods) {
+function selectVertically(view: EditorView, dir: number, mods: string) {
   let sel = view.state.selection
   if (sel instanceof TextSelection && !sel.empty || mods.indexOf("s") > -1) return false
   if (browser.mac && mods.indexOf("m") > -1) return false
@@ -192,7 +192,7 @@ function selectVertically(view, dir, mods) {
   return false
 }
 
-function stopNativeHorizontalDelete(view, dir) {
+function stopNativeHorizontalDelete(view: EditorView, dir: number) {
   if (!(view.state.selection instanceof TextSelection)) return true
   let {$head, $anchor, empty} = view.state.selection
   if (!$head.sameParent($anchor)) return true
@@ -209,7 +209,7 @@ function stopNativeHorizontalDelete(view, dir) {
   return false
 }
 
-function switchEditable(view, node, state) {
+function switchEditable(view: EditorView, node: HTMLElement, state: string) {
   view.domObserver.stop()
   node.contentEditable = state
   view.domObserver.start()
@@ -220,15 +220,16 @@ function switchEditable(view, node, state) {
 // wrong things when the down arrow is pressed when the cursor is
 // directly at the start of a textblock and has an uneditable node
 // after it
-function safariDownArrowBug(view) {
-  if (!browser.safari || view.state.selection.$head.parentOffset > 0) return
-  let {focusNode, focusOffset} = view.root.getSelection()
+function safariDownArrowBug(view: EditorView) {
+  if (!browser.safari || view.state.selection.$head.parentOffset > 0) return false
+  let {focusNode, focusOffset} = view.domSelection()
   if (focusNode && focusNode.nodeType == 1 && focusOffset == 0 &&
-      focusNode.firstChild && focusNode.firstChild.contentEditable == "false") {
-    let child = focusNode.firstChild
-    switchEditable(view, child, true)
-    setTimeout(() => switchEditable(view, child, false), 20)
+      focusNode.firstChild && (focusNode.firstChild as HTMLElement).contentEditable == "false") {
+    let child = focusNode.firstChild as HTMLElement
+    switchEditable(view, child, "true")
+    setTimeout(() => switchEditable(view, child, "false"), 20)
   }
+  return false
 }
 
 // A backdrop key mapping used to make sure we always suppress keys
@@ -238,7 +239,7 @@ function safariDownArrowBug(view) {
 // cursor-motion keys, the code in the handlers also takes care of
 // block selections.
 
-function getMods(event) {
+function getMods(event: KeyboardEvent) {
   let result = ""
   if (event.ctrlKey) result += "c"
   if (event.metaKey) result += "m"
@@ -247,7 +248,7 @@ function getMods(event) {
   return result
 }
 
-export function captureKeyDown(view, event) {
+export function captureKeyDown(view: EditorView, event: KeyboardEvent) {
   let code = event.keyCode, mods = getMods(event)
   if (code == 8 || (browser.mac && code == 72 && mods == "c")) { // Backspace, Ctrl-h on Mac
     return stopNativeHorizontalDelete(view, -1) || skipIgnoredNodesLeft(view)
@@ -255,13 +256,13 @@ export function captureKeyDown(view, event) {
     return stopNativeHorizontalDelete(view, 1) || skipIgnoredNodesRight(view)
   } else if (code == 13 || code == 27) { // Enter, Esc
     return true
-  } else if (code == 37) { // Left arrow
+  } else if (code == 37 || (result.mac && code == 66 && mods == "c")) { // Left arrow, Ctrl-b on Mac
     return selectHorizontally(view, -1, mods) || skipIgnoredNodesLeft(view)
-  } else if (code == 39) { // Right arrow
+  } else if (code == 39 || (result.mac && code == 70 && mods == "c")) { // Right arrow, Ctrl-f on Mac
     return selectHorizontally(view, 1, mods) || skipIgnoredNodesRight(view)
-  } else if (code == 38) { // Up arrow
+  } else if (code == 38 || (result.mac && code == 80 && mods == "c")) { // Up arrow, Ctrl-p on Mac
     return selectVertically(view, -1, mods) || skipIgnoredNodesLeft(view)
-  } else if (code == 40) { // Down arrow
+  } else if (code == 40 || (result.mac && code == 78 && mods == "c")) { // Down arrow, Ctrl-n on Mac
     return safariDownArrowBug(view) || selectVertically(view, 1, mods) || skipIgnoredNodesRight(view)
   } else if (mods == (browser.mac ? "m" : "c") &&
              (code == 66 || code == 73 || code == 89 || code == 90)) { // Mod-[biyz]

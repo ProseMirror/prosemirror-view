@@ -1,11 +1,11 @@
-const {schema, doc, ul, li, p, strong, em, hr} = require("prosemirror-test-builder")
-const {EditorState} = require("prosemirror-state")
-const {Schema} = require("prosemirror-model")
-const {EditorView} = require("..")
-const {tempEditor} = require("./view")
-const ist = require("ist")
+import {schema, doc, ul, li, p, strong, em, hr} from "prosemirror-test-builder"
+import {EditorState} from "prosemirror-state"
+import {Schema} from "prosemirror-model"
+import {EditorView} from "prosemirror-view"
+import ist from "ist"
+import {tempEditor} from "./view"
 
-let space = document.querySelector("#workspace")
+let space = document.querySelector("#workspace")!
 
 describe("EditorView", () => {
   it("can mount an existing node", () => {
@@ -15,7 +15,7 @@ describe("EditorView", () => {
     })
     ist(view.dom, dom)
     ist(dom.contentEditable, "true")
-    ist(dom.firstChild.nodeName, "P")
+    ist(dom.firstChild!.nodeName, "P")
     view.destroy()
     ist(dom.contentEditable, "inherit")
     space.removeChild(dom)
@@ -31,7 +31,7 @@ describe("EditorView", () => {
   it("can update props with setProp", () => {
     let view = tempEditor({scrollThreshold: 100})
     view.setProps({
-      scrollThreshold: null,
+      scrollThreshold: undefined,
       scrollMargin: 10,
       state: view.state.apply(view.state.tr.insertText("y"))
     })
@@ -43,7 +43,7 @@ describe("EditorView", () => {
   it("can update with a state using a different schema", () => {
     let testSchema = new Schema({nodes: schema.spec.nodes})
     let view = tempEditor({doc: doc(p(strong("foo")))})
-    view.updateState(EditorState.create({doc: testSchema.nodes.doc.createAndFill()}))
+    view.updateState(EditorState.create({doc: (testSchema.nodes as any).doc.createAndFill()}))
     ist(!view.dom.querySelector("strong"))
   })
 
@@ -70,7 +70,7 @@ describe("EditorView", () => {
 
   it("can bias DOM position queries to enter nodes", () => {
     let view = tempEditor({doc: doc(p(em(strong("a"), "b"), "c"))})
-    let get = (pos, bias) => {
+    let get = (pos: number, bias: number) => {
       let r = view.domAtPos(pos, bias)
       return (r.node.nodeType == 1 ? r.node.nodeName : r.node.nodeValue) + "@" + r.offset
     }
@@ -89,19 +89,19 @@ describe("EditorView", () => {
   })
 
   it("can be queried for a node's DOM representation", () => {
-    let view = tempEditor({doc: doc(p("foo"), hr)})
-    ist(view.nodeDOM(0).nodeName, "P")
-    ist(view.nodeDOM(5).nodeName, "HR")
+    let view = tempEditor({doc: doc(p("foo"), hr())})
+    ist(view.nodeDOM(0)!.nodeName, "P")
+    ist(view.nodeDOM(5)!.nodeName, "HR")
     ist(view.nodeDOM(3), null)
   })
 
   it("can map DOM positions to doc positions", () => {
-    let view = tempEditor({doc: doc(p("foo"), hr)})
-    ist(view.posAtDOM(view.dom.firstChild.firstChild, 2), 3)
+    let view = tempEditor({doc: doc(p("foo"), hr())})
+    ist(view.posAtDOM(view.dom.firstChild!.firstChild!, 2), 3)
     ist(view.posAtDOM(view.dom, 1), 5)
     ist(view.posAtDOM(view.dom, 2), 6)
-    ist(view.posAtDOM(view.dom.lastChild, 0, -1), 5)
-    ist(view.posAtDOM(view.dom.lastChild, 0, 1), 6)
+    ist(view.posAtDOM(view.dom.lastChild!, 0, -1), 5)
+    ist(view.posAtDOM(view.dom.lastChild!, 0, 1), 6)
   })
 
   it("binds this to itself in dispatchTransaction prop", () => {

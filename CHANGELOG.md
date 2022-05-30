@@ -1,3 +1,149 @@
+## 1.24.0 (2022-05-30)
+
+### Bug fixes
+
+Fix an issue where bogus table wrappers could be added when copy-pasting table content nodes within an editor.
+
+Fix a crash that could occur when two textblocks were joined in the editor DOM.
+
+Treat ctrl-b/f/p/n on macOS similar to arrow key presses, anticipating cursor motion.
+
+### New features
+
+Include TypeScript type declarations.
+
+## 1.23.13 (2022-04-26)
+
+### Bug fixes
+
+Work around a hidden cursor issue in Chrome when a textblock ends in an uneditable node wrapped in a mark.
+
+## 1.23.12 (2022-04-08)
+
+### Bug fixes
+
+Fix an issue where enter on Chrome Android could, in textblock nodes rendered with an inner content element, delete the text after the cursor.
+
+## 1.23.11 (2022-03-31)
+
+### Bug fixes
+
+Fix an issue where a node view with a separate content wrapper node could sometimes lose its content on Chrome when backspacing out content due to unexpected DOM element recreation.
+
+## 1.23.10 (2022-03-22)
+
+### Bug fixes
+
+Fix a crash in `DecorationSet.map` that could occur with some kinds of lift transformations.
+
+## 1.23.9 (2022-03-11)
+
+### Bug fixes
+
+Make sure screen readers don't read the `<img>` nodes added as kludge for cursor behavior.
+
+## 1.23.8 (2022-03-10)
+
+### Bug fixes
+
+Fix an issue where the editor needlessly interrupted composition with IME systems that keep the cursor at the start of the composition, such as some Pinyin input methods.
+
+## 1.23.7 (2022-02-25)
+
+### Bug fixes
+
+Fix a crash when a view was being destroyed during input reading.
+
+Fix a crash on Firefox when replacing text in some specific types of document structure.
+
+## 1.23.6 (2022-01-13)
+
+### Bug fixes
+
+Fix an issue that could cause pieces of DOM to not be synchronized with the document after some kind of changes around marks.
+
+Fix a bug where marks rendered with nested elements would in some situations suppress new input.
+
+Disable Chrome-specific drag-selection workaround in non-Chrome browsers because it affected table cell selection in Safari.
+
+## 1.23.5 (2021-12-27)
+
+### Bug fixes
+
+Use the `whitespace` node prop where appropriate.
+
+## 1.23.4 (2021-12-22)
+
+### Bug fixes
+
+Improve the way the editor handles the mess of events produced when pressing Enter before a word that was just typed on Chrome + GBoard.
+
+Fix an issue where compositions right before another instance of the composed text could cause the editor to crash.
+
+Fix an issue where, if decorations changed during a pointer drag selection, the selection anchor might move around inappropriately.
+
+## 1.23.3 (2021-11-26)
+
+### Bug fixes
+
+The clipboard parser will no longer drop trailing `<br>` nodes that appear in an inline parent element.
+
+## 1.23.2 (2021-11-19)
+
+### Bug fixes
+
+Avoid some unnecessary node redraws when marks are present in sibling nodes.
+
+## 1.23.1 (2021-11-15)
+
+### Bug fixes
+
+Restore accidentally reduced lookahead distance in view updating algorithm.
+
+## 1.23.0 (2021-11-11)
+
+### Bug fixes
+
+When parsing clipboard content, ignore trailing BR nodes that look like they might be there as a contenteditable kludge.
+
+### New features
+
+`EditorView` now exposes an `isDestroyed` property that can be used to test if the view has been destroyed.
+
+## 1.22.0 (2021-11-08)
+
+### Bug fixes
+
+Fix an issue where some types of node decoration changes could cause an unnecessary cascade of node redraws.
+
+### New features
+
+Widget decorations now accept a `destroy` option, which will be called when the widget is removed from the view.
+
+## 1.21.0 (2021-10-29)
+
+### Bug fixes
+
+Fix issue where recent Mobile Safari versions weren't treated as Mac platforms.
+
+### New features
+
+Multiple `style` properties provided through the `attributes` prop are now merged. Adjust mac detection for recent changes to navigator.platform on iOS
+
+## 1.20.3 (2021-10-13)
+
+### Bug fixes
+
+Stop removing leading/trailing whitespace from pasted plain text.
+
+Fix an issue that could cause invalid content to be produced when pasting HTML with isolating nodes in it.
+
+## 1.20.2 (2021-10-07)
+
+### Bug fixes
+
+Fix a crash when pasting whitespace-only content as text.
+
 ## 1.20.1 (2021-09-09)
 
 ### Bug fixes

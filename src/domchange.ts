@@ -1,9 +1,10 @@
-import {Fragment, DOMParser} from "prosemirror-model"
+import {Fragment, DOMParser, ParseRule, Node, Mark, ResolvedPos} from "prosemirror-model"
 import {Selection, TextSelection} from "prosemirror-state"
 
 import {selectionBetween, selectionFromDOM, selectionToDOM} from "./selection"
-import {selectionCollapsed, keyEvent} from "./dom"
-import browser from "./browser"
+import {selectionCollapsed, keyEvent, DOMNode} from "./dom"
+import * as browser from "./browser"
+import {EditorView} from "./index"
 
 // Note that all referencing and parsing is done with the
 // start-of-operation selection and document, since that's the one
@@ -11,18 +12,20 @@ import browser from "./browser"
 // the modification is mapped over those before it is applied, in
 // readDOMChange.
 
-function parseBetween(view, from_, to_) {
+function parseBetween(view: EditorView, from_: number, to_: number) {
   let {node: parent, fromOffset, toOffset, from, to} = view.docView.parseRange(from_, to_)
 
-  let domSel = view.root.getSelection(), find = null, anchor = domSel.anchorNode
+  let domSel = view.domSelection()
+  let find: {node: DOMNode, offset: number, pos?: number}[] | undefined
+  let anchor = domSel.anchorNode
   if (anchor && view.dom.contains(anchor.nodeType == 1 ? anchor : anchor.parentNode)) {
     find = [{node: anchor, offset: domSel.anchorOffset}]
     if (!selectionCollapsed(domSel))
-      find.push({node: domSel.focusNode, offset: domSel.focusOffset})
+      find.push({node: domSel.focusNode!, offset: domSel.focusOffset})
   }
   // Work around issue in Chrome where backspacing sometimes replaces
   // the deleted content with a random BR node (issues #799, #831)
-  if (browser.chrome && view.lastKeyCode === 8) {
+  if (browser.chrome && view.input.lastKeyCode === 8) {
     for (let off = toOffset; off > fromOffset; off--) {
       let node = parent.childNodes[off - 1], desc = node.pmViewDesc
       if (node.nodeName == "BR" && !desc) { toOffset = off; break }
@@ -39,8 +42,7 @@ function parseBetween(view, from_, to_) {
     topOpen: true,
     from: fromOffset,
     to: toOffset,
-    preserveWhitespace: $from.parent.type.spec.code ? "full" : true,
-    editableContent: true,
+    preserveWhitespace: $from.parent.type.whitespace == "pre" ? "full" : true,
     findPositions: find,
     ruleFromNode,
     context: $from
@@ -53,7 +55,7 @@ function parseBetween(view, from_, to_) {
   return {doc, sel, from, to}
 }
 
-function ruleFromNode(dom) {
+function ruleFromNode(dom: DOMNode): ParseRule | null {
   let desc = dom.pmViewDesc
   if (desc) {
     return desc.parseRule()
@@ -64,18 +66,19 @@ function ruleFromNode(dom) {
     if (browser.safari && /^(ul|ol)$/i.test(dom.parentNode.nodeName)) {
       let skip = document.createElement("div")
       skip.appendChild(document.createElement("li"))
-      return {skip}
+      return {skip} as any
     } else if (dom.parentNode.lastChild == dom || browser.safari && /^(tr|table)$/i.test(dom.parentNode.nodeName)) {
       return {ignore: true}
     }
-  } else if (dom.nodeName == "IMG" && dom.getAttribute("mark-placeholder")) {
+  } else if (dom.nodeName == "IMG" && (dom as HTMLElement).getAttribute("mark-placeholder")) {
     return {ignore: true}
   }
+  return null
 }
 
-export function readDOMChange(view, from, to, typeOver, addedNodes) {
+export function readDOMChange(view: EditorView, from: number, to: number, typeOver: boolean, addedNodes: readonly DOMNode[]) {
   if (from < 0) {
-    let origin = view.lastSelectionTime > Date.now() - 50 ? view.lastSelectionOrigin : null
+    let origin = view.input.lastSelectionTime > Date.now() - 50 ? view.input.lastSelectionOrigin : null
     let newSel = selectionFromDOM(view, origin)
     if (newSel && !view.state.selection.eq(newSel)) {
       let tr = view.state.tr.setSelection(newSel)
@@ -93,36 +96,39 @@ export function readDOMChange(view, from, to, typeOver, addedNodes) {
 
   let sel = view.state.selection
   let parse = parseBetween(view, from, to)
+
   // Chrome sometimes leaves the cursor before the inserted text when
   // composing after a cursor wrapper. This moves it forward.
   if (browser.chrome && view.cursorWrapper && parse.sel && parse.sel.anchor == view.cursorWrapper.deco.from) {
-    let text = view.cursorWrapper.deco.type.toDOM.nextSibling
+    let text = (view.cursorWrapper.deco.type as any).toDOM.nextSibling as DOMNode
     let size = text && text.nodeValue ? text.nodeValue.length : 1
     parse.sel = {anchor: parse.sel.anchor + size, head: parse.sel.anchor + size}
   }
 
   let doc = view.state.doc, compare = doc.slice(parse.from, parse.to)
-  let preferredPos, preferredSide
+  let preferredPos, preferredSide: "start" | "end"
   // Prefer anchoring to end when Backspace is pressed
-  if (view.lastKeyCode === 8 && Date.now() - 100 < view.lastKeyCodeTime) {
+  if (view.input.lastKeyCode === 8 && Date.now() - 100 < view.input.lastKeyCodeTime) {
     preferredPos = view.state.selection.to
     preferredSide = "end"
   } else {
     preferredPos = view.state.selection.from
     preferredSide = "start"
   }
-  view.lastKeyCode = null
+  view.input.lastKeyCode = null
 
   let change = findDiff(compare.content, parse.doc.content, parse.from, preferredPos, preferredSide)
+  if ((browser.ios && view.input.lastIOSEnter > Date.now() - 225 || browser.android) &&
+      addedNodes.some(n => n.nodeName == "DIV" || n.nodeName == "P") &&
+      (!change || change.endA >= change.endB) &&
+      view.someProp("handleKeyDown", f => f(view, keyEvent(13, "Enter")))) {
+    view.input.lastIOSEnter = 0
+    return
+  }
   if (!change) {
     if (typeOver && sel instanceof TextSelection && !sel.empty && sel.$head.sameParent(sel.$anchor) &&
         !view.composing && !(parse.sel && parse.sel.anchor != parse.sel.head)) {
       change = {start: sel.from, endA: sel.to, endB: sel.to}
-    } else if ((browser.ios && view.lastIOSEnter > Date.now() - 225 || browser.android) &&
-               addedNodes.some(n => n.nodeName == "DIV" || n.nodeName == "P") &&
-               view.someProp("handleKeyDown", f => f(view, keyEvent(13, "Enter")))) {
-      view.lastIOSEnter = 0
-      return
     } else {
       if (parse.sel) {
         let sel = resolveSelection(view, view.state.doc, parse.sel)
@@ -131,16 +137,18 @@ export function readDOMChange(view, from, to, typeOver, addedNodes) {
       return
     }
   }
-  view.domChangeCount++
+  view.input.domChangeCount++
   // Handle the case where overwriting a selection by typing matches
   // the start or end of the selected content, creating a change
   // that's smaller than what was actually overwritten.
   if (view.state.selection.from < view.state.selection.to &&
       change.start == change.endB &&
       view.state.selection instanceof TextSelection) {
-    if (change.start > view.state.selection.from && change.start <= view.state.selection.from + 2) {
+    if (change.start > view.state.selection.from && change.start <= view.state.selection.from + 2 &&
+        view.state.selection.from >= parse.from) {
       change.start = view.state.selection.from
-    } else if (change.endA < view.state.selection.to && change.endA >= view.state.selection.to - 2) {
+    } else if (change.endA < view.state.selection.to && change.endA >= view.state.selection.to - 2 &&
+               view.state.selection.to <= parse.to) {
       change.endB += (view.state.selection.to - change.endA)
       change.endA = view.state.selection.to
     }
@@ -159,17 +167,18 @@ export function readDOMChange(view, from, to, typeOver, addedNodes) {
 
   let $from = parse.doc.resolveNoCache(change.start - parse.from)
   let $to = parse.doc.resolveNoCache(change.endB - parse.from)
-  let inlineChange = $from.sameParent($to) && $from.parent.inlineContent
+  let $fromA = doc.resolve(change.start)
+  let inlineChange = $from.sameParent($to) && $from.parent.inlineContent && $fromA.end() >= change.endA
   let nextSel
   // If this looks like the effect of pressing Enter (or was recorded
   // as being an iOS enter press), just dispatch an Enter key instead.
-  if (((browser.ios && view.lastIOSEnter > Date.now() - 225 &&
+  if (((browser.ios && view.input.lastIOSEnter > Date.now() - 225 &&
         (!inlineChange || addedNodes.some(n => n.nodeName == "DIV" || n.nodeName == "P"))) ||
        (!inlineChange && $from.pos < parse.doc.content.size &&
         (nextSel = Selection.findFrom(parse.doc.resolve($from.pos + 1), 1, true)) &&
         nextSel.head == $to.pos)) &&
       view.someProp("handleKeyDown", f => f(view, keyEvent(13, "Enter")))) {
-    view.lastIOSEnter = 0
+    view.input.lastIOSEnter = 0
     return
   }
   // Same for backspace
@@ -183,8 +192,8 @@ export function readDOMChange(view, from, to, typeOver, addedNodes) {
   // Chrome Android will occasionally, during composition, delete the
   // entire composition and then immediately insert it again. This is
   // used to detect that situation.
-  if (browser.chrome && browser.android && change.toB == change.from)
-    view.lastAndroidDelete = Date.now()
+  if (browser.chrome && browser.android && change.endB == change.start)
+    view.input.lastAndroidDelete = Date.now()
 
   // This tries to detect Android virtual keyboard
   // enter-and-pick-suggestion action. That sometimes (see issue
@@ -205,7 +214,7 @@ export function readDOMChange(view, from, to, typeOver, addedNodes) {
 
   let chFrom = change.start, chTo = change.endA
 
-  let tr, storedMarks, markChange, $from1
+  let tr, storedMarks, markChange
   if (inlineChange) {
     if ($from.pos == $to.pos) { // Deletion
       // IE11 sometimes weirdly moves the DOM selection around after
@@ -217,9 +226,9 @@ export function readDOMChange(view, from, to, typeOver, addedNodes) {
       tr = view.state.tr.delete(chFrom, chTo)
       storedMarks = doc.resolve(change.start).marksAcross(doc.resolve(change.endA))
     } else if ( // Adding or removing a mark
-      change.endA == change.endB && ($from1 = doc.resolve(change.start)) &&
+      change.endA == change.endB &&
       (markChange = isMarkChange($from.parent.content.cut($from.parentOffset, $to.parentOffset),
-                                 $from1.parent.content.cut($from1.parentOffset, change.endA - $from1.start())))
+                                 $fromA.parent.content.cut($fromA.parentOffset, change.endA - $fromA.start())))
     ) {
       tr = view.state.tr
       if (markChange.type == "add") tr.addMark(chFrom, chTo, markChange.mark)
@@ -242,7 +251,7 @@ export function readDOMChange(view, from, to, typeOver, addedNodes) {
     // Edge just doesn't move the cursor forward when you start typing
     // in an empty block or between br nodes.
     if (sel && !(browser.chrome && browser.android && view.composing && sel.empty &&
-                 (change.start != change.endB || view.lastAndroidDelete < Date.now() - 100) &&
+                 (change.start != change.endB || view.input.lastAndroidDelete < Date.now() - 100) &&
                  (sel.head == chFrom || sel.head == tr.mapping.map(chTo) - 1) ||
                  browser.ie && sel.empty && sel.head == chFrom))
       tr.setSelection(sel)
@@ -251,28 +260,27 @@ export function readDOMChange(view, from, to, typeOver, addedNodes) {
   view.dispatch(tr.scrollIntoView())
 }
 
-function resolveSelection(view, doc, parsedSel) {
+function resolveSelection(view: EditorView, doc: Node, parsedSel: {anchor: number, head: number}) {
   if (Math.max(parsedSel.anchor, parsedSel.head) > doc.content.size) return null
   return selectionBetween(view, doc.resolve(parsedSel.anchor), doc.resolve(parsedSel.head))
 }
 
-// : (Fragment, Fragment) → ?{mark: Mark, type: string}
 // Given two same-length, non-empty fragments of inline content,
 // determine whether the first could be created from the second by
 // removing or adding a single mark type.
-function isMarkChange(cur, prev) {
-  let curMarks = cur.firstChild.marks, prevMarks = prev.firstChild.marks
-  let added = curMarks, removed = prevMarks, type, mark, update
+function isMarkChange(cur: Fragment, prev: Fragment) {
+  let curMarks = cur.firstChild!.marks, prevMarks = prev.firstChild!.marks
+  let added = curMarks, removed = prevMarks, type, mark: Mark | undefined, update
   for (let i = 0; i < prevMarks.length; i++) added = prevMarks[i].removeFromSet(added)
   for (let i = 0; i < curMarks.length; i++) removed = curMarks[i].removeFromSet(removed)
   if (added.length == 1 && removed.length == 0) {
     mark = added[0]
     type = "add"
-    update = node => node.mark(mark.addToSet(node.marks))
+    update = (node: Node) => node.mark(mark!.addToSet(node.marks))
   } else if (added.length == 0 && removed.length == 1) {
     mark = removed[0]
     type = "remove"
-    update = node => node.mark(mark.removeFromSet(node.marks))
+    update = (node: Node) => node.mark(mark!.removeFromSet(node.marks))
   } else {
     return null
   }
@@ -281,7 +289,7 @@ function isMarkChange(cur, prev) {
   if (Fragment.from(updated).eq(cur)) return {mark, type}
 }
 
-function looksLikeJoin(old, start, end, $newStart, $newEnd) {
+function looksLikeJoin(old: Node, start: number, end: number, $newStart: ResolvedPos, $newEnd: ResolvedPos) {
   if (!$newStart.parent.isTextblock ||
       // The content must have shrunk
       end - start <= $newEnd.pos - $newStart.pos ||
@@ -303,7 +311,7 @@ function looksLikeJoin(old, start, end, $newStart, $newEnd) {
   return $newStart.parent.content.cut($newStart.parentOffset).eq($next.parent.content)
 }
 
-function skipClosingAndOpening($pos, fromEnd, mayOpen) {
+function skipClosingAndOpening($pos: ResolvedPos, fromEnd: boolean, mayOpen: boolean) {
   let depth = $pos.depth, end = fromEnd ? $pos.end() : $pos.pos
   while (depth > 0 && (fromEnd || $pos.indexAfter(depth) == $pos.node(depth).childCount)) {
     depth--
@@ -320,10 +328,10 @@ function skipClosingAndOpening($pos, fromEnd, mayOpen) {
   return end
 }
 
-function findDiff(a, b, pos, preferredPos, preferredSide) {
+function findDiff(a: Fragment, b: Fragment, pos: number, preferredPos: number, preferredSide: "start" | "end") {
   let start = a.findDiffStart(b, pos)
   if (start == null) return null
-  let {a: endA, b: endB} = a.findDiffEnd(b, pos + a.size, pos + b.size)
+  let {a: endA, b: endB} = a.findDiffEnd(b, pos + a.size, pos + b.size)!
   if (preferredSide == "end") {
     let adjust = Math.max(0, start - Math.min(endA, endB))
     preferredPos -= endA + adjust - start

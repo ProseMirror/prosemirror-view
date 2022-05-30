@@ -1,26 +1,27 @@
-const ist = require("ist")
-const {eq, doc, p, blockquote, ul, ol, li, hr, br} = require("prosemirror-test-builder")
-const {NodeSelection, TextSelection} = require("prosemirror-state")
-const {Slice, Fragment} = require("prosemirror-model")
-const {tempEditor} = require("./view")
+import ist from "ist"
+import {eq, doc, p, strong, blockquote, ul, ol, li, hr, br} from "prosemirror-test-builder"
+import {NodeSelection, TextSelection} from "prosemirror-state"
+import {Slice, Fragment, Schema} from "prosemirror-model"
+import {tempEditor} from "./view"
 
-const {__serializeForClipboard: serializeForClipboard, __parseFromClipboard: parseFromClipboard} = require("..")
+import {__serializeForClipboard as serializeForClipboard, __parseFromClipboard as parseFromClipboard} from "prosemirror-view"
 
 describe("Clipboard interface", () => {
   it("copies only the node for a node selection", () => {
-    let d = doc(blockquote(p("a"), "<a>", hr), p("b"))
+    let d = doc(blockquote(p("a"), "<a>", hr()), p("b"))
     let view = tempEditor({doc: d})
-    let {dom} = serializeForClipboard(view, NodeSelection.create(d, d.tag.a).content())
+    let {dom} = serializeForClipboard(view, NodeSelection.create(d, (d as any).tag.a).content())
     ist(dom.innerHTML, '<hr data-pm-slice="0 0 []">')
-    ist(parseFromClipboard(view, "", dom.innerHTML, false, d.resolve(1)), d.slice(d.tag.a, d.tag.a + 1), eq)
+    ist(parseFromClipboard(view, "", dom.innerHTML, false, d.resolve(1)), d.slice((d as any).tag.a, (d as any).tag.a + 1), eq)
   })
 
   it("includes context for text selections", () => {
     let d = doc(blockquote(ul(li(p("fo<a>o"), p("b<b>ar")))))
     let view = tempEditor({doc: d})
-    let slice = TextSelection.create(d, d.tag.a, d.tag.b).content(), {dom, text} = serializeForClipboard(view, slice)
+    let slice = TextSelection.create(d, (d as any).tag.a, (d as any).tag.b).content()
+    let {dom, text} = serializeForClipboard(view, slice)
     ist(dom.innerHTML, '<li data-pm-slice="2 2 [&quot;blockquote&quot;,{},&quot;bullet_list&quot;,{}]"><p>o</p><p>b</p></li>')
-    ist(parseFromClipboard(view, text, dom.innerHTML, false, d.resolve(1)), d.slice(d.tag.a, d.tag.b, true), eq)
+    ist(parseFromClipboard(view, text, dom.innerHTML, false, d.resolve(1)), d.slice((d as any).tag.a, (d as any).tag.b, true), eq)
     ist(parseFromClipboard(view, text, dom.innerHTML, true, d.resolve(1)), new Slice(doc(p("o"), p("b")).content, 1, 1), eq)
   })
 
@@ -42,18 +43,24 @@ describe("Clipboard interface", () => {
 
   it("can read external HTML", () => {
     let view = tempEditor(), $p = view.state.doc.resolve(1)
-    ist(parseFromClipboard(view, "", "<p>hello</p><hr>", false, $p), new Slice(doc(p("hello"), hr).content, 1, 0), eq)
+    ist(parseFromClipboard(view, "", "<p>hello</p><hr>", false, $p), new Slice(doc(p("hello"), hr()).content, 1, 0), eq)
     ist(parseFromClipboard(view, "", "<p>hello</p>bar", false, $p), new Slice(doc(p("hello"), p("bar")).content, 1, 1), eq)
   })
 
   it("will sanely clean up top-level nodes in HTML", () => {
     let view = tempEditor(), $p = view.state.doc.resolve(1)
-    ist(parseFromClipboard(view, "", "<ul><li>foo</li></ul>bar<br>", false, $p),
-        new Slice(doc(ul(li(p("foo"))), p("bar", br)).content, 3, 1), eq)
+    ist(parseFromClipboard(view, "", "<ul><li>foo</li></ul>bar<br>baz", false, $p),
+        new Slice(doc(ul(li(p("foo"))), p("bar", br(), "baz")).content, 3, 1), eq)
     ist(parseFromClipboard(view, "", "<ul><li>foo</li></ul>bar<br><p>x</p>", false, $p),
-        new Slice(doc(ul(li(p("foo"))), p("bar", br), p("x")).content, 3, 1), eq)
+        new Slice(doc(ul(li(p("foo"))), p("bar", br()), p("x")).content, 3, 1), eq)
     ist(parseFromClipboard(view, "", "<li>foo</li><li>bar</li><p>x</p>", false, $p),
         new Slice(doc(ol(li(p("foo")), li(p("bar"))), p("x")).content, 3, 1), eq)
+  })
+
+  it("only drops trailing br nodes in block parents", () => {
+    let view = tempEditor()
+    ist(parseFromClipboard(view, "", "<p><strong>a<br></strong> b</p>", false, view.state.doc.resolve(1)),
+        new Slice(doc(p(strong("a"), strong(br), " b")).content, 1, 1), eq)
   })
 
   it("will call transformPastedHTML", () => {
@@ -77,7 +84,33 @@ describe("Clipboard interface", () => {
   it("preserves attributes", () => {
     let d = doc(ol({order: 3}, li(p("f<a>o<b>o"))))
     let view = tempEditor({doc: d})
-    let {dom, text} = serializeForClipboard(view, TextSelection.create(d, d.tag.a, d.tag.b).content())
-    ist(parseFromClipboard(view, text, dom.innerHTML, false, d.resolve(1)), d.slice(d.tag.a, d.tag.b, true), eq)
+    let {dom, text} = serializeForClipboard(view, TextSelection.create(d, (d as any).tag.a, (d as any).tag.b).content())
+    ist(parseFromClipboard(view, text, dom.innerHTML, false, d.resolve(1)),
+        d.slice((d as any).tag.a, (d as any).tag.b, true), eq)
+  })
+
+  function tableSchema() {
+    return new Schema({
+      nodes: {
+        td: {content: "text*", toDOM: () => ["td", 0], parseDOM: [{tag: "td"}]},
+        tr: {content: "td+", toDOM: () => ["tr", 0], parseDOM: [{tag: "tr"}]},
+        table: {content: "tr+", toDOM: () => ["table", ["tbody", 0]], parseDOM: [{tag: "table"}]},
+        doc: {content: "table+"},
+        text: {}
+      }
+    })
+  }
+
+  it("adds necessary wrappers for parsing", () => {
+    let s = tableSchema()
+    let doc = s.node("doc", null, [s.node("table", null, [s.node("tr", null, [
+      s.node("td", null, [s.text("A")]),
+      s.node("td", null, [s.text("B")])
+    ])])])
+    let view = tempEditor({doc})
+    let slice = doc.slice(3, 4, true)
+    let html = serializeForClipboard(view, slice).dom.innerHTML
+    ist(/<table/.test(html))
+    ist(parseFromClipboard(view, "", html, false, doc.resolve(3)), slice, eq)
   })
 })
