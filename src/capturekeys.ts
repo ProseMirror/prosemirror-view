@@ -256,13 +256,13 @@ export function captureKeyDown(view: EditorView, event: KeyboardEvent) {
     return stopNativeHorizontalDelete(view, 1) || skipIgnoredNodesRight(view)
   } else if (code == 13 || code == 27) { // Enter, Esc
     return true
-  } else if (code == 37 || (result.mac && code == 66 && mods == "c")) { // Left arrow, Ctrl-b on Mac
+  } else if (code == 37 || (browser.mac && code == 66 && mods == "c")) { // Left arrow, Ctrl-b on Mac
     return selectHorizontally(view, -1, mods) || skipIgnoredNodesLeft(view)
-  } else if (code == 39 || (result.mac && code == 70 && mods == "c")) { // Right arrow, Ctrl-f on Mac
+  } else if (code == 39 || (browser.mac && code == 70 && mods == "c")) { // Right arrow, Ctrl-f on Mac
     return selectHorizontally(view, 1, mods) || skipIgnoredNodesRight(view)
-  } else if (code == 38 || (result.mac && code == 80 && mods == "c")) { // Up arrow, Ctrl-p on Mac
+  } else if (code == 38 || (browser.mac && code == 80 && mods == "c")) { // Up arrow, Ctrl-p on Mac
     return selectVertically(view, -1, mods) || skipIgnoredNodesLeft(view)
-  } else if (code == 40 || (result.mac && code == 78 && mods == "c")) { // Down arrow, Ctrl-n on Mac
+  } else if (code == 40 || (browser.mac && code == 78 && mods == "c")) { // Down arrow, Ctrl-n on Mac
     return safariDownArrowBug(view) || selectVertically(view, 1, mods) || skipIgnoredNodesRight(view)
   } else if (mods == (browser.mac ? "m" : "c") &&
              (code == 66 || code == 73 || code == 89 || code == 90)) { // Mod-[biyz]

@@ -1,3 +1,9 @@
+## 1.24.1 (2022-05-30)
+
+### Bug fixes
+
+Fix a regression that caused the key handler to crash.
+
 ## 1.24.0 (2022-05-30)
 
 ### Bug fixes
