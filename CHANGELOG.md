@@ -1,3 +1,17 @@
+## 1.24.0 (2022-05-30)
+
+### Bug fixes
+
+Fix an issue where bogus table wrappers could be added when copy-pasting table content nodes within an editor.
+
+Fix a crash that could occur when two textblocks were joined in the editor DOM.
+
+Treat ctrl-b/f/p/n on macOS similar to arrow key presses, anticipating cursor motion.
+
+### New features
+
+Include TypeScript type declarations.
+
 ## 1.23.13 (2022-04-26)
 
 ### Bug fixes
