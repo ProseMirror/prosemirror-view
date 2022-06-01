@@ -1,3 +1,9 @@
+## 1.25.0 (2022-06-01)
+
+### New features
+
+Mark views can now be specified with a separate editor prop, `markViews`, to make it easier to get the types right.
+
 ## 1.24.1 (2022-05-30)
 
 ### Bug fixes
