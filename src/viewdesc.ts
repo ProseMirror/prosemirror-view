@@ -565,9 +565,9 @@ class MarkViewDesc extends ViewDesc {
 
   static create(parent: ViewDesc, mark: Mark, inline: boolean, view: EditorView) {
     let custom = view.nodeViews[mark.type.name]
-    let spec: NodeView = custom && (custom as any)(mark, view, inline)
+    let spec: {dom: HTMLElement, contentDOM?: HTMLElement} = custom && (custom as any)(mark, view, inline)
     if (!spec || !spec.dom)
-      spec = DOMSerializer.renderSpec(document, mark.type.spec.toDOM!(mark, inline))
+      spec = DOMSerializer.renderSpec(document, mark.type.spec.toDOM!(mark, inline)) as any
     return new MarkViewDesc(parent, mark, spec.dom, spec.contentDOM || spec.dom as HTMLElement)
   }
 
@@ -631,7 +631,7 @@ export class NodeViewDesc extends ViewDesc {
   static create(parent: ViewDesc | undefined, node: Node, outerDeco: readonly Decoration[],
                 innerDeco: DecorationSource, view: EditorView, pos: number) {
     let custom = view.nodeViews[node.type.name], descObj: ViewDesc
-    let spec = custom && custom(node, view, () => {
+    let spec: NodeView | undefined = custom && (custom as any)(node, view, () => {
       // (This is a function that allows the custom view to find its
       // own position)
       if (!descObj) return pos

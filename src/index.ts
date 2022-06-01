@@ -42,7 +42,7 @@ export class EditorView {
   /// @internal
   cursorWrapper: {dom: DOMNode, deco: Decoration} | null = null
   /// @internal
-  nodeViews: {[node: string]: NodeViewConstructor}
+  nodeViews: NodeViewSet
   /// @internal
   lastSelectedViewDesc: ViewDesc | undefined = undefined
   /// @internal
@@ -472,15 +472,17 @@ function selectionContextChanged(sel1: Selection, sel2: Selection) {
 }
 
 function buildNodeViews(view: EditorView) {
-  let result: {[node: string]: NodeViewConstructor} = Object.create(null)
-  view.someProp("nodeViews", obj => {
+  let result: NodeViewSet = Object.create(null)
+  function add(obj: NodeViewSet) {
     for (let prop in obj) if (!Object.prototype.hasOwnProperty.call(result, prop))
       result[prop] = obj[prop]
-  })
+  }
+  view.someProp("nodeViews", add)
+  view.someProp("markViews", add)
   return result
 }
 
-function changedNodeViews(a: {[node: string]: NodeViewConstructor}, b: {[node: string]: NodeViewConstructor}) {
+function changedNodeViews(a: NodeViewSet, b: NodeViewSet) {
   let nA = 0, nB = 0
   for (let prop in a) {
     if (a[prop] != b[prop]) return true
@@ -495,8 +497,11 @@ function checkStateComponent(plugin: Plugin) {
     throw new RangeError("Plugins passed directly to the view must not have a state component")
 }
 
-type NodeViewConstructor = (node: Node, view: EditorView, getPos: () => number | undefined,
+type NodeViewConstructor = (node: Node, view: EditorView, getPos: () => number,
                             decorations: readonly Decoration[], innerDecorations: DecorationSource) => NodeView
+type MarkViewConstructor = (mark: Mark, view: EditorView, inline: boolean) => {dom: HTMLElement, contentDOM?: HTMLElement}
+
+type NodeViewSet = {[name: string]: NodeViewConstructor | MarkViewConstructor}
 
 /// Helper type that maps event names to event object types, but
 /// includes events that TypeScript's HTMLElementEventMap doesn't know
@@ -613,14 +618,12 @@ export interface EditorProps {
   /// the document.
   transformPasted?: (slice: Slice) => Slice
 
-  /// Allows you to pass custom rendering and behavior logic for nodes
-  /// and marks. Should map node and mark names to constructor
-  /// functions that produce a [`NodeView`](#view.NodeView) object
-  /// implementing the node's display behavior. For nodes, the third
-  /// argument `getPos` is a function that can be called to get the
-  /// node's current position, which can be useful when creating
-  /// transactions to update it. For marks, the third argument is a
-  /// boolean that indicates whether the mark's content is inline.
+  /// Allows you to pass custom rendering and behavior logic for
+  /// nodes. Should map node names to constructor functions that
+  /// produce a [`NodeView`](#view.NodeView) object implementing the
+  /// node's display behavior. The third argument `getPos` is a
+  /// function that can be called to get the node's current position,
+  /// which can be useful when creating transactions to update it.
   ///
   /// `decorations` is an array of node or inline decorations that are
   /// active around the node. They are automatically drawn in the
@@ -634,7 +637,18 @@ export interface EditorProps {
   /// on the content. But if you, for example, want to create a nested
   /// editor with the content, it may make sense to provide it with the
   /// inner decorations.
+  ///
+  /// (For backwards compatibility reasons, [mark
+  /// views](#view.ViewProps.markViews) can also be included in this
+  /// object.)
   nodeViews?: {[node: string]: NodeViewConstructor}
+
+  /// Pass custom mark rendering functions. Note that these cannot
+  /// provide the kind of dynamic behavior that [node
+  /// views](#view.NodeView) can—they just provide custom rendering
+  /// logic. The third argument indicates whether the mark's content
+  /// is inline.
+  markViews?: {[mark: string]: MarkViewConstructor}
 
   /// The DOM serializer to use when putting content onto the
   /// clipboard. If not given, the result of
