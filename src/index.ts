@@ -497,9 +497,9 @@ function checkStateComponent(plugin: Plugin) {
     throw new RangeError("Plugins passed directly to the view must not have a state component")
 }
 
-type NodeViewConstructor = (node: Node, view: EditorView, getPos: () => number,
+export type NodeViewConstructor = (node: Node, view: EditorView, getPos: () => number,
                             decorations: readonly Decoration[], innerDecorations: DecorationSource) => NodeView
-type MarkViewConstructor = (mark: Mark, view: EditorView, inline: boolean) => {dom: HTMLElement, contentDOM?: HTMLElement}
+export type MarkViewConstructor = (mark: Mark, view: EditorView, inline: boolean) => {dom: HTMLElement, contentDOM?: HTMLElement}
 
 type NodeViewSet = {[name: string]: NodeViewConstructor | MarkViewConstructor}
 
