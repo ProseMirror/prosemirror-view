@@ -1,3 +1,9 @@
+## 1.26.0 (2022-06-07)
+
+### New features
+
+Export the `NodeViewConstructor` and `MarkViewConstructor` types. Include Node/MarkViewConstructor in doc template
+
 ## 1.25.0 (2022-06-01)
 
 ### New features
