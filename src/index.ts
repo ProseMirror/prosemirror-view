@@ -497,11 +497,13 @@ function checkStateComponent(plugin: Plugin) {
     throw new RangeError("Plugins passed directly to the view must not have a state component")
 }
 
-/// Helper type that coalesces argument types to make custom [node views](#view.ViewProps.nodeViews).
+/// The type of function [provided](#view.ViewProps.nodeViews) to
+/// create [node views](#view.NodeView).
 export type NodeViewConstructor = (node: Node, view: EditorView, getPos: () => number,
-                            decorations: readonly Decoration[], innerDecorations: DecorationSource) => NodeView
+                                   decorations: readonly Decoration[], innerDecorations: DecorationSource) => NodeView
 
-/// Helper type that coalesces argument types to make custom [mark views](#view.ViewProps.markViews).
+/// The function types [used](#view.ViewProps.markViews) to create
+/// mark views.
 export type MarkViewConstructor = (mark: Mark, view: EditorView, inline: boolean) => {dom: HTMLElement, contentDOM?: HTMLElement}
 
 type NodeViewSet = {[name: string]: NodeViewConstructor | MarkViewConstructor}

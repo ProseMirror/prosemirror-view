@@ -10,6 +10,10 @@ this module.
 
 @EditorProps
 
+@NodeViewConstructor
+
+@MarkViewConstructor
+
 @DirectEditorProps
 
 @NodeView
