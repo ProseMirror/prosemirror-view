@@ -537,7 +537,7 @@ export interface EditorProps {
   /// `preventDefault` yourself (or not, if you want to allow the
   /// default behavior).
   handleDOMEvents?: {
-    [event in string]: (view: EditorView, event: DOMEventMap[event]) => boolean | void
+    [event in keyof DOMEventMap]?: (view: EditorView, event: DOMEventMap[event]) => boolean | void
   }
 
   /// Called when the editor receives a `keydown` event.
@@ -579,7 +579,7 @@ export interface EditorProps {
   /// Called when something is dropped on the editor. `moved` will be
   /// true if this drop moves from the current selection (which should
   /// thus be deleted).
-  handleDrop?: (view: EditorView, event: MouseEvent, slice: Slice, moved: boolean) => boolean | void
+  handleDrop?: (view: EditorView, event: DragEvent, slice: Slice, moved: boolean) => boolean | void
 
   /// Called when the view, after updating its state, tries to scroll
   /// the selection into view. A handler function may return false to
@@ -672,7 +672,7 @@ export interface EditorProps {
 
   /// A set of [document decorations](#view.Decoration) to show in the
   /// view.
-  decorations?: (state: EditorState) => DecorationSource | null
+  decorations?: (state: EditorState) => DecorationSource | null | undefined
 
   /// When this returns false, the content of the view is not directly
   /// editable.
