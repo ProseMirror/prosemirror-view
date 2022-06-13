@@ -537,7 +537,7 @@ export interface EditorProps {
   /// `preventDefault` yourself (or not, if you want to allow the
   /// default behavior).
   handleDOMEvents?: {
-    [event in keyof DOMEventMap]: (view: EditorView, event: DOMEventMap[event]) => boolean | void
+    [event in keyof DOMEventMap]?: (view: EditorView, event: DOMEventMap[event]) => boolean | void
   }
 
   /// Called when the editor receives a `keydown` event.
