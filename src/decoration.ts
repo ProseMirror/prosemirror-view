@@ -183,6 +183,7 @@ export class Decoration {
     /// mapping
     destroy?: (node: DOMNode) => void
 
+    /// Specs allow arbitrary additional properties.
     [key: string]: any
   }): Decoration {
     return new Decoration(pos, pos, new WidgetType(toDOM, spec))
@@ -202,6 +203,9 @@ export class Decoration {
     /// See
     /// [`inclusiveStart`](#view.Decoration^inline^spec.inclusiveStart).
     inclusiveEnd?: boolean
+
+    /// Specs may have arbitrary additional properties.
+    [key: string]: any
   }) {
     return new Decoration(from, to, new InlineType(attrs, spec))
   }
