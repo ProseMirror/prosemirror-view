@@ -1,3 +1,9 @@
+## 1.26.1 (2022-06-13)
+
+### Bug fixes
+
+Fix incorrect types for `handleDrop` and `decorations`. Document open properties on widget specs
+
 ## 1.26.0 (2022-06-07)
 
 ### New features
