@@ -182,6 +182,8 @@ export class Decoration {
     /// Called when the widget decoration is removed as a result of
     /// mapping
     destroy?: (node: DOMNode) => void
+
+    [key: string]: any
   }): Decoration {
     return new Decoration(pos, pos, new WidgetType(toDOM, spec))
   }
