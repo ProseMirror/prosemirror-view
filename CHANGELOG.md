@@ -1,3 +1,9 @@
+## 1.26.2 (2022-06-22)
+
+### Bug fixes
+
+Mark prosemirror.css as having side effects in package.json.
+
 ## 1.26.1 (2022-06-13)
 
 ### Bug fixes
