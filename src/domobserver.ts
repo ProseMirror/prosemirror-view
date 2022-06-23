@@ -84,8 +84,10 @@ export class DOMObserver {
   }
 
   start() {
-    if (this.observer)
+    if (this.observer) {
+      this.observer.takeRecords()
       this.observer.observe(this.view.dom, observeOptions)
+    }
     if (this.onCharData)
       this.view.dom.addEventListener("DOMCharacterDataModified", this.onCharData)
     this.connectSelection()
