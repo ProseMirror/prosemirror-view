@@ -260,7 +260,7 @@ export function posAtCoords(view: EditorView, coords: {top: number, left: number
   }
 
   let elt = ((view.root as any).elementFromPoint ? view.root : doc)
-              .elementFromPoint(coords.left, coords.top + 1) as HTMLElement
+              .elementFromPoint(coords.left, coords.top) as HTMLElement
   let pos
   if (!elt || !view.dom.contains(elt.nodeType != 1 ? elt.parentNode : elt)) {
     let box = view.dom.getBoundingClientRect()
