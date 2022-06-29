@@ -1,3 +1,9 @@
+## 1.26.3 (2022-06-29)
+
+### Bug fixes
+
+Work around a Safari bug where mutation records get delivered even though the observer wasn't observing when the mutations happened.
+
 ## 1.26.2 (2022-06-22)
 
 ### Bug fixes
