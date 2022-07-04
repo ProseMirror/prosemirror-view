@@ -1,3 +1,9 @@
+## 1.26.4 (2022-07-04)
+
+### Bug fixes
+
+Avoid spurious type errors on `handleDOMEvents` by widening the type for unknown event objects.
+
 ## 1.26.3 (2022-06-29)
 
 ### Bug fixes
