@@ -512,7 +512,7 @@ type NodeViewSet = {[name: string]: NodeViewConstructor | MarkViewConstructor}
 /// includes events that TypeScript's HTMLElementEventMap doesn't know
 /// about.
 export interface DOMEventMap extends HTMLElementEventMap {
-  [event: string]: Event
+  [event: string]: any
 }
 
 /// Props are configuration values that can be passed to an editor view
