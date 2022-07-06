@@ -1196,7 +1196,7 @@ class ViewTreeUpdater {
     if (child.dirty == NODE_DIRTY && child.dom == child.contentDOM) child.dirty = CONTENT_DIRTY
     if (!child.update(node, outerDeco, innerDeco, view)) return false
     this.destroyBetween(this.index, index)
-    this.index = index + 1
+    this.index++
     return true
   }
 
