@@ -1,3 +1,11 @@
+## 1.26.5 (2022-07-07)
+
+### Bug fixes
+
+Fix an issue where a composition happening at the same time as widget insertion/removal could corrupt the rendered DOM.
+
+Fix a problem where `coordsAtPos` would look inside the DOM for atomic nodes, and sometimes return very odd positions that way.
+
 ## 1.26.4 (2022-07-04)
 
 ### Bug fixes
