@@ -315,7 +315,7 @@ const BIDI = /[\u0590-\u05f4\u0600-\u06ff\u0700-\u08ac]/
 // Given a position in the document model, get a bounding box of the
 // character at that position, relative to the window.
 export function coordsAtPos(view: EditorView, pos: number, side: number): Rect {
-  let {node, offset} = view.docView.domFromPos(pos, side < 0 ? -1 : 1)
+  let {node, offset, atom} = view.docView.domFromPos(pos, side < 0 ? -1 : 1)
 
   let supportEmptyRange = browser.webkit || browser.gecko
   if (node.nodeType == 3) {
@@ -345,13 +345,14 @@ export function coordsAtPos(view: EditorView, pos: number, side: number): Rect {
     }
   }
 
+  let $dom = view.state.doc.resolve(pos - (atom || 0))
   // Return a horizontal line in block context
-  if (!view.state.doc.resolve(pos).parent.inlineContent) {
-    if (offset && (side < 0 || offset == nodeSize(node))) {
+  if (!$dom.parent.inlineContent) {
+    if (atom == null && offset && (side < 0 || offset == nodeSize(node))) {
       let before = node.childNodes[offset - 1]
       if (before.nodeType == 1) return flattenH((before as HTMLElement).getBoundingClientRect(), false)
     }
-    if (offset < nodeSize(node)) {
+    if (atom == null && offset < nodeSize(node)) {
       let after = node.childNodes[offset]
       if (after.nodeType == 1) return flattenH((after as HTMLElement).getBoundingClientRect(), true)
     }
@@ -359,7 +360,7 @@ export function coordsAtPos(view: EditorView, pos: number, side: number): Rect {
   }
 
   // Inline, not in text node (this is not Bidi-safe)
-  if (offset && (side < 0 || offset == nodeSize(node))) {
+  if (atom == null && offset && (side < 0 || offset == nodeSize(node))) {
     let before = node.childNodes[offset - 1]
     let target = before.nodeType == 3 ? textRange(before as Text, nodeSize(before) - (supportEmptyRange ? 0 : 1))
         // BR nodes tend to only return the rectangle before them.
@@ -367,7 +368,7 @@ export function coordsAtPos(view: EditorView, pos: number, side: number): Rect {
         : before.nodeType == 1 && (before.nodeName != "BR" || !before.nextSibling) ? before : null
     if (target) return flattenV(singleRect(target as Range | HTMLElement, 1), false)
   }
-  if (offset < nodeSize(node)) {
+  if (atom == null && offset < nodeSize(node)) {
     let after = node.childNodes[offset]
     while (after.pmViewDesc && after.pmViewDesc.ignoreForCoords) after = after.nextSibling!
     let target = !after ? null : after.nodeType == 3 ? textRange(after as Text, 0, (supportEmptyRange ? 0 : 1))

@@ -262,8 +262,8 @@ export class ViewDesc {
     }
   }
 
-  domFromPos(pos: number, side: number): {node: DOMNode, offset: number} {
-    if (!this.contentDOM) return {node: this.dom, offset: 0}
+  domFromPos(pos: number, side: number): {node: DOMNode, offset: number, atom?: number} {
+    if (!this.contentDOM) return {node: this.dom, offset: 0, atom: pos + 1}
     // First find the position in the child array
     let i = 0, offset = 0
     for (let curPos = 0; i < this.children.length; i++) {
