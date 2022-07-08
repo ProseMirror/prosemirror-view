@@ -369,6 +369,7 @@ class MouseDown {
     let pos: {pos: number, inside: number} | null = this.pos
     if (this.view.state.doc != this.startDoc) pos = this.view.posAtCoords(eventCoords(event))
 
+    this.updateAllowDefault(event)
     if (this.allowDefault || !pos) {
       setSelectionOrigin(this.view, "pointer")
     } else if (handleSingleClick(this.view, pos.pos, pos.inside, event, this.selectNode)) {
@@ -395,11 +396,15 @@ class MouseDown {
   }
 
   move(event: MouseEvent) {
-    if (!this.allowDefault && (Math.abs(this.event.x - event.clientX) > 4 ||
-                               Math.abs(this.event.y - event.clientY) > 4))
-      this.allowDefault = true
+    this.updateAllowDefault(event)
     setSelectionOrigin(this.view, "pointer")
     if (event.buttons == 0) this.done()
+  }
+
+  updateAllowDefault(event: MouseEvent) {
+    if (!this.allowDefault && (Math.abs(this.event.x - event.clientX) > 4 ||
+      Math.abs(this.event.y - event.clientY) > 4))
+        this.allowDefault = true
   }
 }
 
