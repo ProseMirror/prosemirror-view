@@ -528,7 +528,7 @@ export interface DOMEventMap extends HTMLElementEventMap {
 /// searching through the plugins (in order of appearance) until one of
 /// them returns true. For some props, the first plugin that yields a
 /// value gets precedence.
-export interface EditorProps {
+export interface EditorProps<ThisType = "default"> {
   /// Can be an object mapping DOM event type names to functions that
   /// handle them. Such functions will be called before any handling
   /// ProseMirror does of events fired on the editable DOM element.
@@ -541,7 +541,7 @@ export interface EditorProps {
   }
 
   /// Called when the editor receives a `keydown` event.
-  handleKeyDown?: (view: EditorView, event: KeyboardEvent) => boolean | void
+  handleKeyDown?: (this: ThisType extends "default" ? this : ThisType, view: EditorView, event: KeyboardEvent) => boolean | void
 
   /// Handler for `keypress` events.
   handleKeyPress?: (view: EditorView, event: KeyboardEvent) => boolean | void
