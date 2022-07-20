@@ -528,7 +528,11 @@ export interface DOMEventMap extends HTMLElementEventMap {
 /// searching through the plugins (in order of appearance) until one of
 /// them returns true. For some props, the first plugin that yields a
 /// value gets precedence.
-export interface EditorProps {
+///
+/// The optional type parameter refers to the type of `this` in prop
+/// functions, and is used to pass in the plugin type when defining a
+/// [plugin](#state.Plugin).
+export interface EditorProps<P = any> {
   /// Can be an object mapping DOM event type names to functions that
   /// handle them. Such functions will be called before any handling
   /// ProseMirror does of events fired on the editable DOM element.
@@ -537,59 +541,59 @@ export interface EditorProps {
   /// `preventDefault` yourself (or not, if you want to allow the
   /// default behavior).
   handleDOMEvents?: {
-    [event in keyof DOMEventMap]?: (view: EditorView, event: DOMEventMap[event]) => boolean | void
+    [event in keyof DOMEventMap]?: (this: P, view: EditorView, event: DOMEventMap[event]) => boolean | void
   }
 
   /// Called when the editor receives a `keydown` event.
-  handleKeyDown?: (view: EditorView, event: KeyboardEvent) => boolean | void
+  handleKeyDown?: (this: P, view: EditorView, event: KeyboardEvent) => boolean | void
 
   /// Handler for `keypress` events.
-  handleKeyPress?: (view: EditorView, event: KeyboardEvent) => boolean | void
+  handleKeyPress?: (this: P, view: EditorView, event: KeyboardEvent) => boolean | void
 
   /// Whenever the user directly input text, this handler is called
   /// before the input is applied. If it returns `true`, the default
   /// behavior of actually inserting the text is suppressed.
-  handleTextInput?: (view: EditorView, from: number, to: number, text: string) => boolean | void
+  handleTextInput?: (this: P, view: EditorView, from: number, to: number, text: string) => boolean | void
 
   /// Called for each node around a click, from the inside out. The
   /// `direct` flag will be true for the inner node.
-  handleClickOn?: (view: EditorView, pos: number, node: Node, nodePos: number, event: MouseEvent, direct: boolean) => boolean | void
+  handleClickOn?: (this: P, view: EditorView, pos: number, node: Node, nodePos: number, event: MouseEvent, direct: boolean) => boolean | void
 
   /// Called when the editor is clicked, after `handleClickOn` handlers
   /// have been called.
-  handleClick?: (view: EditorView, pos: number, event: MouseEvent) => boolean | void
+  handleClick?: (this: P, view: EditorView, pos: number, event: MouseEvent) => boolean | void
 
   /// Called for each node around a double click.
-  handleDoubleClickOn?: (view: EditorView, pos: number, node: Node, nodePos: number, event: MouseEvent, direct: boolean) => boolean | void
+  handleDoubleClickOn?: (this: P, view: EditorView, pos: number, node: Node, nodePos: number, event: MouseEvent, direct: boolean) => boolean | void
 
   /// Called when the editor is double-clicked, after `handleDoubleClickOn`.
-  handleDoubleClick?: (view: EditorView, pos: number, event: MouseEvent) => boolean | void
+  handleDoubleClick?: (this: P, view: EditorView, pos: number, event: MouseEvent) => boolean | void
 
   /// Called for each node around a triple click.
-  handleTripleClickOn?: (view: EditorView, pos: number, node: Node, nodePos: number, event: MouseEvent, direct: boolean) => boolean | void
+  handleTripleClickOn?: (this: P, view: EditorView, pos: number, node: Node, nodePos: number, event: MouseEvent, direct: boolean) => boolean | void
 
   /// Called when the editor is triple-clicked, after `handleTripleClickOn`.
-  handleTripleClick?: (view: EditorView, pos: number, event: MouseEvent) => boolean | void
+  handleTripleClick?: (this: P, view: EditorView, pos: number, event: MouseEvent) => boolean | void
 
   /// Can be used to override the behavior of pasting. `slice` is the
   /// pasted content parsed by the editor, but you can directly access
   /// the event to get at the raw content.
-  handlePaste?: (view: EditorView, event: ClipboardEvent, slice: Slice) => boolean | void
+  handlePaste?: (this: P, view: EditorView, event: ClipboardEvent, slice: Slice) => boolean | void
 
   /// Called when something is dropped on the editor. `moved` will be
   /// true if this drop moves from the current selection (which should
   /// thus be deleted).
-  handleDrop?: (view: EditorView, event: DragEvent, slice: Slice, moved: boolean) => boolean | void
+  handleDrop?: (this: P, view: EditorView, event: DragEvent, slice: Slice, moved: boolean) => boolean | void
 
   /// Called when the view, after updating its state, tries to scroll
   /// the selection into view. A handler function may return false to
   /// indicate that it did not handle the scrolling and further
   /// handlers or the default behavior should be tried.
-  handleScrollToSelection?: (view: EditorView) => boolean
+  handleScrollToSelection?: (this: P, view: EditorView) => boolean
 
   /// Can be used to override the way a selection is created when
   /// reading a DOM selection between the given anchor and head.
-  createSelectionBetween?: (view: EditorView, anchor: ResolvedPos, head: ResolvedPos) => Selection | null
+  createSelectionBetween?: (this: P, view: EditorView, anchor: ResolvedPos, head: ResolvedPos) => Selection | null
 
   /// The [parser](#model.DOMParser) to use when reading editor changes
   /// from the DOM. Defaults to calling
@@ -599,7 +603,7 @@ export interface EditorProps {
 
   /// Can be used to transform pasted HTML text, _before_ it is parsed,
   /// for example to clean it up.
-  transformPastedHTML?: (html: string) => string
+  transformPastedHTML?: (this: P, html: string) => string
 
   /// The [parser](#model.DOMParser) to use when reading content from
   /// the clipboard. When not given, the value of the
@@ -608,7 +612,7 @@ export interface EditorProps {
 
   /// Transform pasted plain text. The `plain` flag will be true when
   /// the text is pasted as plain text.
-  transformPastedText?: (text: string, plain: boolean) => string
+  transformPastedText?: (this: P, text: string, plain: boolean) => string
 
   /// A function to parse text from the clipboard into a document
   /// slice. Called after
@@ -617,11 +621,11 @@ export interface EditorProps {
   /// in `<p>` tags, and call
   /// [`clipboardParser`](#view.EditorProps.clipboardParser) on it.
   /// The `plain` flag will be true when the text is pasted as plain text.
-  clipboardTextParser?: (text: string, $context: ResolvedPos, plain: boolean) => Slice
+  clipboardTextParser?: (this: P, text: string, $context: ResolvedPos, plain: boolean) => Slice
 
   /// Can be used to transform pasted content before it is applied to
   /// the document.
-  transformPasted?: (slice: Slice) => Slice
+  transformPasted?: (this: P, slice: Slice) => Slice
 
   /// Allows you to pass custom rendering and behavior logic for
   /// nodes. Should map node names to constructor functions that
@@ -668,15 +672,15 @@ export interface EditorProps {
   /// selection when copying text to the clipboard. By default, the
   /// editor will use [`textBetween`](#model.Node.textBetween) on the
   /// selected range.
-  clipboardTextSerializer?: (content: Slice) => string
+  clipboardTextSerializer?: (this: P, content: Slice) => string
 
   /// A set of [document decorations](#view.Decoration) to show in the
   /// view.
-  decorations?: (state: EditorState) => DecorationSource | null | undefined
+  decorations?: (this: P, state: EditorState) => DecorationSource | null | undefined
 
   /// When this returns false, the content of the view is not directly
   /// editable.
-  editable?: (state: EditorState) => boolean
+  editable?: (this: P, state: EditorState) => boolean
 
   /// Control the DOM attributes of the editable element. May be either
   /// an object or a function going from an editor state to an object.
