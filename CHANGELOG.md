@@ -1,3 +1,13 @@
+## 1.27.0 (2022-07-20)
+
+### Bug fixes
+
+Fix a bug that in some situations caused composition to be disrupted on Chrome due to a workaround for another browser issue activating inappropriately.
+
+### New features
+
+`EditorProps` now takes an optional type parameter that indicates the type of `this` in prop functions.
+
 ## 1.26.5 (2022-07-07)
 
 ### Bug fixes
