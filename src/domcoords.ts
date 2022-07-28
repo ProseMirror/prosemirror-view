@@ -341,7 +341,7 @@ export function coordsAtPos(view: EditorView, pos: number, side: number): Rect {
       else if (side >= 0 && offset == node.nodeValue!.length) { from--; takeSide = 1 }
       else if (side < 0) { from-- }
       else { to ++ }
-      return flattenV(singleRect(textRange(node as Text, from, to), takeSide), takeSide < 0)
+      return flattenV(singleRect(textRange(node as Text, from, to), 1), takeSide < 0)
     }
   }
 
