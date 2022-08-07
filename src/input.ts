@@ -650,7 +650,6 @@ editHandlers.drop = (view, _event) => {
   let eventPos = view.posAtCoords(eventCoords(event))
   if (!eventPos) return
   let $mouse = view.state.doc.resolve(eventPos.pos)
-  if (!$mouse) return
   let slice = dragging && dragging.slice
   if (slice) {
     view.someProp("transformPasted", f => { slice = f(slice!) })
