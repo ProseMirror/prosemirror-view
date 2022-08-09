@@ -623,8 +623,8 @@ export interface EditorProps<P = any> {
   /// The `plain` flag will be true when the text is pasted as plain text.
   clipboardTextParser?: (this: P, text: string, $context: ResolvedPos, plain: boolean) => Slice
 
-  /// Can be used to transform pasted content before it is applied to
-  /// the document.
+  /// Can be used to transform pasted or dragged-and-dropped content
+  /// before it is applied to the document.
   transformPasted?: (this: P, slice: Slice) => Slice
 
   /// Allows you to pass custom rendering and behavior logic for
