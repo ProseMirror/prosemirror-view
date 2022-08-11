@@ -254,8 +254,25 @@ export class ViewDesc {
     for (let i = 0, offset = 0; i < this.children.length; i++) {
       let child = this.children[i], end = offset + child.size
       if (offset == pos && end != offset) {
-        while (!child.border && child.children.length) child = child.children[0]
-        return child
+        while (!child.border && child.children.length) {
+          let changed = false
+          for (let index = 0; index < child.children.length; index++) {
+            const nthChild = child.children[index]
+            if (nthChild instanceof NodeViewDesc) {
+              child = nthChild
+              changed = true
+              break
+            }
+          }
+          if (!changed) {
+            break
+          } 
+        }
+        if (child instanceof NodeViewDesc) {
+          return child
+        } else {
+          throw new Error("Did't Find the desc for the node after the given pos!")
+        }
       }
       if (pos < end) return child.descAt(pos - offset - child.border)
       offset = end
