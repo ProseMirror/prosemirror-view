@@ -286,12 +286,13 @@ describe("DecorationSet", () => {
 
       // We want inline decorations to be preserved, so we'll use a custom step that allows this
       class MyStep extends ReplaceStep {
-        constructor(from, to, slice, structure, ranges) {
+        ranges: readonly number[]
+        constructor(from: number, to: number, slice: Slice, structure: boolean, ranges: readonly number[]) {
           super(from, to, slice, structure)
           this.ranges = ranges
         }
         getMap() { return new StepMap(this.ranges) }
-        merge(other) { return null }
+        merge(other: MyStep) { return null }
       }
       const posBeforeFirstWord = di.tag.start - 1
       const ranges = [posBeforeFirstWord, 1, 0] // Remove first word's opening token

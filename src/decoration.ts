@@ -550,20 +550,24 @@ function mapChildren(
 
   // Mark the children that are directly touched by changes, and
   // move those that are after the changes.
-  let shift = (oldStart: number, oldEnd: number, newStart: number, newEnd: number) => {
-    for (let i = 0; i < children.length; i += 3) {
-      let end = children[i + 1] as number, dSize
-      if (end < 0 || oldStart > end + oldOffset) continue
-      let start = (children[i] as number) + oldOffset
-      if (oldEnd >= start) {
-        children[i + 1] = oldStart <= start ? -2 : -1
-      } else if (newStart >= offset && (dSize = (newEnd - newStart) - (oldEnd - oldStart))) {
-        ;(children[i] as number) += dSize
-        ;(children[i + 1] as number) += dSize
+  for (let i = 0; i < mapping.maps.length; i++) {
+    let moved = 0
+    mapping.maps[i].forEach((oldStart: number, oldEnd: number, newStart: number, newEnd: number) => {
+      let dSize = (newEnd - newStart) - (oldEnd - oldStart)
+      for (let i = 0; i < children.length; i += 3) {
+        let end = children[i + 1] as number
+        if (end < 0 || oldStart > end + oldOffset - moved) continue
+        let start = (children[i] as number) + oldOffset - moved
+        if (oldEnd >= start) {
+          children[i + 1] = oldStart <= start ? -2 : -1
+        } else if (newStart >= offset && dSize) {
+          ;(children[i] as number) += dSize
+          ;(children[i + 1] as number) += dSize
+        }
       }
-    }
+      moved += dSize
+    })
   }
-  for (let i = 0; i < mapping.maps.length; i++) mapping.maps[i].forEach(shift)
 
   // Find the child nodes that still correspond to a single node,
   // recursively call mapInner on them and update their positions.
