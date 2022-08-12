@@ -13,7 +13,8 @@ import {ViewDesc} from "./viewdesc"
 // A collection of DOM events that occur within the editor, and callback functions
 // to invoke when the event fires.
 const handlers: {[event: string]: (view: EditorView, event: Event) => void} = {}
-let editHandlers: {[event: string]: (view: EditorView, event: Event) => void} = {}
+const editHandlers: {[event: string]: (view: EditorView, event: Event) => void} = {}
+const passiveHandlers: Record<string, boolean> = {touchstart: true, touchmove: true}
 
 export class InputState {
   shiftKey = false
@@ -25,6 +26,8 @@ export class InputState {
   lastSelectionTime = 0
   lastIOSEnter = 0
   lastIOSEnterFallbackTimeout = -1
+  lastFocus = 0
+  lastTouch = 0
   lastAndroidDelete = 0
   composing = false
   composingTimeout = -1
@@ -42,7 +45,7 @@ export function initInput(view: EditorView) {
       if (eventBelongsToView(view, event) && !runCustomHandler(view, event) &&
           (view.editable || !(event.type in editHandlers)))
         handler(view, event)
-    })
+    }, passiveHandlers[event] ? {passive: true} : undefined)
   }
   // On Safari, for reasons beyond my understanding, adding an input
   // event handler makes an issue where the composition vanishes when
@@ -403,8 +406,14 @@ class MouseDown {
   }
 }
 
-handlers.touchdown = view => {
+handlers.touchstart = view => {
+  view.input.lastTouch = Date.now()
   forceDOMFlush(view)
+  setSelectionOrigin(view, "pointer")
+}
+
+handlers.touchmove = view => {
+  view.input.lastTouch = Date.now()
   setSelectionOrigin(view, "pointer")
 }
 
@@ -694,6 +703,7 @@ editHandlers.drop = (view, _event) => {
 }
 
 handlers.focus = view => {
+  view.input.lastFocus = Date.now()
   if (!view.focused) {
     view.domObserver.stop()
     view.dom.classList.add("ProseMirror-focused")

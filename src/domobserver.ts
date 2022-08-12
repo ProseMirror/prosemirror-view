@@ -1,6 +1,7 @@
+import {Selection} from "prosemirror-state"
 import * as browser from "./browser"
-import {domIndex, isEquivalentPosition} from "./dom"
-import {hasFocusAndSelection, selectionToDOM} from "./selection"
+import {domIndex, isEquivalentPosition, selectionCollapsed, DOMSelection} from "./dom"
+import {hasFocusAndSelection, selectionToDOM, selectionFromDOM} from "./selection"
 import {EditorView} from "./index"
 
 const observeOptions = {
@@ -20,7 +21,7 @@ class SelectionState {
   focusNode: Node | null = null
   focusOffset: number = 0
 
-  set(sel: Selection) {
+  set(sel: DOMSelection) {
     this.anchorNode = sel.anchorNode; this.anchorOffset = sel.anchorOffset
     this.focusNode = sel.focusNode; this.focusOffset = sel.focusOffset
   }
@@ -29,7 +30,7 @@ class SelectionState {
     this.anchorNode = this.focusNode = null
   }
 
-  eq(sel: Selection) {
+  eq(sel: DOMSelection) {
     return sel.anchorNode == this.anchorNode && sel.anchorOffset == this.anchorOffset &&
       sel.focusNode == this.focusNode && sel.focusOffset == this.focusOffset
   }
@@ -138,7 +139,7 @@ export class DOMObserver {
     this.currentSelection.set(this.view.domSelection())
   }
 
-  ignoreSelectionChange(sel: Selection) {
+  ignoreSelectionChange(sel: DOMSelection) {
     if (sel.rangeCount == 0) return true
     let container = sel.getRangeAt(0).commonAncestorContainer
     let desc = this.view.docView.nearestDesc(container)
@@ -152,18 +153,19 @@ export class DOMObserver {
   }
 
   flush() {
-    if (!this.view.docView || this.flushingSoon > -1) return
+    let {view} = this
+    if (!view.docView || this.flushingSoon > -1) return
     let mutations = this.observer ? this.observer.takeRecords() : []
     if (this.queue.length) {
       mutations = this.queue.concat(mutations)
       this.queue.length = 0
     }
 
-    let sel = this.view.domSelection()
-    let newSel = !this.suppressingSelectionUpdates && !this.currentSelection.eq(sel) && hasFocusAndSelection(this.view) && !this.ignoreSelectionChange(sel)
+    let sel = view.domSelection()
+    let newSel = !this.suppressingSelectionUpdates && !this.currentSelection.eq(sel) && hasFocusAndSelection(view) && !this.ignoreSelectionChange(sel)
 
     let from = -1, to = -1, typeOver = false, added: Node[] = []
-    if (this.view.editable) {
+    if (view.editable) {
       for (let i = 0; i < mutations.length; i++) {
         let result = this.registerMutation(mutations[i], added)
         if (result) {
@@ -183,14 +185,25 @@ export class DOMObserver {
       }
     }
 
-    if (from > -1 || newSel) {
+    let readSel: Selection | null = null
+    // If it looks like the browser has reset the selection to the
+    // start of the document after focus, restore the selection from
+    // the state
+    if (from < 0 && newSel && view.input.lastFocus > Date.now() - 200 &&
+        view.input.lastTouch < Date.now() - 300 &&
+        selectionCollapsed(sel) && (readSel = selectionFromDOM(view)) &&
+        readSel.eq(Selection.near(view.state.doc.resolve(0), 1))) {
+      selectionToDOM(view)
+      this.currentSelection.set(sel)
+      view.scrollToSelection()
+    } else if (from > -1 || newSel) {
       if (from > -1) {
-        this.view.docView.markDirty(from, to)
-        checkCSS(this.view)
+        view.docView.markDirty(from, to)
+        checkCSS(view)
       }
       this.handleDOMChange(from, to, typeOver, added)
-      if (this.view.docView && this.view.docView.dirty) this.view.updateState(this.view.state)
-      else if (!this.currentSelection.eq(sel)) selectionToDOM(this.view)
+      if (view.docView && view.docView.dirty) view.updateState(view.state)
+      else if (!this.currentSelection.eq(sel)) selectionToDOM(view)
       this.currentSelection.set(sel)
     }
   }

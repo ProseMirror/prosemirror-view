@@ -214,17 +214,22 @@ export class EditorView {
     if (scroll == "reset") {
       this.dom.scrollTop = 0
     } else if (scroll == "to selection") {
-      let startDOM = this.domSelection().focusNode!
-      if (this.someProp("handleScrollToSelection", f => f(this))) {
-        // Handled
-      } else if (state.selection instanceof NodeSelection) {
-        let target = this.docView.domAfterPos(state.selection.from)
-        if (target.nodeType == 1) scrollRectIntoView(this, (target as HTMLElement).getBoundingClientRect(), startDOM)
-      } else {
-        scrollRectIntoView(this, this.coordsAtPos(state.selection.head, 1), startDOM)
-      }
+      this.scrollToSelection()
     } else if (oldScrollPos) {
       resetScrollPos(oldScrollPos)
+    }
+  }
+
+  /// @internal
+  scrollToSelection() {
+    let startDOM = this.domSelection().focusNode!
+    if (this.someProp("handleScrollToSelection", f => f(this))) {
+      // Handled
+    } else if (this.state.selection instanceof NodeSelection) {
+      let target = this.docView.domAfterPos(this.state.selection.from)
+      if (target.nodeType == 1) scrollRectIntoView(this, (target as HTMLElement).getBoundingClientRect(), startDOM)
+    } else {
+      scrollRectIntoView(this, this.coordsAtPos(this.state.selection.head, 1), startDOM)
     }
   }
 
