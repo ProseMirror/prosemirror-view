@@ -193,6 +193,7 @@ export class DOMObserver {
         view.input.lastTouch < Date.now() - 300 &&
         selectionCollapsed(sel) && (readSel = selectionFromDOM(view)) &&
         readSel.eq(Selection.near(view.state.doc.resolve(0), 1))) {
+      view.input.lastFocus = 0
       selectionToDOM(view)
       this.currentSelection.set(sel)
       view.scrollToSelection()
