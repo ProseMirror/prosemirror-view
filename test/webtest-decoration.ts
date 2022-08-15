@@ -1,7 +1,7 @@
 import ist from "ist"
-import {schema, doc, p, h1, li, ul, blockquote} from "prosemirror-test-builder"
-import {Transform, ReplaceAroundStep, liftTarget} from "prosemirror-transform"
-import {Slice, NodeRange, Node} from "prosemirror-model"
+import {schema, doc, p, h1, li, ul, blockquote, builders} from "prosemirror-test-builder"
+import {Transform, ReplaceStep, ReplaceAroundStep, StepMap, liftTarget} from "prosemirror-transform"
+import {Schema, Slice, NodeRange, Node, Fragment} from "prosemirror-model"
 import {Decoration, DecorationSet} from "prosemirror-view"
 
 let widget = document.createElement("button")
@@ -27,6 +27,11 @@ function str(set: DecorationSet) {
   for (let i = 0; i < set.children.length; i += 3)
     s += (s.length > 1 ? ", " : "") + set.children[i] + ": " + str(set.children[i + 2] as DecorationSet)
   return s + "]"
+}
+
+function findStr(set: DecorationSet) {
+  if (!set) return "[]"
+  return "[" + set.find().map(d => `(${d.from},${d.to})`).join(", ") + "]"
 }
 
 function arrayStr(arr: readonly any[]) {
@@ -249,6 +254,73 @@ describe("DecorationSet", () => {
       ist(mapped.length, 1)
       ist(mapped[0].from, 0)
       ist(mapped[0].to, 2)
+    })
+
+    it("maps inline decorations through ranges with > 3 elements", () => {
+      // We start with a doc with one inline "word" node per word, some of which
+      // contain inline decorations
+      const mySchema = new Schema({
+        nodes: schema.spec.nodes.append({
+          word: {inline: true, content: "text*", toDOM() { return ["w", 0] }}
+        }),
+        marks: schema.spec.marks
+      })
+      const b = builders(mySchema);
+      const di = b.doc(b.blockquote(b.paragraph(
+        b.word("<start>Aaa "),
+        b.word("aaa "),
+        b.word("aaaa "),
+        b.word("aaaaaaaa "),
+        b.word("aa "),
+        b.word("<s1>xxx<e1>a "),
+        b.word("aaaaaaa "),
+        b.word("a "),
+        b.word("aaaaaaa "),
+        b.word("aaaaa "),
+        b.word("<s2>xxx<e2>a "),
+        b.word("aaaa<end>"))))
+
+      // We're going to transform it to this doc, i.e. replace word nodes with just text content
+      const df = b.doc(b.blockquote(b.paragraph(
+        "Aaa aaa aaaa aaaaaaaa aa <s1>xxx<e1>a aaaaaaa a aaaaaaa aaaaa <s2>xxx<e2>a aaaa")))
+
+      // We want inline decorations to be preserved, so we'll use a custom step that allows this
+      class MyStep extends ReplaceStep {
+        ranges: readonly number[]
+        constructor(from: number, to: number, slice: Slice, structure: boolean, ranges: readonly number[]) {
+          super(from, to, slice, structure)
+          this.ranges = ranges
+        }
+        getMap() { return new StepMap(this.ranges) }
+        merge(other: MyStep) { return null }
+      }
+      const posBeforeFirstWord = di.tag.start - 1
+      const ranges = [posBeforeFirstWord, 1, 0] // Remove first word's opening token
+      di.resolve(di.tag.start).node(2).forEach((node, offset, index) => {
+        // Remove closing & opening tokens of middle words
+        if (index > 0)
+          ranges.push(posBeforeFirstWord + offset - 1, 1, 0, posBeforeFirstWord + offset, 1, 0)
+      })
+      ranges.push(di.tag.end, 1, 0) // Remove closing token of last word
+      const slice = new Slice(Fragment.from(b.paragraph(di.textContent)), 0, 0)
+      const tr = new Transform(di).step(new MyStep(di.tag.start - 2, di.tag.end + 2, slice, false, ranges))
+
+      const startSet = build(di, {from: di.tag.s1, to: di.tag.e1}, {from: di.tag.s2, to: di.tag.e2})
+      const expectedSet = build(df, {from: df.tag.s1, to: df.tag.e1}, {from: df.tag.s2, to: df.tag.e2})
+
+      // As a sanity check, verify that the transform produces the expected doc,
+      // and that individually-mapped decorations give us the expected result
+      ist(tr.doc.toString(), df.toString())
+      const handMappedSet = DecorationSet.create(df, startSet.find().map(deco => make({
+        from: tr.mapping.map(deco.from),
+        to: tr.mapping.map(deco.to)
+      })))
+      ist(findStr(handMappedSet), findStr(expectedSet))
+
+      // startSet.map should give the same results as the hand mapping, but it doesn't,
+      // i.e. this fails:
+      const actualSet = startSet.map(tr.mapping, tr.doc)
+      ist(findStr(actualSet), findStr(expectedSet))
     })
   })
 

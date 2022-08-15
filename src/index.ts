@@ -42,7 +42,7 @@ export class EditorView {
   /// @internal
   cursorWrapper: {dom: DOMNode, deco: Decoration} | null = null
   /// @internal
-  nodeViews: {[node: string]: NodeViewConstructor}
+  nodeViews: NodeViewSet
   /// @internal
   lastSelectedViewDesc: ViewDesc | undefined = undefined
   /// @internal
@@ -218,17 +218,22 @@ export class EditorView {
     if (scroll == "reset") {
       this.dom.scrollTop = 0
     } else if (scroll == "to selection") {
-      let startDOM = this.domSelection().focusNode!
-      if (this.someProp("handleScrollToSelection", f => f(this))) {
-        // Handled
-      } else if (state.selection instanceof NodeSelection) {
-        let target = this.docView.domAfterPos(state.selection.from)
-        if (target.nodeType == 1) scrollRectIntoView(this, (target as HTMLElement).getBoundingClientRect(), startDOM)
-      } else {
-        scrollRectIntoView(this, this.coordsAtPos(state.selection.head, 1), startDOM)
-      }
+      this.scrollToSelection()
     } else if (oldScrollPos) {
       resetScrollPos(oldScrollPos)
+    }
+  }
+
+  /// @internal
+  scrollToSelection() {
+    let startDOM = this.domSelection().focusNode!
+    if (this.someProp("handleScrollToSelection", f => f(this))) {
+      // Handled
+    } else if (this.state.selection instanceof NodeSelection) {
+      let target = this.docView.domAfterPos(this.state.selection.from)
+      if (target.nodeType == 1) scrollRectIntoView(this, (target as HTMLElement).getBoundingClientRect(), startDOM)
+    } else {
+      scrollRectIntoView(this, this.coordsAtPos(this.state.selection.head, 1), startDOM)
     }
   }
 
@@ -476,15 +481,17 @@ function selectionContextChanged(sel1: Selection, sel2: Selection) {
 }
 
 function buildNodeViews(view: EditorView) {
-  let result: {[node: string]: NodeViewConstructor} = Object.create(null)
-  view.someProp("nodeViews", obj => {
+  let result: NodeViewSet = Object.create(null)
+  function add(obj: NodeViewSet) {
     for (let prop in obj) if (!Object.prototype.hasOwnProperty.call(result, prop))
       result[prop] = obj[prop]
-  })
+  }
+  view.someProp("nodeViews", add)
+  view.someProp("markViews", add)
   return result
 }
 
-function changedNodeViews(a: {[node: string]: NodeViewConstructor}, b: {[node: string]: NodeViewConstructor}) {
+function changedNodeViews(a: NodeViewSet, b: NodeViewSet) {
   let nA = 0, nB = 0
   for (let prop in a) {
     if (a[prop] != b[prop]) return true
@@ -499,14 +506,22 @@ function checkStateComponent(plugin: Plugin) {
     throw new RangeError("Plugins passed directly to the view must not have a state component")
 }
 
-type NodeViewConstructor = (node: Node, view: EditorView, getPos: () => number | undefined,
-                            decorations: readonly Decoration[], innerDecorations: DecorationSource) => NodeView
+/// The type of function [provided](#view.ViewProps.nodeViews) to
+/// create [node views](#view.NodeView).
+export type NodeViewConstructor = (node: Node, view: EditorView, getPos: () => number,
+                                   decorations: readonly Decoration[], innerDecorations: DecorationSource) => NodeView
+
+/// The function types [used](#view.ViewProps.markViews) to create
+/// mark views.
+export type MarkViewConstructor = (mark: Mark, view: EditorView, inline: boolean) => {dom: HTMLElement, contentDOM?: HTMLElement}
+
+type NodeViewSet = {[name: string]: NodeViewConstructor | MarkViewConstructor}
 
 /// Helper type that maps event names to event object types, but
 /// includes events that TypeScript's HTMLElementEventMap doesn't know
 /// about.
 export interface DOMEventMap extends HTMLElementEventMap {
-  [event: string]: Event
+  [event: string]: any
 }
 
 /// Props are configuration values that can be passed to an editor view
@@ -522,7 +537,11 @@ export interface DOMEventMap extends HTMLElementEventMap {
 /// searching through the plugins (in order of appearance) until one of
 /// them returns true. For some props, the first plugin that yields a
 /// value gets precedence.
-export interface EditorProps {
+///
+/// The optional type parameter refers to the type of `this` in prop
+/// functions, and is used to pass in the plugin type when defining a
+/// [plugin](#state.Plugin).
+export interface EditorProps<P = any> {
   /// Can be an object mapping DOM event type names to functions that
   /// handle them. Such functions will be called before any handling
   /// ProseMirror does of events fired on the editable DOM element.
@@ -531,59 +550,59 @@ export interface EditorProps {
   /// `preventDefault` yourself (or not, if you want to allow the
   /// default behavior).
   handleDOMEvents?: {
-    [event in string]: (view: EditorView, event: DOMEventMap[event]) => boolean | void
+    [event in keyof DOMEventMap]?: (this: P, view: EditorView, event: DOMEventMap[event]) => boolean | void
   }
 
   /// Called when the editor receives a `keydown` event.
-  handleKeyDown?: (view: EditorView, event: KeyboardEvent) => boolean | void
+  handleKeyDown?: (this: P, view: EditorView, event: KeyboardEvent) => boolean | void
 
   /// Handler for `keypress` events.
-  handleKeyPress?: (view: EditorView, event: KeyboardEvent) => boolean | void
+  handleKeyPress?: (this: P, view: EditorView, event: KeyboardEvent) => boolean | void
 
   /// Whenever the user directly input text, this handler is called
   /// before the input is applied. If it returns `true`, the default
   /// behavior of actually inserting the text is suppressed.
-  handleTextInput?: (view: EditorView, from: number, to: number, text: string) => boolean | void
+  handleTextInput?: (this: P, view: EditorView, from: number, to: number, text: string) => boolean | void
 
   /// Called for each node around a click, from the inside out. The
   /// `direct` flag will be true for the inner node.
-  handleClickOn?: (view: EditorView, pos: number, node: Node, nodePos: number, event: MouseEvent, direct: boolean) => boolean | void
+  handleClickOn?: (this: P, view: EditorView, pos: number, node: Node, nodePos: number, event: MouseEvent, direct: boolean) => boolean | void
 
   /// Called when the editor is clicked, after `handleClickOn` handlers
   /// have been called.
-  handleClick?: (view: EditorView, pos: number, event: MouseEvent) => boolean | void
+  handleClick?: (this: P, view: EditorView, pos: number, event: MouseEvent) => boolean | void
 
   /// Called for each node around a double click.
-  handleDoubleClickOn?: (view: EditorView, pos: number, node: Node, nodePos: number, event: MouseEvent, direct: boolean) => boolean | void
+  handleDoubleClickOn?: (this: P, view: EditorView, pos: number, node: Node, nodePos: number, event: MouseEvent, direct: boolean) => boolean | void
 
   /// Called when the editor is double-clicked, after `handleDoubleClickOn`.
-  handleDoubleClick?: (view: EditorView, pos: number, event: MouseEvent) => boolean | void
+  handleDoubleClick?: (this: P, view: EditorView, pos: number, event: MouseEvent) => boolean | void
 
   /// Called for each node around a triple click.
-  handleTripleClickOn?: (view: EditorView, pos: number, node: Node, nodePos: number, event: MouseEvent, direct: boolean) => boolean | void
+  handleTripleClickOn?: (this: P, view: EditorView, pos: number, node: Node, nodePos: number, event: MouseEvent, direct: boolean) => boolean | void
 
   /// Called when the editor is triple-clicked, after `handleTripleClickOn`.
-  handleTripleClick?: (view: EditorView, pos: number, event: MouseEvent) => boolean | void
+  handleTripleClick?: (this: P, view: EditorView, pos: number, event: MouseEvent) => boolean | void
 
   /// Can be used to override the behavior of pasting. `slice` is the
   /// pasted content parsed by the editor, but you can directly access
   /// the event to get at the raw content.
-  handlePaste?: (view: EditorView, event: ClipboardEvent, slice: Slice) => boolean | void
+  handlePaste?: (this: P, view: EditorView, event: ClipboardEvent, slice: Slice) => boolean | void
 
   /// Called when something is dropped on the editor. `moved` will be
   /// true if this drop moves from the current selection (which should
   /// thus be deleted).
-  handleDrop?: (view: EditorView, event: MouseEvent, slice: Slice, moved: boolean) => boolean | void
+  handleDrop?: (this: P, view: EditorView, event: DragEvent, slice: Slice, moved: boolean) => boolean | void
 
   /// Called when the view, after updating its state, tries to scroll
   /// the selection into view. A handler function may return false to
   /// indicate that it did not handle the scrolling and further
   /// handlers or the default behavior should be tried.
-  handleScrollToSelection?: (view: EditorView) => boolean
+  handleScrollToSelection?: (this: P, view: EditorView) => boolean
 
   /// Can be used to override the way a selection is created when
   /// reading a DOM selection between the given anchor and head.
-  createSelectionBetween?: (view: EditorView, anchor: ResolvedPos, head: ResolvedPos) => Selection | null
+  createSelectionBetween?: (this: P, view: EditorView, anchor: ResolvedPos, head: ResolvedPos) => Selection | null
 
   /// The [parser](#model.DOMParser) to use when reading editor changes
   /// from the DOM. Defaults to calling
@@ -593,7 +612,7 @@ export interface EditorProps {
 
   /// Can be used to transform pasted HTML text, _before_ it is parsed,
   /// for example to clean it up.
-  transformPastedHTML?: (html: string) => string
+  transformPastedHTML?: (this: P, html: string) => string
 
   /// The [parser](#model.DOMParser) to use when reading content from
   /// the clipboard. When not given, the value of the
@@ -602,7 +621,7 @@ export interface EditorProps {
 
   /// Transform pasted plain text. The `plain` flag will be true when
   /// the text is pasted as plain text.
-  transformPastedText?: (text: string, plain: boolean) => string
+  transformPastedText?: (this: P, text: string, plain: boolean) => string
 
   /// A function to parse text from the clipboard into a document
   /// slice. Called after
@@ -611,20 +630,18 @@ export interface EditorProps {
   /// in `<p>` tags, and call
   /// [`clipboardParser`](#view.EditorProps.clipboardParser) on it.
   /// The `plain` flag will be true when the text is pasted as plain text.
-  clipboardTextParser?: (text: string, $context: ResolvedPos, plain: boolean) => Slice
+  clipboardTextParser?: (this: P, text: string, $context: ResolvedPos, plain: boolean) => Slice
 
-  /// Can be used to transform pasted content before it is applied to
-  /// the document.
-  transformPasted?: (slice: Slice) => Slice
+  /// Can be used to transform pasted or dragged-and-dropped content
+  /// before it is applied to the document.
+  transformPasted?: (this: P, slice: Slice) => Slice
 
-  /// Allows you to pass custom rendering and behavior logic for nodes
-  /// and marks. Should map node and mark names to constructor
-  /// functions that produce a [`NodeView`](#view.NodeView) object
-  /// implementing the node's display behavior. For nodes, the third
-  /// argument `getPos` is a function that can be called to get the
-  /// node's current position, which can be useful when creating
-  /// transactions to update it. For marks, the third argument is a
-  /// boolean that indicates whether the mark's content is inline.
+  /// Allows you to pass custom rendering and behavior logic for
+  /// nodes. Should map node names to constructor functions that
+  /// produce a [`NodeView`](#view.NodeView) object implementing the
+  /// node's display behavior. The third argument `getPos` is a
+  /// function that can be called to get the node's current position,
+  /// which can be useful when creating transactions to update it.
   ///
   /// `decorations` is an array of node or inline decorations that are
   /// active around the node. They are automatically drawn in the
@@ -638,7 +655,18 @@ export interface EditorProps {
   /// on the content. But if you, for example, want to create a nested
   /// editor with the content, it may make sense to provide it with the
   /// inner decorations.
+  ///
+  /// (For backwards compatibility reasons, [mark
+  /// views](#view.ViewProps.markViews) can also be included in this
+  /// object.)
   nodeViews?: {[node: string]: NodeViewConstructor}
+
+  /// Pass custom mark rendering functions. Note that these cannot
+  /// provide the kind of dynamic behavior that [node
+  /// views](#view.NodeView) can—they just provide custom rendering
+  /// logic. The third argument indicates whether the mark's content
+  /// is inline.
+  markViews?: {[mark: string]: MarkViewConstructor}
 
   /// The DOM serializer to use when putting content onto the
   /// clipboard. If not given, the result of
@@ -653,15 +681,15 @@ export interface EditorProps {
   /// selection when copying text to the clipboard. By default, the
   /// editor will use [`textBetween`](#model.Node.textBetween) on the
   /// selected range.
-  clipboardTextSerializer?: (content: Slice) => string
+  clipboardTextSerializer?: (this: P, content: Slice) => string
 
   /// A set of [document decorations](#view.Decoration) to show in the
   /// view.
-  decorations?: (state: EditorState) => DecorationSource | null
+  decorations?: (this: P, state: EditorState) => DecorationSource | null | undefined
 
   /// When this returns false, the content of the view is not directly
   /// editable.
-  editable?: (state: EditorState) => boolean
+  editable?: (this: P, state: EditorState) => boolean
 
   /// Control the DOM attributes of the editable element. May be either
   /// an object or a function going from an editor state to an object.

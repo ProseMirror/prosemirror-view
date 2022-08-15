@@ -1,3 +1,57 @@
+## 1.27.0 (2022-07-20)
+
+### Bug fixes
+
+Fix a bug that in some situations caused composition to be disrupted on Chrome due to a workaround for another browser issue activating inappropriately.
+
+### New features
+
+`EditorProps` now takes an optional type parameter that indicates the type of `this` in prop functions.
+
+## 1.26.5 (2022-07-07)
+
+### Bug fixes
+
+Fix an issue where a composition happening at the same time as widget insertion/removal could corrupt the rendered DOM.
+
+Fix a problem where `coordsAtPos` would look inside the DOM for atomic nodes, and sometimes return very odd positions that way.
+
+## 1.26.4 (2022-07-04)
+
+### Bug fixes
+
+Avoid spurious type errors on `handleDOMEvents` by widening the type for unknown event objects.
+
+## 1.26.3 (2022-06-29)
+
+### Bug fixes
+
+Work around a Safari bug where mutation records get delivered even though the observer wasn't observing when the mutations happened.
+
+## 1.26.2 (2022-06-22)
+
+### Bug fixes
+
+Mark prosemirror.css as having side effects in package.json.
+
+## 1.26.1 (2022-06-13)
+
+### Bug fixes
+
+Fix incorrect types for `handleDrop` and `decorations`. Document open properties on widget specs
+
+## 1.26.0 (2022-06-07)
+
+### New features
+
+Export the `NodeViewConstructor` and `MarkViewConstructor` types. Include Node/MarkViewConstructor in doc template
+
+## 1.25.0 (2022-06-01)
+
+### New features
+
+Mark views can now be specified with a separate editor prop, `markViews`, to make it easier to get the types right.
+
 ## 1.24.1 (2022-05-30)
 
 ### Bug fixes
