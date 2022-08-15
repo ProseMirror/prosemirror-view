@@ -257,11 +257,16 @@ export class DOMObserver {
   }
 }
 
-let cssChecked = false
+let cssChecked: WeakMap<EditorView, null> = new WeakMap()
+let cssCheckWarned: boolean = false
 
 function checkCSS(view: EditorView) {
-  if (cssChecked) return
-  cssChecked = true
-  if (getComputedStyle(view.dom).whiteSpace == "normal")
+  if (cssChecked.has(view)) return
+  cssChecked.set(view, null)
+  if (['normal', 'nowrap', 'pre-line'].indexOf(getComputedStyle(view.dom).whiteSpace) !== -1) {
+    view.requiresGeckoHackNode = browser.gecko
+    if (cssCheckWarned) return
     console["warn"]("ProseMirror expects the CSS white-space property to be set, preferably to 'pre-wrap'. It is recommended to load style/prosemirror.css from the prosemirror-view package.")
+    cssCheckWarned = true
+  }
 }

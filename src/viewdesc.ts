@@ -709,7 +709,7 @@ export class NodeViewDesc extends ViewDesc {
     let composition = view.composing ? this.localCompositionInfo(view, pos) : null
     let localComposition = composition && composition.pos > -1 ? composition : null
     let compositionInChild = composition && composition.pos < 0
-    let updater = new ViewTreeUpdater(this, localComposition && localComposition.node)
+    let updater = new ViewTreeUpdater(this, localComposition && localComposition.node, view)
     iterDeco(this.node, this.innerDeco, (widget, i, insideNode) => {
       if (widget.spec.marks)
         updater.syncToMarks(widget.spec.marks, inline, view)
@@ -1109,7 +1109,7 @@ class ViewTreeUpdater {
   preMatch: {index: number, matched: Map<ViewDesc, number>, matches: readonly ViewDesc[]}
   top: ViewDesc
 
-  constructor(top: NodeViewDesc, readonly lock: DOMNode | null) {
+  constructor(top: NodeViewDesc, readonly lock: DOMNode | null, private readonly view: EditorView) {
     this.top = top
     this.preMatch = preMatch(top.node.content, top)
   }
@@ -1273,7 +1273,8 @@ class ViewTreeUpdater {
 
     if (!lastChild || // Empty textblock
         !(lastChild instanceof TextViewDesc) ||
-        /\n$/.test(lastChild.node.text!)) {
+        /\n$/.test(lastChild.node.text!) ||
+        (this.view.requiresGeckoHackNode && /\s$/.test(lastChild.node.text!))) {
       // Avoid bugs in Safari's cursor drawing (#1165) and Chrome's mouse selection (#1152)
       if ((browser.safari || browser.chrome) && lastChild && (lastChild.dom as HTMLElement).contentEditable == "false")
         this.addHackNode("IMG", parent)
