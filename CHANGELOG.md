@@ -1,3 +1,13 @@
+## 1.27.1 (2022-08-16)
+
+### Bug fixes
+
+Fix a bug in `DecorationSet.map` that could cause invalid mapping when step maps contain multiple replaced ranges.
+
+Make sure that when the editor receives focus via tab or calling `.focus()` on its DOM element, the existing selection is restored.
+
+Avoid collapsing of whitespace in Firefox when the editor doesn't have `white-space` set to `pre-wrap`.
+
 ## 1.27.0 (2022-07-20)
 
 ### Bug fixes
