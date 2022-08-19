@@ -1,3 +1,11 @@
+## 1.27.2 (2022-08-19)
+
+### Bug fixes
+
+Fix an issue where `DecorationSet.map`, given a mapping with multiple steps, could in some cases corrupt the decorations.
+
+Stop calling `handleClick` when the mouse moved but failed to fire mousemove events (for example when dragging a scrollbar).
+
 ## 1.27.1 (2022-08-16)
 
 ### Bug fixes
