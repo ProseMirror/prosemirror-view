@@ -322,6 +322,31 @@ describe("DecorationSet", () => {
       const actualSet = startSet.map(tr.mapping, tr.doc)
       ist(findStr(actualSet), findStr(expectedSet))
     })
+
+    it("correctly offsets a deep structure", () => {
+      // a structure like a 5 rows 2 cols table
+      let row = blockquote(blockquote(p("1111")), blockquote(p("2222")))
+      let d = doc(blockquote(row, row, row, row, row))
+      let decorations: DecoSpec[] = [], i = 0
+      let tr = new Transform(d)
+      d.descendants((node, pos) => {
+        if (node.type.name === 'paragraph') {
+          if (i++ % 2 === 0)
+            decorations.push({pos: pos + 1})
+          else
+            tr.replaceWith(tr.mapping.map(pos), tr.mapping.map(pos + node.nodeSize, -1), p())
+        }
+      })
+      let oldSet = build(d, ...decorations), set = oldSet.map(tr.mapping, tr.doc)
+
+      function setStr(doc: Node, set: DecorationSet) {
+        return set.find().map(({from}) => {
+          let node = doc.nodeAt(from)
+          return !node ? "X" : node.text || ""
+        }).filter(x => x).join("-")
+      }
+      ist(setStr(tr.doc, set), setStr(d, oldSet))
+    })
   })
 
   describe("add", () => {
