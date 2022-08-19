@@ -97,15 +97,6 @@ export function readDOMChange(view: EditorView, from: number, to: number, typeOv
   let sel = view.state.selection
   let parse = parseBetween(view, from, to)
 
-  // Chrome sometimes leaves the cursor before the inserted text when
-  // composing after a cursor wrapper. This moves it forward.
-  if (browser.chrome && view.cursorWrapper && parse.sel && parse.sel.anchor == view.cursorWrapper.deco.from &&
-      parse.sel.head == parse.sel.anchor) {
-    let text = (view.cursorWrapper.deco.type as any).toDOM.nextSibling as DOMNode
-    let size = text && text.nodeValue ? text.nodeValue.length : 1
-    parse.sel = {anchor: parse.sel.anchor + size, head: parse.sel.anchor + size}
-  }
-
   let doc = view.state.doc, compare = doc.slice(parse.from, parse.to)
   let preferredPos, preferredSide: "start" | "end"
   // Prefer anchoring to end when Backspace is pressed
@@ -138,6 +129,14 @@ export function readDOMChange(view: EditorView, from: number, to: number, typeOv
       return
     }
   }
+  // Chrome sometimes leaves the cursor before the inserted text when
+  // composing after a cursor wrapper. This moves it forward.
+  if (browser.chrome && view.cursorWrapper && parse.sel && parse.sel.anchor == view.cursorWrapper.deco.from &&
+      parse.sel.head == parse.sel.anchor) {
+    let size = change.endB - change.start
+    parse.sel = {anchor: parse.sel.anchor + size, head: parse.sel.anchor + size}
+  }
+
   view.input.domChangeCount++
   // Handle the case where overwriting a selection by typing matches
   // the start or end of the selected content, creating a change
