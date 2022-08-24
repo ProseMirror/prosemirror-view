@@ -181,7 +181,7 @@ export function selectionBetween(view: EditorView, $anchor: ResolvedPos, $head: 
 }
 
 export function hasFocusAndSelection(view: EditorView) {
-  if (view.editable && view.root.activeElement != view.dom) return false
+  if (view.editable && !view.hasFocus()) return false
   return hasSelection(view)
 }
 
