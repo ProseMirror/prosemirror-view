@@ -292,6 +292,21 @@ export class EditorView {
 
   /// Query whether the view has focus.
   hasFocus() {
+    // Work around IE not handling focus correctly if resize handles are shown.
+    // If the cursor is inside an element with resize handles, activeElement
+    // will be that element instead of this.dom.
+    if (browser.ie) {
+      // If activeElement is within this.dom, and there are no other elements
+      // setting `contenteditable` to false in between, treat it as focused.
+      let node = this.root.activeElement
+      if (node == this.dom) return true
+      if (!node || !this.dom.contains(node)) return false
+      while (node && this.dom != node && this.dom.contains(node)) {
+        if ((node as HTMLElement).contentEditable == 'false') return false
+        node = node.parentElement
+      }
+      return true
+    }
     return this.root.activeElement == this.dom
   }
 
