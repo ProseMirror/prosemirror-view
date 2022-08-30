@@ -417,7 +417,7 @@ export class ViewDesc {
     // browsers support it yet.
     let domSelExtended = false
     if ((domSel.extend || anchor == head) && !brKludge) {
-      domSel.collapse(anchorDOM.node, anchorDOM.offset)
+      if (typeof domSel.collapse == "function") domSel.collapse(anchorDOM.node, anchorDOM.offset)
       try {
         if (anchor != head) domSel.extend(headDOM.node, headDOM.offset)
         domSelExtended = true
