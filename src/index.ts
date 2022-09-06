@@ -1,23 +1,22 @@
-import {NodeSelection, EditorState, Plugin, PluginView, Transaction, Selection} from "prosemirror-state"
-import {Slice, ResolvedPos, DOMParser, DOMSerializer, Node, Mark} from "prosemirror-model"
+import { DOMParser, DOMSerializer, Mark, Node, ResolvedPos, Slice } from "prosemirror-model"
+import { EditorState, NodeSelection, Plugin, PluginView, Selection, Transaction } from "prosemirror-state"
 
-import {scrollRectIntoView, posAtCoords, coordsAtPos, endOfTextblock, storeScrollPos,
-        resetScrollPos, focusPreventScroll} from "./domcoords"
-import {docViewDesc, ViewDesc, NodeView, NodeViewDesc} from "./viewdesc"
-import {initInput, destroyInput, dispatchEvent, ensureListeners, clearComposition, InputState} from "./input"
-import {selectionToDOM, anchorInRightPlace, syncNodeSelection} from "./selection"
-import {Decoration, viewDecorations, DecorationSource} from "./decoration"
-import {DOMObserver} from "./domobserver"
-import {readDOMChange} from "./domchange"
-import {DOMSelection, DOMNode} from "./dom"
 import * as browser from "./browser"
+import { Decoration, DecorationSource, viewDecorations } from "./decoration"
+import { DOMNode, DOMSelection } from "./dom"
+import { readDOMChange } from "./domchange"
+import { coordsAtPos, endOfTextblock, focusPreventScroll, posAtCoords, resetScrollPos, scrollRectIntoView, storeScrollPos } from "./domcoords"
+import { DOMObserver } from "./domobserver"
+import { clearComposition, destroyInput, dispatchEvent, ensureListeners, initInput, InputState } from "./input"
+import { anchorInRightPlace, selectionToDOM, syncNodeSelection } from "./selection"
+import { docViewDesc, NodeView, NodeViewDesc, ViewDesc } from "./viewdesc"
 
-export {Decoration, DecorationSet, DecorationAttrs, DecorationSource} from "./decoration"
-export {NodeView} from "./viewdesc"
+export { Decoration, DecorationAttrs, DecorationSet, DecorationSource } from "./decoration"
+export { NodeView } from "./viewdesc"
 
 // Exported for testing
-import {serializeForClipboard, parseFromClipboard} from "./clipboard"
-import {endComposition} from "./input"
+import { parseFromClipboard, serializeForClipboard } from "./clipboard"
+import { endComposition } from "./input"
 /// @internal
 export const __serializeForClipboard = serializeForClipboard
 /// @internal
@@ -650,6 +649,10 @@ export interface EditorProps<P = any> {
   /// Can be used to transform pasted or dragged-and-dropped content
   /// before it is applied to the document.
   transformPasted?: (this: P, slice: Slice) => Slice
+
+  /// Can be used to transform copied or cut content
+  /// before it is retrieved to the document.
+  transformCopied?: (this: P, slice: Slice) => Slice
 
   /// Allows you to pass custom rendering and behavior logic for
   /// nodes. Should map node names to constructor functions that

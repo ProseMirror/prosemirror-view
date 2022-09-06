@@ -1,8 +1,10 @@
-import {Slice, Fragment, DOMParser, DOMSerializer, ResolvedPos, NodeType, Node} from "prosemirror-model"
+import { DOMParser, DOMSerializer, Fragment, Node, NodeType, ResolvedPos, Slice } from "prosemirror-model"
 import * as browser from "./browser"
-import {EditorView} from "./index"
+import { EditorView } from "./index"
 
 export function serializeForClipboard(view: EditorView, slice: Slice) {
+  view.someProp("transformCopied", f => { slice = f(slice!) })
+
   let context = [], {content, openStart, openEnd} = slice
   while (openStart > 1 && openEnd > 1 && content.childCount == 1 && content.firstChild!.childCount == 1) {
     openStart--
