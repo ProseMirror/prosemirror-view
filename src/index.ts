@@ -651,6 +651,10 @@ export interface EditorProps<P = any> {
   /// before it is applied to the document.
   transformPasted?: (this: P, slice: Slice) => Slice
 
+  /// Can be used to transform copied or cut content
+  /// before it is serialized to the document.
+  transformCopied?: (this: P, slice: Slice) => Slice
+
   /// Allows you to pass custom rendering and behavior logic for
   /// nodes. Should map node names to constructor functions that
   /// produce a [`NodeView`](#view.NodeView) object implementing the
