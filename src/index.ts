@@ -652,7 +652,7 @@ export interface EditorProps<P = any> {
   transformPasted?: (this: P, slice: Slice) => Slice
 
   /// Can be used to transform copied or cut content
-  /// before it is retrieved to the document.
+  /// before it is serialized to the document.
   transformCopied?: (this: P, slice: Slice) => Slice
 
   /// Allows you to pass custom rendering and behavior logic for
