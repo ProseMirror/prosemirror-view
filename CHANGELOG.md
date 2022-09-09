@@ -1,3 +1,13 @@
+## 1.28.0 (2022-09-09)
+
+### Bug fixes
+
+Fix an issue where the editor wouldn't realize it was focused on IE when IE's resize controls are on an element inside the content. Adjust Chrome click-override behavior to only happen for invisible selections
+
+### New features
+
+The new `transformCopied` prop can be used to transform a copied/cut slice before it is serialized to the clipboard. Adjust doc comment
+
 ## 1.27.2 (2022-08-19)
 
 ### Bug fixes
