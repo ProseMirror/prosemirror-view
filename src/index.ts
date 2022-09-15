@@ -129,7 +129,7 @@ export class EditorView {
       props.plugins.forEach(checkStateComponent)
       this.directPlugins = props.plugins
     }
-    this.updateStateInner(props.state, true)
+    this.updateStateInner(props.state, true, false)
   }
 
   /// Update the view by updating existing props object with the object
@@ -146,10 +146,11 @@ export class EditorView {
   /// Update the editor's `state` prop, without touching any of the
   /// other props.
   updateState(state: EditorState) {
-    this.updateStateInner(state, this.state.plugins != state.plugins)
+    let reconfigured = this.state.plugins != state.plugins
+    this.updateStateInner(state, reconfigured, reconfigured && !this.state.doc.eq(state.doc))
   }
 
-  private updateStateInner(state: EditorState, reconfigured: boolean) {
+  private updateStateInner(state: EditorState, reconfigured: boolean, reset: boolean) {
     let prev = this.state, redraw = false, updateSel = false
     // When stored marks are added, stop composition, so that they can
     // be displayed.
@@ -171,7 +172,7 @@ export class EditorView {
     updateCursorWrapper(this)
     let innerDeco = viewDecorations(this), outerDeco = computeDocDeco(this)
 
-    let scroll = reconfigured ? "reset"
+    let scroll = reset ? "reset"
         : (state as any).scrollToSelection > (prev as any).scrollToSelection ? "to selection" : "preserve"
     let updateDoc = redraw || !this.docView.matchesNode(state.doc, outerDeco, innerDeco)
     if (updateDoc || !state.selection.eq(prev.selection)) updateSel = true
