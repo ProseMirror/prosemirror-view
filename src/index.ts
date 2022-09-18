@@ -124,12 +124,18 @@ export class EditorView {
   /// the DOM.
   update(props: DirectEditorProps) {
     if (props.handleDOMEvents != this._props.handleDOMEvents) ensureListeners(this)
+    let reconfigured = props.state.plugins != this.state.plugins
+    for (let prop in this._props)
+      if (prop != "state" && (this._props as any)[prop] != (props as any)[prop]) reconfigured = true
+    for (let prop in props)
+      if (prop != "state" && (this._props as any)[prop] != (props as any)[prop]) reconfigured = true
+    console.log(props, reconfigured)
     this._props = props
     if (props.plugins) {
       props.plugins.forEach(checkStateComponent)
       this.directPlugins = props.plugins
     }
-    this.updateStateInner(props.state, true, false)
+    this.updateStateInner(props.state, reconfigured)
   }
 
   /// Update the view by updating existing props object with the object
@@ -147,10 +153,10 @@ export class EditorView {
   /// other props.
   updateState(state: EditorState) {
     let reconfigured = this.state.plugins != state.plugins
-    this.updateStateInner(state, reconfigured, reconfigured && !this.state.doc.eq(state.doc))
+    this.updateStateInner(state, reconfigured)
   }
 
-  private updateStateInner(state: EditorState, reconfigured: boolean, reset: boolean) {
+  private updateStateInner(state: EditorState, reconfigured: boolean) {
     let prev = this.state, redraw = false, updateSel = false
     // When stored marks are added, stop composition, so that they can
     // be displayed.
@@ -172,7 +178,7 @@ export class EditorView {
     updateCursorWrapper(this)
     let innerDeco = viewDecorations(this), outerDeco = computeDocDeco(this)
 
-    let scroll = reset ? "reset"
+    let scroll = reconfigured && !prev.doc.eq(state.doc) ? "reset"
         : (state as any).scrollToSelection > (prev as any).scrollToSelection ? "to selection" : "preserve"
     let updateDoc = redraw || !this.docView.matchesNode(state.doc, outerDeco, innerDeco)
     if (updateDoc || !state.selection.eq(prev.selection)) updateSel = true
