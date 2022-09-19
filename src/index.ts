@@ -129,7 +129,6 @@ export class EditorView {
       if (prop != "state" && (this._props as any)[prop] != (props as any)[prop]) reconfigured = true
     for (let prop in props)
       if (prop != "state" && (this._props as any)[prop] != (props as any)[prop]) reconfigured = true
-    console.log(props, reconfigured)
     this._props = props
     if (props.plugins) {
       props.plugins.forEach(checkStateComponent)
