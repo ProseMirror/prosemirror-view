@@ -124,11 +124,6 @@ export class EditorView {
   /// the DOM.
   update(props: DirectEditorProps) {
     if (props.handleDOMEvents != this._props.handleDOMEvents) ensureListeners(this)
-    let reconfigured = props.state.plugins != this.state.plugins
-    for (let prop in this._props)
-      if (prop != "state" && (this._props as any)[prop] != (props as any)[prop]) reconfigured = true
-    for (let prop in props)
-      if (prop != "state" && (this._props as any)[prop] != (props as any)[prop]) reconfigured = true
     let prevProps = this._props
     this._props = props
     if (props.plugins) {
