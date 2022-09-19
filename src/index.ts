@@ -129,12 +129,13 @@ export class EditorView {
       if (prop != "state" && (this._props as any)[prop] != (props as any)[prop]) reconfigured = true
     for (let prop in props)
       if (prop != "state" && (this._props as any)[prop] != (props as any)[prop]) reconfigured = true
+    let prevProps = this._props
     this._props = props
     if (props.plugins) {
       props.plugins.forEach(checkStateComponent)
       this.directPlugins = props.plugins
     }
-    this.updateStateInner(props.state, reconfigured)
+    this.updateStateInner(props.state, prevProps)
   }
 
   /// Update the view by updating existing props object with the object
@@ -151,11 +152,10 @@ export class EditorView {
   /// Update the editor's `state` prop, without touching any of the
   /// other props.
   updateState(state: EditorState) {
-    let reconfigured = this.state.plugins != state.plugins
-    this.updateStateInner(state, reconfigured)
+    this.updateStateInner(state, this._props)
   }
 
-  private updateStateInner(state: EditorState, reconfigured: boolean) {
+  private updateStateInner(state: EditorState, prevProps: DirectEditorProps) {
     let prev = this.state, redraw = false, updateSel = false
     // When stored marks are added, stop composition, so that they can
     // be displayed.
@@ -164,12 +164,15 @@ export class EditorView {
       updateSel = true
     }
     this.state = state
-    if (reconfigured) {
+    let pluginsChanged = prev.plugins != state.plugins || this._props.plugins != prevProps.plugins
+    if (pluginsChanged || this._props.plugins != prevProps.plugins || this._props.nodeViews != prevProps.nodeViews) {
       let nodeViews = buildNodeViews(this)
       if (changedNodeViews(nodeViews, this.nodeViews)) {
         this.nodeViews = nodeViews
         redraw = true
       }
+    }
+    if (pluginsChanged || prevProps.handleDOMEvents != this._props.handleDOMEvents) {
       ensureListeners(this)
     }
 
@@ -177,7 +180,7 @@ export class EditorView {
     updateCursorWrapper(this)
     let innerDeco = viewDecorations(this), outerDeco = computeDocDeco(this)
 
-    let scroll = reconfigured && !prev.doc.eq(state.doc) ? "reset"
+    let scroll = prev.plugins != state.plugins && !prev.doc.eq(state.doc) ? "reset"
         : (state as any).scrollToSelection > (prev as any).scrollToSelection ? "to selection" : "preserve"
     let updateDoc = redraw || !this.docView.matchesNode(state.doc, outerDeco, innerDeco)
     if (updateDoc || !state.selection.eq(prev.selection)) updateSel = true
