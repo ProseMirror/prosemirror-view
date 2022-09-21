@@ -94,3 +94,9 @@ export function keyEvent(keyCode: number, key: string) {
   ;(event as any).key = (event as any).code = key
   return event
 }
+
+export function deepActiveElement(doc: Document) {
+  let elt = doc.activeElement
+  while (elt && elt.shadowRoot) elt = elt.shadowRoot.activeElement
+  return elt
+}

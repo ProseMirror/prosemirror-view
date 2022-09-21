@@ -9,7 +9,7 @@ import {selectionToDOM, anchorInRightPlace, syncNodeSelection} from "./selection
 import {Decoration, viewDecorations, DecorationSource} from "./decoration"
 import {DOMObserver} from "./domobserver"
 import {readDOMChange} from "./domchange"
-import {DOMSelection, DOMNode} from "./dom"
+import {DOMSelection, DOMNode, isEquivalentPosition, deepActiveElement} from "./dom"
 import * as browser from "./browser"
 
 export {Decoration, DecorationSet, DecorationAttrs, DecorationSource} from "./decoration"
@@ -451,7 +451,62 @@ export class EditorView {
 
   /// @internal
   domSelection(): DOMSelection {
+    if (browser.safari && this.root.nodeType === 11 && deepActiveElement(this.dom.ownerDocument) == this.dom)
+      return this.safariDomSelection();
+
     return (this.root as Document).getSelection()!
+  }
+
+  // Used to work around a Safari Selection/shadow DOM bug
+  // Based on https://github.com/codemirror/dev/issues/414 fix
+  private safariDomSelection(): DOMSelection {
+    let found: StaticRange | undefined;
+
+    function read(event: InputEvent) {
+      event.preventDefault()
+      event.stopImmediatePropagation()
+      found = event.getTargetRanges()[0]
+    }
+
+    // Because Safari (at least in 2018-2022) doesn't provide regular
+    // access to the selection inside a shadowRoot, we have to perform a
+    // ridiculous hack to get at it—using `execCommand` to trigger a
+    // `beforeInput` event so that we can read the target range from the
+    // event.
+    this.dom.addEventListener("beforeinput", read, true)
+    document.execCommand("indent")
+    this.dom.removeEventListener("beforeinput", read, true)
+
+    let anchorNode = found!.startContainer, anchorOffset = found!.startOffset
+    let focusNode = found!.endContainer, focusOffset = found!.endOffset
+
+    let currentAnchor = this.domAtPos(this.state.selection.anchor)
+
+    // Since such a range doesn't distinguish between anchor and head,
+    // use a heuristic that flips it around if its end matches the
+    // current anchor.
+    if (isEquivalentPosition(currentAnchor.node, currentAnchor.offset, focusNode, focusOffset))
+      [anchorNode, anchorOffset, focusNode, focusOffset] = [focusNode, focusOffset, anchorNode, anchorOffset]
+
+    let selection = (this.root as Document).getSelection()! as IndexedDOMSelection
+
+    // Copy methods and bind to the original selection as they could be invoked only on Selection instance
+    let selectionMethods: Record<string, Function> = {};
+    for (const selectionApiKey in selection) {
+      if (typeof selection[selectionApiKey] === 'function') {
+        selectionMethods[selectionApiKey] = selection[selectionApiKey].bind(selection);
+      }
+    }
+
+    return {
+      ...selection, // get selection props
+      ...selectionMethods, // get selection methods
+      anchorNode,
+      anchorOffset,
+      focusNode,
+      focusOffset,
+      isCollapsed: !!found?.collapsed,
+    }
   }
 }
 
@@ -757,4 +812,8 @@ export interface DirectEditorProps extends EditorProps {
   /// [applied](#state.EditorState.apply). The callback will be bound to have
   /// the view instance as its `this` binding.
   dispatchTransaction?: (tr: Transaction) => void
+}
+
+interface IndexedDOMSelection extends DOMSelection {
+  [key: string]: any;
 }
