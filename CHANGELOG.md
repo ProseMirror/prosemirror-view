@@ -1,3 +1,9 @@
+## 1.28.1 (2022-09-21)
+
+### Bug fixes
+
+Fix an issue where the editor would reset its scroll position to the top of the document for any state reconfiguration, even if the document was unchanged.
+
 ## 1.28.0 (2022-09-09)
 
 ### Bug fixes
