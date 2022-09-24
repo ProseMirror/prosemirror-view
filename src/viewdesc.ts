@@ -419,7 +419,12 @@ export class ViewDesc {
     if ((domSel.extend || anchor == head) && !brKludge) {
       domSel.collapse(anchorDOM.node, anchorDOM.offset)
       try {
-        if (anchor != head) domSel.extend(headDOM.node, headDOM.offset)
+        if (anchor != head) {
+          // This can crash on Safari if the editor is hidden, and
+          // there was no selection. (#1308)
+          try { domSel.extend(headDOM.node, headDOM.offset) }
+          catch (_) {}
+        }
         domSelExtended = true
       } catch (err) {
         // In some cases with Chrome the selection is empty after calling
