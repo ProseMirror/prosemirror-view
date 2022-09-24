@@ -1,3 +1,9 @@
+## 1.28.2 (2022-09-24)
+
+### Bug fixes
+
+Avoid a crash in selection updates in a hidden editor on Safari.
+
 ## 1.28.1 (2022-09-21)
 
 ### Bug fixes
