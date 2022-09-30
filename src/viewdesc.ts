@@ -762,7 +762,7 @@ export class NodeViewDesc extends ViewDesc {
     // are inside of this node
     let {from, to} = view.state.selection
     if (!(view.state.selection instanceof TextSelection) || from < pos || to > pos + this.node.content.size) return null
-    let sel = view.domSelection()
+    let sel = view.domSelectionRange()
     let textNode = nearbyTextNode(sel.focusNode!, sel.focusOffset)
     if (!textNode || !this.dom.contains(textNode.parentNode)) return null
 

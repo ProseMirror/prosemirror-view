@@ -1,7 +1,9 @@
-import * as browser from "./browser"
-
 export type DOMNode = InstanceType<typeof window.Node>
 export type DOMSelection = InstanceType<typeof window.Selection>
+export type DOMSelectionRange = {
+  focusNode: DOMNode | null, focusOffset: number,
+  anchorNode: DOMNode | null, anchorOffset: number
+}
 
 export const domIndex = function(node: Node) {
   for (var index = 0;; index++) {
@@ -10,7 +12,7 @@ export const domIndex = function(node: Node) {
   }
 }
 
-export const parentNode = function(node: Node) {
+export const parentNode = function(node: Node): Node | null {
   let parent = (node as HTMLSlotElement).assignedSlot || node.parentNode
   return parent && parent.nodeType == 11 ? (parent as ShadowRoot).host : parent
 }
@@ -80,11 +82,9 @@ function hasBlockDesc(dom: Node) {
 
 // Work around Chrome issue https://bugs.chromium.org/p/chromium/issues/detail?id=447523
 // (isCollapsed inappropriately returns true in shadow dom)
-export const selectionCollapsed = function(domSel: Selection) {
-  let collapsed = domSel.isCollapsed
-  if (collapsed && browser.chrome && domSel.rangeCount && !domSel.getRangeAt(0).collapsed)
-    collapsed = false
-  return collapsed
+export const selectionCollapsed = function(domSel: DOMSelectionRange) {
+  return domSel.focusNode && isEquivalentPosition(domSel.focusNode, domSel.focusOffset,
+                                                  domSel.anchorNode!, domSel.anchorOffset)
 }
 
 export function keyEvent(keyCode: number, key: string) {

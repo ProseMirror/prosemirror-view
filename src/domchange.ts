@@ -15,7 +15,7 @@ import {EditorView} from "./index"
 function parseBetween(view: EditorView, from_: number, to_: number) {
   let {node: parent, fromOffset, toOffset, from, to} = view.docView.parseRange(from_, to_)
 
-  let domSel = view.domSelection()
+  let domSel = view.domSelectionRange()
   let find: {node: DOMNode, offset: number, pos?: number}[] | undefined
   let anchor = domSel.anchorNode
   if (anchor && view.dom.contains(anchor.nodeType == 1 ? anchor : anchor.parentNode)) {

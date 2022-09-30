@@ -452,15 +452,18 @@ function endOfTextblockHorizontal(view: EditorView, state: EditorState, dir: "le
     // one character, and see if that moves the cursor out of the
     // textblock (or doesn't move it at all, when at the start/end of
     // the document).
-    let oldRange = sel.getRangeAt(0), oldNode = sel.focusNode, oldOff = sel.focusOffset
+    let {focusNode: oldNode, focusOffset: oldOff, anchorNode, anchorOffset} = view.domSelectionRange()
     let oldBidiLevel = (sel as any).caretBidiLevel // Only for Firefox
     ;(sel as any).modify("move", dir, "character")
     let parentDOM = $head.depth ? view.docView.domAfterPos($head.before()) : view.dom
-    let result = !parentDOM.contains(sel.focusNode!.nodeType == 1 ? sel.focusNode : sel.focusNode!.parentNode) ||
-        (oldNode == sel.focusNode && oldOff == sel.focusOffset)
+    let {focusNode: newNode, focusOffset: newOff} = view.domSelectionRange()
+    let result = newNode && !parentDOM.contains(newNode.nodeType == 1 ? newNode : newNode.parentNode) ||
+        (oldNode == newNode && oldOff == newOff)
     // Restore the previous selection
-    sel.removeAllRanges()
-    sel.addRange(oldRange)
+    try {
+      sel.collapse(anchorNode, anchorOffset)
+      if (oldNode && (oldNode != anchorNode || oldOff != anchorOffset) && sel.extend) sel.extend(oldNode, oldOff)
+    } catch (_) {}
     if (oldBidiLevel != null) (sel as any).caretBidiLevel = oldBidiLevel
     return result
   })

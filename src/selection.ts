@@ -2,12 +2,12 @@ import {TextSelection, NodeSelection, Selection} from "prosemirror-state"
 import {ResolvedPos} from "prosemirror-model"
 
 import * as browser from "./browser"
-import {selectionCollapsed, isEquivalentPosition, domIndex, isOnEdge} from "./dom"
+import {isEquivalentPosition, domIndex, isOnEdge, selectionCollapsed} from "./dom"
 import {EditorView} from "./index"
 import {NodeViewDesc} from "./viewdesc"
 
 export function selectionFromDOM(view: EditorView, origin: string | null = null) {
-  let domSel = view.domSelection(), doc = view.state.doc
+  let domSel = view.domSelectionRange(), doc = view.state.doc
   if (!domSel.focusNode) return null
   let nearestDesc = view.docView.nearestDesc(domSel.focusNode), inWidget = nearestDesc && nearestDesc.size == 0
   let head = view.docView.posFromDOM(domSel.focusNode, domSel.focusOffset, 1)
@@ -50,7 +50,7 @@ export function selectionToDOM(view: EditorView, force = false) {
   // in Safari. And the drag selection delay is to workarond issues
   // which only present in Chrome.
   if (!force && view.input.mouseDown && view.input.mouseDown.allowDefault && browser.chrome) {
-    let domSel = view.domSelection(), curSel = view.domObserver.currentSelection
+    let domSel = view.domSelectionRange(), curSel = view.domObserver.currentSelection
     if (domSel.anchorNode && curSel.anchorNode &&
         isEquivalentPosition(domSel.anchorNode, domSel.anchorOffset,
                              curSel.anchorNode, curSel.anchorOffset)) {
@@ -121,7 +121,7 @@ function resetEditable(element: HTMLElement) {
 function removeClassOnSelectionChange(view: EditorView) {
   let doc = view.dom.ownerDocument
   doc.removeEventListener("selectionchange", view.input.hideSelectionGuard!)
-  let domSel = view.domSelection()
+  let domSel = view.domSelectionRange()
   let node = domSel.anchorNode, offset = domSel.anchorOffset
   doc.addEventListener("selectionchange", view.input.hideSelectionGuard = () => {
     if (domSel.anchorNode != node || domSel.anchorOffset != offset) {
@@ -186,7 +186,7 @@ export function hasFocusAndSelection(view: EditorView) {
 }
 
 export function hasSelection(view: EditorView) {
-  let sel = view.domSelection()
+  let sel = view.domSelectionRange()
   if (!sel.anchorNode) return false
   try {
     // Firefox will raise 'permission denied' errors when accessing
@@ -201,6 +201,6 @@ export function hasSelection(view: EditorView) {
 
 export function anchorInRightPlace(view: EditorView) {
   let anchorDOM = view.docView.domFromPos(view.state.selection.anchor, 0)
-  let domSel = view.domSelection()
+  let domSel = view.domSelectionRange()
   return isEquivalentPosition(anchorDOM.node, anchorDOM.offset, domSel.anchorNode!, domSel.anchorOffset)
 }

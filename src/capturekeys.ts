@@ -1,7 +1,7 @@
 import {Selection, NodeSelection, TextSelection, AllSelection, EditorState} from "prosemirror-state"
 import {EditorView} from "./index"
 import * as browser from "./browser"
-import {domIndex, selectionCollapsed, DOMSelection} from "./dom"
+import {domIndex, selectionCollapsed} from "./dom"
 import {selectionToDOM} from "./selection"
 
 function moveSelectionBlock(state: EditorState, dir: number) {
@@ -62,7 +62,7 @@ function isIgnorable(dom: Node) {
 // Make sure the cursor isn't directly after one or more ignored
 // nodes, which will confuse the browser's cursor motion logic.
 function skipIgnoredNodesLeft(view: EditorView) {
-  let sel = view.domSelection()
+  let sel = view.domSelectionRange()
   let node = sel.focusNode!, offset = sel.focusOffset
   if (!node) return
   let moveNode, moveOffset: number | undefined, force = false
@@ -103,14 +103,14 @@ function skipIgnoredNodesLeft(view: EditorView) {
       }
     }
   }
-  if (force) setSelFocus(view, sel, node, offset)
-  else if (moveNode) setSelFocus(view, sel, moveNode, moveOffset!)
+  if (force) setSelFocus(view, node, offset)
+  else if (moveNode) setSelFocus(view, moveNode, moveOffset!)
 }
 
 // Make sure the cursor isn't directly before one or more ignored
 // nodes.
 function skipIgnoredNodesRight(view: EditorView) {
-  let sel = view.domSelection()
+  let sel = view.domSelectionRange()
   let node = sel.focusNode!, offset = sel.focusOffset
   if (!node) return
   let len = nodeLen(node)
@@ -144,7 +144,7 @@ function skipIgnoredNodesRight(view: EditorView) {
       }
     }
   }
-  if (moveNode) setSelFocus(view, sel, moveNode, moveOffset!)
+  if (moveNode) setSelFocus(view, moveNode, moveOffset!)
 }
 
 function isBlockNode(dom: Node) {
@@ -152,7 +152,8 @@ function isBlockNode(dom: Node) {
   return desc && desc.node && desc.node.isBlock
 }
 
-function setSelFocus(view: EditorView, sel: DOMSelection, node: Node, offset: number) {
+function setSelFocus(view: EditorView, node: Node, offset: number) {
+  let sel = view.domSelection()
   if (selectionCollapsed(sel)) {
     let range = document.createRange()
     range.setEnd(node, offset)
@@ -222,7 +223,7 @@ function switchEditable(view: EditorView, node: HTMLElement, state: string) {
 // after it
 function safariDownArrowBug(view: EditorView) {
   if (!browser.safari || view.state.selection.$head.parentOffset > 0) return false
-  let {focusNode, focusOffset} = view.domSelection()
+  let {focusNode, focusOffset} = view.domSelectionRange()
   if (focusNode && focusNode.nodeType == 1 && focusOffset == 0 &&
       focusNode.firstChild && (focusNode.firstChild as HTMLElement).contentEditable == "false") {
     let child = focusNode.firstChild as HTMLElement

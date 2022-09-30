@@ -463,12 +463,12 @@ editHandlers.compositionstart = editHandlers.compositionupdate = view => {
       // the inserted text won't inherit the marks. So this moves it
       // inside if necessary.
       if (browser.gecko && state.selection.empty && $pos.parentOffset && !$pos.textOffset && $pos.nodeBefore!.marks.length) {
-        let sel = view.domSelection()
+        let sel = view.domSelectionRange()
         for (let node = sel.focusNode, offset = sel.focusOffset; node && node.nodeType == 1 && offset != 0;) {
           let before = offset < 0 ? node.lastChild : node.childNodes[offset - 1]
           if (!before) break
           if (before.nodeType == 3) {
-            sel.collapse(before, before.nodeValue!.length)
+            view.domSelection().collapse(before, before.nodeValue!.length)
             break
           } else {
             node = before
@@ -715,7 +715,7 @@ handlers.focus = view => {
     view.domObserver.start()
     view.focused = true
     setTimeout(() => {
-      if (view.docView && view.hasFocus() && !view.domObserver.currentSelection.eq(view.domSelection()))
+      if (view.docView && view.hasFocus() && !view.domObserver.currentSelection.eq(view.domSelectionRange()))
         selectionToDOM(view)
     }, 20)
   }

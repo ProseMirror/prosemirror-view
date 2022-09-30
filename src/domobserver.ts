@@ -1,6 +1,6 @@
 import {Selection} from "prosemirror-state"
 import * as browser from "./browser"
-import {domIndex, isEquivalentPosition, selectionCollapsed, DOMSelection} from "./dom"
+import {domIndex, isEquivalentPosition, selectionCollapsed, parentNode, DOMSelectionRange, DOMNode} from "./dom"
 import {hasFocusAndSelection, selectionToDOM, selectionFromDOM} from "./selection"
 import {EditorView} from "./index"
 
@@ -21,7 +21,7 @@ class SelectionState {
   focusNode: Node | null = null
   focusOffset: number = 0
 
-  set(sel: DOMSelection) {
+  set(sel: DOMSelectionRange) {
     this.anchorNode = sel.anchorNode; this.anchorOffset = sel.anchorOffset
     this.focusNode = sel.focusNode; this.focusOffset = sel.focusOffset
   }
@@ -30,7 +30,7 @@ class SelectionState {
     this.anchorNode = this.focusNode = null
   }
 
-  eq(sel: DOMSelection) {
+  eq(sel: DOMSelectionRange) {
     return sel.anchorNode == this.anchorNode && sel.anchorOffset == this.anchorOffset &&
       sel.focusNode == this.focusNode && sel.focusOffset == this.focusOffset
   }
@@ -127,7 +127,7 @@ export class DOMObserver {
     // us a selection change event before the DOM changes are
     // reported.
     if (browser.ie && browser.ie_version <= 11 && !this.view.state.selection.empty) {
-      let sel = this.view.domSelection()
+      let sel = this.view.domSelectionRange()
       // Selection.isCollapsed isn't reliable on IE
       if (sel.focusNode && isEquivalentPosition(sel.focusNode, sel.focusOffset, sel.anchorNode!, sel.anchorOffset))
         return this.flushSoon()
@@ -136,16 +136,21 @@ export class DOMObserver {
   }
 
   setCurSelection() {
-    this.currentSelection.set(this.view.domSelection())
+    this.currentSelection.set(this.view.domSelectionRange())
   }
 
-  ignoreSelectionChange(sel: DOMSelection) {
-    if (sel.rangeCount == 0) return true
-    let container = sel.getRangeAt(0).commonAncestorContainer
-    let desc = this.view.docView.nearestDesc(container)
+  ignoreSelectionChange(sel: DOMSelectionRange) {
+    if (!sel.focusNode) return true
+    let ancestors: Set<Node> = new Set, container: DOMNode | undefined
+    for (let scan: DOMNode | null = sel.focusNode; scan; scan = parentNode(scan)) ancestors.add(scan)
+    for (let scan = sel.anchorNode; scan; scan = parentNode(scan)) if (ancestors.has(scan)) {
+      container = scan
+      break
+    }
+    let desc = container && this.view.docView.nearestDesc(container)
     if (desc && desc.ignoreMutation({
       type: "selection",
-      target: container.nodeType == 3 ? container.parentNode : container
+      target: container!.nodeType == 3 ? container!.parentNode : container
     } as any)) {
       this.setCurSelection()
       return true
@@ -161,7 +166,7 @@ export class DOMObserver {
       this.queue.length = 0
     }
 
-    let sel = view.domSelection()
+    let sel = view.domSelectionRange()
     let newSel = !this.suppressingSelectionUpdates && !this.currentSelection.eq(sel) && hasFocusAndSelection(view) && !this.ignoreSelectionChange(sel)
 
     let from = -1, to = -1, typeOver = false, added: Node[] = []
@@ -269,4 +274,35 @@ function checkCSS(view: EditorView) {
     console["warn"]("ProseMirror expects the CSS white-space property to be set, preferably to 'pre-wrap'. It is recommended to load style/prosemirror.css from the prosemirror-view package.")
     cssCheckWarned = true
   }
+}
+
+// Used to work around a Safari Selection/shadow DOM bug
+// Based on https://github.com/codemirror/dev/issues/414 fix
+export function safariShadowSelectionRange(view: EditorView): DOMSelectionRange {
+  let found: StaticRange | undefined
+  function read(event: InputEvent) {
+    event.preventDefault()
+    event.stopImmediatePropagation()
+    found = event.getTargetRanges()[0]
+  }
+
+  // Because Safari (at least in 2018-2022) doesn't provide regular
+  // access to the selection inside a shadowRoot, we have to perform a
+  // ridiculous hack to get at it—using `execCommand` to trigger a
+  // `beforeInput` event so that we can read the target range from the
+  // event.
+  view.dom.addEventListener("beforeinput", read, true)
+  document.execCommand("indent")
+  view.dom.removeEventListener("beforeinput", read, true)
+
+  let anchorNode = found!.startContainer, anchorOffset = found!.startOffset
+  let focusNode = found!.endContainer, focusOffset = found!.endOffset
+
+  let currentAnchor = view.domAtPos(view.state.selection.anchor)
+  // Since such a range doesn't distinguish between anchor and head,
+  // use a heuristic that flips it around if its end matches the
+  // current anchor.
+  if (isEquivalentPosition(currentAnchor.node, currentAnchor.offset, focusNode, focusOffset))
+    [anchorNode, anchorOffset, focusNode, focusOffset] = [focusNode, focusOffset, anchorNode, anchorOffset]
+  return {anchorNode, anchorOffset, focusNode, focusOffset}
 }
