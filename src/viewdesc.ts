@@ -419,20 +419,16 @@ export class ViewDesc {
     if ((domSel.extend || anchor == head) && !brKludge) {
       domSel.collapse(anchorDOM.node, anchorDOM.offset)
       try {
-        if (anchor != head) {
-          // This can crash on Safari if the editor is hidden, and
-          // there was no selection. (#1308)
-          try { domSel.extend(headDOM.node, headDOM.offset) }
-          catch (_) {}
-        }
+        if (anchor != head)
+          domSel.extend(headDOM.node, headDOM.offset)
         domSelExtended = true
-      } catch (err) {
+      } catch (_) {
         // In some cases with Chrome the selection is empty after calling
         // collapse, even when it should be valid. This appears to be a bug, but
         // it is difficult to isolate. If this happens fallback to the old path
         // without using extend.
-        if (!(err instanceof DOMException)) throw err
-        // declare global: DOMException
+        // Similarly, this could crash on Safari if the editor is hidden, and
+        // there was no selection.
       }
     }
     if (!domSelExtended) {
