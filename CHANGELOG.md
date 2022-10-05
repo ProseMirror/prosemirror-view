@@ -1,3 +1,9 @@
+## 1.28.3 (2022-10-05)
+
+### Bug fixes
+
+Work around the five-year-old Safari bug where it won't accurately report the selection inside shadow roots, which would break ProseMirror when put in shadow DOM.
+
 ## 1.28.2 (2022-09-24)
 
 ### Bug fixes
