@@ -202,6 +202,8 @@ function detachedDoc() {
 function readHTML(html: string) {
   let metas = /^(\s*<meta [^>]*>)*/.exec(html)
   if (metas) html = html.slice(metas[0].length)
+  const fragments = html.match(/<!--StartFragment-->(.*)<!--EndFragment-->/); // for windows
+  if (fragments) html = fragments[1]
   let elt = detachedDoc().createElement("div")
   let firstTag = /<([a-z][^>\s]+)/i.exec(html), wrap
   if (wrap = firstTag && wrapMap[firstTag[1].toLowerCase()])
