@@ -113,4 +113,12 @@ describe("Clipboard interface", () => {
     ist(/<table/.test(html))
     ist(parseFromClipboard(view, "", html, false, doc.resolve(3)), slice, eq)
   })
+
+  it("can parse content wrapped in comments", () => {
+    let s = tableSchema()
+    let doc = s.node("doc", null, [s.node("table", null, [s.node("tr", null, [s.node("td")])])])
+    let html = `<html><body><!--StartFragment--><table data-pm-slice="1 1 -2 []"><tbody><tr><td class="PROSEMIRROR_TABLE_TD_CLS" align="left"><p>123</p></td></tr><tr><td class="PROSEMIRROR_TABLE_TD_CLS" align="left"><p>123</p></td></tr></tbody></table><!--EndFragment--></body></html>`
+    ist(parseFromClipboard(tempEditor({doc}), "", html, false, doc.resolve(1)) + "",
+        "<tr(td(\"123\")), tr(td(\"123\"))>(1,1)")
+  })
 })

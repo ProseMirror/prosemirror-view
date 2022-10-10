@@ -68,8 +68,12 @@ export function parseFromClipboard(view: EditorView, text: string, html: string 
 
   let contextNode = dom && dom.querySelector("[data-pm-slice]")
   let sliceData = contextNode && /^(\d+) (\d+)(?: -(\d+))? (.*)/.exec(contextNode.getAttribute("data-pm-slice") || "")
-  if (sliceData && sliceData[3]) for (let i = +sliceData[3]; i > 0 && dom!.firstChild; i--)
-    dom = dom!.firstChild as HTMLElement
+  if (sliceData && sliceData[3]) for (let i = +sliceData[3]; i > 0; i--) {
+    let child = dom!.firstChild
+    while (child && child.nodeType != 1) child = child.nextSibling
+    if (!child) break
+    dom = child as HTMLElement
+  }
 
   if (!slice) {
     let parser = view.someProp("clipboardParser") || view.someProp("domParser") || DOMParser.fromSchema(view.state.schema)
