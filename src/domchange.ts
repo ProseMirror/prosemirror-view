@@ -111,7 +111,7 @@ export function readDOMChange(view: EditorView, from: number, to: number, typeOv
 
   let change = findDiff(compare.content, parse.doc.content, parse.from, preferredPos, preferredSide)
   if ((browser.ios && view.input.lastIOSEnter > Date.now() - 225 || browser.android) &&
-      addedNodes.some(n => n.nodeName == "DIV" || n.nodeName == "P") &&
+      addedNodes.some(n => n.nodeName == "DIV" || n.nodeName == "P" || n.nodeName == "LI") &&
       (!change || change.endA >= change.endB) &&
       view.someProp("handleKeyDown", f => f(view, keyEvent(13, "Enter")))) {
     view.input.lastIOSEnter = 0
