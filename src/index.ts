@@ -638,7 +638,7 @@ export interface EditorProps<P = any> {
 
   /// Can be used to transform pasted HTML text, _before_ it is parsed,
   /// for example to clean it up.
-  transformPastedHTML?: (this: P, html: string) => string
+  transformPastedHTML?: (this: P, html: string, view: EditorView) => string
 
   /// The [parser](#model.DOMParser) to use when reading content from
   /// the clipboard. When not given, the value of the
@@ -647,7 +647,7 @@ export interface EditorProps<P = any> {
 
   /// Transform pasted plain text. The `plain` flag will be true when
   /// the text is pasted as plain text.
-  transformPastedText?: (this: P, text: string, plain: boolean) => string
+  transformPastedText?: (this: P, text: string, plain: boolean, view: EditorView) => string
 
   /// A function to parse text from the clipboard into a document
   /// slice. Called after
@@ -656,15 +656,15 @@ export interface EditorProps<P = any> {
   /// in `<p>` tags, and call
   /// [`clipboardParser`](#view.EditorProps.clipboardParser) on it.
   /// The `plain` flag will be true when the text is pasted as plain text.
-  clipboardTextParser?: (this: P, text: string, $context: ResolvedPos, plain: boolean) => Slice
+  clipboardTextParser?: (this: P, text: string, $context: ResolvedPos, plain: boolean, view: EditorView) => Slice
 
   /// Can be used to transform pasted or dragged-and-dropped content
   /// before it is applied to the document.
-  transformPasted?: (this: P, slice: Slice) => Slice
+  transformPasted?: (this: P, slice: Slice, view: EditorView) => Slice
 
   /// Can be used to transform copied or cut content before it is
   /// serialized to the clipboard.
-  transformCopied?: (this: P, slice: Slice) => Slice
+  transformCopied?: (this: P, slice: Slice, view: EditorView) => Slice
 
   /// Allows you to pass custom rendering and behavior logic for
   /// nodes. Should map node names to constructor functions that
@@ -711,7 +711,7 @@ export interface EditorProps<P = any> {
   /// selection when copying text to the clipboard. By default, the
   /// editor will use [`textBetween`](#model.Node.textBetween) on the
   /// selected range.
-  clipboardTextSerializer?: (this: P, content: Slice) => string
+  clipboardTextSerializer?: (this: P, content: Slice, view: EditorView) => string
 
   /// A set of [document decorations](#view.Decoration) to show in the
   /// view.

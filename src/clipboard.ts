@@ -3,7 +3,7 @@ import * as browser from "./browser"
 import {EditorView} from "./index"
 
 export function serializeForClipboard(view: EditorView, slice: Slice) {
-  view.someProp("transformCopied", f => { slice = f(slice!) })
+  view.someProp("transformCopied", f => { slice = f(slice!, view) })
 
   let context = [], {content, openStart, openEnd} = slice
   while (openStart > 1 && openEnd > 1 && content.childCount == 1 && content.firstChild!.childCount == 1) {
@@ -33,7 +33,7 @@ export function serializeForClipboard(view: EditorView, slice: Slice) {
     (firstChild as HTMLElement).setAttribute(
       "data-pm-slice", `${openStart} ${openEnd}${wrappers ? ` -${wrappers}` : ""} ${JSON.stringify(context)}`)
 
-  let text = view.someProp("clipboardTextSerializer", f => f(slice)) ||
+  let text = view.someProp("clipboardTextSerializer", f => f(slice, view)) ||
       slice.content.textBetween(0, slice.content.size, "\n\n")
 
   return {dom: wrap, text}
@@ -46,9 +46,9 @@ export function parseFromClipboard(view: EditorView, text: string, html: string 
   if (!html && !text) return null
   let asText = text && (plainText || inCode || !html)
   if (asText) {
-    view.someProp("transformPastedText", f => { text = f(text, inCode || plainText) })
+    view.someProp("transformPastedText", f => { text = f(text, inCode || plainText, view) })
     if (inCode) return text ? new Slice(Fragment.from(view.state.schema.text(text.replace(/\r\n?/g, "\n"))), 0, 0) : Slice.empty
-    let parsed = view.someProp("clipboardTextParser", f => f(text, $context, plainText))
+    let parsed = view.someProp("clipboardTextParser", f => f(text, $context, plainText, view))
     if (parsed) {
       slice = parsed
     } else {
@@ -61,7 +61,7 @@ export function parseFromClipboard(view: EditorView, text: string, html: string 
       })
     }
   } else {
-    view.someProp("transformPastedHTML", f => { html = f(html!) })
+    view.someProp("transformPastedHTML", f => { html = f(html!, view) })
     dom = readHTML(html!)
     if (browser.webkit) restoreReplacedSpaces(dom)
   }
@@ -101,7 +101,7 @@ export function parseFromClipboard(view: EditorView, text: string, html: string 
     }
   }
 
-  view.someProp("transformPasted", f => { slice = f(slice!) })
+  view.someProp("transformPasted", f => { slice = f(slice!, view) })
   return slice
 }
 
