@@ -1,3 +1,15 @@
+## 1.29.0 (2022-10-12)
+
+### Bug fixes
+
+Fix an issue where HTML comments added to the clipboard by the OS throw off the clipboard parser.
+
+Make sure Chrome Android's native behavior on pressing Enter in an empty nested list item is replaced by the result of the editor's Enter key handler.
+
+### New features
+
+The `transformPastedHTML`, `transformPastedText`, `transformPasted`, `transformCopied`, and `clipboardTextSerializer` props are now passed the view instance as last argument.
+
 ## 1.28.3 (2022-10-05)
 
 ### Bug fixes
