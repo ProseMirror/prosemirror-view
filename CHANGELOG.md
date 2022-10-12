@@ -20,11 +20,11 @@ Fix an issue where the editor would reset its scroll position to the top of the 
 
 ### Bug fixes
 
-Fix an issue where the editor wouldn't realize it was focused on IE when IE's resize controls are on an element inside the content. Adjust Chrome click-override behavior to only happen for invisible selections
+Fix an issue where the editor wouldn't realize it was focused on IE when IE's resize controls are on an element inside the content.
 
 ### New features
 
-The new `transformCopied` prop can be used to transform a copied/cut slice before it is serialized to the clipboard. Adjust doc comment
+The new `transformCopied` prop can be used to transform a copied/cut slice before it is serialized to the clipboard.
 
 ## 1.27.2 (2022-08-19)
 
