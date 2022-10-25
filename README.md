@@ -19,7 +19,7 @@ This code is released under an
 [MIT license](https://github.com/prosemirror/prosemirror/tree/master/LICENSE).
 There's a [forum](http://discuss.prosemirror.net) for general
 discussion and support requests, and the
-[Github bug tracker](https://github.com/prosemirror/prosemirror/issues)
+[GitHub bug tracker](https://github.com/prosemirror/prosemirror/issues)
 is the place to report issues.
 
 We aim to be an inclusive, welcoming community. To make that explicit,
