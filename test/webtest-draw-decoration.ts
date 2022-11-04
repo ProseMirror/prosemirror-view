@@ -1,7 +1,7 @@
 import {doc, p, h1, hr, em, strong, img, blockquote, schema} from "prosemirror-test-builder"
 import {Plugin, TextSelection} from "prosemirror-state"
 import {Schema} from "prosemirror-model"
-import {DecorationSet, Decoration, EditorView} from "prosemirror-view"
+import {DecorationSet, Decoration, EditorView, DecorationSource} from "prosemirror-view"
 import {tempEditor} from "./view"
 import ist from "ist"
 
@@ -488,5 +488,33 @@ describe("Decoration drawing", () => {
     })
     ist((view.dom.firstChild as HTMLElement).innerHTML,
         'o<span class="foo">ne </span><em class="foo">two</em><span class="foo"> thre</span>e')
+  })
+
+  it("can handle combining decorations from parent editors in child editors", () => {
+    let decosFromFirstEditor: DecorationSource | undefined;
+    let view = tempEditor({
+      doc: doc(p("one two three")),
+      plugins: [
+        decoPlugin([Decoration.inline(2, 13, {class: "foo"})]),
+        decoPlugin([Decoration.inline(2, 13, {class: "bar"})]),
+      ], nodeViews: {
+        paragraph: (_node, _view, _getPos, _decos, innerDecos) => {
+          decosFromFirstEditor = innerDecos
+          return { dom: document.createElement('p') }
+        }
+      }
+    });
+
+    view = tempEditor({
+      doc: doc(p("one two three")),
+      plugins: [
+        decoPlugin([Decoration.inline(1, 12, {class: "baz"})]),
+      ],
+      decorations: () => decosFromFirstEditor
+    });
+
+    ist(view.dom.querySelectorAll(".foo").length, 1)
+    ist(view.dom.querySelectorAll(".bar").length, 1)
+    ist(view.dom.querySelectorAll(".baz").length, 1)
   })
 })
