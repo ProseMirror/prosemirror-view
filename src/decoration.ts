@@ -528,11 +528,22 @@ class DecorationGroup implements DecorationSource {
 
   // Create a group for the given array of decoration sets, or return
   // a single set when possible.
-  static from(members: readonly DecorationSet[]): DecorationSet | DecorationGroup {
+  static from(members: readonly (DecorationSet | DecorationGroup)[]): DecorationSet | DecorationGroup {
     switch (members.length) {
       case 0: return empty
       case 1: return members[0]
-      default: return new DecorationGroup(members)
+      default: {
+        let flatMembers = [] as DecorationSet[]
+        for (let i = 0; i < members.length; i++) {
+          const member = members[i]
+          if (member instanceof DecorationGroup) {
+            flatMembers = flatMembers.concat(member.members)
+          } else {
+            flatMembers.push(member)
+          }
+        }
+        return new DecorationGroup(flatMembers)
+      }
     }
   }
 }
