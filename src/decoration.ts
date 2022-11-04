@@ -528,11 +528,14 @@ class DecorationGroup implements DecorationSource {
 
   // Create a group for the given array of decoration sets, or return
   // a single set when possible.
-  static from(members: readonly DecorationSet[]): DecorationSet | DecorationGroup {
+  static from(members: readonly DecorationSource[]): DecorationSource {
     switch (members.length) {
       case 0: return empty
       case 1: return members[0]
-      default: return new DecorationGroup(members)
+      default: return new DecorationGroup(
+        members.every(m => m instanceof DecorationSet) ? members as DecorationSet[] :
+          members.reduce((r, m) => r.concat(m instanceof DecorationSet ? m : (m as DecorationGroup).members),
+                         [] as DecorationSet[]))
     }
   }
 }
@@ -753,8 +756,8 @@ function insertAhead(array: Decoration[], i: number, deco: Decoration) {
 }
 
 // Get the decorations associated with the current props of a view.
-export function viewDecorations(view: EditorView): DecorationSet | DecorationGroup {
-  let found = []
+export function viewDecorations(view: EditorView): DecorationSource {
+  let found: DecorationSource[] = []
   view.someProp("decorations", f => {
     let result = f(view.state)
     if (result && result != empty) found.push(result)
