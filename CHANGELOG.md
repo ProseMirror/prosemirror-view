@@ -1,3 +1,9 @@
+## 1.29.1 (2022-11-14)
+
+### Bug fixes
+
+Fix a problem when returning decorations from an outer editor from the `decorations` prop.
+
 ## 1.29.0 (2022-10-12)
 
 ### Bug fixes
