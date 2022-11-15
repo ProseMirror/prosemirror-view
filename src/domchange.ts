@@ -80,7 +80,7 @@ export function readDOMChange(view: EditorView, from: number, to: number, typeOv
   if (from < 0) {
     let origin = view.input.lastSelectionTime > Date.now() - 50 ? view.input.lastSelectionOrigin : null
     let newSel = selectionFromDOM(view, origin)
-    if (newSel && !view.state.selection.eq(newSel)) {
+    if (origin && newSel && !view.state.selection.eq(newSel)) {
       let tr = view.state.tr.setSelection(newSel)
       if (origin == "pointer") tr.setMeta("pointer", true)
       else if (origin == "key") tr.scrollIntoView()
