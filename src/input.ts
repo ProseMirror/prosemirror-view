@@ -52,7 +52,75 @@ export function initInput(view: EditorView) {
   // you press enter go away.
   if (browser.safari) view.dom.addEventListener("input", () => null)
 
+  // Support auto scroll while dragging on safari and improve the
+  // scroll interaction on other browsers
+  // ps: we should throttle the drag event or the scroll behavior will be stuck on safari browser.
+  const dragHandler = throttle((e: DragEvent) => handleDrag(view, e), 20);
+  document.body.addEventListener('drag', dragHandler);
+
   ensureListeners(view)
+}
+
+/**
+ * Returns the passed element if scrollable, else the closest parent
+ * that will, up to the entire document scrolling element
+ */
+ function getScrollElement(el: HTMLElement | null = null): HTMLElement {
+  if (!el) {
+    return (document.scrollingElement || document.documentElement) as HTMLElement;
+  }
+  return isElementOverflowScroll(el) ? el : getScrollElement(el.parentElement);
+}
+
+function isElementOverflowScroll(el: HTMLElement) {
+  const style = getComputedStyle(el);
+  return /(auto|scroll)/.test(style.overflow + style.overflowY);
+}
+
+// Auto scroll while dragging
+function handleDrag(view: EditorView, e: DragEvent) {
+  const scrollEl = getScrollElement(view.dom),
+    rect = scrollEl.getBoundingClientRect(),
+    MAX_INNER_GAP = 120;
+  const step = (d: number) => Math.min(2 * MAX_INNER_GAP, MAX_INNER_GAP - d) * 0.2;
+
+  if (isElementOverflowScroll(scrollEl)) {
+    let top = rect.top + window.scrollY,
+      bottom = rect.bottom + window.scrollY;
+    if (e.clientY - top <= MAX_INNER_GAP) {
+      scrollEl.scrollTop -= step(e.clientY - top);
+    } else if (bottom - e.clientY <= MAX_INNER_GAP) {
+      scrollEl.scrollTop += step(bottom - e.clientY);
+    }
+  } else {
+    // if the scroll element‘s overflow is not `scroll` or `auto`, set `scrollTop`
+    // won't scroll the element, then we need use `window.scrollTo`
+    let top = rect.top + window.scrollY,
+      bottom = Math.min(rect.bottom - window.scrollY, window.innerHeight);
+    if (e.clientY - top <= MAX_INNER_GAP) {
+      window.scrollTo({ top: window.scrollY - step(e.clientY - top) });
+    } else if (bottom - e.clientY <= MAX_INNER_GAP) {
+      window.scrollTo({ top: window.scrollY + step(bottom - e.clientY) });
+    }
+  }
+}
+
+function throttle<T extends unknown[], U>(
+  callback: (...args: T) => PromiseLike<U> | U,
+  /** Default is 0. */
+  wait = 0,
+) {
+  let canRun = true;
+  return function (this: unknown, ...args: T): Promise<U> | void {
+    if (!canRun) return;
+    canRun = false;
+    return new Promise((resolve) => {
+      window.setTimeout(() => {
+        canRun = true;
+        resolve(callback.call(this, ...args));
+      }, wait);
+    });
+  };
 }
 
 function setSelectionOrigin(view: EditorView, origin: string) {
