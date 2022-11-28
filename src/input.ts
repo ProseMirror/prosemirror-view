@@ -15,6 +15,7 @@ import {ViewDesc} from "./viewdesc"
 const handlers: {[event: string]: (view: EditorView, event: Event) => void} = {}
 const editHandlers: {[event: string]: (view: EditorView, event: Event) => void} = {}
 const passiveHandlers: Record<string, boolean> = {touchstart: true, touchmove: true}
+let removeAutoScrollDragHandler: (() => void) | undefined;
 
 export class InputState {
   shiftKey = false
@@ -38,7 +39,7 @@ export class InputState {
   hideSelectionGuard: (() => void) | null = null
 }
 
-export function initInput(view: EditorView) {
+export function initInput(view: EditorView, autoScrollDragArea: HTMLElement) {
   for (let event in handlers) {
     let handler = handlers[event]
     view.dom.addEventListener(event, view.input.eventHandlers[event] = (event: Event) => {
@@ -56,7 +57,10 @@ export function initInput(view: EditorView) {
   // scroll interaction on other browsers
   // ps: we should throttle the drag event or the scroll behavior will be stuck on safari browser.
   const dragHandler = throttle((e: DragEvent) => handleDrag(view, e), 20);
-  document.body.addEventListener('drag', dragHandler);
+  autoScrollDragArea.addEventListener('drag', dragHandler);
+  removeAutoScrollDragHandler = () => {
+    autoScrollDragArea.removeEventListener('drag', dragHandler);
+  }
 
   ensureListeners(view)
 }
@@ -129,6 +133,7 @@ function setSelectionOrigin(view: EditorView, origin: string) {
 }
 
 export function destroyInput(view: EditorView) {
+  if(removeAutoScrollDragHandler) removeAutoScrollDragHandler();
   view.domObserver.stop()
   for (let type in view.input.eventHandlers)
     view.dom.removeEventListener(type, view.input.eventHandlers[type])

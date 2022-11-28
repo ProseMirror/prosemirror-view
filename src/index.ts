@@ -81,6 +81,10 @@ export class EditorView {
       else if ((place as {mount: HTMLElement}).mount) this.mounted = true
     }
 
+    if (!(props.autoScrollDragArea instanceof HTMLElement)) {
+      props.autoScrollDragArea = this.dom;
+    }
+
     this.editable = getEditable(this)
     updateCursorWrapper(this)
     this.nodeViews = buildNodeViews(this)
@@ -88,7 +92,7 @@ export class EditorView {
 
     this.domObserver = new DOMObserver(this, (from, to, typeOver, added) => readDOMChange(this, from, to, typeOver, added))
     this.domObserver.start()
-    initInput(this)
+    initInput(this, props.autoScrollDragArea)
     this.updatePluginViews()
   }
 
@@ -764,4 +768,9 @@ export interface DirectEditorProps extends EditorProps {
   /// [applied](#state.EditorState.apply). The callback will be bound to have
   /// the view instance as its `this` binding.
   dispatchTransaction?: (tr: Transaction) => void
+
+  /// This field defines an element which is a dragging area. The element
+  /// will listen a drag event and do some improvement for auto scroll
+  /// during dragging. Default value is the [`dom`](#view.EditorView.dom) of editor itself.
+  autoScrollDragArea?: HTMLElement;
 }
