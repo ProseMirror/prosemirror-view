@@ -81,6 +81,10 @@ export function readDOMChange(view: EditorView, from: number, to: number, typeOv
     let origin = view.input.lastSelectionTime > Date.now() - 50 ? view.input.lastSelectionOrigin : null
     let newSel = selectionFromDOM(view, origin)
     if (newSel && !view.state.selection.eq(newSel)) {
+      if (browser.chrome && browser.android &&
+          view.input.lastKeyCode === 13 && Date.now() - 100 < view.input.lastKeyCodeTime &&
+          view.someProp("handleKeyDown", f => f(view, keyEvent(13, "Enter"))))
+        return
       let tr = view.state.tr.setSelection(newSel)
       if (origin == "pointer") tr.setMeta("pointer", true)
       else if (origin == "key") tr.scrollIntoView()
