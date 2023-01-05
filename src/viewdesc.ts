@@ -791,6 +791,17 @@ export class NodeViewDesc extends ViewDesc {
 
     // Patch up this.children to contain the composition view
     this.children = replaceNodes(this.children, pos, pos + text.length, view, desc)
+    // Force re-create markdesc dom to prevent renderDesc remove composition view
+    const changeDescIdx = new Set<number>();
+    this.children.forEach((desc, idx) => {
+      if (changeDescIdx.has(idx) || !(desc instanceof MarkViewDesc)) return
+      if (idx > 0 && this.children[idx - 1] instanceof CompositionViewDesc) changeDescIdx.add(idx)
+      if (idx < this.children.length - 1 && this.children[idx + 1] instanceof CompositionViewDesc) changeDescIdx.add(idx)
+    })
+    changeDescIdx.forEach((idx) => {
+      const markDesc = this.children[idx] as MarkViewDesc;
+      this.children[idx] = markDesc.slice(0, markDesc.posAtEnd - markDesc.posAtStart, view)
+    })
   }
 
   // If this desc must be updated to match the given node decoration,
