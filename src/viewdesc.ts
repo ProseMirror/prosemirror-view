@@ -1150,7 +1150,8 @@ class ViewTreeUpdater {
       this.stack.push(this.top, this.index + 1)
       let found = -1
       for (let i = this.index; i < Math.min(this.index + 3, this.top.children.length); i++) {
-        if (this.top.children[i].matchesMark(marks[depth])) { found = i; break }
+        let next = this.top.children[i]
+        if (next.matchesMark(marks[depth]) && !this.isLocked(next.dom)) { found = i; break }
       }
       if (found > -1) {
         if (found > this.index) {
@@ -1230,7 +1231,7 @@ class ViewTreeUpdater {
         // Can't update if nextDOM is or contains this.lock, except if
         // it's a text node whose content already matches the new text
         // and whose decorations match the new ones.
-        let locked = this.lock && (nextDOM == this.lock || nextDOM.nodeType == 1 && nextDOM.contains(this.lock.parentNode)) &&
+        let locked = this.isLocked(nextDOM) &&
             !(node.isText && next.node && next.node.isText && next.nodeDOM.nodeValue == node.text &&
               next.dirty != NODE_DIRTY && sameOuterDeco(outerDeco, next.outerDeco))
         if (!locked && next.update(node, outerDeco, innerDeco, view)) {
@@ -1298,6 +1299,10 @@ class ViewTreeUpdater {
       else parent.children.splice(this.index++, 0, hack)
       this.changed = true
     }
+  }
+
+  isLocked(node: DOMNode) {
+    return this.lock && (node == this.lock || node.nodeType == 1 && node.contains(this.lock.parentNode))
   }
 }
 
