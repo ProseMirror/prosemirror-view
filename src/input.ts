@@ -443,6 +443,17 @@ function inOrNearComposition(view: EditorView, event: Event) {
   return false
 }
 
+function isHeadContentAtom(selection: Selection) {
+  let firstChild = selection.$from.nodeAfter;
+  while (firstChild) {
+    if (firstChild.isAtom && !firstChild.isText) {
+      return true;
+    }
+    firstChild = firstChild.firstChild
+  }
+  return false;
+}
+
 // Drop active composition after 5 seconds of inactivity on Android
 const timeoutComposition = browser.android ? 5000 : -1
 
@@ -475,6 +486,13 @@ editHandlers.compositionstart = editHandlers.compositionupdate = view => {
             offset = -1
           }
         }
+      }
+
+      // If selected as the first node in range isn't editable
+      // browser doesn't insert content when inputs with composing
+      // thus in this case proactively delete content 
+      if (!state.selection.empty && isHeadContentAtom(state.selection)) {
+        view.domSelection().deleteFromDocument()
       }
     }
     view.input.composing = true
