@@ -413,7 +413,7 @@ function endOfTextblockVertical(view: EditorView, state: EditorState, dir: "up" 
     for (;;) {
       let nearest = view.docView.nearestDesc(dom, true)
       if (!nearest) break
-      if (nearest.node!.isBlock) { dom = nearest.dom; break }
+      if (nearest.node!.isBlock) { dom = nearest.contentDOM || nearest.dom; break }
       dom = nearest.dom.parentNode!
     }
     let coords = coordsAtPos(view, $pos.pos, 1)
