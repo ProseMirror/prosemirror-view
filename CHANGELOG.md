@@ -1,3 +1,13 @@
+## 1.29.2 (2023-01-17)
+
+### Bug fixes
+
+Make sure enter key handlers are called on Chrome Android when the cursor is in a position where the native behavior of Enter doesn't change the document.
+
+Fix a crash that could occur when starting a composition at the end of a non-inclusive mark.
+
+Fix a bug in (vertical) `endOfTextblock` that caused it to return falsely positive results inside textblocks that had a separate `contentDOM`.
+
 ## 1.29.1 (2022-11-14)
 
 ### Bug fixes
