@@ -4,7 +4,7 @@ import {Slice, ResolvedPos, DOMParser, DOMSerializer, Node, Mark} from "prosemir
 import {scrollRectIntoView, posAtCoords, coordsAtPos, endOfTextblock, storeScrollPos,
         resetScrollPos, focusPreventScroll} from "./domcoords"
 import {docViewDesc, ViewDesc, NodeView, NodeViewDesc} from "./viewdesc"
-import {initInput, destroyInput, dispatchEvent, ensureListeners, clearComposition, InputState} from "./input"
+import {initInput, destroyInput, dispatchEvent, ensureListeners, clearComposition, InputState, doPaste} from "./input"
 import {selectionToDOM, anchorInRightPlace, syncNodeSelection} from "./selection"
 import {Decoration, viewDecorations, DecorationSource} from "./decoration"
 import {DOMObserver, safariShadowSelectionRange} from "./domobserver"
@@ -407,6 +407,18 @@ export class EditorView {
   /// pass a different state.
   endOfTextblock(dir: "up" | "down" | "left" | "right" | "forward" | "backward", state?: EditorState): boolean {
     return endOfTextblock(this, state || this.state, dir)
+  }
+
+  /// Run the editor's paste logic with the given HTML string. The
+  /// `event`, if given, will be passed to the
+  /// [`handlePaste`](#view.EditorProps.handlePaste) hook.
+  pasteHTML(html: string, event?: ClipboardEvent) {
+    return doPaste(this, "", html, false, event || new ClipboardEvent("paste"))
+  }
+
+  /// Run the editor's paste logic with the given plain-text input.
+  pasteText(text: string, event?: ClipboardEvent) {
+    return doPaste(this, text, null, true, event || new ClipboardEvent("paste"))
   }
 
   /// Removes the editor from the DOM and destroys all [node
