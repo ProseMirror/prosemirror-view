@@ -1,3 +1,9 @@
+## 1.30.0 (2023-01-19)
+
+### New features
+
+`EditorView` now has `pasteHTML` and `pasteText` methods which initiate paste handling.
+
 ## 1.29.2 (2023-01-17)
 
 ### Bug fixes
