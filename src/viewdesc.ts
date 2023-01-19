@@ -221,6 +221,8 @@ export class ViewDesc {
 
   // Scan up the dom finding the first desc that is a descendant of
   // this one.
+  nearestDesc(dom: DOMNode): ViewDesc | undefined
+  nearestDesc(dom: DOMNode, onlyNodes: true): NodeViewDesc | undefined
   nearestDesc(dom: DOMNode, onlyNodes: boolean = false) {
     for (let first = true, cur: DOMNode | null = dom; cur; cur = cur.parentNode) {
       let desc = this.getDesc(cur), nodeDOM

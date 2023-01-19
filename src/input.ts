@@ -635,7 +635,7 @@ handlers.dragstart = (view, _event) => {
     view.dispatch(view.state.tr.setSelection(NodeSelection.create(view.state.doc, mouseDown.mightDrag.pos)))
   } else if (event.target && (event.target as HTMLElement).nodeType == 1) {
     let desc = view.docView.nearestDesc(event.target as HTMLElement, true)
-    if (desc && desc.node!.type.spec.draggable && desc != view.docView)
+    if (desc && desc.node.type.spec.draggable && desc != view.docView)
       view.dispatch(view.state.tr.setSelection(NodeSelection.create(view.state.doc, desc.posBefore)))
   }
   let slice = view.state.selection.content(), {dom, text} = serializeForClipboard(view, slice)

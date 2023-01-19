@@ -2,7 +2,6 @@ import {EditorState} from "prosemirror-state"
 import {nodeSize, textRange, parentNode} from "./dom"
 import * as browser from "./browser"
 import {EditorView} from "./index"
-import {NodeViewDesc} from "./viewdesc"
 
 export type Rect = {left: number, right: number, top: number, bottom: number}
 
@@ -216,7 +215,7 @@ function posFromCaret(view: EditorView, node: Node, offset: number, coords: {top
     if (cur == view.dom) break
     let desc = view.docView.nearestDesc(cur, true)
     if (!desc) return null
-    if ((desc as NodeViewDesc).node.isBlock && desc.parent) {
+    if (desc.node.isBlock && desc.parent) {
       let rect = (desc.dom as HTMLElement).getBoundingClientRect()
       if (rect.left > coords.left || rect.top > coords.top) outside = desc.posBefore
       else if (rect.right < coords.left || rect.bottom < coords.top) outside = desc.posAfter
@@ -413,7 +412,7 @@ function endOfTextblockVertical(view: EditorView, state: EditorState, dir: "up" 
     for (;;) {
       let nearest = view.docView.nearestDesc(dom, true)
       if (!nearest) break
-      if (nearest.node!.isBlock) { dom = nearest.contentDOM || nearest.dom; break }
+      if (nearest.node.isBlock) { dom = nearest.contentDOM || nearest.dom; break }
       dom = nearest.dom.parentNode!
     }
     let coords = coordsAtPos(view, $pos.pos, 1)
