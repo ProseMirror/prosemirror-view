@@ -210,20 +210,27 @@ function posFromCaret(view: EditorView, node: Node, offset: number, coords: {top
   // of nodes to see if there are block nodes that the coordinates
   // fall outside of. If so, we take the position before/after that
   // block. If not, we call `posFromDOM` on the raw node/offset.
-  let outside = -1
+  let outsideBlock = -1
   for (let cur = node;;) {
     if (cur == view.dom) break
     let desc = view.docView.nearestDesc(cur, true)
     if (!desc) return null
-    if (desc.node.isBlock && desc.parent) {
+    if (desc.dom.nodeType == 1 && (desc.node.isBlock && desc.parent || !desc.contentDOM)) {
       let rect = (desc.dom as HTMLElement).getBoundingClientRect()
-      if (rect.left > coords.left || rect.top > coords.top) outside = desc.posBefore
-      else if (rect.right < coords.left || rect.bottom < coords.top) outside = desc.posAfter
-      else break
+      if (desc.node.isBlock && desc.parent) {
+        if (rect.left > coords.left || rect.top > coords.top) outsideBlock = desc.posBefore
+        else if (rect.right < coords.left || rect.bottom < coords.top) outsideBlock = desc.posAfter
+      }
+      if (!desc.contentDOM && outsideBlock < 0) {
+        // If we are inside a leaf, return the side of the leaf closer to the coords
+        let before = desc.node.isBlock ? coords.top < (rect.top + rect.bottom) / 2
+          : coords.left < (rect.left + rect.right) / 2
+        return before ? desc.posBefore : desc.posAfter
+      }
     }
     cur = desc.dom.parentNode!
   }
-  return outside > -1 ? outside : view.docView.posFromDOM(node, offset, 1)
+  return outsideBlock > -1 ? outsideBlock : view.docView.posFromDOM(node, offset, -1)
 }
 
 function elementFromPoint(element: HTMLElement, coords: {top: number, left: number}, box: Rect): HTMLElement {
