@@ -1,3 +1,11 @@
+## 1.30.1 (2023-02-04)
+
+### Bug fixes
+
+Fix a bug that caused `posAtCoords` to always return the position after a leaf node when querying a position on top of the node's element.
+
+Fix an issue where, when putting focus on the editor by clicking at the very start of the document, the editor would restore a previous selection.
+
 ## 1.30.0 (2023-01-19)
 
 ### New features
