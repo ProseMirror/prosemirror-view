@@ -195,7 +195,7 @@ export class DOMObserver {
     // start of the document after focus, restore the selection from
     // the state
     if (from < 0 && newSel && view.input.lastFocus > Date.now() - 200 &&
-        view.input.lastTouch < Date.now() - 300 &&
+        Math.max(view.input.lastTouch, view.input.lastClick.time) < Date.now() - 300 &&
         selectionCollapsed(sel) && (readSel = selectionFromDOM(view)) &&
         readSel.eq(Selection.near(view.state.doc.resolve(0), 1))) {
       view.input.lastFocus = 0
