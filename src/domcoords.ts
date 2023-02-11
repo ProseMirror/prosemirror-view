@@ -211,13 +211,14 @@ function posFromCaret(view: EditorView, node: Node, offset: number, coords: {top
   // fall outside of. If so, we take the position before/after that
   // block. If not, we call `posFromDOM` on the raw node/offset.
   let outsideBlock = -1
-  for (let cur = node;;) {
+  for (let cur = node, sawBlock = false;;) {
     if (cur == view.dom) break
     let desc = view.docView.nearestDesc(cur, true)
     if (!desc) return null
-    if (desc.dom.nodeType == 1 && (desc.node.isBlock && desc.parent || !desc.contentDOM)) {
+    if (desc.dom.nodeType == 1 && (desc.node.isBlock && desc.parent && !sawBlock || !desc.contentDOM)) {
       let rect = (desc.dom as HTMLElement).getBoundingClientRect()
-      if (desc.node.isBlock && desc.parent) {
+      if (desc.node.isBlock && desc.parent && !sawBlock) {
+        sawBlock = true
         if (rect.left > coords.left || rect.top > coords.top) outsideBlock = desc.posBefore
         else if (rect.right < coords.left || rect.bottom < coords.top) outsideBlock = desc.posAfter
       }
