@@ -43,6 +43,7 @@ export class DOMObserver {
   currentSelection = new SelectionState
   onCharData: ((e: Event) => void) | null = null
   suppressingSelectionUpdates = false
+  lockDOMSelectionSync = false
 
   constructor(
     readonly view: EditorView,
@@ -132,7 +133,9 @@ export class DOMObserver {
       if (sel.focusNode && isEquivalentPosition(sel.focusNode, sel.focusOffset, sel.anchorNode!, sel.anchorOffset))
         return this.flushSoon()
     }
+    this.lockDOMSelectionSync = !!this.view.input.mouseDown
     this.flush()
+    this.lockDOMSelectionSync = false
   }
 
   setCurSelection() {
