@@ -195,7 +195,7 @@ export class EditorView {
         // Chrome sometimes starts misreporting the selection, so this
         // tracks that and forces a selection reset when our update
         // did write to the node.
-        let chromeKludge = browser.chrome ? (this.trackWrites = this.domSelectionRange().focusNode) : null
+        let chromeKludge = browser.chrome ? (this.trackWrites = this.domSelectionRange()?.focusNode) : null
         if (redraw || !this.docView.update(state.doc, outerDeco, innerDeco, this)) {
           this.docView.updateOuterDeco([])
           this.docView.destroy()
