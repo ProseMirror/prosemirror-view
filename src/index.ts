@@ -546,7 +546,7 @@ function checkStateComponent(plugin: Plugin) {
 
 /// The type of function [provided](#view.ViewProps.nodeViews) to
 /// create [node views](#view.NodeView).
-export type NodeViewConstructor = (node: Node, view: EditorView, getPos: () => number,
+export type NodeViewConstructor = (node: Node, view: EditorView, getPos: () => number | undefined,
                                    decorations: readonly Decoration[], innerDecorations: DecorationSource) => NodeView
 
 /// The function types [used](#view.ViewProps.markViews) to create
@@ -684,6 +684,8 @@ export interface EditorProps<P = any> {
   /// node's display behavior. The third argument `getPos` is a
   /// function that can be called to get the node's current position,
   /// which can be useful when creating transactions to update it.
+  /// Note that if the node is not in the document, the position
+  /// returned by this function will be `undefined`.
   ///
   /// `decorations` is an array of node or inline decorations that are
   /// active around the node. They are automatically drawn in the
