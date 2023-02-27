@@ -544,12 +544,12 @@ function checkStateComponent(plugin: Plugin) {
     throw new RangeError("Plugins passed directly to the view must not have a state component")
 }
 
-/// The type of function [provided](#view.ViewProps.nodeViews) to
+/// The type of function [provided](#view.EditorProps.nodeViews) to
 /// create [node views](#view.NodeView).
 export type NodeViewConstructor = (node: Node, view: EditorView, getPos: () => number | undefined,
                                    decorations: readonly Decoration[], innerDecorations: DecorationSource) => NodeView
 
-/// The function types [used](#view.ViewProps.markViews) to create
+/// The function types [used](#view.EditorProps.markViews) to create
 /// mark views.
 export type MarkViewConstructor = (mark: Mark, view: EditorView, inline: boolean) => {dom: HTMLElement, contentDOM?: HTMLElement}
 
@@ -701,7 +701,7 @@ export interface EditorProps<P = any> {
   /// inner decorations.
   ///
   /// (For backwards compatibility reasons, [mark
-  /// views](#view.ViewProps.markViews) can also be included in this
+  /// views](#view.EditorProps.markViews) can also be included in this
   /// object.)
   nodeViews?: {[node: string]: NodeViewConstructor}
 
