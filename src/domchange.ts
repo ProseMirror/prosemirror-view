@@ -76,6 +76,8 @@ function ruleFromNode(dom: DOMNode): ParseRule | null {
   return null
 }
 
+const isInline = /^(a|abbr|acronym|b|bd[io]|big|br|button|cite|code|data(list)?|del|dfn|em|i|ins|kbd|label|map|mark|meter|output|q|ruby|s|samp|small|span|strong|su[bp]|time|u|tt|var)$/i
+
 export function readDOMChange(view: EditorView, from: number, to: number, typeOver: boolean, addedNodes: readonly DOMNode[]) {
   if (from < 0) {
     let origin = view.input.lastSelectionTime > Date.now() - 50 ? view.input.lastSelectionOrigin : null
@@ -115,7 +117,7 @@ export function readDOMChange(view: EditorView, from: number, to: number, typeOv
 
   let change = findDiff(compare.content, parse.doc.content, parse.from, preferredPos, preferredSide)
   if ((browser.ios && view.input.lastIOSEnter > Date.now() - 225 || browser.android) &&
-      addedNodes.some(n => n.nodeName == "DIV" || n.nodeName == "P" || n.nodeName == "LI") &&
+      addedNodes.some(n => n.nodeType == 1 && !isInline.test(n.nodeName)) &&
       (!change || change.endA >= change.endB) &&
       view.someProp("handleKeyDown", f => f(view, keyEvent(13, "Enter")))) {
     view.input.lastIOSEnter = 0
