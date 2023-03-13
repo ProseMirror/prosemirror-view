@@ -1,3 +1,13 @@
+## 1.30.2 (2023-03-13)
+
+### Bug fixes
+
+Fix an issue where `posAtCoords` could incorrectly return positions outside of a table when querying a coordinate inside it.
+
+Update the type of the `getPos` callback to include undefined in its return type. Update broken link (ViewProps -> EditorProps) Also detect iOS enter when the new block type is a less common node
+
+Fix an issue where Enter on iOS would sometimes not be handled by the library.
+
 ## 1.30.1 (2023-02-04)
 
 ### Bug fixes
