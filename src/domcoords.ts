@@ -133,6 +133,7 @@ export function focusPreventScroll(dom: HTMLElement) {
 function findOffsetInNode(node: HTMLElement, coords: {top: number, left: number}): {node: Node, offset: number} {
   let closest, dxClosest = 2e8, coordsClosest: {left: number, top: number} | undefined, offset = 0
   let rowBot = coords.top, rowTop = coords.top
+  let firstBelow: Node | undefined, coordsBelow: {left: number, top: number} | undefined
   for (let child = node.firstChild, childIndex = 0; child; child = child.nextSibling, childIndex++) {
     let rects
     if (child.nodeType == 1) rects = (child as HTMLElement).getClientRects()
@@ -157,12 +158,16 @@ function findOffsetInNode(node: HTMLElement, coords: {top: number, left: number}
             offset = childIndex + (coords.left >= (rect.left + rect.right) / 2 ? 1 : 0)
           continue
         }
+      } else if (rect.top > coords.top && !firstBelow && rect.left <= coords.left && rect.right >= coords.left) {
+        firstBelow = child
+        coordsBelow = {left: Math.max(rect.left, Math.min(rect.right, coords.left)), top: rect.top}
       }
       if (!closest && (coords.left >= rect.right && coords.top >= rect.top ||
                        coords.left >= rect.left && coords.top >= rect.bottom))
         offset = childIndex + 1
     }
   }
+  if (!closest && firstBelow) { closest = firstBelow; coordsClosest = coordsBelow; dxClosest = 0 }
   if (closest && closest.nodeType == 3) return findOffsetInText(closest as Text, coordsClosest!)
   if (!closest || (dxClosest && closest.nodeType == 1)) return {node, offset}
   return findOffsetInNode(closest as HTMLElement, coordsClosest!)
