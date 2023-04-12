@@ -619,7 +619,6 @@ export class NodeViewDesc extends ViewDesc {
     pos: number
   ) {
     super(parent, [], dom, contentDOM)
-    if (contentDOM) this.updateChildren(view, pos)
   }
 
   // By default, a node is rendered using the `toDOM` method from the
@@ -733,7 +732,7 @@ export class NodeViewDesc extends ViewDesc {
                  (compIndex = updater.findIndexWithChild(composition!.node)) > -1 &&
                  updater.updateNodeAt(child, outerDeco, innerDeco, compIndex, view)) {
         // Updated the specific node that holds the composition
-      } else if (updater.updateNextNode(child, outerDeco, innerDeco, view, i)) {
+      } else if (updater.updateNextNode(child, outerDeco, innerDeco, view, i, off)) {
         // Could update an existing node to reflect this node
       } else {
         // Add it as a new view
@@ -846,7 +845,9 @@ export class NodeViewDesc extends ViewDesc {
 export function docViewDesc(doc: Node, outerDeco: readonly Decoration[], innerDeco: DecorationSource,
                             dom: HTMLElement, view: EditorView): NodeViewDesc {
   applyOuterDeco(dom, outerDeco, doc)
-  return new NodeViewDesc(undefined, doc, outerDeco, innerDeco, dom, dom, dom, view, 0)
+  let docView = new NodeViewDesc(undefined, doc, outerDeco, innerDeco, dom, dom, dom, view, 0)
+  if (docView.contentDOM) docView.updateChildren(view, 0)
+  return docView
 }
 
 class TextViewDesc extends NodeViewDesc {
@@ -1222,13 +1223,13 @@ class ViewTreeUpdater {
   // Try to update the next node, if any, to the given data. Checks
   // pre-matches to avoid overwriting nodes that could still be used.
   updateNextNode(node: Node, outerDeco: readonly Decoration[], innerDeco: DecorationSource,
-                 view: EditorView, index: number): boolean {
+                 view: EditorView, index: number, pos: number): boolean {
     for (let i = this.index; i < this.top.children.length; i++) {
       let next = this.top.children[i]
       if (next instanceof NodeViewDesc) {
         let preMatch = this.preMatch.matched.get(next)
         if (preMatch != null && preMatch != index) return false
-        let nextDOM = next.dom
+        let nextDOM = next.dom, updated
 
         // Can't update if nextDOM is or contains this.lock, except if
         // it's a text node whose content already matches the new text
@@ -1241,6 +1242,11 @@ class ViewTreeUpdater {
           if (next.dom != nextDOM) this.changed = true
           this.index++
           return true
+        } else if (!locked && (updated = this.recreateWrapper(next, node, outerDeco, innerDeco, view, pos))) {
+          this.top.children[this.index] = updated
+          this.changed = true
+          this.index++
+          return true
         }
         break
       }
@@ -1248,9 +1254,28 @@ class ViewTreeUpdater {
     return false
   }
 
+  // When a node with content is replaced by a different node with
+  // identical content, move over its children.
+  recreateWrapper(next: NodeViewDesc, node: Node, outerDeco: readonly Decoration[], innerDeco: DecorationSource,
+                  view: EditorView, pos: number) {
+    if (next.dirty || node.isAtom || !next.children.length ||
+        !next.node.content.eq(node.content)) return null
+    let wrapper = NodeViewDesc.create(this.top, node, outerDeco, innerDeco, view, pos)
+    if (!wrapper.contentDOM) return null
+    wrapper.children = next.children
+    next.children = []
+    for (let ch of wrapper.children) ch.parent = wrapper
+    wrapper.dirty = CONTENT_DIRTY
+    wrapper.updateChildren(view, pos + 1)
+    wrapper.dirty = NOT_DIRTY
+    return wrapper
+  }
+
   // Insert the node as a newly created node desc.
   addNode(node: Node, outerDeco: readonly Decoration[], innerDeco: DecorationSource, view: EditorView, pos: number) {
-    this.top.children.splice(this.index++, 0, NodeViewDesc.create(this.top, node, outerDeco, innerDeco, view, pos))
+    let desc = NodeViewDesc.create(this.top, node, outerDeco, innerDeco, view, pos)
+    if (desc.contentDOM) desc.updateChildren(view, pos + 1)
+    this.top.children.splice(this.index++, 0, desc)
     this.changed = true
   }
 
