@@ -18,6 +18,7 @@ export const safari = !ie && !!nav && /Apple Computer/.test(nav.vendor)
 // Is true for both iOS and iPadOS for convenience
 export const ios = safari && (/Mobile\/\w+/.test(agent) || !!nav && nav.maxTouchPoints > 2)
 export const mac = ios || (nav ? /Mac/.test(nav.platform) : false)
+export const windows = nav ? /Win/.test(nav.platform) : false
 export const android = /Android \d/.test(agent)
 export const webkit = !!doc && "webkitFontSmoothing" in doc.documentElement.style
 export const webkit_version = webkit ? +(/\bAppleWebKit\/(\d+)/.exec(navigator.userAgent) || [0, 0])[1] : 0

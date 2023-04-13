@@ -59,7 +59,7 @@ function isIgnorable(dom: Node) {
   return desc && desc.size == 0 && (dom.nextSibling || dom.nodeName != "BR")
 }
 
-function skipIgnoredNodes(view: EditorView, dir: -1 | 1) {
+function skipIgnoredNodes(view: EditorView, dir: number) {
   return dir < 0 ? skipIgnoredNodesBefore(view) : skipIgnoredNodesAfter(view)
 }
 
@@ -175,6 +175,27 @@ function setSelFocus(view: EditorView, node: Node, offset: number) {
   }, 50)
 }
 
+function findDirection(view: EditorView, pos: number): "rtl" | "ltr" {
+  let $pos = view.state.doc.resolve(pos)
+  if (!(browser.chrome || browser.windows) && $pos.parent.inlineContent) {
+    let coords = view.coordsAtPos(pos)
+    if (pos > $pos.start()) {
+      let before = view.coordsAtPos(pos - 1)
+      let mid = (before.top + before.bottom) / 2
+      if (mid > coords.top && mid < coords.bottom && Math.abs(before.left - coords.left) > 1)
+        return before.left < coords.left ? "ltr" : "rtl"
+    }
+    if (pos < $pos.end()) {
+      let after = view.coordsAtPos(pos + 1)
+      let mid = (after.top + after.bottom) / 2
+      if (mid > coords.top && mid < coords.bottom && Math.abs(after.left - coords.left) > 1)
+        return after.left > coords.left ? "ltr" : "rtl"
+    }
+  }
+  let computed = getComputedStyle(view.dom).direction
+  return computed == "rtl" ? "rtl" : "ltr"
+}
+
 // Check whether vertical selection motion would involve node
 // selections. If so, apply it (if not, the result is left to the
 // browser)
@@ -262,9 +283,11 @@ export function captureKeyDown(view: EditorView, event: KeyboardEvent) {
   } else if (code == 13 || code == 27) { // Enter, Esc
     return true
   } else if (code == 37 || (browser.mac && code == 66 && mods == "c")) { // Left arrow, Ctrl-b on Mac
-    return selectHorizontally(view, -1, mods) || skipIgnoredNodes(view, -1)
+    let dir = code == 37 ? (findDirection(view, view.state.selection.from) == "ltr" ? -1 : 1) : -1
+    return selectHorizontally(view, dir, mods) || skipIgnoredNodes(view, dir)
   } else if (code == 39 || (browser.mac && code == 70 && mods == "c")) { // Right arrow, Ctrl-f on Mac
-    return selectHorizontally(view, 1, mods) || skipIgnoredNodes(view, 1)
+    let dir = code == 39 ? (findDirection(view, view.state.selection.from) == "ltr" ? 1 : -1) : 1
+    return selectHorizontally(view, dir, mods) || skipIgnoredNodes(view, dir)
   } else if (code == 38 || (browser.mac && code == 80 && mods == "c")) { // Up arrow, Ctrl-p on Mac
     return selectVertically(view, -1, mods) || skipIgnoredNodes(view, -1)
   } else if (code == 40 || (browser.mac && code == 78 && mods == "c")) { // Down arrow, Ctrl-n on Mac
