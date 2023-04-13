@@ -100,3 +100,16 @@ export function deepActiveElement(doc: Document) {
   while (elt && elt.shadowRoot) elt = elt.shadowRoot.activeElement
   return elt
 }
+
+export function caretFromPoint(doc: Document, x: number, y: number): {node: Node, offset: number} | undefined {
+  if ((doc as any).caretPositionFromPoint) {
+    try { // Firefox throws for this call in hard-to-predict circumstances (#994)
+      let pos = (doc as any).caretPositionFromPoint(x, y)
+      if (pos) return {node: pos.offsetNode, offset: pos.offset}
+    } catch (_) {}
+  }
+  if (doc.caretRangeFromPoint) {
+    let range = doc.caretRangeFromPoint(x, y)
+    if (range) return {node: range.startContainer, offset: range.startOffset}
+  }
+}

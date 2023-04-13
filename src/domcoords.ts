@@ -1,5 +1,5 @@
 import {EditorState} from "prosemirror-state"
-import {nodeSize, textRange, parentNode} from "./dom"
+import {nodeSize, textRange, parentNode, caretFromPoint} from "./dom"
 import * as browser from "./browser"
 import {EditorView} from "./index"
 
@@ -260,16 +260,8 @@ function elementFromPoint(element: HTMLElement, coords: {top: number, left: numb
 // Given an x,y position on the editor, get the position in the document.
 export function posAtCoords(view: EditorView, coords: {top: number, left: number}) {
   let doc = view.dom.ownerDocument, node: Node | undefined, offset = 0
-  if ((doc as any).caretPositionFromPoint) {
-    try { // Firefox throws for this call in hard-to-predict circumstances (#994)
-      let pos = (doc as any).caretPositionFromPoint(coords.left, coords.top)
-      if (pos) ({offsetNode: node, offset} = pos)
-    } catch (_) {}
-  }
-  if (!node && doc.caretRangeFromPoint) {
-    let range = doc.caretRangeFromPoint(coords.left, coords.top)
-    if (range) ({startContainer: node, startOffset: offset} = range)
-  }
+  let caret = caretFromPoint(doc, coords.left, coords.top)
+  if (caret) ({node, offset} = caret)
 
   let elt = ((view.root as any).elementFromPoint ? view.root : doc)
               .elementFromPoint(coords.left, coords.top) as HTMLElement
