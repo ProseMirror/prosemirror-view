@@ -21,7 +21,7 @@ function selectHorizontally(view: EditorView, dir: number, mods: string) {
   if (sel instanceof TextSelection) {
     if (!sel.empty || mods.indexOf("s") > -1) {
       return false
-    } else if (view.endOfTextblock(dir > 0 ? "right" : "left")) {
+    } else if (view.endOfTextblock(dir > 0 ? "forward" : "backward")) {
       let next = moveSelectionBlock(view.state, dir)
       if (next && (next instanceof NodeSelection)) return apply(view, next)
       return false
@@ -59,9 +59,13 @@ function isIgnorable(dom: Node) {
   return desc && desc.size == 0 && (dom.nextSibling || dom.nodeName != "BR")
 }
 
+function skipIgnoredNodes(view: EditorView, dir: -1 | 1) {
+  return dir < 0 ? skipIgnoredNodesBefore(view) : skipIgnoredNodesAfter(view)
+}
+
 // Make sure the cursor isn't directly after one or more ignored
 // nodes, which will confuse the browser's cursor motion logic.
-function skipIgnoredNodesLeft(view: EditorView) {
+function skipIgnoredNodesBefore(view: EditorView) {
   let sel = view.domSelectionRange()
   let node = sel.focusNode!, offset = sel.focusOffset
   if (!node) return
@@ -109,7 +113,7 @@ function skipIgnoredNodesLeft(view: EditorView) {
 
 // Make sure the cursor isn't directly before one or more ignored
 // nodes.
-function skipIgnoredNodesRight(view: EditorView) {
+function skipIgnoredNodesAfter(view: EditorView) {
   let sel = view.domSelectionRange()
   let node = sel.focusNode!, offset = sel.focusOffset
   if (!node) return
@@ -252,19 +256,19 @@ function getMods(event: KeyboardEvent) {
 export function captureKeyDown(view: EditorView, event: KeyboardEvent) {
   let code = event.keyCode, mods = getMods(event)
   if (code == 8 || (browser.mac && code == 72 && mods == "c")) { // Backspace, Ctrl-h on Mac
-    return stopNativeHorizontalDelete(view, -1) || skipIgnoredNodesLeft(view)
+    return stopNativeHorizontalDelete(view, -1) || skipIgnoredNodes(view, -1)
   } else if (code == 46 || (browser.mac && code == 68 && mods == "c")) { // Delete, Ctrl-d on Mac
-    return stopNativeHorizontalDelete(view, 1) || skipIgnoredNodesRight(view)
+    return stopNativeHorizontalDelete(view, 1) || skipIgnoredNodes(view, 1)
   } else if (code == 13 || code == 27) { // Enter, Esc
     return true
   } else if (code == 37 || (browser.mac && code == 66 && mods == "c")) { // Left arrow, Ctrl-b on Mac
-    return selectHorizontally(view, -1, mods) || skipIgnoredNodesLeft(view)
+    return selectHorizontally(view, -1, mods) || skipIgnoredNodes(view, -1)
   } else if (code == 39 || (browser.mac && code == 70 && mods == "c")) { // Right arrow, Ctrl-f on Mac
-    return selectHorizontally(view, 1, mods) || skipIgnoredNodesRight(view)
+    return selectHorizontally(view, 1, mods) || skipIgnoredNodes(view, 1)
   } else if (code == 38 || (browser.mac && code == 80 && mods == "c")) { // Up arrow, Ctrl-p on Mac
-    return selectVertically(view, -1, mods) || skipIgnoredNodesLeft(view)
+    return selectVertically(view, -1, mods) || skipIgnoredNodes(view, -1)
   } else if (code == 40 || (browser.mac && code == 78 && mods == "c")) { // Down arrow, Ctrl-n on Mac
-    return safariDownArrowBug(view) || selectVertically(view, 1, mods) || skipIgnoredNodesRight(view)
+    return safariDownArrowBug(view) || selectVertically(view, 1, mods) || skipIgnoredNodesAfter(view)
   } else if (mods == (browser.mac ? "m" : "c") &&
              (code == 66 || code == 73 || code == 89 || code == 90)) { // Mod-[biyz]
     return true
