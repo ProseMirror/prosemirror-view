@@ -632,13 +632,15 @@ handlers.dragstart = (view, _event) => {
   if (pos && pos.pos >= sel.from && pos.pos <= (sel instanceof NodeSelection ? sel.to - 1: sel.to)) {
     // In selection
   } else if (mouseDown && mouseDown.mightDrag) {
-    view.dispatch(view.state.tr.setSelection(NodeSelection.create(view.state.doc, mouseDown.mightDrag.pos)))
+    sel = NodeSelection.create(view.state.doc, mouseDown.mightDrag.pos))
+    view.dispatch(view.state.tr.setSelection(sel)
   } else if (event.target && (event.target as HTMLElement).nodeType == 1) {
     let desc = view.docView.nearestDesc(event.target as HTMLElement, true)
     if (desc && desc.node.type.spec.draggable && desc != view.docView)
-      view.dispatch(view.state.tr.setSelection(NodeSelection.create(view.state.doc, desc.posBefore)))
+      sel = NodeSelection.create(view.state.doc, desc.posBefore))
+      view.dispatch(view.state.tr.setSelection(sel)
   }
-  let slice = view.state.selection.content(), {dom, text} = serializeForClipboard(view, slice)
+  let slice = sel.content(), {dom, text} = serializeForClipboard(view, slice)
   event.dataTransfer.clearData()
   event.dataTransfer.setData(brokenClipboardAPI ? "Text" : "text/html", dom.innerHTML)
   // See https://github.com/ProseMirror/prosemirror/issues/1156
