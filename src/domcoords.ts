@@ -309,9 +309,17 @@ export function posAtCoords(view: EditorView, coords: {top: number, left: number
   return {pos, inside: desc ? desc.posAtStart - desc.border : -1}
 }
 
+function nonZero(rect: DOMRect) {
+  return rect.top < rect.bottom || rect.left < rect.right
+}
+
 function singleRect(target: HTMLElement | Range, bias: number): DOMRect {
   let rects = target.getClientRects()
-  return !rects.length ? target.getBoundingClientRect() : rects[bias < 0 ? 0 : rects.length - 1]
+  if (rects.length) {
+    let first = rects[bias < 0 ? 0 : rects.length - 1]
+    if (nonZero(first)) return first
+  }
+  return Array.prototype.find.call(rects, nonZero) || target.getBoundingClientRect()
 }
 
 const BIDI = /[\u0590-\u05f4\u0600-\u06ff\u0700-\u08ac]/
@@ -345,7 +353,7 @@ export function coordsAtPos(view: EditorView, pos: number, side: number): Rect {
       else if (side >= 0 && offset == node.nodeValue!.length) { from--; takeSide = 1 }
       else if (side < 0) { from-- }
       else { to ++ }
-      return flattenV(singleRect(textRange(node as Text, from, to), 1), takeSide < 0)
+      return flattenV(singleRect(textRange(node as Text, from, to), takeSide), takeSide < 0)
     }
   }
 
