@@ -90,6 +90,7 @@ export function readDOMChange(view: EditorView, from: number, to: number, typeOv
       let tr = view.state.tr.setSelection(newSel)
       if (origin == "pointer") tr.setMeta("pointer", true)
       else if (origin == "key") tr.scrollIntoView()
+      if (view.composing) tr.setMeta("composition", view.input.compositionID)
       view.dispatch(tr)
     }
     return
@@ -130,7 +131,11 @@ export function readDOMChange(view: EditorView, from: number, to: number, typeOv
     } else {
       if (parse.sel) {
         let sel = resolveSelection(view, view.state.doc, parse.sel)
-        if (sel && !sel.eq(view.state.selection)) view.dispatch(view.state.tr.setSelection(sel))
+        if (sel && !sel.eq(view.state.selection)) {
+          let tr = view.state.tr.setSelection(sel)
+          if (view.composing) tr.setMeta("composition", view.input.compositionID)
+          view.dispatch(tr)
+        }
       }
       return
     }
@@ -263,6 +268,7 @@ export function readDOMChange(view: EditorView, from: number, to: number, typeOv
       tr.setSelection(sel)
   }
   if (storedMarks) tr.ensureMarks(storedMarks)
+  if (view.composing) tr.setMeta("composition", view.input.compositionID)
   view.dispatch(tr.scrollIntoView())
 }
 

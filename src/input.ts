@@ -33,6 +33,7 @@ export class InputState {
   composingTimeout = -1
   compositionNodes: ViewDesc[] = []
   compositionEndedAt = -2e8
+  compositionID = 1
   domChangeCount = 0
   eventHandlers: {[event: string]: (event: Event) => void} = Object.create(null)
   hideSelectionGuard: (() => void) | null = null
@@ -486,6 +487,7 @@ editHandlers.compositionend = (view, event) => {
   if (view.composing) {
     view.input.composing = false
     view.input.compositionEndedAt = event.timeStamp
+    view.input.compositionID++
     scheduleComposeEnd(view, 20)
   }
 }
