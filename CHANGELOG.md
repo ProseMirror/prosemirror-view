@@ -1,3 +1,19 @@
+## 1.31.0 (2023-04-26)
+
+### Bug fixes
+
+Fix an issue where, when the browser failed to return a cursor for a set of coordinates (as in a shadow root in Chrome) the library's own algorithm worked poorly for coordinates between lines in a textblock.
+
+Improve performance of changing a parent node (by type or attributes) without modifying its children by reusing the DOM of the child nodes.
+
+Fix an issue where, in right-to-left context, the left and right arrow keys could get stuck on a selectable leaf node because the editor was moving the selection in the wrong direction.
+
+Fix a regression in `coordsAtPos` when querying the position of a line wrap.
+
+### New features
+
+Attach a `"composition"` meta field to transactions generated from DOM changes.
+
 ## 1.30.2 (2023-03-13)
 
 ### Bug fixes
