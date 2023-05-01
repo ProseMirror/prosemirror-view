@@ -1,3 +1,9 @@
+## 1.31.1 (2023-05-01)
+
+### Bug fixes
+
+Fix a bug that could cause a view crash on some kind of document updates.
+
 ## 1.31.0 (2023-04-26)
 
 ### Bug fixes
