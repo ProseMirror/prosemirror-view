@@ -1244,6 +1244,9 @@ class ViewTreeUpdater {
           return true
         } else if (!locked && (updated = this.recreateWrapper(next, node, outerDeco, innerDeco, view, pos))) {
           this.top.children[this.index] = updated
+          updated.dirty = CONTENT_DIRTY
+          updated.updateChildren(view, pos + 1)
+          updated.dirty = NOT_DIRTY
           this.changed = true
           this.index++
           return true
@@ -1265,9 +1268,7 @@ class ViewTreeUpdater {
     wrapper.children = next.children
     next.children = []
     for (let ch of wrapper.children) ch.parent = wrapper
-    wrapper.dirty = CONTENT_DIRTY
-    wrapper.updateChildren(view, pos + 1)
-    wrapper.dirty = NOT_DIRTY
+   
     return wrapper
   }
 
