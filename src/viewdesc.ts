@@ -385,18 +385,6 @@ export class ViewDesc {
       let {node, offset} = anchorDOM
       if (node.nodeType == 3) {
         brKludge = !!(offset && node.nodeValue![offset - 1] == "\n")
-        // Issue #1128
-        if (brKludge && offset == node.nodeValue!.length) {
-          for (let scan: DOMNode | null = node, after; scan; scan = scan.parentNode) {
-            if (after = scan.nextSibling) {
-              if (after.nodeName == "BR")
-                anchorDOM = headDOM = {node: after.parentNode!, offset: domIndex(after) + 1}
-              break
-            }
-            let desc = scan.pmViewDesc
-            if (desc && desc.node && desc.node.isBlock) break
-          }
-        }
       } else {
         let prev = node.childNodes[offset - 1]
         brKludge = prev && (prev.nodeName == "BR" || (prev as HTMLElement).contentEditable == "false")
