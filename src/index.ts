@@ -485,9 +485,8 @@ function computeDocDeco(view: EditorView) {
     if (value) for (let attr in value) {
       if (attr == "class")
         attrs.class += " " + value[attr]
-      if (attr == "style") {
+      else if (attr == "style")
         attrs.style = (attrs.style ? attrs.style + ";" : "") + value[attr]
-      }
       else if (!attrs[attr] && attr != "contenteditable" && attr != "nodeName")
         attrs[attr] = String(value[attr])
     }
