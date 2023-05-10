@@ -1,3 +1,11 @@
+## 1.31.2 (2023-05-10)
+
+### Bug fixes
+
+Fix a bug that broke backspace after empty lines in code blocks on Firefox.
+
+Make it possible for the `attributes` prop to override the `translate` attribute.
+
 ## 1.31.1 (2023-05-01)
 
 ### Bug fixes
