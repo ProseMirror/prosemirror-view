@@ -478,7 +478,6 @@ function computeDocDeco(view: EditorView) {
   let attrs = Object.create(null)
   attrs.class = "ProseMirror"
   attrs.contenteditable = String(view.editable)
-  attrs.translate = "no"
 
   view.someProp("attributes", value => {
     if (typeof value == "function") value = value(view.state)
@@ -491,6 +490,7 @@ function computeDocDeco(view: EditorView) {
         attrs[attr] = String(value[attr])
     }
   })
+  if (!attrs.translate) attrs.translate = "no"
 
   return [Decoration.node(0, view.state.doc.content.size, attrs)]
 }
