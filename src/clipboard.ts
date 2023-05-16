@@ -168,9 +168,10 @@ function closeRight(node: Node, depth: number) {
 
 function closeRange(fragment: Fragment, side: number, from: number, to: number, depth: number, openEnd: number) {
   let node = side < 0 ? fragment.firstChild! : fragment.lastChild!, inner = node.content
+  if (fragment.childCount > 1) openEnd = 0
   if (depth < to - 1) inner = closeRange(inner, side, from, to, depth + 1, openEnd)
   if (depth >= from)
-    inner = side < 0 ? node.contentMatchAt(0)!.fillBefore(inner, fragment.childCount > 1 || openEnd <= depth)!.append(inner)
+    inner = side < 0 ? node.contentMatchAt(0)!.fillBefore(inner, openEnd <= depth)!.append(inner)
       : inner.append(node.contentMatchAt(node.childCount)!.fillBefore(Fragment.empty, true)!)
   return fragment.replaceChild(side < 0 ? 0 : fragment.childCount - 1, node.copy(inner))
 }
