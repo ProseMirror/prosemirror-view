@@ -1,3 +1,11 @@
+## 1.31.3 (2023-05-17)
+
+### Bug fixes
+
+Fix an issue that could cause the clipboard parser to create invalid slices when parsing content containing isolating nodes.
+
+Include CommonJS type declarations in the package to please new TypeScript resolution settings.
+
 ## 1.31.2 (2023-05-10)
 
 ### Bug fixes
