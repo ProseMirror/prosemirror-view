@@ -17,9 +17,6 @@ declare global {
 /// the behavior of a node's in-editor representation, and need to
 /// [define](#view.EditorProps.nodeViews) a custom node view.
 ///
-/// Mark views only support `dom` and `contentDOM`, and don't support
-/// any of the node view methods.
-///
 /// Objects returned as node views must conform to this interface.
 export interface NodeView {
   /// The outer DOM node that represents the document node.
@@ -78,6 +75,15 @@ export interface NodeView {
   /// Called when the node view is removed from the editor or the whole
   /// editor is destroyed. (Not available for marks.)
   destroy?: () => void
+}
+
+/// MarkView has a similar effect to [NodeView](#view.NodeView), but 
+/// it only supports `dom` and `contentDOM` and does not support any
+/// any of the methods available in the node view.
+export interface MarkView {
+  dom: HTMLElement,
+
+  contentDOM?: HTMLElement | null
 }
 
 // View descriptions are data structures that describe the DOM that is
