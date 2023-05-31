@@ -1255,6 +1255,7 @@ class ViewTreeUpdater {
     if (!wrapper.contentDOM) return null
     wrapper.children = next.children
     next.children = []
+    next.destroy()
     for (let ch of wrapper.children) ch.parent = wrapper
    
     return wrapper
