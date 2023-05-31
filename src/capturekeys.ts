@@ -278,7 +278,7 @@ export function captureKeyDown(view: EditorView, event: KeyboardEvent) {
   let code = event.keyCode, mods = getMods(event)
   if (code == 8 || (browser.mac && code == 72 && mods == "c")) { // Backspace, Ctrl-h on Mac
     return stopNativeHorizontalDelete(view, -1) || skipIgnoredNodes(view, -1)
-  } else if (code == 46 || (browser.mac && code == 68 && mods == "c")) { // Delete, Ctrl-d on Mac
+  } else if ((code == 46 && !event.shiftKey) || (browser.mac && code == 68 && mods == "c")) { // Delete, Ctrl-d on Mac
     return stopNativeHorizontalDelete(view, 1) || skipIgnoredNodes(view, 1)
   } else if (code == 13 || code == 27) { // Enter, Esc
     return true
