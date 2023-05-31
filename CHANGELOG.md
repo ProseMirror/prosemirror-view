@@ -1,3 +1,9 @@
+## 1.31.4 (2023-05-31)
+
+### Bug fixes
+
+Make sure `destroy` is called on node views that are replaced by changing a node's markup.
+
 ## 1.31.3 (2023-05-17)
 
 ### Bug fixes
