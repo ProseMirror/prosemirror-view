@@ -582,11 +582,12 @@ function capturePaste(view: EditorView, event: ClipboardEvent) {
   if (!plainText) target.contentEditable = "true"
   target.style.cssText = "position: fixed; left: -10000px; top: 10px"
   target.focus()
+  let plain = view.input.shiftKey && view.input.lastKeyCode != 45
   setTimeout(() => {
     view.focus()
     if (target.parentNode) target.parentNode.removeChild(target)
-    if (plainText) doPaste(view, (target as HTMLTextAreaElement).value, null, view.input.shiftKey, event)
-    else doPaste(view, target.textContent!, target.innerHTML, view.input.shiftKey, event)
+    if (plainText) doPaste(view, (target as HTMLTextAreaElement).value, null, plain, event)
+    else doPaste(view, target.textContent!, target.innerHTML, plain, event)
   }, 50)
 }
 
@@ -597,7 +598,7 @@ export function doPaste(view: EditorView, text: string, html: string | null, pre
 
   let singleNode = sliceSingleNode(slice)
   let tr = singleNode
-    ? view.state.tr.replaceSelectionWith(singleNode, view.input.shiftKey)
+    ? view.state.tr.replaceSelectionWith(singleNode, preferPlain)
     : view.state.tr.replaceSelection(slice)
   view.dispatch(tr.scrollIntoView().setMeta("paste", true).setMeta("uiEvent", "paste"))
   return true
@@ -611,7 +612,8 @@ editHandlers.paste = (view, _event) => {
   // where the editor is almost always composing.
   if (view.composing && !browser.android) return
   let data = brokenClipboardAPI ? null : event.clipboardData
-  if (data && doPaste(view, data.getData("text/plain"), data.getData("text/html"), view.input.shiftKey, event))
+  let plain = view.input.shiftKey && view.input.lastKeyCode != 45
+  if (data && doPaste(view, data.getData("text/plain"), data.getData("text/html"), plain, event))
     event.preventDefault()
   else
     capturePaste(view, event)
