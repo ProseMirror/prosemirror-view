@@ -185,7 +185,7 @@ export function readDOMChange(view: EditorView, from: number, to: number, typeOv
   // as being an iOS enter press), just dispatch an Enter key instead.
   if (((browser.ios && view.input.lastIOSEnter > Date.now() - 225 &&
         (!inlineChange || addedNodes.some(n => n.nodeName == "DIV" || n.nodeName == "P"))) ||
-       (!inlineChange && $from.pos < parse.doc.content.size &&
+       (!inlineChange && $from.pos < parse.doc.content.size && !$from.sameParent($to) &&
         (nextSel = Selection.findFrom(parse.doc.resolve($from.pos + 1), 1, true)) &&
         nextSel.head == $to.pos)) &&
       view.someProp("handleKeyDown", f => f(view, keyEvent(13, "Enter")))) {
