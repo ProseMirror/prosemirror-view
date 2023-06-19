@@ -1,3 +1,15 @@
+## 1.31.5 (2023-06-19)
+
+### Bug fixes
+
+Fix a bug where the editor accidentally blocked shift-delete when the whole document is selected.
+
+Bring back workaround for an issue where Firefox draws the cursor in the wrong place in a code block.
+
+Fix an issue where Shift-Insert pastes pasted plain text (because Shift was being held).
+
+Fix an issue where selecting across paragraph and starting a composition would update the state as if Enter was pressed and disrupt the composition.
+
 ## 1.31.4 (2023-05-31)
 
 ### Bug fixes
