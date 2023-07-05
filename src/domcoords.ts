@@ -227,7 +227,7 @@ function posFromCaret(view: EditorView, node: Node, offset: number, coords: {top
         if (rect.left > coords.left || rect.top > coords.top) outsideBlock = desc.posBefore
         else if (rect.right < coords.left || rect.bottom < coords.top) outsideBlock = desc.posAfter
       }
-      if (!desc.contentDOM && outsideBlock < 0) {
+      if (!desc.contentDOM && outsideBlock < 0 && !desc.node.isText) {
         // If we are inside a leaf, return the side of the leaf closer to the coords
         let before = desc.node.isBlock ? coords.top < (rect.top + rect.bottom) / 2
           : coords.left < (rect.left + rect.right) / 2
