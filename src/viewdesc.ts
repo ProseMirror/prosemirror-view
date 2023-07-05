@@ -562,7 +562,7 @@ class CompositionViewDesc extends ViewDesc {
 // some cases they will be split more often than would appear
 // necessary.
 class MarkViewDesc extends ViewDesc {
-  constructor(parent: ViewDesc, readonly mark: Mark, dom: DOMNode, contentDOM: HTMLElement | null) {
+  constructor(parent: ViewDesc, readonly mark: Mark, dom: DOMNode, contentDOM: HTMLElement) {
     super(parent, [], dom, contentDOM)
   }
 
@@ -576,7 +576,7 @@ class MarkViewDesc extends ViewDesc {
 
   parseRule(): ParseRule | null {
     if ((this.dirty & NODE_DIRTY) || this.mark.type.spec.reparseInView) return null
-    return {mark: this.mark.type.name, attrs: this.mark.attrs, contentElement: this.contentDOM || undefined}
+    return {mark: this.mark.type.name, attrs: this.mark.attrs, contentElement: this.contentDOM!}
   }
 
   matchesMark(mark: Mark) { return this.dirty != NODE_DIRTY && this.mark.eq(mark) }
