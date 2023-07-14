@@ -1,3 +1,11 @@
+## 1.31.6 (2023-07-14)
+
+### Bug fixes
+
+Fix a bug that caused `posAtCoords` to return incorrect results for coordinates over inline-decorated text.
+
+Don't try to scroll fixed-positioned elements into view by scrolling their parent elements.
+
 ## 1.31.5 (2023-06-19)
 
 ### Bug fixes
