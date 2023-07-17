@@ -157,14 +157,16 @@ export class DOMObserver {
     }
   }
 
+  pendingRecords() {
+    if (this.observer) for (let mut of this.observer.takeRecords()) this.queue.push(mut)
+    return this.queue
+  }
+
   flush() {
     let {view} = this
     if (!view.docView || this.flushingSoon > -1) return
-    let mutations = this.observer ? this.observer.takeRecords() : []
-    if (this.queue.length) {
-      mutations = this.queue.concat(mutations)
-      this.queue.length = 0
-    }
+    let mutations = this.pendingRecords()
+    if (mutations.length) this.queue = []
 
     let sel = view.domSelectionRange()
     let newSel = !this.suppressingSelectionUpdates && !this.currentSelection.eq(sel) && hasFocusAndSelection(view) && !this.ignoreSelectionChange(sel)

@@ -79,6 +79,9 @@ function ruleFromNode(dom: DOMNode): ParseRule | null {
 const isInline = /^(a|abbr|acronym|b|bd[io]|big|br|button|cite|code|data(list)?|del|dfn|em|i|ins|kbd|label|map|mark|meter|output|q|ruby|s|samp|small|span|strong|su[bp]|time|u|tt|var)$/i
 
 export function readDOMChange(view: EditorView, from: number, to: number, typeOver: boolean, addedNodes: readonly DOMNode[]) {
+  let compositionID = view.input.compositionPendingChanges || (view.composing ? view.input.compositionID : 0)
+  view.input.compositionPendingChanges = 0
+  
   if (from < 0) {
     let origin = view.input.lastSelectionTime > Date.now() - 50 ? view.input.lastSelectionOrigin : null
     let newSel = selectionFromDOM(view, origin)
@@ -90,7 +93,7 @@ export function readDOMChange(view: EditorView, from: number, to: number, typeOv
       let tr = view.state.tr.setSelection(newSel)
       if (origin == "pointer") tr.setMeta("pointer", true)
       else if (origin == "key") tr.scrollIntoView()
-      if (view.composing) tr.setMeta("composition", view.input.compositionID)
+      if (compositionID) tr.setMeta("composition", compositionID)
       view.dispatch(tr)
     }
     return
@@ -133,7 +136,7 @@ export function readDOMChange(view: EditorView, from: number, to: number, typeOv
         let sel = resolveSelection(view, view.state.doc, parse.sel)
         if (sel && !sel.eq(view.state.selection)) {
           let tr = view.state.tr.setSelection(sel)
-          if (view.composing) tr.setMeta("composition", view.input.compositionID)
+          if (compositionID) tr.setMeta("composition", compositionID)
           view.dispatch(tr)
         }
       }
@@ -268,7 +271,7 @@ export function readDOMChange(view: EditorView, from: number, to: number, typeOv
       tr.setSelection(sel)
   }
   if (storedMarks) tr.ensureMarks(storedMarks)
-  if (view.composing) tr.setMeta("composition", view.input.compositionID)
+  if (compositionID) tr.setMeta("composition", compositionID)
   view.dispatch(tr.scrollIntoView())
 }
 

@@ -34,6 +34,8 @@ export class InputState {
   compositionNodes: ViewDesc[] = []
   compositionEndedAt = -2e8
   compositionID = 1
+  // Set to a composition ID when there are pending changes at compositionend
+  compositionPendingChanges = 0
   domChangeCount = 0
   eventHandlers: {[event: string]: (event: Event) => void} = Object.create(null)
   hideSelectionGuard: (() => void) | null = null
@@ -487,6 +489,8 @@ editHandlers.compositionend = (view, event) => {
   if (view.composing) {
     view.input.composing = false
     view.input.compositionEndedAt = event.timeStamp
+    view.input.compositionPendingChanges = view.domObserver.pendingRecords().length ? view.input.compositionID : 0
+    if (view.input.compositionPendingChanges) Promise.resolve().then(() => view.domObserver.flush())
     view.input.compositionID++
     scheduleComposeEnd(view, 20)
   }
