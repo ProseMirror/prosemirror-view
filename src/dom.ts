@@ -74,7 +74,7 @@ export function isOnEdge(node: Node, offset: number, parent: Node) {
   }
 }
 
-function hasBlockDesc(dom: Node) {
+export function hasBlockDesc(dom: Node) {
   let desc
   for (let cur: Node | null = dom; cur; cur = cur.parentNode) if (desc = cur.pmViewDesc) break
   return desc && desc.node && desc.node.isBlock && (desc.dom == dom || desc.contentDOM == dom)

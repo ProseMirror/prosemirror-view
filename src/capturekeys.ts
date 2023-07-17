@@ -1,7 +1,7 @@
 import {Selection, NodeSelection, TextSelection, AllSelection, EditorState} from "prosemirror-state"
 import {EditorView} from "./index"
 import * as browser from "./browser"
-import {domIndex, selectionCollapsed} from "./dom"
+import {domIndex, selectionCollapsed, hasBlockDesc} from "./dom"
 import {selectionToDOM} from "./selection"
 
 function moveSelectionBlock(state: EditorState, dir: number) {
@@ -157,7 +157,42 @@ function isBlockNode(dom: Node) {
   return desc && desc.node && desc.node.isBlock
 }
 
+function textNodeAfter(node: Node | null, offset: number): Text | undefined {
+  while (node && offset == node.childNodes.length && !hasBlockDesc(node)) {
+    offset = domIndex(node) + 1
+    node = node.parentNode
+  }
+  while (node && offset < node.childNodes.length) {
+    node = node.childNodes[offset]
+    if (node.nodeType == 3) return node as Text
+    offset = 0
+  }
+}
+
+function textNodeBefore(node: Node | null, offset: number): Text | undefined {
+  while (node && !offset && !hasBlockDesc(node)) {
+    offset = domIndex(node)
+    node = node.parentNode
+  }
+  while (node && offset) {
+    node = node.childNodes[offset - 1]
+    if (node.nodeType == 3) return node as Text
+    offset = node.childNodes.length
+  }
+}
+
 function setSelFocus(view: EditorView, node: Node, offset: number) {
+  if (node.nodeType != 3) {
+    let before, after
+    if (after = textNodeAfter(node, offset)) {
+      node = after
+      offset = 0
+    } else if (before = textNodeBefore(node, offset)) {
+      node = before
+      offset = before.nodeValue!.length
+    }
+  }
+
   let sel = view.domSelection()
   if (selectionCollapsed(sel)) {
     let range = document.createRange()
