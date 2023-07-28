@@ -1,3 +1,13 @@
+## 1.31.7 (2023-07-28)
+
+### Bug fixes
+
+Fix a bug where, when a compositionend event was received before the composition's final changes were processed, the resulting transaction didn't have its composition metadata set.
+
+Fix an issue that caused cursor motion to stop at uneditable nodes that aren't widget decorations.
+
+When scrolling an element higher than the viewport into view, make sure its top is visible.
+
 ## 1.31.6 (2023-07-14)
 
 ### Bug fixes
