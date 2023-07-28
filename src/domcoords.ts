@@ -37,7 +37,9 @@ export function scrollRectIntoView(view: EditorView, rect: Rect, startDOM: Node)
     if (rect.top < bounding.top + getSide(scrollThreshold, "top"))
       moveY = -(bounding.top - rect.top + getSide(scrollMargin, "top"))
     else if (rect.bottom > bounding.bottom - getSide(scrollThreshold, "bottom"))
-      moveY = rect.bottom - bounding.bottom + getSide(scrollMargin, "bottom")
+      moveY = rect.bottom - rect.top > bounding.bottom - bounding.top
+        ? rect.top + getSide(scrollMargin, "top") - bounding.top
+        : rect.bottom - bounding.bottom + getSide(scrollMargin, "bottom")
     if (rect.left < bounding.left + getSide(scrollThreshold, "left"))
       moveX = -(bounding.left - rect.left + getSide(scrollMargin, "left"))
     else if (rect.right > bounding.right - getSide(scrollThreshold, "right"))
