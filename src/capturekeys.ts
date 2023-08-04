@@ -54,10 +54,10 @@ function nodeLen(node: Node) {
   return node.nodeType == 3 ? node.nodeValue!.length : node.childNodes.length
 }
 
-function isIgnorable(dom: Node) {
+function isIgnorable(dom: Node, dir: number) {
   if ((dom as HTMLElement).contentEditable == "false") return true
   let desc = dom.pmViewDesc
-  return desc && desc.size == 0 && (dom.nextSibling || dom.nodeName != "BR")
+  return desc && desc.size == 0 && (dir < 0 || dom.nextSibling || dom.nodeName != "BR")
 }
 
 function skipIgnoredNodes(view: EditorView, dir: number) {
@@ -74,14 +74,14 @@ function skipIgnoredNodesBefore(view: EditorView) {
   // Gecko will do odd things when the selection is directly in front
   // of a non-editable node, so in that case, move it into the next
   // node if possible. Issue prosemirror/prosemirror#832.
-  if (browser.gecko && node.nodeType == 1 && offset < nodeLen(node) && isIgnorable(node.childNodes[offset])) force = true
+  if (browser.gecko && node.nodeType == 1 && offset < nodeLen(node) && isIgnorable(node.childNodes[offset], -1)) force = true
   for (;;) {
     if (offset > 0) {
       if (node.nodeType != 1) {
         break
       } else {
         let before = node.childNodes[offset - 1]
-        if (isIgnorable(before)) {
+        if (isIgnorable(before, -1)) {
           moveNode = node
           moveOffset = --offset
         } else if (before.nodeType == 3) {
@@ -93,7 +93,7 @@ function skipIgnoredNodesBefore(view: EditorView) {
       break
     } else {
       let prev = node.previousSibling
-      while (prev && isIgnorable(prev)) {
+      while (prev && isIgnorable(prev, -1)) {
         moveNode = node.parentNode
         moveOffset = domIndex(prev)
         prev = prev.previousSibling
@@ -124,7 +124,7 @@ function skipIgnoredNodesAfter(view: EditorView) {
     if (offset < len) {
       if (node.nodeType != 1) break
       let after = node.childNodes[offset]
-      if (isIgnorable(after)) {
+      if (isIgnorable(after, 1)) {
         moveNode = node
         moveOffset = ++offset
       }
@@ -133,7 +133,7 @@ function skipIgnoredNodesAfter(view: EditorView) {
       break
     } else {
       let next = node.nextSibling
-      while (next && isIgnorable(next)) {
+      while (next && isIgnorable(next, 1)) {
         moveNode = next.parentNode
         moveOffset = domIndex(next) + 1
         next = next.nextSibling

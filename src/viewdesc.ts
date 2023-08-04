@@ -387,7 +387,7 @@ export class ViewDesc {
         brKludge = !!(offset && node.nodeValue![offset - 1] == "\n")
         // Issue #1128
         if (brKludge && offset == node.nodeValue!.length) {
-          for (let scan: DOMNode | null = node, after; scan; scan = scan.parentNode) {
+           for (let scan: DOMNode | null = node, after; scan; scan = scan.parentNode) {
             if (after = scan.nextSibling) {
               if (after.nodeName == "BR")
                 anchorDOM = headDOM = {node: after.parentNode!, offset: domIndex(after) + 1}
