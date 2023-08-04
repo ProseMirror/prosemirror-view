@@ -163,8 +163,10 @@ function textNodeAfter(node: Node | null, offset: number): Text | undefined {
     node = node.parentNode
   }
   while (node && offset < node.childNodes.length) {
-    node = node.childNodes[offset]
-    if (node.nodeType == 3) return node as Text
+    let next = node.childNodes[offset]
+    if (next.nodeType == 3) return next as Text
+    if (next.nodeType == 1 && (next as HTMLElement).contentEditable == "false") break
+    node = next
     offset = 0
   }
 }
@@ -175,8 +177,10 @@ function textNodeBefore(node: Node | null, offset: number): Text | undefined {
     node = node.parentNode
   }
   while (node && offset) {
-    node = node.childNodes[offset - 1]
-    if (node.nodeType == 3) return node as Text
+    let next = node.childNodes[offset - 1]
+    if (next.nodeType == 3) return next as Text
+    if (next.nodeType == 1 && (next as HTMLElement).contentEditable == "false") break
+    node = next
     offset = node.childNodes.length
   }
 }
@@ -327,7 +331,7 @@ export function captureKeyDown(view: EditorView, event: KeyboardEvent) {
   } else if (code == 38 || (browser.mac && code == 80 && mods == "c")) { // Up arrow, Ctrl-p on Mac
     return selectVertically(view, -1, mods) || skipIgnoredNodes(view, -1)
   } else if (code == 40 || (browser.mac && code == 78 && mods == "c")) { // Down arrow, Ctrl-n on Mac
-    return safariDownArrowBug(view) || selectVertically(view, 1, mods) || skipIgnoredNodesAfter(view)
+    return safariDownArrowBug(view) || selectVertically(view, 1, mods) || skipIgnoredNodes(view, 1)
   } else if (mods == (browser.mac ? "m" : "c") &&
              (code == 66 || code == 73 || code == 89 || code == 90)) { // Mod-[biyz]
     return true
