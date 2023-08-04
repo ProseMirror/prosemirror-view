@@ -1264,12 +1264,12 @@ class ViewTreeUpdater {
     if (next.dirty || node.isAtom || !next.children.length ||
         !next.node.content.eq(node.content)) return null
     let wrapper = NodeViewDesc.create(this.top, node, outerDeco, innerDeco, view, pos)
-    if (!wrapper.contentDOM) return null
-    wrapper.children = next.children
-    next.children = []
+    if (wrapper.contentDOM) {
+      wrapper.children = next.children
+      next.children = []
+      for (let ch of wrapper.children) ch.parent = wrapper
+    }
     next.destroy()
-    for (let ch of wrapper.children) ch.parent = wrapper
-   
     return wrapper
   }
 
