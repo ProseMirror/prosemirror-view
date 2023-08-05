@@ -1244,9 +1244,11 @@ class ViewTreeUpdater {
           return true
         } else if (!locked && (updated = this.recreateWrapper(next, node, outerDeco, innerDeco, view, pos))) {
           this.top.children[this.index] = updated
-          updated.dirty = CONTENT_DIRTY
-          updated.updateChildren(view, pos + 1)
-          updated.dirty = NOT_DIRTY
+          if (updated.contentDOM) {
+            updated.dirty = CONTENT_DIRTY
+            updated.updateChildren(view, pos + 1)
+            updated.dirty = NOT_DIRTY
+          }
           this.changed = true
           this.index++
           return true
