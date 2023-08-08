@@ -271,14 +271,24 @@ function forceDOMFlush(view: EditorView) {
 
 const selectNodeModifier: keyof MouseEvent = browser.mac ? "metaKey" : "ctrlKey"
 
+const hasDoubleClickHandlers = (view: EditorView): boolean => (
+  !!view.someProp("handleDoubleClick") || !!view.someProp("handleDoubleClickOn")
+  || !!view.someProp("handleTripleClick") || !!view.someProp("handleTripleClickOn")
+)
+
+const hasTripleClickHandlers = (view: EditorView): boolean => (
+  !!view.someProp("handleTripleClick") || !!view.someProp("handleTripleClickOn")
+)
+
 handlers.mousedown = (view, _event) => {
   let event = _event as MouseEvent
   view.input.shiftKey = event.shiftKey
   let flushed = forceDOMFlush(view)
   let now = Date.now(), type = "singleClick"
   if (now - view.input.lastClick.time < 500 && isNear(event, view.input.lastClick) && !event[selectNodeModifier]) {
-    if (view.input.lastClick.type == "singleClick") type = "doubleClick"
-    else if (view.input.lastClick.type == "doubleClick") type = "tripleClick"
+    if (view.input.lastClick.type == "singleClick" && 
+      (hasDoubleClickHandlers(view) || hasTripleClickHandlers(view))) type = "doubleClick"
+    else if (view.input.lastClick.type == "doubleClick" && hasTripleClickHandlers(view)) type = "tripleClick"
   }
   view.input.lastClick = {time: now, x: event.clientX, y: event.clientY, type}
 
