@@ -303,7 +303,7 @@ export class DecorationSet implements DecorationSource {
         result.push(span.copy(span.from + offset, span.to + offset))
     }
     for (let i = 0; i < this.children.length; i += 3) {
-      if (this.children[i] < end && this.children[i + 1] > start) {
+      if ((this.children[i] as number) < end && (this.children[i + 1] as number) > start) {
         let childOff = (this.children[i] as number) + 1
         ;(this.children[i + 2] as DecorationSet).findInner(start - childOff, end - childOff,
                                                            result, offset + childOff, predicate)
@@ -357,7 +357,7 @@ export class DecorationSet implements DecorationSource {
       if (!(found = takeSpansForNode(decorations, childNode, baseOffset))) return
 
       if (!children) children = this.children.slice()
-      while (childIndex < children.length && children[childIndex] < childOffset) childIndex += 3
+      while (childIndex < children.length && (children[childIndex] as number) < childOffset) childIndex += 3
       if (children[childIndex] == childOffset)
         children[childIndex + 2] = (children[childIndex + 2] as DecorationSet).addInner(childNode, found, baseOffset + 1)
       else
@@ -416,7 +416,7 @@ export class DecorationSet implements DecorationSource {
     if (node.isLeaf) return DecorationSet.empty
 
     let child, local: Decoration[] | undefined
-    for (let i = 0; i < this.children.length; i += 3) if (this.children[i] >= offset) {
+    for (let i = 0; i < this.children.length; i += 3) if ((this.children[i] as number) >= offset) {
       if (this.children[i] == offset) child = this.children[i + 2] as DecorationSet
       break
     }
@@ -578,7 +578,7 @@ function mapChildren(
   // Find the child nodes that still correspond to a single node,
   // recursively call mapInner on them and update their positions.
   let mustRebuild = false
-  for (let i = 0; i < children.length; i += 3) if (children[i + 1] < 0) { // Touched nodes
+  for (let i = 0; i < children.length; i += 3) if ((children[i + 1] as number) < 0) { // Touched nodes
     if (children[i + 1] == -2) {
       mustRebuild = true
       children[i + 1] = -1
@@ -615,7 +615,7 @@ function mapChildren(
                                                        offset, oldOffset, options)
     let built = buildTree(decorations, node, 0, options)
     newLocal = built.local as Decoration[]
-    for (let i = 0; i < children.length; i += 3) if (children[i + 1] < 0) {
+    for (let i = 0; i < children.length; i += 3) if ((children[i + 1] as number) < 0) {
       children.splice(i, 3)
       i -= 3
     }
