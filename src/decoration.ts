@@ -278,7 +278,8 @@ export class DecorationSet implements DecorationSource {
   }
 
   /// Create a set of decorations, using the structure of the given
-  /// document.
+  /// document. This will consume (modify) the `decorations` array, so
+  /// you must make a copy if you want need to preserve that.
   static create(doc: Node, decorations: Decoration[]) {
     return decorations.length ? buildTree(decorations, doc, 0, noSpec) : empty
   }
@@ -340,8 +341,9 @@ export class DecorationSet implements DecorationSource {
   }
 
   /// Add the given array of decorations to the ones in the set,
-  /// producing a new set. Needs access to the current document to
-  /// create the appropriate tree structure.
+  /// producing a new set. Consumes the `decorations` array. Needs
+  /// access to the current document to create the appropriate tree
+  /// structure.
   add(doc: Node, decorations: Decoration[]) {
     if (!decorations.length) return this
     if (this == empty) return DecorationSet.create(doc, decorations)
