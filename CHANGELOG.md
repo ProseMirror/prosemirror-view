@@ -1,3 +1,13 @@
+## 1.31.8 (2023-09-12)
+
+### Bug fixes
+
+Fix a bug that broke arrow motion near uneditable nodes on Chrome in some situations.
+
+Fix an issue that broke backspace at the end of a textblock that ended in a newline on Chrome.
+
+Fix a crash in the way inline decorations that ended right after a node end position were drawn.
+
 ## 1.31.7 (2023-07-28)
 
 ### Bug fixes
