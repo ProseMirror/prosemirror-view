@@ -223,6 +223,9 @@ export class Decoration {
 
   /// @internal
   get inline() { return this.type instanceof InlineType }
+
+  /// @internal
+  get widget() { return this.type instanceof WidgetType }
 }
 
 /// A set of attributes to add to a decorated node. Most properties

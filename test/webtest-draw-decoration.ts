@@ -459,8 +459,8 @@ describe("Decoration drawing", () => {
     ist(view.dom.textContent, "abab")
   })
 
-  it("only draws inline decorations on the innermost level", () => {
-    let s = new Schema({
+  function thingSchema() {
+    return new Schema({
       nodes: {
         doc: {content: "(text | thing)*"},
         text: {},
@@ -470,6 +470,10 @@ describe("Decoration drawing", () => {
                 parseDOM: [{tag: "strong"}]}
       }
     })
+  }
+
+  it("only draws inline decorations on the innermost level", () => {
+    let s = thingSchema()
     let view = tempEditor({
       doc: s.node("doc", null, [s.text("abc"), s.node("thing", null, [s.text("def")]), s.text("ghi")]),
       decorations: s => DecorationSet.create(s.doc, [Decoration.inline(1, 10, {class: "dec"})])
@@ -478,6 +482,15 @@ describe("Decoration drawing", () => {
     ist(styled.length, 3)
     ist(Array.prototype.map.call(styled, n => n.textContent).join(), "bc,def,gh")
     ist(styled[1].parentNode!.nodeName, "STRONG")
+  })
+
+  it("can handle inline decorations ending on inline node boundaries", () => {
+    let s = thingSchema()
+    let view = tempEditor({
+      doc: s.node("doc", null, [s.node("thing", null, s.text("abc")), s.text("def")]),
+      decorations: s => DecorationSet.create(s.doc, [Decoration.inline(3, 5, {class: "c"})])
+    })
+    ist(view.dom.querySelectorAll(".c").length, 1)
   })
 
   it("can handle nodeName decoration overlapping with classes", () => {

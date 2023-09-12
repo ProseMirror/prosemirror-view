@@ -1405,10 +1405,15 @@ function iterDeco(
 
   let decoIndex = 0, active = [], restNode = null
   for (let parentIndex = 0;;) {
-    if (decoIndex < locals.length && locals[decoIndex].to == offset) {
-      let widget = locals[decoIndex++], widgets
-      while (decoIndex < locals.length && locals[decoIndex].to == offset)
-        (widgets || (widgets = [widget])).push(locals[decoIndex++])
+    let widget, widgets
+    while (decoIndex < locals.length && locals[decoIndex].to == offset) {
+      let next = locals[decoIndex++]
+      if (next.widget) {
+        if (!widget) widget = next
+        else (widgets || (widgets = [widget])).push(next)
+      }
+    }
+    if (widget) {
       if (widgets) {
         widgets.sort(compareSide)
         for (let i = 0; i < widgets.length; i++) onWidget(widgets[i], parentIndex, !!restNode)
