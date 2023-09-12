@@ -294,6 +294,11 @@ export function posAtCoords(view: EditorView, coords: {top: number, left: number
           offset++
       }
     }
+    let prev
+    // When clicking above the right side of an uneditable node, Chrome will report a cursor position after that node.
+    if (browser.webkit && offset && node.nodeType == 1 && (prev = node.childNodes[offset - 1]).nodeType == 1 &&
+        (prev as HTMLElement).contentEditable == "false" && (prev as HTMLElement).getBoundingClientRect().top >= coords.top)
+      offset--
     // Suspiciously specific kludge to work around caret*FromPoint
     // never returning a position at the end of the document
     if (node == view.dom && offset == node.childNodes.length - 1 && node.lastChild!.nodeType == 1 &&
