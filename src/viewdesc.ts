@@ -1499,6 +1499,8 @@ function findTextInFragment(frag: Fragment, text: string, from: number, to: numb
       str += next.text
     }
     if (pos >= from) {
+      if (pos >= to && str.slice(to - text.length - childStart, to - childStart) == text)
+        return to - text.length
       let found = childStart < to ? str.lastIndexOf(text, to - childStart - 1) : -1
       if (found >= 0 && found + text.length + childStart >= from)
         return childStart + found
