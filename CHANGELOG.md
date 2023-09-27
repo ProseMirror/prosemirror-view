@@ -1,3 +1,15 @@
+## 1.32.0 (2023-09-27)
+
+### Bug fixes
+
+Work around an issue on Chrome where, when clicking above the right side of an uneditable node, the cursor would be put after the node.
+
+Fix a bug that could corrupt the composition when it occurs next to text identical to the composed characters.
+
+### New features
+
+The new `EditorView.updateRoot` method can be used to make the editor update its DOM root when it is moved to a new document or shadow tree.
+
 ## 1.31.8 (2023-09-12)
 
 ### Bug fixes
