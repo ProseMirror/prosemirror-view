@@ -339,6 +339,12 @@ export class EditorView {
     return cached || document
   }
 
+  /// When an existing editor view is moved to a new document or
+  /// shadow tree, call this to make it recompute its root.
+  updateRoot() {
+    this._root = null
+  }
+
   /// Given a pair of viewport coordinates, return the document
   /// position that corresponds to them. May return null if the given
   /// coordinates aren't inside of the editor. When an object is
