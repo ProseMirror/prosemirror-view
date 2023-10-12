@@ -19,7 +19,12 @@ function apply(view: EditorView, sel: Selection) {
 function selectHorizontally(view: EditorView, dir: number, mods: string) {
   let sel = view.state.selection
   if (sel instanceof TextSelection) {
-    if (!sel.empty || mods.indexOf("s") > -1) {
+    if (mods.indexOf("s") > -1) {
+      let {$head} = sel, node = $head.textOffset ? null : dir < 0 ? $head.nodeBefore : $head.nodeAfter
+      if (!node || node.isText || !node.isLeaf) return false
+      let $newHead = view.state.doc.resolve($head.pos + node.nodeSize * (dir < 0 ? -1 : 1))
+      return apply(view, new TextSelection(sel.$anchor, $newHead))
+    } else if (!sel.empty) {
       return false
     } else if (view.endOfTextblock(dir > 0 ? "forward" : "backward")) {
       let next = moveSelectionBlock(view.state, dir)
