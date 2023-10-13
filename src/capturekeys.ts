@@ -60,7 +60,6 @@ function nodeLen(node: Node) {
 }
 
 function isIgnorable(dom: Node, dir: number) {
-  if ((dom as HTMLElement).contentEditable == "false") return true
   let desc = dom.pmViewDesc
   return desc && desc.size == 0 && (dir < 0 || dom.nextSibling || dom.nodeName != "BR")
 }
