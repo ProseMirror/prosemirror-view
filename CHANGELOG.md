@@ -1,3 +1,11 @@
+## 1.32.1 (2023-10-13)
+
+### Bug fixes
+
+Work around a Chrome issue where it didn't draw a selection for inline leaf nodes when selecting across them.
+
+Override the native behavior when shift-selecting horizontally across non-text inline nodes, since most browsers behave poorly here.
+
 ## 1.32.0 (2023-09-27)
 
 ### Bug fixes
