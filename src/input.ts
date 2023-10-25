@@ -608,6 +608,13 @@ export function doPaste(view: EditorView, text: string, html: string | null, pre
   return true
 }
 
+function getText(clipboardData: DataTransfer) {
+  let text = clipboardData.getData("text/html") || clipboardData.getData("Text")
+  if (text) return text
+  let uris = clipboardData.getData("text/uri-list")
+  return uris ? uris.replace(/\r?\n/g, " ") : ""
+}
+
 editHandlers.paste = (view, _event) => {
   let event = _event as ClipboardEvent
   // Handling paste from JavaScript during composition is very poorly
@@ -617,7 +624,7 @@ editHandlers.paste = (view, _event) => {
   if (view.composing && !browser.android) return
   let data = brokenClipboardAPI ? null : event.clipboardData
   let plain = view.input.shiftKey && view.input.lastKeyCode != 45
-  if (data && doPaste(view, data.getData("text/plain"), data.getData("text/html"), plain, event))
+  if (data && doPaste(view, getText(data), data.getData("text/html"), plain, event))
     event.preventDefault()
   else
     capturePaste(view, event)
@@ -678,7 +685,7 @@ editHandlers.drop = (view, _event) => {
   if (slice) {
     view.someProp("transformPasted", f => { slice = f(slice!, view) })
   } else {
-    slice = parseFromClipboard(view, event.dataTransfer.getData(brokenClipboardAPI ? "Text" : "text/plain"),
+    slice = parseFromClipboard(view, getText(event.dataTransfer),
                                brokenClipboardAPI ? null : event.dataTransfer.getData("text/html"), false, $mouse)
   }
   let move = !!(dragging && !event[dragCopyModifier])
