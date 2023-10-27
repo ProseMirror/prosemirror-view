@@ -1,3 +1,9 @@
+## 1.32.2 (2023-10-27)
+
+### Bug fixes
+
+Check for text/uri-list data on the clipboard or in the drop event when pasting or dropping content, since some types of copying on Apple devices use this format.
+
 ## 1.32.1 (2023-10-13)
 
 ### Bug fixes
