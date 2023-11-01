@@ -609,7 +609,7 @@ export function doPaste(view: EditorView, text: string, html: string | null, pre
 }
 
 function getText(clipboardData: DataTransfer) {
-  let text = clipboardData.getData("text/html") || clipboardData.getData("Text")
+  let text = clipboardData.getData("text/plain") || clipboardData.getData("Text")
   if (text) return text
   let uris = clipboardData.getData("text/uri-list")
   return uris ? uris.replace(/\r?\n/g, " ") : ""
