@@ -1,3 +1,9 @@
+## 1.32.3 (2023-11-01)
+
+### Bug fixes
+
+Fix a bug where, in some situations, pasting plain text pasted HTML markup.
+
 ## 1.32.2 (2023-10-27)
 
 ### Bug fixes
