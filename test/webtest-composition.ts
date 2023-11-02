@@ -3,6 +3,7 @@ import ist from "ist"
 import {Decoration, DecorationSet, __endComposition, EditorView} from "prosemirror-view"
 import {EditorState, Plugin} from "prosemirror-state"
 import {tempEditor, requireFocus, findTextNode} from "./view"
+import { ReplaceStep } from "prosemirror-transform"
 
 function event(pm: EditorView, type: string) {
   pm.dom.dispatchEvent(new CompositionEvent(type))
@@ -130,6 +131,23 @@ describe("EditorView composition", () => {
       n => edit(n, "z", 3)
     ])
     ist(pm.state.doc, doc(p("fxyzoo")), eq)
+  })
+
+  it("produces expected Steps with unicode sequences", () => {
+    let steps: ReplaceStep[] = [];
+    function dispatchTransaction(tr) {
+        this.updateState(this.state.apply(tr))
+        steps = steps.concat(tr.steps)
+    }
+    let pm = requireFocus(tempEditor({doc: doc(p("test")), dispatchTransaction}))
+    compose(pm, () => edit(findTextNode(pm.dom, "test")!), [
+      n => edit(n, "👽", 0),
+      n => edit(n, "💎", 0)
+    ])
+    let expected = doc(p("💎👽test"))
+    ist(pm.state.doc, expected, eq)
+    ist(steps[0].slice.content.toString(), '<"👽">')
+    ist(steps[1].slice.content.toString(), '<"💎">')
   })
 
   it("can deal with Android-style newline-after-composition", () => {
