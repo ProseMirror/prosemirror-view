@@ -354,13 +354,23 @@ function findDiff(a: Fragment, b: Fragment, pos: number, preferredPos: number, p
   if (endA < start && a.size < b.size) {
     let move = preferredPos <= start && preferredPos >= endA ? start - preferredPos : 0
     start -= move
+    if (start && start < b.size && isSurrogatePair(b.textBetween(start - 1, start + 1)))
+      start += move ? 1 : -1
     endB = start + (endB - endA)
     endA = start
   } else if (endB < start) {
     let move = preferredPos <= start && preferredPos >= endB ? start - preferredPos : 0
     start -= move
+    if (start && start < a.size && isSurrogatePair(a.textBetween(start - 1, start + 1)))
+      start += move ? 1 : -1
     endA = start + (endA - endB)
     endB = start
   }
   return {start, endA, endB}
+}
+
+function isSurrogatePair(str: string) {
+  if (str.length != 2) return false
+  let a = str.charCodeAt(0), b = str.charCodeAt(1)
+  return a >= 0xDC00 && a <= 0xDFFF && b >= 0xD800 && b <= 0xDBFF
 }

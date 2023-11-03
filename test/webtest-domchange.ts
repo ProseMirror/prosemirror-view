@@ -444,4 +444,19 @@ describe("DOM change", () => {
     ist((steps![0] as any).to, 12)
     ist((steps![0] as any).slice.content.toString(), '<"e">')
   })
+
+  it("doesn't create steps in the middle of surrogate pairs", () => {
+    let steps: Step[] = [], view = tempEditor({
+      doc: doc(p("👽<a>")),
+      dispatchTransaction(tr) {
+        steps = tr.steps
+        view.updateState(view.state.apply(tr))
+      }
+    })
+    findTextNode(view.dom, "👽")!.nodeValue = "💎👽"
+    flush(view)
+    ist(steps.length, 1)
+    ist((steps[0] as any).from, 1)
+    ist((steps[0] as any).slice.content.toString(), '<"💎">')
+  })
 })
