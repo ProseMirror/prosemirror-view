@@ -4,7 +4,8 @@ import {Slice, ResolvedPos, DOMParser, DOMSerializer, Node, Mark} from "prosemir
 import {scrollRectIntoView, posAtCoords, coordsAtPos, endOfTextblock, storeScrollPos,
         resetScrollPos, focusPreventScroll} from "./domcoords"
 import {docViewDesc, ViewDesc, NodeView, NodeViewDesc} from "./viewdesc"
-import {initInput, destroyInput, dispatchEvent, ensureListeners, clearComposition, InputState, doPaste} from "./input"
+import {initInput, destroyInput, dispatchEvent, ensureListeners, clearComposition,
+        InputState, doPaste, Dragging} from "./input"
 import {selectionToDOM, anchorInRightPlace, syncNodeSelection} from "./selection"
 import {Decoration, viewDecorations, DecorationSource} from "./decoration"
 import {DOMObserver, safariShadowSelectionRange} from "./domobserver"
@@ -219,6 +220,8 @@ export class EditorView {
     }
 
     this.updatePluginViews(prev)
+    if ((this.dragging as Dragging)?.node && !prev.doc.eq(state.doc))
+      this.updateDraggedNode(this.dragging as Dragging, prev)
 
     if (scroll == "reset") {
       this.dom.scrollTop = 0
@@ -265,6 +268,19 @@ export class EditorView {
         if (pluginView.update) pluginView.update(this, prevState)
       }
     }
+  }
+
+  private updateDraggedNode(dragging: Dragging, prev: EditorState) {
+    let sel = dragging.node!, found = -1
+    if (this.state.doc.nodeAt(sel.from) == sel.node) {
+      found = sel.from
+    } else {
+      let movedPos = sel.from + (this.state.doc.content.size - prev.doc.content.size)
+      let moved = movedPos > 0 && this.state.doc.nodeAt(movedPos)
+      if (moved == sel.node) found = movedPos
+    }
+    this.dragging = new Dragging(dragging.slice, dragging.move,
+                                 found < 0 ? undefined : NodeSelection.create(this.state.doc, found))
   }
 
   /// Goes over the values of a prop, first those provided directly,

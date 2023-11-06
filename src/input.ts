@@ -630,8 +630,8 @@ editHandlers.paste = (view, _event) => {
     capturePaste(view, event)
 }
 
-class Dragging {
-  constructor(readonly slice: Slice, readonly move: boolean) {}
+export class Dragging {
+  constructor(readonly slice: Slice, readonly move: boolean, readonly node?: NodeSelection) {}
 }
 
 const dragCopyModifier: keyof DragEvent = browser.mac ? "altKey" : "ctrlKey"
@@ -644,22 +644,23 @@ handlers.dragstart = (view, _event) => {
 
   let sel = view.state.selection
   let pos = sel.empty ? null : view.posAtCoords(eventCoords(event))
+  let node: undefined | NodeSelection
   if (pos && pos.pos >= sel.from && pos.pos <= (sel instanceof NodeSelection ? sel.to - 1: sel.to)) {
     // In selection
   } else if (mouseDown && mouseDown.mightDrag) {
-    view.dispatch(view.state.tr.setSelection(NodeSelection.create(view.state.doc, mouseDown.mightDrag.pos)))
+    node = NodeSelection.create(view.state.doc, mouseDown.mightDrag.pos)
   } else if (event.target && (event.target as HTMLElement).nodeType == 1) {
     let desc = view.docView.nearestDesc(event.target as HTMLElement, true)
     if (desc && desc.node.type.spec.draggable && desc != view.docView)
-      view.dispatch(view.state.tr.setSelection(NodeSelection.create(view.state.doc, desc.posBefore)))
+      node = NodeSelection.create(view.state.doc, desc.posBefore)
   }
-  let slice = view.state.selection.content(), {dom, text} = serializeForClipboard(view, slice)
+  let slice = (node || view.state.selection).content(), {dom, text} = serializeForClipboard(view, slice)
   event.dataTransfer.clearData()
   event.dataTransfer.setData(brokenClipboardAPI ? "Text" : "text/html", dom.innerHTML)
   // See https://github.com/ProseMirror/prosemirror/issues/1156
   event.dataTransfer.effectAllowed = "copyMove"
   if (!brokenClipboardAPI) event.dataTransfer.setData("text/plain", text)
-  view.dragging = new Dragging(slice, !event[dragCopyModifier])
+  view.dragging = new Dragging(slice, !event[dragCopyModifier], node)
 }
 
 handlers.dragend = view => {
@@ -700,7 +701,11 @@ editHandlers.drop = (view, _event) => {
   if (insertPos == null) insertPos = $mouse.pos
 
   let tr = view.state.tr
-  if (move) tr.deleteSelection()
+  if (move) {
+    let {node} = dragging as Dragging
+    if (node) node.replace(tr)
+    else tr.deleteSelection()
+  }
 
   let pos = tr.mapping.map(insertPos)
   let isNode = slice.openStart == 0 && slice.openEnd == 0 && slice.content.childCount == 1
