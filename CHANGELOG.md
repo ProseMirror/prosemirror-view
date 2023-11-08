@@ -1,3 +1,11 @@
+## 1.32.4 (2023-11-08)
+
+### Bug fixes
+
+Fix a case where a DOM change involving astal characters could create odd steps that started and ended in the middle of UTF16 surrogate pairs.
+
+Dragging a draggable node will no longer implicitly select it.
+
 ## 1.32.3 (2023-11-01)
 
 ### Bug fixes
