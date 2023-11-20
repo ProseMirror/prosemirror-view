@@ -914,7 +914,7 @@ class TrailingHackViewDesc extends ViewDesc {
   parseRule() { return {ignore: true} }
   matchesHack(nodeName: string) { return this.dirty == NOT_DIRTY && this.dom.nodeName == nodeName }
   get domAtom() { return true }
-  get ignoreForCoords() { return this.dom.nodeName == "IMG" }
+  get ignoreForCoords() { return false }
 }
 
 // A separate subclass is used for customized node views, so that the
@@ -1307,28 +1307,20 @@ class ViewTreeUpdater {
     if (!lastChild || // Empty textblock
         !(lastChild instanceof TextViewDesc) ||
         /\n$/.test(lastChild.node.text!) ||
-        (this.view.requiresGeckoHackNode && /\s$/.test(lastChild.node.text!))) {
-      // Avoid bugs in Safari's cursor drawing (#1165)
-      if (browser.safari && lastChild && (lastChild.dom as HTMLElement).contentEditable == "false")
-        this.addHackNode("IMG", parent)
-      this.addHackNode("BR", this.top)
-    }
-  }
-
-  addHackNode(nodeName: string, parent: ViewDesc) {
-    if (parent == this.top && this.index < parent.children.length && parent.children[this.index].matchesHack(nodeName)) {
-      this.index++
-    } else {
-      let dom = document.createElement(nodeName)
-      if (nodeName == "IMG") {
-        dom.className = "ProseMirror-separator"
-        ;(dom as HTMLImageElement).alt = ""
+        (this.view.requiresGeckoHackNode && /\s$/.test(lastChild.node.text!))
+    ) {
+      // <br> added to because line is empty (matching browser behaviour)
+      // or before any closing tags to make sure the cursor is visible and selection works (prosemirror-view#162)
+      if (parent == this.top && this.index < parent.children.length && parent.children[this.index].matchesHack('BR')) {
+        this.index++
+      } else {
+        let dom = document.createElement('BR')
+        dom.className = "ProseMirror-trailingBreak"
+        let hack = new TrailingHackViewDesc(this.top, [], dom, null)
+        if (parent != this.top) parent.children.push(hack)
+        else parent.children.splice(this.index++, 0, hack)
+        this.changed = true
       }
-      if (nodeName == "BR") dom.className = "ProseMirror-trailingBreak"
-      let hack = new TrailingHackViewDesc(this.top, [], dom, null)
-      if (parent != this.top) parent.children.push(hack)
-      else parent.children.splice(this.index++, 0, hack)
-      this.changed = true
     }
   }
 

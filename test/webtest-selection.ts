@@ -146,7 +146,7 @@ describe("EditorView", () => {
   })
 
   it("produces sensible screen coordinates in corner cases", () => {
-    let view = tempEditor({doc: doc(p("one", em("two", strong("three"), img), br(), code("foo")), p())})
+    let view = tempEditor({doc: doc(p("one", em("two", strong("three"), img), br(), code("foo"), br()), p())})
     return new Promise(ok => {
       setTimeout(() => {
         allPositions(view.state.doc).forEach(pos => {
