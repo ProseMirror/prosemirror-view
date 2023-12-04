@@ -1,3 +1,9 @@
+## 1.32.5 (2023-12-04)
+
+### Bug fixes
+
+Fix a bug in `DecorationSet.map` that, in specific cases when mapping through groups of changes, move decorations to the wrong position.
+
 ## 1.32.4 (2023-11-08)
 
 ### Bug fixes
