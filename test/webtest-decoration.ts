@@ -347,6 +347,14 @@ describe("DecorationSet", () => {
       }
       ist(setStr(tr.doc, set), setStr(d, oldSet))
     })
+
+    it("doesn't get confused by composite changes", () => {
+      let d = doc(p("x"), p("a"), p("x"), blockquote(p("<a>b<b>")), p("x"))
+      let tr = new Transform(d).delete(14, 17).delete(6, 9).delete(0, 3)
+      let deco = DecorationSet.create(d, [Decoration.inline(d.tag.a, d.tag.b, {})])
+      let changed = deco.map(tr.mapping, tr.doc)
+      ist(changed.find().map(d => d.from + "-" + d.to), "5-6")
+    })
   })
 
   describe("add", () => {

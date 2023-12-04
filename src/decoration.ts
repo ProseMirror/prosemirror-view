@@ -568,7 +568,7 @@ function mapChildren(
         let start = (children[i] as number) + baseOffset - moved
         if (oldEnd >= start) {
           children[i + 1] = oldStart <= start ? -2 : -1
-        } else if (newStart >= offset && dSize) {
+        } else if (oldStart >= baseOffset && dSize) {
           ;(children[i] as number) += dSize
           ;(children[i + 1] as number) += dSize
         }
