@@ -1,3 +1,9 @@
+## 1.32.6 (2023-12-08)
+
+### Bug fixes
+
+Fix a bug that could cause view updates to crash in rare situations where inline nodes were added around decorations.
+
 ## 1.32.5 (2023-12-04)
 
 ### Bug fixes
