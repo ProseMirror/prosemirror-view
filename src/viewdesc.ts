@@ -1449,6 +1449,8 @@ function iterDeco(
         end = cutAt
         index = -1
       }
+    } else {
+      while (decoIndex < locals.length && locals[decoIndex].to <= end) decoIndex++
     }
 
     let outerDeco = child.isInline && !child.isLeaf ? active.filter(d => !d.inline) : active.slice()
