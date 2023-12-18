@@ -1,3 +1,9 @@
+## 1.32.7 (2023-12-18)
+
+### Bug fixes
+
+Fix a regression that caused widget decorations directly after a node to not get drawn in some situations.
+
 ## 1.32.6 (2023-12-08)
 
 ### Bug fixes
