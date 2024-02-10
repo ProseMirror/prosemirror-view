@@ -179,8 +179,8 @@ export class Decoration {
     /// different keys.
     key?: string
 
-    /// Called when the widget decoration is removed as a result of
-    /// mapping
+    /// Called when the widget decoration is removed or the editor is
+    /// destroyed.
     destroy?: (node: DOMNode) => void
 
     /// Specs allow arbitrary additional properties.
