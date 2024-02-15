@@ -1,3 +1,9 @@
+## 1.33.1 (2024-02-15)
+
+### Bug fixes
+
+Fix a type error in the published type declarations in 1.33.0.
+
 ## 1.33.0 (2024-02-15)
 
 ### New features
