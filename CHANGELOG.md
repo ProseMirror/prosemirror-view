@@ -1,3 +1,9 @@
+## 1.33.0 (2024-02-15)
+
+### New features
+
+The `DecorationSource.forChild` method is now public.
+
 ## 1.32.7 (2023-12-18)
 
 ### Bug fixes
