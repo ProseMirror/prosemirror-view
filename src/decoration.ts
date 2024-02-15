@@ -258,7 +258,7 @@ export interface DecorationSource {
   map: (mapping: Mapping, node: Node) => DecorationSource
   /// @internal
   locals(node: Node): readonly Decoration[]
-  /// @internal
+  /// Extract a DecorationSource containing decorations for the given child node at the given offset.
   forChild(offset: number, child: Node): DecorationSource
   /// @internal
   eq(other: DecorationSource): boolean
