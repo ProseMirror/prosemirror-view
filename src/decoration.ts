@@ -413,7 +413,7 @@ export class DecorationSet implements DecorationSource {
     return local.length || children.length ? new DecorationSet(local, children) : empty
   }
 
-  /// @internal
+  /// Extract a DecorationSource containing decorations for the given child node at the given offset.
   forChild(offset: number, node: Node): DecorationSet | DecorationGroup {
     if (this == empty) return this
     if (node.isLeaf) return DecorationSet.empty
