@@ -69,6 +69,16 @@ describe("Clipboard interface", () => {
         new Slice(p("abc").content, 0, 0), eq)
   })
 
+  it("will call transformCopiedHTML", () => {
+    let d = doc(blockquote(blockquote(p("foo"))))
+    let view = tempEditor({doc: d, transformCopiedHTML(html) {
+        html.innerHTML = '<p>bar</p>'
+        return html
+    },})
+    let {dom} = serializeForClipboard(view,new Slice(doc(p("foo")).content, 1, 0), eq)
+    ist(dom.innerHTML, '<p>bar</p>')
+  })
+
   it("will call transformPastedText", () => {
     let view = tempEditor({transformPastedText(_) { return "abc" }})
     ist(parseFromClipboard(view, "def", null, false, view.state.doc.resolve(1)),

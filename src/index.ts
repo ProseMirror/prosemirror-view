@@ -673,6 +673,10 @@ export interface EditorProps<P = any> {
   /// for example to clean it up.
   transformPastedHTML?: (this: P, html: string, view: EditorView) => string
 
+  /// Can be used to transform copied HTML, _before_ it is,
+  /// passed to the clipboard.
+  transformCopiedHTML?: (this: P, html: HTMLDivElement, view: EditorView) => HTMLDivElement
+
   /// The [parser](#model.DOMParser) to use when reading content from
   /// the clipboard. When not given, the value of the
   /// [`domParser`](#view.EditorProps.domParser) prop is used.
