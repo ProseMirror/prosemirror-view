@@ -197,7 +197,7 @@ export function readDOMChange(view: EditorView, from: number, to: number, typeOv
   }
   // Same for backspace
   if (view.state.selection.anchor > change.start &&
-      looksLikeJoin(doc, change.start, change.endA, $from, $to) &&
+      looksLikeBackspace(doc, change.start, change.endA, $from, $to) &&
       view.someProp("handleKeyDown", f => f(view, keyEvent(8, "Backspace")))) {
     if (browser.android && browser.chrome) view.domObserver.suppressSelectionUpdates() // #820
     return
@@ -304,15 +304,21 @@ function isMarkChange(cur: Fragment, prev: Fragment) {
   if (Fragment.from(updated).eq(cur)) return {mark, type}
 }
 
-function looksLikeJoin(old: Node, start: number, end: number, $newStart: ResolvedPos, $newEnd: ResolvedPos) {
-  if (!$newStart.parent.isTextblock ||
-      // The content must have shrunk
+function looksLikeBackspace(old: Node, start: number, end: number, $newStart: ResolvedPos, $newEnd: ResolvedPos) {
+  if (// The content must have shrunk
       end - start <= $newEnd.pos - $newStart.pos ||
       // newEnd must point directly at or after the end of the block that newStart points into
       skipClosingAndOpening($newStart, true, false) < $newEnd.pos)
     return false
 
   let $start = old.resolve(start)
+
+  // Handle the case where, rather than joining blocks, the change just removed an entire block
+  if (!$newStart.parent.isTextblock) {
+    let after = $start.nodeAfter
+    return after != null && end == start + after.nodeSize
+  }
+
   // Start must be at the end of a block
   if ($start.parentOffset < $start.parent.content.size || !$start.parent.isTextblock)
     return false
