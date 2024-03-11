@@ -6,6 +6,11 @@ import {EditorView} from "./index"
 export type Rect = {left: number, right: number, top: number, bottom: number}
 
 function windowRect(doc: Document): Rect {
+  let vp = doc.defaultView && doc.defaultView.visualViewport
+  if (vp) return {
+    left: 0, right: vp.width,
+    top: 0, bottom: vp.height
+  }
   return {left: 0, right: doc.documentElement.clientWidth,
           top: 0, bottom: doc.documentElement.clientHeight}
 }
