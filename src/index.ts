@@ -198,7 +198,7 @@ export class EditorView {
         // did write to the node.
         let chromeKludge = browser.chrome ? (this.trackWrites = this.domSelectionRange().focusNode) : null
         if (redraw || !this.docView.update(state.doc, outerDeco, innerDeco, this)) {
-          this.docView.updateOuterDeco([])
+          this.docView.updateOuterDeco(outerDeco)
           this.docView.destroy()
           this.docView = docViewDesc(state.doc, outerDeco, innerDeco, this.dom, this)
         }
