@@ -63,6 +63,38 @@ export function nodeSize(node: Node) {
   return node.nodeType == 3 ? node.nodeValue!.length : node.childNodes.length
 }
 
+export function textNodeBefore(node: Node, offset: number) {
+  for (;;) {
+    if (node.nodeType == 3 && offset) return node as Text
+    if (node.nodeType == 1 && offset > 0) {
+      if ((node as HTMLElement).contentEditable != "false") return null
+      node = node.childNodes[offset - 1]
+      offset = nodeSize(node)
+    } else if (node.parentNode && !hasBlockDesc(node)) {
+      offset = domIndex(node)
+      node = node.parentNode
+    } else {
+      return null
+    }
+  }
+}
+
+export function textNodeAfter(node: Node, offset: number) {
+  for (;;) {
+    if (node.nodeType == 3 && offset < node.nodeValue!.length) return node as Text
+    if (node.nodeType == 1 && offset < node.childNodes.length) {
+      if ((node as HTMLElement).contentEditable != "false") return null
+      node = node.childNodes[offset]
+      offset = 0
+    } else if (node.parentNode && !hasBlockDesc(node)) {
+      offset = domIndex(node) + 1
+      node = node.parentNode
+    } else {
+      return null
+    }
+  }
+}
+
 export function isOnEdge(node: Node, offset: number, parent: Node) {
   for (let atStart = offset == 0, atEnd = offset == nodeSize(node); atStart || atEnd;) {
     if (node == parent) return true

@@ -1,7 +1,7 @@
 import {DOMSerializer, Fragment, Mark, Node, ParseRule} from "prosemirror-model"
 import {TextSelection} from "prosemirror-state"
 
-import {domIndex, isEquivalentPosition, nodeSize, DOMNode} from "./dom"
+import {domIndex, isEquivalentPosition, DOMNode, textNodeBefore, textNodeAfter} from "./dom"
 import * as browser from "./browser"
 import {Decoration, DecorationSource, WidgetConstructor, WidgetType, NodeType} from "./decoration"
 import {EditorView} from "./index"
@@ -760,7 +760,14 @@ export class NodeViewDesc extends ViewDesc {
     let {from, to} = view.state.selection
     if (!(view.state.selection instanceof TextSelection) || from < pos || to > pos + this.node.content.size) return null
     let sel = view.domSelectionRange()
-    let textNode = nearbyTextNode(sel.focusNode!, sel.focusOffset)
+    let textBefore = textNodeBefore(sel.focusNode!, sel.focusOffset)
+    let textAfter = textNodeAfter(sel.focusNode!, sel.focusOffset)
+    let textNode = textBefore || textAfter
+    if (textBefore && textAfter && textBefore != textAfter) {
+      let descAfter = textAfter.pmViewDesc
+      if (!descAfter || descAfter instanceof TextViewDesc && descAfter.node.text != textAfter.nodeValue)
+        textNode = textAfter
+    }
     if (!textNode || !this.dom.contains(textNode.parentNode)) return null
 
     if (this.node.inlineContent) {
@@ -1467,23 +1474,6 @@ function iosHacks(dom: HTMLElement) {
     dom.style.cssText = oldCSS + "; list-style: square !important"
     window.getComputedStyle(dom).listStyle
     dom.style.cssText = oldCSS
-  }
-}
-
-function nearbyTextNode(node: DOMNode, offset: number): Text | null {
-  for (;;) {
-    if (node.nodeType == 3) return node as Text
-    if (node.nodeType == 1 && offset > 0) {
-      if (node.childNodes.length > offset && node.childNodes[offset].nodeType == 3)
-        return node.childNodes[offset] as Text
-      node = node.childNodes[offset - 1]
-      offset = nodeSize(node)
-    } else if (node.nodeType == 1 && offset < node.childNodes.length) {
-      node = node.childNodes[offset]
-      offset = 0
-    } else {
-      return null
-    }
   }
 }
 

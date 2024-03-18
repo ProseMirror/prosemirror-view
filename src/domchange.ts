@@ -143,13 +143,6 @@ export function readDOMChange(view: EditorView, from: number, to: number, typeOv
       return
     }
   }
-  // Chrome sometimes leaves the cursor before the inserted text when
-  // composing after a cursor wrapper. This moves it forward.
-  if (browser.chrome && view.cursorWrapper && parse.sel && parse.sel.anchor == view.cursorWrapper.deco.from &&
-      parse.sel.head == parse.sel.anchor) {
-    let size = change.endB - change.start
-    parse.sel = {anchor: parse.sel.anchor + size, head: parse.sel.anchor + size}
-  }
 
   view.input.domChangeCount++
   // Handle the case where overwriting a selection by typing matches
