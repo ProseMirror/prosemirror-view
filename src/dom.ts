@@ -29,6 +29,10 @@ export const textRange = function(node: Text, from?: number, to?: number) {
   return range
 }
 
+export const clearReusedRange = function() {
+  reusedRange = null;
+}
+
 // Scans forward and backward through DOM positions equivalent to the
 // given one to see if the two are in the same place (i.e. after a
 // text node vs at the end of that text node)

@@ -10,7 +10,7 @@ import {selectionToDOM, anchorInRightPlace, syncNodeSelection} from "./selection
 import {Decoration, viewDecorations, DecorationSource} from "./decoration"
 import {DOMObserver, safariShadowSelectionRange} from "./domobserver"
 import {readDOMChange} from "./domchange"
-import {DOMSelection, DOMNode, DOMSelectionRange, deepActiveElement} from "./dom"
+import {DOMSelection, DOMNode, DOMSelectionRange, deepActiveElement, clearReusedRange} from "./dom"
 import * as browser from "./browser"
 
 export {Decoration, DecorationSet, DecorationAttrs, DecorationSource} from "./decoration"
@@ -457,6 +457,7 @@ export class EditorView {
     }
     this.docView.destroy()
     ;(this as any).docView = null
+    clearReusedRange();
   }
 
   /// This is true when the view has been
