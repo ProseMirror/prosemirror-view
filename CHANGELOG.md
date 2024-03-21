@@ -1,3 +1,17 @@
+## 1.33.2 (2024-03-21)
+
+### Bug fixes
+
+Improve Android backspace detection when the native effect is to delete an entire block element.
+
+Fix a bug where reconfiguring node views caused the editor to lose focus.
+
+Fix an issue where some commands didn't properly scroll the cursor into view on Mobile Safari.
+
+Fix a bug where starting a composition with stored marks or after a noninclusive mark, with an IME that keeps the cursor at the start of the composed text (like many Chinese IMEs) disrupted composition on Chrome.
+
+Fix a memory leak where a (single) destroyed editor could be kept alive through a reused `Range` object.
+
 ## 1.33.1 (2024-02-15)
 
 ### Bug fixes
