@@ -5,7 +5,7 @@ import {scrollRectIntoView, posAtCoords, coordsAtPos, endOfTextblock, storeScrol
         resetScrollPos, focusPreventScroll} from "./domcoords"
 import {docViewDesc, ViewDesc, NodeView, NodeViewDesc} from "./viewdesc"
 import {initInput, destroyInput, dispatchEvent, ensureListeners, clearComposition,
-        InputState, doPaste, Dragging} from "./input"
+        InputState, doPaste, Dragging, findCompositionNode} from "./input"
 import {selectionToDOM, anchorInRightPlace, syncNodeSelection} from "./selection"
 import {Decoration, viewDecorations, DecorationSource} from "./decoration"
 import {DOMObserver, safariShadowSelectionRange} from "./domobserver"
@@ -197,6 +197,7 @@ export class EditorView {
         // tracks that and forces a selection reset when our update
         // did write to the node.
         let chromeKludge = browser.chrome ? (this.trackWrites = this.domSelectionRange().focusNode) : null
+        if (this.composing) this.input.compositionNode = findCompositionNode(this)
         if (redraw || !this.docView.update(state.doc, outerDeco, innerDeco, this)) {
           this.docView.updateOuterDeco(outerDeco)
           this.docView.destroy()

@@ -71,7 +71,7 @@ export function textNodeBefore(node: Node, offset: number) {
   for (;;) {
     if (node.nodeType == 3 && offset) return node as Text
     if (node.nodeType == 1 && offset > 0) {
-      if ((node as HTMLElement).contentEditable != "false") return null
+      if ((node as HTMLElement).contentEditable == "false") return null
       node = node.childNodes[offset - 1]
       offset = nodeSize(node)
     } else if (node.parentNode && !hasBlockDesc(node)) {
@@ -87,7 +87,7 @@ export function textNodeAfter(node: Node, offset: number) {
   for (;;) {
     if (node.nodeType == 3 && offset < node.nodeValue!.length) return node as Text
     if (node.nodeType == 1 && offset < node.childNodes.length) {
-      if ((node as HTMLElement).contentEditable != "false") return null
+      if ((node as HTMLElement).contentEditable == "false") return null
       node = node.childNodes[offset]
       offset = 0
     } else if (node.parentNode && !hasBlockDesc(node)) {

@@ -1,7 +1,7 @@
 import {DOMSerializer, Fragment, Mark, Node, ParseRule} from "prosemirror-model"
 import {TextSelection} from "prosemirror-state"
 
-import {domIndex, isEquivalentPosition, DOMNode, textNodeBefore, textNodeAfter} from "./dom"
+import {domIndex, isEquivalentPosition, DOMNode} from "./dom"
 import * as browser from "./browser"
 import {Decoration, DecorationSource, WidgetConstructor, WidgetType, NodeType} from "./decoration"
 import {EditorView} from "./index"
@@ -485,6 +485,8 @@ export class ViewDesc {
   get domAtom() { return false }
 
   get ignoreForCoords() { return false }
+
+  isText(text: string) { return false }
 }
 
 // A widget desc represents a widget decoration, which is a DOM node
@@ -759,15 +761,7 @@ export class NodeViewDesc extends ViewDesc {
     // are inside of this node
     let {from, to} = view.state.selection
     if (!(view.state.selection instanceof TextSelection) || from < pos || to > pos + this.node.content.size) return null
-    let sel = view.domSelectionRange()
-    let textBefore = textNodeBefore(sel.focusNode!, sel.focusOffset)
-    let textAfter = textNodeAfter(sel.focusNode!, sel.focusOffset)
-    let textNode = textBefore || textAfter
-    if (textBefore && textAfter && textBefore != textAfter) {
-      let descAfter = textAfter.pmViewDesc
-      if (!descAfter || descAfter instanceof TextViewDesc && descAfter.node.text != textAfter.nodeValue)
-        textNode = textAfter
-    }
+    let textNode = view.input.compositionNode
     if (!textNode || !this.dom.contains(textNode.parentNode)) return null
 
     if (this.node.inlineContent) {
@@ -913,6 +907,8 @@ class TextViewDesc extends NodeViewDesc {
   }
 
   get domAtom() { return false }
+
+  isText(text: string) { return this.node.text == text }
 }
 
 // A dummy desc used to tag trailing BR or IMG nodes created to work

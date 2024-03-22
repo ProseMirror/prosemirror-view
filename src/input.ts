@@ -6,7 +6,7 @@ import * as browser from "./browser"
 import {captureKeyDown} from "./capturekeys"
 import {parseFromClipboard, serializeForClipboard} from "./clipboard"
 import {selectionBetween, selectionToDOM, selectionFromDOM} from "./selection"
-import {keyEvent, DOMNode} from "./dom"
+import {keyEvent, DOMNode, textNodeBefore, textNodeAfter} from "./dom"
 import {EditorView} from "./index"
 import {ViewDesc} from "./viewdesc"
 
@@ -30,6 +30,7 @@ export class InputState {
   lastTouch = 0
   lastAndroidDelete = 0
   composing = false
+  compositionNode: Text | null = null
   composingTimeout = -1
   compositionNodes: ViewDesc[] = []
   compositionEndedAt = -2e8
@@ -490,6 +491,7 @@ editHandlers.compositionend = (view, event) => {
     view.input.composing = false
     view.input.compositionEndedAt = event.timeStamp
     view.input.compositionPendingChanges = view.domObserver.pendingRecords().length ? view.input.compositionID : 0
+    view.input.compositionNode = null
     if (view.input.compositionPendingChanges) Promise.resolve().then(() => view.domObserver.flush())
     view.input.compositionID++
     scheduleComposeEnd(view, 20)
@@ -507,6 +509,24 @@ export function clearComposition(view: EditorView) {
     view.input.compositionEndedAt = timestampFromCustomEvent()
   }
   while (view.input.compositionNodes.length > 0) view.input.compositionNodes.pop()!.markParentsDirty()
+}
+
+export function findCompositionNode(view: EditorView) {
+  let sel = view.domSelectionRange()
+  if (!sel.focusNode) return null
+  let textBefore = textNodeBefore(sel.focusNode, sel.focusOffset)
+  let textAfter = textNodeAfter(sel.focusNode, sel.focusOffset)
+  if (textBefore && textAfter && textBefore != textAfter) {
+    let descAfter = textAfter.pmViewDesc
+    if (!descAfter || !descAfter.isText(textAfter.nodeValue!)) {
+      return textAfter
+    } else if (view.input.compositionNode == textAfter) {
+      let descBefore = textBefore.pmViewDesc
+      if (!(!descBefore || !descBefore.isText(textBefore.nodeValue!)))
+        return textAfter
+    }
+  }
+  return textBefore
 }
 
 function timestampFromCustomEvent() {
