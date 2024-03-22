@@ -1,3 +1,9 @@
+## 1.33.3 (2024-03-22)
+
+### Bug fixes
+
+Further improve preserving of compositions for IME systems that keep the cursor before the composed text.
+
 ## 1.33.2 (2024-03-21)
 
 ### Bug fixes
