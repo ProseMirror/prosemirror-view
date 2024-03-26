@@ -36,6 +36,9 @@ export function serializeForClipboard(view: EditorView, slice: Slice) {
   let text = view.someProp("clipboardTextSerializer", f => f(slice, view)) ||
       slice.content.textBetween(0, slice.content.size, "\n\n")
 
+  // Call transformCopiedHTML callback to allow user to manipulate the HTML content before passing to clipboard
+  wrap = view.someProp("transformCopiedHTML", f => f(wrap!, view)) || wrap
+
   return {dom: wrap, text}
 }
 
