@@ -64,7 +64,7 @@ export function selectionToDOM(view: EditorView, force = false) {
 
   if (view.cursorWrapper) {
     selectCursorWrapper(view)
-  } else {
+  } else if (!view.domObserver.lockDOMSelectionSync) {
     let {anchor, head} = sel, resetEditableFrom, resetEditableTo
     if (brokenSelectBetweenUneditable && !(sel instanceof TextSelection)) {
       if (!sel.$from.parent.inlineContent)
