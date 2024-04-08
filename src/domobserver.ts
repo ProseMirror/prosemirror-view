@@ -1,6 +1,6 @@
 import {Selection} from "prosemirror-state"
 import * as browser from "./browser"
-import {domIndex, isEquivalentPosition, selectionCollapsed, parentNode, DOMSelectionRange, DOMNode} from "./dom"
+import {domIndex, isEquivalentPosition, selectionCollapsed, parentNode, DOMSelectionRange, DOMNode, DOMSelection} from "./dom"
 import {hasFocusAndSelection, selectionToDOM, selectionFromDOM} from "./selection"
 import {EditorView} from "./index"
 
@@ -278,9 +278,27 @@ function checkCSS(view: EditorView) {
   }
 }
 
+function rangeToSelectionRange(view: EditorView, range: StaticRange) {
+  let anchorNode = range.startContainer, anchorOffset = range.startOffset
+  let focusNode = range.endContainer, focusOffset = range.endOffset
+
+  let currentAnchor = view.domAtPos(view.state.selection.anchor)
+  // Since such a range doesn't distinguish between anchor and head,
+  // use a heuristic that flips it around if its end matches the
+  // current anchor.
+  if (isEquivalentPosition(currentAnchor.node, currentAnchor.offset, focusNode, focusOffset))
+    [anchorNode, anchorOffset, focusNode, focusOffset] = [focusNode, focusOffset, anchorNode, anchorOffset]
+  return {anchorNode, anchorOffset, focusNode, focusOffset}
+}
+
 // Used to work around a Safari Selection/shadow DOM bug
 // Based on https://github.com/codemirror/dev/issues/414 fix
-export function safariShadowSelectionRange(view: EditorView): DOMSelectionRange {
+export function safariShadowSelectionRange(view: EditorView, selection: DOMSelection): DOMSelectionRange | null {
+  if ((selection as any).getComposedRanges) {
+    let range = (selection as any).getComposedRanges(view.root)[0] as StaticRange
+    if (range) return rangeToSelectionRange(view, range)
+  }
+
   let found: StaticRange | undefined
   function read(event: InputEvent) {
     event.preventDefault()
@@ -297,14 +315,5 @@ export function safariShadowSelectionRange(view: EditorView): DOMSelectionRange 
   document.execCommand("indent")
   view.dom.removeEventListener("beforeinput", read, true)
 
-  let anchorNode = found!.startContainer, anchorOffset = found!.startOffset
-  let focusNode = found!.endContainer, focusOffset = found!.endOffset
-
-  let currentAnchor = view.domAtPos(view.state.selection.anchor)
-  // Since such a range doesn't distinguish between anchor and head,
-  // use a heuristic that flips it around if its end matches the
-  // current anchor.
-  if (isEquivalentPosition(currentAnchor.node, currentAnchor.offset, focusNode, focusOffset))
-    [anchorNode, anchorOffset, focusNode, focusOffset] = [focusNode, focusOffset, anchorNode, anchorOffset]
-  return {anchorNode, anchorOffset, focusNode, focusOffset}
+  return found ? rangeToSelectionRange(view, found) : null
 }

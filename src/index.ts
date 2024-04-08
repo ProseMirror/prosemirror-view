@@ -488,8 +488,9 @@ export class EditorView {
 
   /// @internal
   domSelectionRange(): DOMSelectionRange {
-    return browser.safari && this.root.nodeType === 11 && deepActiveElement(this.dom.ownerDocument) == this.dom
-      ? safariShadowSelectionRange(this) : this.domSelection()
+    let sel = this.domSelection()
+    return browser.safari && this.root.nodeType === 11 &&
+      deepActiveElement(this.dom.ownerDocument) == this.dom && safariShadowSelectionRange(this, sel) || sel
   }
 
   /// @internal
