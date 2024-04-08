@@ -1,4 +1,4 @@
-import {DOMSerializer, Fragment, Mark, Node, ParseRule} from "prosemirror-model"
+import {DOMSerializer, Fragment, Mark, Node, TagParseRule} from "prosemirror-model"
 import {TextSelection} from "prosemirror-state"
 
 import {domIndex, isEquivalentPosition, DOMNode} from "./dom"
@@ -124,7 +124,7 @@ export class ViewDesc {
   // When parsing in-editor content (in domchange.js), we allow
   // descriptions to determine the parse rules that should be used to
   // parse them.
-  parseRule(): ParseRule | null { return null }
+  parseRule(): Omit<TagParseRule, "tag"> | null { return null }
 
   // Used by the editor's event handler to ignore events that come
   // from certain descs.
@@ -576,7 +576,7 @@ class MarkViewDesc extends ViewDesc {
     return new MarkViewDesc(parent, mark, spec.dom, spec.contentDOM || spec.dom as HTMLElement)
   }
 
-  parseRule(): ParseRule | null {
+  parseRule() {
     if ((this.dirty & NODE_DIRTY) || this.mark.type.spec.reparseInView) return null
     return {mark: this.mark.type.name, attrs: this.mark.attrs, contentElement: this.contentDOM!}
   }
@@ -666,14 +666,14 @@ export class NodeViewDesc extends ViewDesc {
       return new NodeViewDesc(parent, node, outerDeco, innerDeco, dom, contentDOM || null, nodeDOM, view, pos + 1)
   }
 
-  parseRule(): ParseRule | null {
+  parseRule() {
     // Experimental kludge to allow opt-in re-parsing of nodes
     if (this.node.type.spec.reparseInView) return null
     // FIXME the assumption that this can always return the current
     // attrs means that if the user somehow manages to change the
     // attrs in the dom, that won't be picked up. Not entirely sure
     // whether this is a problem
-    let rule: ParseRule = {node: this.node.type.name, attrs: this.node.attrs}
+    let rule: Omit<TagParseRule, "tag"> = {node: this.node.type.name, attrs: this.node.attrs}
     if (this.node.type.whitespace == "pre") rule.preserveWhitespace = "full"
     if (!this.contentDOM) {
       rule.getContent = () => this.node.content
@@ -857,7 +857,7 @@ class TextViewDesc extends NodeViewDesc {
     super(parent, node, outerDeco, innerDeco, dom, null, nodeDOM, view, 0)
   }
 
-  parseRule(): ParseRule {
+  parseRule() {
     let skip = this.nodeDOM.parentNode
     while (skip && skip != this.dom && !(skip as any).pmIsDeco) skip = skip.parentNode
     return {skip: (skip || true) as any}

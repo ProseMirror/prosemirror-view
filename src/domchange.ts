@@ -1,4 +1,4 @@
-import {Fragment, DOMParser, ParseRule, Node, Mark, ResolvedPos} from "prosemirror-model"
+import {Fragment, DOMParser, TagParseRule, Node, Mark, ResolvedPos} from "prosemirror-model"
 import {Selection, TextSelection} from "prosemirror-state"
 
 import {selectionBetween, selectionFromDOM, selectionToDOM} from "./selection"
@@ -55,7 +55,7 @@ function parseBetween(view: EditorView, from_: number, to_: number) {
   return {doc, sel, from, to}
 }
 
-function ruleFromNode(dom: DOMNode): ParseRule | null {
+function ruleFromNode(dom: DOMNode): Omit<TagParseRule, "tag"> | null {
   let desc = dom.pmViewDesc
   if (desc) {
     return desc.parseRule()
