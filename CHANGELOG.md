@@ -1,3 +1,9 @@
+## 1.33.4 (2024-04-08)
+
+### Bug fixes
+
+When available, use `Selection.getComposedRanges` on Safari to find the selection inside a shadow DOM.
+
 ## 1.33.3 (2024-03-22)
 
 ### Bug fixes
