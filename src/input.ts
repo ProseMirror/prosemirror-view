@@ -526,7 +526,7 @@ export function findCompositionNode(view: EditorView) {
         return textAfter
     }
   }
-  return textBefore
+  return textBefore || textAfter
 }
 
 function timestampFromCustomEvent() {
