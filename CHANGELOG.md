@@ -1,3 +1,9 @@
+## 1.33.5 (2024-04-22)
+
+### Bug fixes
+
+Fix a regression in composition handling in 1.33.3 that occurs for some IMEs when starting composition on an empty line.
+
 ## 1.33.4 (2024-04-08)
 
 ### Bug fixes
