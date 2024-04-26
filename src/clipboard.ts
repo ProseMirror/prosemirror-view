@@ -36,7 +36,7 @@ export function serializeForClipboard(view: EditorView, slice: Slice) {
   let text = view.someProp("clipboardTextSerializer", f => f(slice, view)) ||
       slice.content.textBetween(0, slice.content.size, "\n\n")
 
-  return {dom: wrap, text}
+  return {dom: wrap, text, slice}
 }
 
 // Read a slice of content from the clipboard (or drop data).
