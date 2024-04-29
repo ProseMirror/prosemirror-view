@@ -674,7 +674,8 @@ handlers.dragstart = (view, _event) => {
     if (desc && desc.node.type.spec.draggable && desc != view.docView)
       node = NodeSelection.create(view.state.doc, desc.posBefore)
   }
-  let slice = (node || view.state.selection).content(), {dom, text} = serializeForClipboard(view, slice)
+  let draggedSlice = (node || view.state.selection).content()
+  let {dom, text, slice} = serializeForClipboard(view, draggedSlice)
   event.dataTransfer.clearData()
   event.dataTransfer.setData(brokenClipboardAPI ? "Text" : "text/html", dom.innerHTML)
   // See https://github.com/ProseMirror/prosemirror/issues/1156
