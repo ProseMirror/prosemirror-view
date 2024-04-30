@@ -1,3 +1,9 @@
+## 1.33.6 (2024-04-30)
+
+### Bug fixes
+
+Make sure the content slice stored for an in-editor drag is the one that was transformed by `transformCopied`.
+
 ## 1.33.5 (2024-04-22)
 
 ### Bug fixes
