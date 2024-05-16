@@ -183,12 +183,19 @@ export class DOMObserver {
       }
     }
 
-    if (browser.gecko && added.length > 1) {
-      let brs = added.filter(n => n.nodeName == "BR")
+    if (browser.gecko && added.length) {
+      let brs = added.filter(n => n.nodeName == "BR") as HTMLElement[]
       if (brs.length == 2) {
-        let a = brs[0] as HTMLElement, b = brs[1] as HTMLElement
+        let [a, b] = brs
         if (a.parentNode && a.parentNode.parentNode == b.parentNode) b.remove()
         else a.remove()
+      } else {
+        let {focusNode} = this.currentSelection
+        for (let br of brs) {
+          let parent = br.parentNode
+          if (parent && parent.nodeName == "LI" && (!focusNode || blockParent(view, focusNode) != parent))
+            br.remove()
+        }
       }
     }
 
@@ -316,4 +323,12 @@ export function safariShadowSelectionRange(view: EditorView, selection: DOMSelec
   view.dom.removeEventListener("beforeinput", read, true)
 
   return found ? rangeToSelectionRange(view, found) : null
+}
+
+function blockParent(view: EditorView, node: DOMNode): Node | null {
+  for (let p = node.parentNode; p && p != view.dom; p = p.parentNode) {
+    let desc = view.docView.nearestDesc(p, true)
+    if (desc && desc.node.isBlock) return p
+  }
+  return null
 }
