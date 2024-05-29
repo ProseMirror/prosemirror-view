@@ -834,8 +834,10 @@ export class NodeViewDesc extends ViewDesc {
 
   // Remove selected node marking from this node.
   deselectNode() {
-    if (this.nodeDOM.nodeType == 1) (this.nodeDOM as HTMLElement).classList.remove("ProseMirror-selectednode")
-    if (this.contentDOM || !this.node.type.spec.draggable) (this.dom as HTMLElement).removeAttribute("draggable")
+    if (this.nodeDOM.nodeType == 1) {
+      ;(this.nodeDOM as HTMLElement).classList.remove("ProseMirror-selectednode")
+      if (this.contentDOM || !this.node.type.spec.draggable) (this.dom as HTMLElement).removeAttribute("draggable")
+    }
   }
 
   get domAtom() { return this.node.isAtom }
