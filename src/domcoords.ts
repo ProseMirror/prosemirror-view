@@ -227,12 +227,13 @@ function posFromCaret(view: EditorView, node: Node, offset: number, coords: {top
     if (cur == view.dom) break
     let desc = view.docView.nearestDesc(cur, true)
     if (!desc) return null
-    if (desc.dom.nodeType == 1 && (desc.node.isBlock && desc.parent && !sawBlock || !desc.contentDOM)) {
+    if (desc.dom.nodeType == 1 && (desc.node.isBlock && desc.parent || !desc.contentDOM)) {
       let rect = (desc.dom as HTMLElement).getBoundingClientRect()
-      if (desc.node.isBlock && desc.parent && !sawBlock) {
+      if (desc.node.isBlock && desc.parent) {
+        // Only apply the horizontal test to the innermost block. Vertical for any parent.
+        if (!sawBlock && rect.left > coords.left || rect.top > coords.top) outsideBlock = desc.posBefore
+        else if (!sawBlock && rect.right < coords.left || rect.bottom < coords.top) outsideBlock = desc.posAfter
         sawBlock = true
-        if (rect.left > coords.left || rect.top > coords.top) outsideBlock = desc.posBefore
-        else if (rect.right < coords.left || rect.bottom < coords.top) outsideBlock = desc.posAfter
       }
       if (!desc.contentDOM && outsideBlock < 0 && !desc.node.isText) {
         // If we are inside a leaf, return the side of the leaf closer to the coords
