@@ -1,3 +1,13 @@
+## 1.33.7 (2024-05-31)
+
+### Bug fixes
+
+Ignore stray `<br>` nodes added to parent list elements when backspacing near uneditable content in Firefox.
+
+Fix a crash where the editor tried to call `removeAttribute` on a text node.
+
+Fix an issue where coordinates near nested blocks could inappropriately be assigned to be inside those blocks.
+
 ## 1.33.6 (2024-04-30)
 
 ### Bug fixes
