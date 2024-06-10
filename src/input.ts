@@ -517,7 +517,8 @@ export function findCompositionNode(view: EditorView) {
   let textBefore = textNodeBefore(sel.focusNode, sel.focusOffset)
   let textAfter = textNodeAfter(sel.focusNode, sel.focusOffset)
   if (textBefore && textAfter && textBefore != textAfter) {
-    let descAfter = textAfter.pmViewDesc
+    let descAfter = textAfter.pmViewDesc, lastChanged = view.domObserver.lastChangedTextNode
+    if (textBefore == lastChanged || textAfter == lastChanged) return lastChanged
     if (!descAfter || !descAfter.isText(textAfter.nodeValue!)) {
       return textAfter
     } else if (view.input.compositionNode == textAfter) {

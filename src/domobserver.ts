@@ -43,6 +43,7 @@ export class DOMObserver {
   currentSelection = new SelectionState
   onCharData: ((e: Event) => void) | null = null
   suppressingSelectionUpdates = false
+  lastChangedTextNode: Text | null = null
 
   constructor(
     readonly view: EditorView,
@@ -235,7 +236,11 @@ export class DOMObserver {
     if (!desc || desc.ignoreMutation(mut)) return null
 
     if (mut.type == "childList") {
-      for (let i = 0; i < mut.addedNodes.length; i++) added.push(mut.addedNodes[i])
+      for (let i = 0; i < mut.addedNodes.length; i++) {
+        let node = mut.addedNodes[i]
+        added.push(node)
+        if (node.nodeType == 3) this.lastChangedTextNode = node as Text
+      }
       if (desc.contentDOM && desc.contentDOM != desc.dom && !desc.contentDOM.contains(mut.target))
         return {from: desc.posBefore, to: desc.posAfter}
       let prev = mut.previousSibling, next = mut.nextSibling
@@ -258,6 +263,7 @@ export class DOMObserver {
     } else if (mut.type == "attributes") {
       return {from: desc.posAtStart - desc.border, to: desc.posAtEnd + desc.border}
     } else { // "characterData"
+      this.lastChangedTextNode = mut.target as Text
       return {
         from: desc.posAtStart,
         to: desc.posAtEnd,
