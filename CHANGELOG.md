@@ -1,3 +1,9 @@
+## 1.33.8 (2024-06-11)
+
+### Bug fixes
+
+When composition happens with the cursor between two text nodes, use the last mutated one to guess which one is being changed.
+
 ## 1.33.7 (2024-05-31)
 
 ### Bug fixes
