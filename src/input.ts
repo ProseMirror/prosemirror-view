@@ -677,7 +677,9 @@ handlers.dragstart = (view, _event) => {
   }
   let draggedSlice = (node || view.state.selection).content()
   let {dom, text, slice} = serializeForClipboard(view, draggedSlice)
-  event.dataTransfer.clearData()
+  // Pre-120 Chrome versions clear files when calling `clearData` (#1472)
+  if (!event.dataTransfer.files.length || !browser.chrome || browser.chrome_version > 120)
+    event.dataTransfer.clearData()
   event.dataTransfer.setData(brokenClipboardAPI ? "Text" : "text/html", dom.innerHTML)
   // See https://github.com/ProseMirror/prosemirror/issues/1156
   event.dataTransfer.effectAllowed = "copyMove"
