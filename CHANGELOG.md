@@ -1,3 +1,11 @@
+## 1.33.9 (2024-07-18)
+
+### Bug fixes
+
+Fix an issue where dragging an image on Chrome versions before 121 failed to put the image file in the clipboard data.
+
+Enable cross-site scripting protection hack when rendering nodes and marks inside the editor.
+
 ## 1.33.8 (2024-06-11)
 
 ### Bug fixes
