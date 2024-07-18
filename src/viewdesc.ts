@@ -572,7 +572,7 @@ class MarkViewDesc extends ViewDesc {
     let custom = view.nodeViews[mark.type.name]
     let spec: {dom: HTMLElement, contentDOM?: HTMLElement} = custom && (custom as any)(mark, view, inline)
     if (!spec || !spec.dom)
-      spec = DOMSerializer.renderSpec(document, mark.type.spec.toDOM!(mark, inline)) as any
+      spec = (DOMSerializer.renderSpec as any)(document, mark.type.spec.toDOM!(mark, inline), null, mark.attrs) as any
     return new MarkViewDesc(parent, mark, spec.dom, spec.contentDOM || spec.dom as HTMLElement)
   }
 
@@ -647,7 +647,8 @@ export class NodeViewDesc extends ViewDesc {
       if (!dom) dom = document.createTextNode(node.text!)
       else if (dom.nodeType != 3) throw new RangeError("Text must be rendered as a DOM text node")
     } else if (!dom) {
-      ;({dom, contentDOM} = DOMSerializer.renderSpec(document, node.type.spec.toDOM!(node)))
+      let spec = (DOMSerializer.renderSpec as any)(document, node.type.spec.toDOM!(node), null, node.attrs)
+      ;({dom, contentDOM} = spec as {dom: DOMNode, contentDOM?: HTMLElement})
     }
     if (!contentDOM && !node.isText && dom.nodeName != "BR") { // Chrome gets confused by <br contenteditable=false>
       if (!(dom as HTMLElement).hasAttribute("contenteditable")) (dom as HTMLElement).contentEditable = "false"
