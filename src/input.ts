@@ -183,6 +183,7 @@ function runHandlerOnContext(
 
 function updateSelection(view: EditorView, selection: Selection, origin: string) {
   if (!view.focused) view.focus()
+  if (view.state.selection.eq(selection)) return
   let tr = view.state.tr.setSelection(selection)
   if (origin == "pointer") tr.setMeta("pointer", true)
   view.dispatch(tr)
