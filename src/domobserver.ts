@@ -141,7 +141,7 @@ export class DOMObserver {
   }
 
   ignoreSelectionChange(sel: DOMSelectionRange) {
-    if (!sel.focusNode) return true
+    if (!sel || !sel.focusNode) return true
     let ancestors: Set<Node> = new Set, container: DOMNode | undefined
     for (let scan: DOMNode | null = sel.focusNode; scan; scan = parentNode(scan)) ancestors.add(scan)
     for (let scan = sel.anchorNode; scan; scan = parentNode(scan)) if (ancestors.has(scan)) {

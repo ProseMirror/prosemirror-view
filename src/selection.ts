@@ -187,7 +187,7 @@ export function hasFocusAndSelection(view: EditorView) {
 
 export function hasSelection(view: EditorView) {
   let sel = view.domSelectionRange()
-  if (!sel.anchorNode) return false
+  if (!sel || !sel.anchorNode) return false
   try {
     // Firefox will raise 'permission denied' errors when accessing
     // properties of `sel.anchorNode` when it's in a generated CSS
