@@ -136,6 +136,7 @@ function removeClassOnSelectionChange(view: EditorView) {
 
 function selectCursorWrapper(view: EditorView) {
   let domSel = view.domSelection(), range = document.createRange()
+  if (!domSel) return
   let node = view.cursorWrapper!.dom, img = node.nodeName == "IMG"
   if (img) range.setEnd(node.parentNode!, domIndex(node) + 1)
   else range.setEnd(node, 0)

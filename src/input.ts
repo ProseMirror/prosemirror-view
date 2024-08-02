@@ -473,7 +473,8 @@ editHandlers.compositionstart = editHandlers.compositionupdate = view => {
           let before = offset < 0 ? node.lastChild : node.childNodes[offset - 1]
           if (!before) break
           if (before.nodeType == 3) {
-            view.domSelection().collapse(before, before.nodeValue!.length)
+            let sel = view.domSelection()
+            if (sel) sel.collapse(before, before.nodeValue!.length)
             break
           } else {
             node = before

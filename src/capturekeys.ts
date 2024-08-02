@@ -202,6 +202,7 @@ function setSelFocus(view: EditorView, node: Node, offset: number) {
   }
 
   let sel = view.domSelection()
+  if (!sel) return
   if (selectionCollapsed(sel)) {
     let range = document.createRange()
     range.setEnd(node, offset)

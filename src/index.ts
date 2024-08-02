@@ -489,13 +489,14 @@ export class EditorView {
   /// @internal
   domSelectionRange(): DOMSelectionRange {
     let sel = this.domSelection()
+    if (!sel) return {focusNode: null, focusOffset: 0, anchorNode: null, anchorOffset: 0}
     return browser.safari && this.root.nodeType === 11 &&
       deepActiveElement(this.dom.ownerDocument) == this.dom && safariShadowSelectionRange(this, sel) || sel
   }
 
   /// @internal
-  domSelection(): DOMSelection {
-    return (this.root as Document).getSelection()!
+  domSelection(): DOMSelection | null {
+    return (this.root as Document).getSelection()
   }
 }
 
