@@ -539,13 +539,14 @@ function timestampFromCustomEvent() {
 }
 
 /// @internal
-export function endComposition(view: EditorView, forceUpdate = false) {
+export function endComposition(view: EditorView, restarting = false) {
   if (browser.android && view.domObserver.flushingSoon >= 0) return
   view.domObserver.forceFlush()
   clearComposition(view)
-  if (forceUpdate || view.docView && view.docView.dirty) {
+  if (restarting || view.docView && view.docView.dirty) {
     let sel = selectionFromDOM(view)
     if (sel && !sel.eq(view.state.selection)) view.dispatch(view.state.tr.setSelection(sel))
+    else if (view.markCursor && !view.state.selection.empty) view.dispatch(view.state.tr.deleteSelection())
     else view.updateState(view.state)
     return true
   }

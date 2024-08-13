@@ -140,13 +140,7 @@ function selectCursorWrapper(view: EditorView) {
   let node = view.cursorWrapper!.dom, img = node.nodeName == "IMG"
   if (img) range.setStart(node.parentNode!, domIndex(node) + 1)
   else range.setStart(node, 0)
-  let sel = view.state.selection
-  if (sel.empty) {
-    range.collapse(true)
-  } else {
-    let end = view.domAtPos(sel.to)
-    range.setEnd(end.node, end.offset)
-  }
+  range.collapse(true)
   domSel.removeAllRanges()
   domSel.addRange(range)
   // Kludge to kill 'control selection' in IE11 when selecting an
