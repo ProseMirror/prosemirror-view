@@ -1,3 +1,13 @@
+## 1.33.10 (2024-08-13)
+
+### Bug fixes
+
+Prevent triple clicks and clicks on atom nodes from dispatching a selection update when the new selection is equal to the current selection.
+
+Don't crash when `window.getSelection()` returns null.
+
+Create a cursor wrapper when starting a composition with a selection that spans mark boundaries, to avoid odd DOM forms created by Chrome in such a situation.
+
 ## 1.33.9 (2024-07-18)
 
 ### Bug fixes
