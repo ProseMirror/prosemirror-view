@@ -454,8 +454,8 @@ const timeoutComposition = browser.android ? 5000 : -1
 editHandlers.compositionstart = editHandlers.compositionupdate = view => {
   if (!view.composing) {
     view.domObserver.flush()
-    let {state} = view, $pos = state.selection.$from
-    if (state.selection.empty &&
+    let {state} = view, $pos = state.selection.$to
+    if (state.selection instanceof TextSelection &&
         (state.storedMarks ||
          (!$pos.textOffset && $pos.parentOffset && $pos.nodeBefore!.marks.some(m => m.type.spec.inclusive === false)))) {
       // Need to wrap the cursor in mark nodes different from the ones in the DOM context

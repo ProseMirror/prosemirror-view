@@ -527,7 +527,7 @@ function updateCursorWrapper(view: EditorView) {
     dom.className = "ProseMirror-separator"
     dom.setAttribute("mark-placeholder", "true")
     dom.setAttribute("alt", "")
-    view.cursorWrapper = {dom, deco: Decoration.widget(view.state.selection.head,
+    view.cursorWrapper = {dom, deco: Decoration.widget(view.state.selection.from,
                                                        dom, {raw: true, marks: view.markCursor} as any)}
   } else {
     view.cursorWrapper = null
