@@ -1,3 +1,11 @@
+## 1.33.11 (2024-08-19)
+
+### Bug fixes
+
+Delete the selection on composition start when on a mark boundary to force Chrome to apply the correct style to the composition.
+
+When the browser starts a composition and the selection spans across blocks, start by clearing it to make sure the composed text node lands in a valid position.
+
 ## 1.33.10 (2024-08-13)
 
 ### Bug fixes
