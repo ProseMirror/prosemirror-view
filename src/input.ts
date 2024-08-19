@@ -463,7 +463,7 @@ editHandlers.compositionstart = editHandlers.compositionupdate = view => {
       endComposition(view, true)
       view.markCursor = null
     } else {
-      endComposition(view)
+      endComposition(view, !state.selection.empty)
       // In firefox, if the cursor is after but outside a marked node,
       // the inserted text won't inherit the marks. So this moves it
       // inside if necessary.
@@ -546,7 +546,7 @@ export function endComposition(view: EditorView, restarting = false) {
   if (restarting || view.docView && view.docView.dirty) {
     let sel = selectionFromDOM(view)
     if (sel && !sel.eq(view.state.selection)) view.dispatch(view.state.tr.setSelection(sel))
-    else if (view.markCursor && !view.state.selection.empty) view.dispatch(view.state.tr.deleteSelection())
+    else if ((view.markCursor || restarting) && !view.state.selection.empty) view.dispatch(view.state.tr.deleteSelection())
     else view.updateState(view.state)
     return true
   }

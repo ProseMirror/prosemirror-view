@@ -291,10 +291,9 @@ describe("EditorView composition", () => {
     ist(pm.state.doc, doc(p("one!!"), p("two.")), eq)
   })
 
-  function crossParagraph(first = false) {
+  it("can handle cross-paragraph compositions", () => {
     let pm = requireFocus(tempEditor({doc: doc(p("one <a>two"), p("three"), p("four<b> five"))}))
     compose(pm, () => {
-      for (let i = 0; i < 2; i++) pm.dom.removeChild(first ? pm.dom.lastChild! : pm.dom.firstChild!)
       let target = pm.dom.firstChild!.firstChild as Text
       target.nodeValue = "one A five"
       document.getSelection()!.collapse(target, 4)
@@ -304,9 +303,5 @@ describe("EditorView composition", () => {
       n => edit(n, "C", 4, 5)
     ])
     ist(pm.state.doc, doc(p("one C five")), eq)
-  }
-
-  it("can handle cross-paragraph compositions", () => crossParagraph(true))
-
-  it("can handle cross-paragraph compositions (keeping the last paragraph)", () => crossParagraph(false))
+  })
 })
