@@ -13,7 +13,7 @@ import {readDOMChange} from "./domchange"
 import {DOMSelection, DOMNode, DOMSelectionRange, deepActiveElement, clearReusedRange} from "./dom"
 import * as browser from "./browser"
 
-export {Decoration, DecorationSet, DecorationAttrs, DecorationSource} from "./decoration"
+export {Decoration, DecorationSet, DecorationAttrs, DecorationSource, DecorationGroup} from "./decoration"
 export {NodeView} from "./viewdesc"
 
 // Exported for testing
