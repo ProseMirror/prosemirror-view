@@ -262,6 +262,8 @@ export interface DecorationSource {
   forChild(offset: number, child: Node): DecorationSource
   /// @internal
   eq(other: DecorationSource): boolean
+  /// Call the given function for each decoration set in the group.
+  forEachSet(f: (set: DecorationSet) => void): void
 }
 
 /// A collection of [decorations](#view.Decoration), organized in such
@@ -475,6 +477,8 @@ export class DecorationSet implements DecorationSource {
 
   /// @internal
   static removeOverlap = removeOverlap
+
+  forEachSet(f: (set: DecorationSet) => void) { f(this) }
 }
 
 const empty = DecorationSet.empty
@@ -541,6 +545,10 @@ class DecorationGroup implements DecorationSource {
           members.reduce((r, m) => r.concat(m instanceof DecorationSet ? m : (m as DecorationGroup).members),
                          [] as DecorationSet[]))
     }
+  }
+
+  forEachSet(f: (set: DecorationSet) => void) {
+    for (let i = 0; i < this.members.length; i++) this.members[i].forEachSet(f)
   }
 }
 
