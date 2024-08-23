@@ -1,3 +1,9 @@
+## 1.34.0 (2024-08-23)
+
+### New features
+
+The `DecorationGroup` interface now has a `forEachSet` method to iterate though the contained decoration sets.
+
 ## 1.33.11 (2024-08-19)
 
 ### Bug fixes
