@@ -1,3 +1,11 @@
+## 1.34.1 (2024-08-26)
+
+### Bug fixes
+
+Fix null dereferences caused by the behavior of Chrome's newly supported `caretPositionFromPoint` method.
+
+Fix an issue where on Android, with GBoard, enter presses in code blocks while a spell correction was selected didn't insert a new line.
+
 ## 1.34.0 (2024-08-23)
 
 ### New features
