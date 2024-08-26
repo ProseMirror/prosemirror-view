@@ -141,11 +141,14 @@ export function caretFromPoint(doc: Document, x: number, y: number): {node: Node
   if ((doc as any).caretPositionFromPoint) {
     try { // Firefox throws for this call in hard-to-predict circumstances (#994)
       let pos = (doc as any).caretPositionFromPoint(x, y)
-      if (pos) return {node: pos.offsetNode, offset: pos.offset}
+      // Clip the offset, because Chrome will return a text offset
+      // into <input> nodes, which can't be treated as a regular DOM
+      // offset
+      if (pos) return {node: pos.offsetNode, offset: Math.min(nodeSize(pos.offsetNode), pos.offset)}
     } catch (_) {}
   }
   if (doc.caretRangeFromPoint) {
     let range = doc.caretRangeFromPoint(x, y)
-    if (range) return {node: range.startContainer, offset: range.startOffset}
+    if (range) return {node: range.startContainer, offset: Math.min(nodeSize(range.startContainer), range.startOffset)}
   }
 }
