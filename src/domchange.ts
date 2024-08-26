@@ -120,6 +120,7 @@ export function readDOMChange(view: EditorView, from: number, to: number, typeOv
   view.input.lastKeyCode = null
 
   let change = findDiff(compare.content, parse.doc.content, parse.from, preferredPos, preferredSide)
+  if (change) view.input.domChangeCount++
   if ((browser.ios && view.input.lastIOSEnter > Date.now() - 225 || browser.android) &&
       addedNodes.some(n => n.nodeType == 1 && !isInline.test(n.nodeName)) &&
       (!change || change.endA >= change.endB) &&
@@ -144,7 +145,6 @@ export function readDOMChange(view: EditorView, from: number, to: number, typeOv
     }
   }
 
-  view.input.domChangeCount++
   // Handle the case where overwriting a selection by typing matches
   // the start or end of the selected content, creating a change
   // that's smaller than what was actually overwritten.
