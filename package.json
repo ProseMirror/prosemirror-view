@@ -8,12 +8,15 @@
   "types": "dist/index.d.ts",
   "exports": {
     ".": {
+      "types": "./dist/index.d.ts",
       "import": "./dist/index.js",
       "require": "./dist/index.cjs"
     },
     "./style/prosemirror.css": "./style/prosemirror.css"
   },
-  "sideEffects": ["./style/prosemirror.css"],
+  "sideEffects": [
+    "./style/prosemirror.css"
+  ],
   "style": "style/prosemirror.css",
   "license": "MIT",
   "maintainers": [
