@@ -1,3 +1,11 @@
+## 1.34.2 (2024-09-03)
+
+### Bug fixes
+
+Fix pasting in Chrome with the require-trusted-types-for CSP enabled.
+
+Fix an issue where, for some kinds of IME on Windows, pressing Enter while in a composition would execute the resulting command on the wrong selection, erasing some typed content.
+
 ## 1.34.1 (2024-08-26)
 
 ### Bug fixes
