@@ -458,6 +458,7 @@ export class EditorView {
     }
     this.docView.destroy()
     ;(this as any).docView = null
+    this.trackWrites = null
     clearReusedRange();
   }
 
