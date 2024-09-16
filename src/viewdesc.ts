@@ -1249,6 +1249,7 @@ class ViewTreeUpdater {
           this.index++
           return true
         } else if (!locked && (updated = this.recreateWrapper(next, node, outerDeco, innerDeco, view, pos))) {
+          this.destroyBetween(this.index, i)
           this.top.children[this.index] = updated
           if (updated.contentDOM) {
             updated.dirty = CONTENT_DIRTY
@@ -1270,7 +1271,8 @@ class ViewTreeUpdater {
   recreateWrapper(next: NodeViewDesc, node: Node, outerDeco: readonly Decoration[], innerDeco: DecorationSource,
                   view: EditorView, pos: number) {
     if (next.dirty || node.isAtom || !next.children.length ||
-        !next.node.content.eq(node.content)) return null
+        !next.node.content.eq(node.content) ||
+        !sameOuterDeco(outerDeco, next.outerDeco) || !innerDeco.eq(next.innerDeco)) return null
     let wrapper = NodeViewDesc.create(this.top, node, outerDeco, innerDeco, view, pos)
     if (wrapper.contentDOM) {
       wrapper.children = next.children
