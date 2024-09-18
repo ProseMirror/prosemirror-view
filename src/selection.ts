@@ -24,6 +24,16 @@ export function selectionFromDOM(view: EditorView, origin: string | null = null)
     }
   } else {
     let anchor = view.docView.posFromDOM(domSel.anchorNode!, domSel.anchorOffset, 1)
+    if (domSel instanceof window.Selection && domSel.rangeCount > 1) {
+      let contiguous = true
+      for (let i = 0; i < domSel.rangeCount - 1; i++) {
+        if (view.posAtDOM(domSel.getRangeAt(i + 1).startContainer, 0) !== view.posAtDOM(domSel.getRangeAt(i).endContainer, 0)) {
+          contiguous = false
+          break
+        }
+      }
+      if (contiguous) anchor = view.state.selection.$anchor.pos
+    }
     if (anchor < 0) return null
     $anchor = doc.resolve(anchor)
   }
