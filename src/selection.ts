@@ -12,9 +12,9 @@ export function selectionFromDOM(view: EditorView, origin: string | null = null)
   let nearestDesc = view.docView.nearestDesc(domSel.focusNode), inWidget = nearestDesc && nearestDesc.size == 0
   let head = view.docView.posFromDOM(domSel.focusNode, domSel.focusOffset, 1)
   if (head < 0) return null
-  let $head = doc.resolve(head), $anchor, selection
+  let $head = doc.resolve(head), anchor, selection
   if (selectionCollapsed(domSel)) {
-    $anchor = $head
+    anchor = head
     while (nearestDesc && !nearestDesc.node) nearestDesc = nearestDesc.parent
     let nearestDescNode = (nearestDesc as NodeViewDesc).node
     if (nearestDesc && nearestDescNode.isAtom && NodeSelection.isSelectable(nearestDescNode) && nearestDesc.parent
@@ -23,10 +23,22 @@ export function selectionFromDOM(view: EditorView, origin: string | null = null)
       selection = new NodeSelection(head == pos ? $head : doc.resolve(pos))
     }
   } else {
-    let anchor = view.docView.posFromDOM(domSel.anchorNode!, domSel.anchorOffset, 1)
+    if (domSel instanceof view.dom.ownerDocument.defaultView!.Selection && domSel.rangeCount > 1) {
+      let min = head, max = head
+      for (let i = 0; i < domSel.rangeCount; i++) {
+        let range = domSel.getRangeAt(i)
+        min = Math.min(min, view.docView.posFromDOM(range.startContainer, range.startOffset, 1))
+        max = Math.max(max, view.docView.posFromDOM(range.endContainer, range.endOffset, -1))
+      }
+      if (min < 0) return null
+      ;[anchor, head] = max == view.state.selection.anchor ? [max, min] : [min, max]
+      $head = doc.resolve(head)
+    } else {
+      anchor = view.docView.posFromDOM(domSel.anchorNode!, domSel.anchorOffset, 1)
+    }
     if (anchor < 0) return null
-    $anchor = doc.resolve(anchor)
   }
+  let $anchor = doc.resolve(anchor)
 
   if (!selection) {
     let bias = origin == "pointer" || (view.state.selection.head < $head.pos && !inWidget) ? 1 : -1
