@@ -1,3 +1,11 @@
+## 1.34.3 (2024-09-19)
+
+### Bug fixes
+
+Fix an issue that would, during some types of document updates, leave the document DOM in an improper form.
+
+Handle the case where drag-selecting in Firefox creates a selection with multiple distinct ranges.
+
 ## 1.34.2 (2024-09-03)
 
 ### Bug fixes
