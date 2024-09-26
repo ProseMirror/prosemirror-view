@@ -33,17 +33,25 @@ export interface NodeView {
   /// (or deciding not to render) its child nodes.
   contentDOM?: HTMLElement | null
 
-  /// When given, this will be called when the view is updating itself.
-  /// It will be given a node (possibly of a different type), an array
-  /// of active decorations around the node (which are automatically
-  /// drawn, and the node view may ignore if it isn't interested in
-  /// them), and a [decoration source](#view.DecorationSource) that
-  /// represents any decorations that apply to the content of the node
-  /// (which again may be ignored). It should return true if it was
-  /// able to update to that node, and false otherwise. If the node
-  /// view has a `contentDOM` property (or no `dom` property), updating
-  /// its child nodes will be handled by ProseMirror.
+  /// When given, this will be called when the view is updating
+  /// itself. It will be given a node, an array of active decorations
+  /// around the node (which are automatically drawn, and the node
+  /// view may ignore if it isn't interested in them), and a
+  /// [decoration source](#view.DecorationSource) that represents any
+  /// decorations that apply to the content of the node (which again
+  /// may be ignored). It should return true if it was able to update
+  /// to that node, and false otherwise. If the node view has a
+  /// `contentDOM` property (or no `dom` property), updating its child
+  /// nodes will be handled by ProseMirror.
   update?: (node: Node, decorations: readonly Decoration[], innerDecorations: DecorationSource) => boolean
+
+  /// By default, `update` will only be called when a node of the same
+  /// node type appears in this view's position. When you set this to
+  /// true, it will be called for any node, making it possible to have
+  /// a node view that representsmultiple types of nodes. You will
+  /// need to check the type of the nodes you get in `update` and
+  /// return `false` for types you cannot handle.
+  multiType?: boolean
 
   /// Can be used to override the way the node's selected status (as a
   /// node selection) is displayed.
@@ -938,7 +946,7 @@ class CustomNodeViewDesc extends NodeViewDesc {
   // updates the children.
   update(node: Node, outerDeco: readonly Decoration[], innerDeco: DecorationSource, view: EditorView) {
     if (this.dirty == NODE_DIRTY) return false
-    if (this.spec.update) {
+    if (this.spec.update && (this.node.type == node.type || this.spec.multiType)) {
       let result = this.spec.update(node, outerDeco, innerDeco)
       if (result) this.updateInner(node, outerDeco, innerDeco, view)
       return result
