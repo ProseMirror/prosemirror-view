@@ -163,17 +163,14 @@ export class DOMObserver {
     return this.queue
   }
 
-  selectionChanged(sel: DOMSelectionRange) {
-    return !this.suppressingSelectionUpdates && !this.currentSelection.eq(sel) && hasFocusAndSelection(this.view) && !this.ignoreSelectionChange(sel)
-  }
-
   flush() {
     let {view} = this
     if (!view.docView || this.flushingSoon > -1) return
     let mutations = this.pendingRecords()
     if (mutations.length) this.queue = []
 
-    let sel = view.domSelectionRange(), newSel = this.selectionChanged(sel)
+    let sel = view.domSelectionRange()
+    let newSel = !this.suppressingSelectionUpdates && !this.currentSelection.eq(sel) && hasFocusAndSelection(view) && !this.ignoreSelectionChange(sel)
 
     let from = -1, to = -1, typeOver = false, added: Node[] = []
     if (view.editable) {

@@ -112,9 +112,7 @@ editHandlers.keydown = (view: EditorView, _event: Event) => {
   // to be part of a confused sequence of composition events fired,
   // and handling them eagerly tends to corrupt the input.
   if (browser.android && browser.chrome && event.keyCode == 13) return
-
-  if (view.domObserver.selectionChanged(view.domSelectionRange())) view.domObserver.flush()
-  else if (event.keyCode != 229) view.domObserver.forceFlush()
+  if (event.keyCode != 229) view.domObserver.forceFlush()
 
   // On iOS, if we preventDefault enter key presses, the virtual
   // keyboard gets confused. So the hack here is to set a flag that
