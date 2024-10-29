@@ -1,3 +1,9 @@
+## 1.35.0 (2024-10-29)
+
+### New features
+
+The new `NodeView.multiType` flag is now required to opt into handling different node types in a single node view. It used to be the default, but this tripped too many people up.
+
 ## 1.34.3 (2024-09-19)
 
 ### Bug fixes
