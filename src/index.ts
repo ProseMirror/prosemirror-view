@@ -14,7 +14,7 @@ import {DOMSelection, DOMNode, DOMSelectionRange, deepActiveElement, clearReused
 import * as browser from "./browser"
 
 export {Decoration, DecorationSet, DecorationAttrs, DecorationSource} from "./decoration"
-export {NodeView} from "./viewdesc"
+export {NodeView, MarkView} from "./viewdesc"
 
 // Exported for testing
 import {serializeForClipboard, parseFromClipboard} from "./clipboard"
