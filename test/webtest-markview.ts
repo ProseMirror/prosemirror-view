@@ -3,7 +3,7 @@ import { doc, p, strong } from "prosemirror-test-builder"
 import { tempEditor } from "./view"
 
 describe("markViews prop", () => {
-  it("can replace a node's representation", () => {
+  it("can replace a mark's representation", () => {
     let view = tempEditor({doc: doc(p("foo", strong("bar"))),
                            markViews: {strong() { return {dom: document.createElement("var")}}}})
     ist(view.dom.querySelector("var"))
