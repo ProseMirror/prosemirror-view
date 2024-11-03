@@ -630,7 +630,7 @@ class MarkViewDesc extends ViewDesc {
   }
 
   destroy() {
-    this.spec.destroy?.()
+    if (this.spec.destroy) this.spec.destroy()
     super.destroy()
   }
 }
@@ -993,7 +993,7 @@ class CustomNodeViewDesc extends NodeViewDesc {
   }
 
   destroy() {
-    this.spec.destroy?.()
+    if (this.spec.destroy) this.spec.destroy()
     super.destroy()
   }
 
