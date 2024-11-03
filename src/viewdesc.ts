@@ -17,9 +17,6 @@ declare global {
 /// the behavior of a node's in-editor representation, and need to
 /// [define](#view.EditorProps.nodeViews) a custom node view.
 ///
-/// Mark views only support `dom` and `contentDOM`, and don't support
-/// any of the node view methods.
-///
 /// Objects returned as node views must conform to this interface.
 export interface NodeView {
   /// The outer DOM node that represents the document node.
@@ -84,7 +81,27 @@ export interface NodeView {
   ignoreMutation?: (mutation: MutationRecord) => boolean
 
   /// Called when the node view is removed from the editor or the whole
-  /// editor is destroyed. (Not available for marks.)
+  /// editor is destroyed.
+  destroy?: () => void
+}
+
+/// By default, document marks are rendered using the result of the
+/// [`toDOM`](#model.MarkSpec.toDOM) method of their spec, and managed entirely
+/// by the editor. For some use cases, you want more control over the behavior
+/// of a mark's in-editor representation, and need to
+/// [define](#view.EditorProps.markViews) a custom mark view.
+///
+/// Objects returned as mark views must conform to this interface.
+export interface MarkView {
+  /// The outer DOM node that represents the document node.
+  dom: DOMNode
+
+  /// The DOM node that should hold the mark's content. When this is not
+  /// present, the `dom` property is used as the content DOM.
+  contentDOM?: HTMLElement | null
+  
+  /// Called when the mark view is removed from the editor or the whole
+  /// editor is destroyed.
   destroy?: () => void
 }
 
@@ -572,7 +589,7 @@ class CompositionViewDesc extends ViewDesc {
 // some cases they will be split more often than would appear
 // necessary.
 class MarkViewDesc extends ViewDesc {
-  constructor(parent: ViewDesc, readonly mark: Mark, dom: DOMNode, contentDOM: HTMLElement) {
+  constructor(parent: ViewDesc, readonly mark: Mark, dom: DOMNode, contentDOM: HTMLElement, readonly spec: MarkView) {
     super(parent, [], dom, contentDOM)
   }
 
@@ -581,7 +598,7 @@ class MarkViewDesc extends ViewDesc {
     let spec: {dom: HTMLElement, contentDOM?: HTMLElement} = custom && (custom as any)(mark, view, inline)
     if (!spec || !spec.dom)
       spec = (DOMSerializer.renderSpec as any)(document, mark.type.spec.toDOM!(mark, inline), null, mark.attrs) as any
-    return new MarkViewDesc(parent, mark, spec.dom, spec.contentDOM || spec.dom as HTMLElement)
+    return new MarkViewDesc(parent, mark, spec.dom, spec.contentDOM || spec.dom as HTMLElement, spec)
   }
 
   parseRule() {
@@ -610,6 +627,11 @@ class MarkViewDesc extends ViewDesc {
     for (let i = 0; i < nodes.length; i++) nodes[i].parent = copy
     copy.children = nodes
     return copy
+  }
+
+  destroy() {
+    if (this.spec.destroy) this.spec.destroy()
+    super.destroy()
   }
 }
 

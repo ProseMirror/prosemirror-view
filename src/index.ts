@@ -3,7 +3,7 @@ import {Slice, ResolvedPos, DOMParser, DOMSerializer, Node, Mark} from "prosemir
 
 import {scrollRectIntoView, posAtCoords, coordsAtPos, endOfTextblock, storeScrollPos,
         resetScrollPos, focusPreventScroll} from "./domcoords"
-import {docViewDesc, ViewDesc, NodeView, NodeViewDesc} from "./viewdesc"
+import {docViewDesc, ViewDesc, NodeView, NodeViewDesc, MarkView} from "./viewdesc"
 import {initInput, destroyInput, dispatchEvent, ensureListeners, clearComposition,
         InputState, doPaste, Dragging, findCompositionNode} from "./input"
 import {selectionToDOM, anchorInRightPlace, syncNodeSelection} from "./selection"
@@ -14,7 +14,7 @@ import {DOMSelection, DOMNode, DOMSelectionRange, deepActiveElement, clearReused
 import * as browser from "./browser"
 
 export {Decoration, DecorationSet, DecorationAttrs, DecorationSource} from "./decoration"
-export {NodeView} from "./viewdesc"
+export {NodeView, MarkView} from "./viewdesc"
 
 // Exported for testing
 import {serializeForClipboard, parseFromClipboard} from "./clipboard"
@@ -576,7 +576,7 @@ export type NodeViewConstructor = (node: Node, view: EditorView, getPos: () => n
 
 /// The function types [used](#view.EditorProps.markViews) to create
 /// mark views.
-export type MarkViewConstructor = (mark: Mark, view: EditorView, inline: boolean) => {dom: HTMLElement, contentDOM?: HTMLElement}
+export type MarkViewConstructor = (mark: Mark, view: EditorView, inline: boolean) => MarkView
 
 type NodeViewSet = {[name: string]: NodeViewConstructor | MarkViewConstructor}
 
