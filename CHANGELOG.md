@@ -1,3 +1,13 @@
+## 1.36.0 (2024-11-05)
+
+### Bug fixes
+
+Don't recreated `TrustedTypePolicy` objects for every paste.
+
+### New features
+
+Add support for a `destroy` method on custom mark views. Add MarkView to the doc template
+
 ## 1.35.0 (2024-10-29)
 
 ### New features
