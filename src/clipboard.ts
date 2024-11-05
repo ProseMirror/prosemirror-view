@@ -212,7 +212,7 @@ function maybeWrapTrusted(html: string): string {
   // With the require-trusted-types-for CSP, Chrome will block
   // innerHTML, even on a detached document. This wraps the string in
   // a way that makes the browser allow us to use its parser again.
-  if (!_policy) _policy = trustedTypes.createPolicy("detachedDocument", {createHTML: (s: string) => s})
+  if (!_policy) _policy = trustedTypes.createPolicy("ProseMirrorClipboard", {createHTML: (s: string) => s})
   return _policy.createHTML(html)
 }
 
