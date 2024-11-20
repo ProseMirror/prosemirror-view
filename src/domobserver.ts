@@ -151,8 +151,8 @@ export class DOMObserver {
     let desc = container && this.view.docView.nearestDesc(container)
     if (desc && desc.ignoreMutation({
       type: "selection",
-      target: container!.nodeType == 3 ? container!.parentNode : container
-    } as any)) {
+      target: container!.nodeType == 3 ? container!.parentNode! : container!
+    })) {
       this.setCurSelection()
       return true
     }

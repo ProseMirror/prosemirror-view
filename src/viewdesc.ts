@@ -10,6 +10,13 @@ declare global {
   interface Node { pmViewDesc?: ViewDesc }
 }
 
+/// A ViewMutationRecord represents a DOM
+/// [mutation](https://developer.mozilla.org/en-US/docs/Web/API/MutationObserver)
+/// or a selection change happens within the view. When the change is
+/// a selection change, the record will have a `type` property of
+/// `"selection"` (which doesn't occur for native mutation records).
+export type ViewMutationRecord = MutationRecord | { type: "selection", target: DOMNode }
+
 /// By default, document nodes are rendered using the result of the
 /// [`toDOM`](#model.NodeSpec.toDOM) method of their spec, and managed
 /// entirely by the editor. For some use cases, such as embedded
@@ -70,15 +77,10 @@ export interface NodeView {
   /// which this returns true are not handled by the editor.
   stopEvent?: (event: Event) => boolean
 
-  /// Called when a DOM
-  /// [mutation](https://developer.mozilla.org/en-US/docs/Web/API/MutationObserver)
-  /// or a selection change happens within the view. When the change is
-  /// a selection change, the record will have a `type` property of
-  /// `"selection"` (which doesn't occur for native mutation records).
-  /// Return false if the editor should re-read the selection or
-  /// re-parse the range around the mutation, true if it can safely be
-  /// ignored.
-  ignoreMutation?: (mutation: MutationRecord) => boolean
+  /// Called when a [mutation](#view.ViewMutationRecord) happens within the
+  /// view. Return false if the editor should re-read the selection or re-parse
+  /// the range around the mutation, true if it can safely be ignored.
+  ignoreMutation?: (mutation: ViewMutationRecord) => boolean
 
   /// Called when the node view is removed from the editor or the whole
   /// editor is destroyed.
@@ -99,6 +101,12 @@ export interface MarkView {
   /// The DOM node that should hold the mark's content. When this is not
   /// present, the `dom` property is used as the content DOM.
   contentDOM?: HTMLElement | null
+
+  /// Called when a [mutation](#view.ViewMutationRecord) happens within the
+  /// view. Return false if the editor should re-read the selection or re-parse
+  /// the range around the mutation, true if it can safely be ignored.
+  ignoreMutation?: (mutation: ViewMutationRecord) => boolean
+
   
   /// Called when the mark view is removed from the editor or the whole
   /// editor is destroyed.
@@ -468,8 +476,8 @@ export class ViewDesc {
     }
   }
 
-  ignoreMutation(mutation: MutationRecord): boolean {
-    return !this.contentDOM && (mutation.type as any) != "selection"
+  ignoreMutation(mutation: ViewMutationRecord): boolean {
+    return !this.contentDOM && mutation.type != "selection"
   }
 
   get contentLost() {
@@ -548,8 +556,8 @@ class WidgetViewDesc extends ViewDesc {
     return stop ? stop(event) : false
   }
 
-  ignoreMutation(mutation: MutationRecord) {
-    return (mutation.type as any) != "selection" || this.widget.spec.ignoreSelection
+  ignoreMutation(mutation: ViewMutationRecord) {
+    return mutation.type != "selection" || this.widget.spec.ignoreSelection
   }
 
   destroy() {
@@ -578,7 +586,7 @@ class CompositionViewDesc extends ViewDesc {
     return {node: this.textDOM, offset: pos}
   }
 
-  ignoreMutation(mut: MutationRecord) {
+  ignoreMutation(mut: ViewMutationRecord) {
     return mut.type === 'characterData' && mut.target.nodeValue == mut.oldValue
    }
 }
@@ -627,6 +635,10 @@ class MarkViewDesc extends ViewDesc {
     for (let i = 0; i < nodes.length; i++) nodes[i].parent = copy
     copy.children = nodes
     return copy
+  }
+
+  ignoreMutation(mutation: ViewMutationRecord) {
+    return this.spec.ignoreMutation ? this.spec.ignoreMutation(mutation) : super.ignoreMutation(mutation)
   }
 
   destroy() {
@@ -924,8 +936,8 @@ class TextViewDesc extends NodeViewDesc {
     return super.localPosFromDOM(dom, offset, bias)
   }
 
-  ignoreMutation(mutation: MutationRecord) {
-    return mutation.type != "characterData" && (mutation.type as any) != "selection"
+  ignoreMutation(mutation: ViewMutationRecord) {
+    return mutation.type != "characterData" && mutation.type != "selection"
   }
 
   slice(from: number, to: number, view: EditorView) {
@@ -1001,7 +1013,7 @@ class CustomNodeViewDesc extends NodeViewDesc {
     return this.spec.stopEvent ? this.spec.stopEvent(event) : false
   }
 
-  ignoreMutation(mutation: MutationRecord) {
+  ignoreMutation(mutation: ViewMutationRecord) {
     return this.spec.ignoreMutation ? this.spec.ignoreMutation(mutation) : super.ignoreMutation(mutation)
   }
 }

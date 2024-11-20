@@ -3,7 +3,7 @@ import ist from "ist"
 import {Selection, NodeSelection} from "prosemirror-state"
 import {Decoration, DecorationSet, EditorView} from "prosemirror-view"
 import {Node as PMNode} from "prosemirror-model"
-import {tempEditor, findTextNode} from "./view"
+import {tempEditor, findTextNode, flush} from "./view"
 
 const img = img_({src: "data:image/gif;base64,R0lGODlhBQAFAIABAAAAAP///yH5BAEKAAEALAAAAAAFAAUAAAIEjI+pWAA7"})
 
@@ -66,7 +66,7 @@ describe("EditorView", () => {
     function test(node: Node, offset: number, expected: number) {
       setDOMSel(node, offset)
       view.dom.focus()
-      view.domObserver.flush()
+      flush(view)
       let sel = view.state.selection
       ist(sel.head == null ? sel.from : sel.head, expected)
     }

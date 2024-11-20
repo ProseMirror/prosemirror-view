@@ -1,8 +1,8 @@
 import {doc, p, br, blockquote} from "prosemirror-test-builder"
 import {Plugin} from "prosemirror-state"
-import {DecorationSet, Decoration} from "prosemirror-view"
+import {DecorationSet, Decoration, ViewMutationRecord} from "prosemirror-view"
 import ist from "ist"
-import {tempEditor} from "./view"
+import {tempEditor, flush} from "./view"
 
 describe("nodeViews prop", () => {
   it("can replace a node's representation", () => {
@@ -72,6 +72,32 @@ describe("nodeViews prop", () => {
     view.dispatch(view.state.tr.insertText("a"))
     ist(view.dom.querySelector("p"), para)
     ist(para.textContent, "afoo")
+  })
+
+  it("has its ignoreMutation method called", async () => {
+    let mutation: ViewMutationRecord | undefined
+    let view = tempEditor({
+      doc: doc(p("foo")),
+      nodeViews: {paragraph() { 
+        let dom = document.createElement('div');
+        let contentDOM = document.createElement('p');
+        let info = document.createElement('x-info')
+        dom.append(contentDOM, info)
+        return {
+          dom, 
+          contentDOM,
+          ignoreMutation: (m) => {
+            mutation = m
+            return true
+          }
+        }
+      }}
+    })
+    ist(!mutation)
+    view.dom.querySelector("x-info")!.textContent = "info"
+    flush(view)
+    ist(mutation)
+    ist((mutation!.target as HTMLElement).tagName, "X-INFO")
   })
 
   it("has its destroy method called", () => {

@@ -2,8 +2,7 @@ import ist from "ist"
 import {eq, doc, p, pre, h1, a, em, img as img_, br, strong, blockquote} from "prosemirror-test-builder"
 import {EditorState, TextSelection} from "prosemirror-state"
 import {Step} from "prosemirror-transform"
-import {EditorView} from "prosemirror-view"
-import {tempEditor, findTextNode} from "./view"
+import {tempEditor, findTextNode, flush} from "./view"
 
 const img = img_({src: "data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw=="})
 
@@ -13,10 +12,6 @@ function setSel(aNode: Node, aOff: number, fNode?: Node, fOff = 0) {
   r.setStart(aNode, aOff)
   s.removeAllRanges()
   s.addRange(r)
-}
-
-function flush(view: EditorView) {
-  view.domObserver.flush()
 }
 
 describe("DOM change", () => {

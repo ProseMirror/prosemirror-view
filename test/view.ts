@@ -48,3 +48,8 @@ export function requireFocus(pm: EditorView) {
   pm.focus()
   return pm
 }
+
+export function flush(view: EditorView) {
+  // @ts-ignore: view.domObserver is an internal API
+  view.domObserver.flush()
+}
