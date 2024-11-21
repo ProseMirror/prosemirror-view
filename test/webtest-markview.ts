@@ -1,6 +1,7 @@
 import ist from "ist"
 import { doc, p, strong } from "prosemirror-test-builder"
-import { tempEditor } from "./view"
+import { ViewMutationRecord } from "prosemirror-view"
+import { tempEditor, flush } from "./view"
 
 describe("markViews prop", () => {
   it("can replace a mark's representation", () => {
@@ -23,6 +24,27 @@ describe("markViews prop", () => {
     view.dispatch(view.state.tr.insertText("a", 2))
     ist(view.dom.querySelector("span"), span)
     ist(span.textContent, "faoo")
+  })
+
+  it("has its ignoreMutation method called", async () => {
+    let mutation: ViewMutationRecord | undefined
+    let view = tempEditor({
+      doc: doc(p("foo", strong("bar"))),
+      markViews: {strong() { 
+        return {
+          dom: document.createElement("var"),
+          ignoreMutation: (m) => {
+            mutation = m
+            return true
+          }
+        }
+      }}
+    })
+    ist(!mutation)
+    view.dom.querySelector("var")!.classList.add("foo")
+    flush(view)
+    ist(mutation)
+    ist((mutation!.target as HTMLElement).tagName, "VAR")
   })
 
   it("has its destroy method called", () => {
