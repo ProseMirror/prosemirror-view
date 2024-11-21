@@ -20,6 +20,8 @@ this module.
 
 @MarkView
 
+@ViewMutationRecord
+
 @DOMEventMap
 
 ### Decorations
