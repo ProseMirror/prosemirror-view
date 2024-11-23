@@ -1,3 +1,13 @@
+## 1.37.0 (2024-11-23)
+
+### Bug fixes
+
+Fix an issue on Safari where the (incorrect) top-level selection was used, instead of the workaround that also works inside shadow roots.
+
+### New features
+
+Mark views can now provide an `ignoreMutation` method. Add ViewMutationRecord to doc template
+
 ## 1.36.0 (2024-11-05)
 
 ### Bug fixes
