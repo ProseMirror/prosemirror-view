@@ -395,19 +395,20 @@ export class ViewDesc {
   // custom things with the selection. Note that this falls apart when
   // a selection starts in such a node and ends in another, in which
   // case we just use whatever domFromPos produces as a best effort.
-  setSelection(anchor: number, head: number, root: Document | ShadowRoot, force = false): void {
+  setSelection(anchor: number, head: number, view: EditorView, force = false): void {
     // If the selection falls entirely in a child, give it to that child
     let from = Math.min(anchor, head), to = Math.max(anchor, head)
     for (let i = 0, offset = 0; i < this.children.length; i++) {
       let child = this.children[i], end = offset + child.size
       if (from > offset && to < end)
-        return child.setSelection(anchor - offset - child.border, head - offset - child.border, root, force)
+        return child.setSelection(anchor - offset - child.border, head - offset - child.border, view, force)
       offset = end
     }
 
     let anchorDOM = this.domFromPos(anchor, anchor ? -1 : 1)
     let headDOM = head == anchor ? anchorDOM : this.domFromPos(head, head ? -1 : 1)
-    let domSel = (root as Document).getSelection()!
+    let domSel = (view.root as Document).getSelection()!
+    let selRange = view.domSelectionRange()
 
     let brKludge = false
     // On Firefox, using Selection.collapse to put the cursor after a
@@ -437,14 +438,14 @@ export class ViewDesc {
     }
     // Firefox can act strangely when the selection is in front of an
     // uneditable node. See #1163 and https://bugzilla.mozilla.org/show_bug.cgi?id=1709536
-    if (browser.gecko && domSel.focusNode && domSel.focusNode != headDOM.node && domSel.focusNode.nodeType == 1) {
-      let after = domSel.focusNode.childNodes[domSel.focusOffset]
+    if (browser.gecko && selRange.focusNode && selRange.focusNode != headDOM.node && selRange.focusNode.nodeType == 1) {
+      let after = selRange.focusNode.childNodes[selRange.focusOffset]
       if (after && (after as HTMLElement).contentEditable == "false") force = true
     }
 
     if (!(force || brKludge && browser.safari) &&
-        isEquivalentPosition(anchorDOM.node, anchorDOM.offset, domSel.anchorNode!, domSel.anchorOffset) &&
-        isEquivalentPosition(headDOM.node, headDOM.offset, domSel.focusNode!, domSel.focusOffset))
+        isEquivalentPosition(anchorDOM.node, anchorDOM.offset, selRange.anchorNode!, selRange.anchorOffset) &&
+        isEquivalentPosition(headDOM.node, headDOM.offset, selRange.focusNode!, selRange.focusOffset))
       return
 
     // Selection.extend can be used to create an 'inverted' selection
@@ -999,9 +1000,9 @@ class CustomNodeViewDesc extends NodeViewDesc {
     this.spec.deselectNode ? this.spec.deselectNode() : super.deselectNode()
   }
 
-  setSelection(anchor: number, head: number, root: Document | ShadowRoot, force: boolean) {
-    this.spec.setSelection ? this.spec.setSelection(anchor, head, root)
-      : super.setSelection(anchor, head, root, force)
+  setSelection(anchor: number, head: number, view: EditorView, force: boolean) {
+    this.spec.setSelection ? this.spec.setSelection(anchor, head, view.root)
+      : super.setSelection(anchor, head, view, force)
   }
 
   destroy() {

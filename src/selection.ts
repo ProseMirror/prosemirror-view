@@ -84,7 +84,7 @@ export function selectionToDOM(view: EditorView, force = false) {
       if (!sel.empty && !sel.$from.parent.inlineContent)
         resetEditableTo = temporarilyEditableNear(view, sel.to)
     }
-    view.docView.setSelection(anchor, head, view.root, force)
+    view.docView.setSelection(anchor, head, view, force)
     if (brokenSelectBetweenUneditable) {
       if (resetEditableFrom) resetEditable(resetEditableFrom)
       if (resetEditableTo) resetEditable(resetEditableTo)
