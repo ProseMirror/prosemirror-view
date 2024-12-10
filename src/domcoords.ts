@@ -229,6 +229,12 @@ function posFromCaret(view: EditorView, node: Node, offset: number, coords: {top
     if (!desc) return null
     if (desc.dom.nodeType == 1 && (desc.node.isBlock && desc.parent || !desc.contentDOM)) {
       let rect = (desc.dom as HTMLElement).getBoundingClientRect()
+      if (!rect.width && !rect.height) {
+        // its possible to have a node with display:contents, yet it contains other block nodes.
+        cur = desc.dom.parentNode!
+        sawBlock = true;
+        continue;
+      }
       if (desc.node.isBlock && desc.parent) {
         // Only apply the horizontal test to the innermost block. Vertical for any parent.
         if (!sawBlock && rect.left > coords.left || rect.top > coords.top) outsideBlock = desc.posBefore
