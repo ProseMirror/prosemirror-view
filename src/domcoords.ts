@@ -225,10 +225,11 @@ function posFromCaret(view: EditorView, node: Node, offset: number, coords: {top
   let outsideBlock = -1
   for (let cur = node, sawBlock = false;;) {
     if (cur == view.dom) break
-    let desc = view.docView.nearestDesc(cur, true)
+    let desc = view.docView.nearestDesc(cur, true), rect
     if (!desc) return null
-    if (desc.dom.nodeType == 1 && (desc.node.isBlock && desc.parent || !desc.contentDOM)) {
-      let rect = (desc.dom as HTMLElement).getBoundingClientRect()
+    if (desc.dom.nodeType == 1 && (desc.node.isBlock && desc.parent || !desc.contentDOM) &&
+        // Ignore elements with zero-size bounding rectangles
+        ((rect = (desc.dom as HTMLElement).getBoundingClientRect()).width || rect.height)) {
       if (desc.node.isBlock && desc.parent) {
         // Only apply the horizontal test to the innermost block. Vertical for any parent.
         if (!sawBlock && rect.left > coords.left || rect.top > coords.top) outsideBlock = desc.posBefore
