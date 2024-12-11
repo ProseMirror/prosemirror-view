@@ -296,7 +296,7 @@ describe("EditorView composition", () => {
     compose(pm, () => {
       let target = pm.dom.firstChild!.firstChild as Text
       target.nodeValue = "one A five"
-      document.getSelection()!.collapse(target, 4)
+      document.getSelection()!.collapse(target, 5)
       return target
     }, [
       n => edit(n, "B", 4, 5),

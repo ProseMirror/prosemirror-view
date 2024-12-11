@@ -196,11 +196,11 @@ export function readDOMChange(view: EditorView, from: number, to: number, typeOv
     return
   }
 
-  // Chrome Android will occasionally, during composition, delete the
+  // Chrome will occasionally, during composition, delete the
   // entire composition and then immediately insert it again. This is
   // used to detect that situation.
-  if (browser.chrome && browser.android && change.endB == change.start)
-    view.input.lastAndroidDelete = Date.now()
+  if (browser.chrome && change.endB == change.start)
+    view.input.lastChromeDelete = Date.now()
 
   // This tries to detect Android virtual keyboard
   // enter-and-pick-suggestion action. That sometimes (see issue
@@ -252,13 +252,13 @@ export function readDOMChange(view: EditorView, from: number, to: number, typeOv
     tr = view.state.tr.replace(chFrom, chTo, parse.doc.slice(change.start - parse.from, change.endB - parse.from))
   if (parse.sel) {
     let sel = resolveSelection(view, tr.doc, parse.sel)
-    // Chrome Android will sometimes, during composition, report the
+    // Chrome will sometimes, during composition, report the
     // selection in the wrong place. If it looks like that is
     // happening, don't update the selection.
     // Edge just doesn't move the cursor forward when you start typing
     // in an empty block or between br nodes.
-    if (sel && !(browser.chrome && browser.android && view.composing && sel.empty &&
-                 (change.start != change.endB || view.input.lastAndroidDelete < Date.now() - 100) &&
+    if (sel && !(browser.chrome && view.composing && sel.empty &&
+                 (change.start != change.endB || view.input.lastChromeDelete < Date.now() - 100) &&
                  (sel.head == chFrom || sel.head == tr.mapping.map(chTo) - 1) ||
                  browser.ie && sel.empty && sel.head == chFrom))
       tr.setSelection(sel)

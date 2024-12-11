@@ -28,7 +28,7 @@ export class InputState {
   lastIOSEnterFallbackTimeout = -1
   lastFocus = 0
   lastTouch = 0
-  lastAndroidDelete = 0
+  lastChromeDelete = 0
   composing = false
   compositionNode: Text | null = null
   composingTimeout = -1
