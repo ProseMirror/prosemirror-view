@@ -1,3 +1,11 @@
+## 1.37.1 (2024-12-11)
+
+### Bug fixes
+
+Fix an issue where `display: content` elements could break `posAtCoords`.
+
+Work around an issue with Chrome reporting the selection incorrectly during composition.
+
 ## 1.37.0 (2024-11-23)
 
 ### Bug fixes
