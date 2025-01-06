@@ -2068,17 +2068,13 @@ Transactions that update the selection because of mouse or touch input now get a
 
 ## 0.16.0 (2016-12-23)
 
-### Bug fixes
-
-Solve problem where setting a node selection would trigger a DOM read, leading to the selection being reset.
-
-## 0.16.0 (2016-12-23)
-
 ### Breaking changes
 
 The `spellcheck`, `label`, and `class` props are now replaced by an [`attributes` prop](https://prosemirror.net/docs/ref/version/0.16.0.html#view.EditorProps.attributes).
 
 ### Bug fixes
+
+Solve problem where setting a node selection would trigger a DOM read, leading to the selection being reset.
 
 Ignoring/aborting an action should no longer lead to the DOM being stuck in an outdated state.
 
