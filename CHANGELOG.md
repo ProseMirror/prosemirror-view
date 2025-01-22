@@ -1,3 +1,11 @@
+## 1.37.2 (2025-01-22)
+
+### Bug fixes
+
+Fix a bug that caused `EditorView.nodeDOM` to sometimes not return a DOM node when querying a node next to a widget.
+
+Fix an issue where an editor would, when scrolling the selection into view, try to do so even if the selection wasn't in that editor.
+
 ## 1.37.1 (2024-12-11)
 
 ### Bug fixes
