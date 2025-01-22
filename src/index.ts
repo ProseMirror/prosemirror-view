@@ -235,8 +235,10 @@ export class EditorView {
 
   /// @internal
   scrollToSelection() {
-    let startDOM = this.domSelectionRange().focusNode!
-    if (this.someProp("handleScrollToSelection", f => f(this))) {
+    let startDOM = this.domSelectionRange().focusNode
+    if (!startDOM || !this.dom.contains(startDOM.nodeType == 1 ? startDOM : startDOM.parentNode)) {
+      // Ignore selections outside the editor
+    } else if (this.someProp("handleScrollToSelection", f => f(this))) {
       // Handled
     } else if (this.state.selection instanceof NodeSelection) {
       let target = this.docView.domAfterPos(this.state.selection.from)
