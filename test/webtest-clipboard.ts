@@ -4,13 +4,13 @@ import {NodeSelection, TextSelection} from "prosemirror-state"
 import {Slice, Fragment, Schema} from "prosemirror-model"
 import {tempEditor} from "./view"
 
-import {__serializeForClipboard as serializeForClipboard, __parseFromClipboard as parseFromClipboard} from "prosemirror-view"
+import {__parseFromClipboard as parseFromClipboard} from "prosemirror-view"
 
 describe("Clipboard interface", () => {
   it("copies only the node for a node selection", () => {
     let d = doc(blockquote(p("a"), "<a>", hr()), p("b"))
     let view = tempEditor({doc: d})
-    let {dom} = serializeForClipboard(view, NodeSelection.create(d, (d as any).tag.a).content())
+    let {dom} = view.serializeForClipboard(NodeSelection.create(d, (d as any).tag.a).content())
     ist(dom.innerHTML, '<hr data-pm-slice="0 0 []">')
     ist(parseFromClipboard(view, "", dom.innerHTML, false, d.resolve(1)), d.slice((d as any).tag.a, (d as any).tag.a + 1), eq)
   })
@@ -19,7 +19,7 @@ describe("Clipboard interface", () => {
     let d = doc(blockquote(ul(li(p("fo<a>o"), p("b<b>ar")))))
     let view = tempEditor({doc: d})
     let slice = TextSelection.create(d, (d as any).tag.a, (d as any).tag.b).content()
-    let {dom, text} = serializeForClipboard(view, slice)
+    let {dom, text} = view.serializeForClipboard(slice)
     ist(dom.innerHTML, '<li data-pm-slice="2 2 [&quot;blockquote&quot;,{},&quot;bullet_list&quot;,{}]"><p>o</p><p>b</p></li>')
     ist(parseFromClipboard(view, text, dom.innerHTML, false, d.resolve(1)), d.slice((d as any).tag.a, (d as any).tag.b, true), eq)
     ist(parseFromClipboard(view, text, dom.innerHTML, true, d.resolve(1)), new Slice(doc(p("o"), p("b")).content, 1, 1), eq)
@@ -29,7 +29,7 @@ describe("Clipboard interface", () => {
     let d = doc(blockquote(blockquote(p("foo"))))
     let view = tempEditor({doc: d})
     let slice = new Slice(Fragment.from(d.firstChild), 1, 1)
-    let html = serializeForClipboard(view, slice).dom.innerHTML
+    let html = view.serializeForClipboard(slice).dom.innerHTML
     let parsed = parseFromClipboard(view, "-", html, false, d.resolve(1))
     ist(parsed, slice, eq)
   })
@@ -37,7 +37,7 @@ describe("Clipboard interface", () => {
   it("uses clipboardTextSerializer when given", () => {
     let view = tempEditor({doc: doc(p("hello")),
                            clipboardTextSerializer(_) { return "OK" }})
-    let {text} = serializeForClipboard(view, view.state.doc.slice(1, 6))
+    let {text} = view.serializeForClipboard(view.state.doc.slice(1, 6))
     ist(text, "OK")
   })
 
@@ -84,7 +84,7 @@ describe("Clipboard interface", () => {
   it("preserves attributes", () => {
     let d = doc(ol({order: 3}, li(p("f<a>o<b>o"))))
     let view = tempEditor({doc: d})
-    let {dom, text} = serializeForClipboard(view, TextSelection.create(d, (d as any).tag.a, (d as any).tag.b).content())
+    let {dom, text} = view.serializeForClipboard(TextSelection.create(d, (d as any).tag.a, (d as any).tag.b).content())
     ist(parseFromClipboard(view, text, dom.innerHTML, false, d.resolve(1)),
         d.slice((d as any).tag.a, (d as any).tag.b, true), eq)
   })
@@ -109,7 +109,7 @@ describe("Clipboard interface", () => {
     ])])])
     let view = tempEditor({doc})
     let slice = doc.slice(3, 4, true)
-    let html = serializeForClipboard(view, slice).dom.innerHTML
+    let html = view.serializeForClipboard(slice).dom.innerHTML
     ist(/<table/.test(html))
     ist(parseFromClipboard(view, "", html, false, doc.resolve(3)), slice, eq)
   })

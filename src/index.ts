@@ -20,8 +20,6 @@ export {NodeView, MarkView, ViewMutationRecord} from "./viewdesc"
 import {serializeForClipboard, parseFromClipboard} from "./clipboard"
 import {endComposition} from "./input"
 /// @internal
-export const __serializeForClipboard = serializeForClipboard
-/// @internal
 export const __parseFromClipboard = parseFromClipboard
 /// @internal
 export const __endComposition = endComposition
@@ -444,6 +442,16 @@ export class EditorView {
   /// Run the editor's paste logic with the given plain-text input.
   pasteText(text: string, event?: ClipboardEvent) {
     return doPaste(this, text, null, true, event || new ClipboardEvent("paste"))
+  }
+
+  /// Serialize the given slice as it would be if it was copied from
+  /// this editor. Returns a DOM element that contains a
+  /// representation of the slice as its children, a textual
+  /// representation, and the transformed slice (which can be
+  /// different from the given input due to hooks like
+  /// [`transformCopied`](#view.EditorProps.transformCopied)).
+  serializeForClipboard(slice: Slice): {dom: HTMLElement, text: string, slice: Slice} {
+    return serializeForClipboard(this, slice)
   }
 
   /// Removes the editor from the DOM and destroys all [node
