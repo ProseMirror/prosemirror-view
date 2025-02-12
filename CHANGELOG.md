@@ -1,3 +1,9 @@
+## 1.38.0 (2025-02-12)
+
+### New features
+
+The clipboard serialization logic is now available as a `serializeToClipboard` method on the view object.
+
 ## 1.37.2 (2025-01-22)
 
 ### Bug fixes
