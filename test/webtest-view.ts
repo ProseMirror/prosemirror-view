@@ -49,8 +49,11 @@ describe("EditorView", () => {
 
   it("calls handleScrollToSelection when appropriate", () => {
     let called = 0
-    let view = tempEditor({doc: doc(p("foo")),
-                           handleScrollToSelection() { called++; return false }})
+    let view = tempEditor({
+      doc: doc(p("foo")),
+      handleScrollToSelection() { called++; return false }
+    })
+    view.focus()
     view.dispatch(view.state.tr.scrollIntoView())
     ist(called, 1)
   })
