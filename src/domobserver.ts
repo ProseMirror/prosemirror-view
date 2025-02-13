@@ -211,6 +211,7 @@ export class DOMObserver {
       view.input.lastFocus = 0
       selectionToDOM(view)
       this.currentSelection.set(sel)
+      view.scrollToSelection()
     } else if (from > -1 || newSel) {
       if (from > -1) {
         view.docView.markDirty(from, to)
