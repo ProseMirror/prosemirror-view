@@ -7,7 +7,10 @@ import {Decoration, DecorationSource, WidgetConstructor, WidgetType, NodeType} f
 import {EditorView} from "./index"
 
 declare global {
-  interface Node { pmViewDesc?: ViewDesc }
+  interface Node { 
+    /// @internal
+    pmViewDesc?: ViewDesc 
+  }
 }
 
 /// A ViewMutationRecord represents a DOM
