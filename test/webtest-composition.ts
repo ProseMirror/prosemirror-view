@@ -2,7 +2,7 @@ import {schema, eq, doc, p, em, code, strong} from "prosemirror-test-builder"
 import ist from "ist"
 import {Decoration, DecorationSet, __endComposition, EditorView} from "prosemirror-view"
 import {EditorState, Plugin} from "prosemirror-state"
-import {tempEditor, requireFocus, findTextNode, flush} from "./view"
+import {tempEditor, requireFocus, findTextNode, flush} from "./view.js"
 
 function event(pm: EditorView, type: string) {
   pm.dom.dispatchEvent(new CompositionEvent(type))

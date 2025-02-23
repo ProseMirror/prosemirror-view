@@ -2,7 +2,7 @@ import {doc, p, h1, hr, em, strong, img, blockquote, schema} from "prosemirror-t
 import {Plugin, TextSelection} from "prosemirror-state"
 import {Schema} from "prosemirror-model"
 import {DecorationSet, Decoration, EditorView, DecorationSource} from "prosemirror-view"
-import {tempEditor} from "./view"
+import {tempEditor} from "./view.js"
 import ist from "ist"
 
 function make(str: string | Decoration): Decoration {

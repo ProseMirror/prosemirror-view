@@ -2,7 +2,7 @@ import {doc, p, br, blockquote} from "prosemirror-test-builder"
 import {Plugin} from "prosemirror-state"
 import {DecorationSet, Decoration, ViewMutationRecord} from "prosemirror-view"
 import ist from "ist"
-import {tempEditor, flush} from "./view"
+import {tempEditor, flush} from "./view.js"
 
 describe("nodeViews prop", () => {
   it("can replace a node's representation", () => {

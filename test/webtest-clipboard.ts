@@ -2,7 +2,7 @@ import ist from "ist"
 import {eq, doc, p, strong, blockquote, ul, ol, li, hr, br} from "prosemirror-test-builder"
 import {NodeSelection, TextSelection} from "prosemirror-state"
 import {Slice, Fragment, Schema} from "prosemirror-model"
-import {tempEditor} from "./view"
+import {tempEditor} from "./view.js"
 
 import {__parseFromClipboard as parseFromClipboard} from "prosemirror-view"
 

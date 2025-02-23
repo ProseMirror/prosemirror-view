@@ -2,7 +2,7 @@ import {schema, doc, p, a} from "prosemirror-test-builder"
 import ist from "ist"
 import {Decoration, DecorationSet} from "prosemirror-view"
 import {TextSelection} from "prosemirror-state"
-import {tempEditor} from "./view"
+import {tempEditor} from "./view.js"
 
 describe("EditorView.endOfTextblock", () => {
   it("works at the left side of a textblock", () => {

@@ -3,7 +3,7 @@ import {EditorState} from "prosemirror-state"
 import {Schema} from "prosemirror-model"
 import {EditorView} from "prosemirror-view"
 import ist from "ist"
-import {tempEditor} from "./view"
+import {tempEditor} from "./view.js"
 
 let space = document.querySelector("#workspace")!
 

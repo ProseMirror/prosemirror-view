@@ -1,7 +1,7 @@
 import ist from "ist"
 import { doc, p, strong } from "prosemirror-test-builder"
 import { ViewMutationRecord } from "prosemirror-view"
-import { tempEditor, flush } from "./view"
+import { tempEditor, flush } from "./view.js"
 
 describe("markViews prop", () => {
   it("can replace a mark's representation", () => {

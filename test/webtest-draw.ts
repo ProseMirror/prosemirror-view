@@ -2,7 +2,7 @@ import {doc, strong, pre, h1, p, hr, schema} from "prosemirror-test-builder"
 import {Plugin} from "prosemirror-state"
 import {Schema} from "prosemirror-model"
 import ist from "ist"
-import {tempEditor} from "./view"
+import {tempEditor} from "./view.js"
 
 describe("EditorView draw", () => {
   it("updates the DOM", () => {

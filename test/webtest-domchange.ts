@@ -2,7 +2,7 @@ import ist from "ist"
 import {eq, doc, p, pre, h1, a, em, img as img_, br, strong, blockquote} from "prosemirror-test-builder"
 import {EditorState, TextSelection} from "prosemirror-state"
 import {Step} from "prosemirror-transform"
-import {tempEditor, findTextNode, flush} from "./view"
+import {tempEditor, findTextNode, flush} from "./view.js"
 
 const img = img_({src: "data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw=="})
 

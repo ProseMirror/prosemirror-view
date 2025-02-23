@@ -3,7 +3,7 @@ import ist from "ist"
 import {Selection, NodeSelection} from "prosemirror-state"
 import {Decoration, DecorationSet, EditorView} from "prosemirror-view"
 import {Node as PMNode} from "prosemirror-model"
-import {tempEditor, findTextNode, flush} from "./view"
+import {tempEditor, findTextNode, flush} from "./view.js"
 
 const img = img_({src: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAMAAAAoLQ9TAAAAVFBMVEUAAAD/zE3/zE3/zE3/zE3/zE3/zE3/zE3/zE3/zE3BlS5mRQBtSwSFYA+ddhyRaxW0pILg2sz///9zUAa3jCl6VwprSgPxwEb+y0zgsT60iieYcRk7fYG6AAAACnRSTlMAOYbF8wAUjv+pYbspWwAAAHJJREFUGBkFwQlKQDEUBLBM+z64gPc/pyAK1o5JIEm0HeSRBNDWkh2A7FhSa8FaGuuEBBJyVgCArAAAmaCgkIELLpgyXUFvjk7ZZyfau49O+X39AS/fdKa5ecuX9/bq5Mn+SBJt+/nXPJIA2hrak0TbwT8U8zdOEulMLAAAAABJRU5ErkJggg=="})
 
