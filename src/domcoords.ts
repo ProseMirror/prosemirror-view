@@ -60,7 +60,7 @@ export function scrollRectIntoView(view: EditorView, rect: Rect, startDOM: Node)
         rect = {left: rect.left - dX, top: rect.top - dY, right: rect.right - dX, bottom: rect.bottom - dY}
       }
     }
-    if (atTop || /^(fixed|sticky)$/.test(getComputedStyle(parent as HTMLElement).position)) break
+    if (atTop || /^(fixed|sticky|absolute)$/.test(getComputedStyle(parent as HTMLElement).position)) break
   }
 }
 
