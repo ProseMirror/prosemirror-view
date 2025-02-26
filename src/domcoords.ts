@@ -32,10 +32,18 @@ function clientRect(node: HTMLElement): Rect {
 export function scrollRectIntoView(view: EditorView, rect: Rect, startDOM: Node) {
   let scrollThreshold = view.someProp("scrollThreshold") || 0, scrollMargin = view.someProp("scrollMargin") || 5
   let doc = view.dom.ownerDocument
+  let ignoreNonStaticElements = false
   for (let parent: Node | null = startDOM || view.dom;; parent = parentNode(parent)) {
     if (!parent) break
     if (parent.nodeType != 1) continue
     let elt = parent as HTMLElement
+    let eltPosition = getComputedStyle(elt).position
+    if (ignoreNonStaticElements) {
+      if (eltPosition == "static") {
+        continue
+      }
+      ignoreNonStaticElements = false
+    }
     let atTop = elt == doc.body
     let bounding = atTop ? windowRect(doc) : clientRect(elt as HTMLElement)
     let moveX = 0, moveY = 0
@@ -60,7 +68,8 @@ export function scrollRectIntoView(view: EditorView, rect: Rect, startDOM: Node)
         rect = {left: rect.left - dX, top: rect.top - dY, right: rect.right - dX, bottom: rect.bottom - dY}
       }
     }
-    if (atTop || /^(fixed|sticky|absolute)$/.test(getComputedStyle(parent as HTMLElement).position)) break
+    if (atTop || /^(fixed|sticky)$/.test(eltPosition)) break
+    if (eltPosition == "absolute") ignoreNonStaticElements = true
   }
 }
 
