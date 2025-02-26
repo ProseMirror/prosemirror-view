@@ -32,9 +32,9 @@ function clientRect(node: HTMLElement): Rect {
 export function scrollRectIntoView(view: EditorView, rect: Rect, startDOM: Node) {
   let scrollThreshold = view.someProp("scrollThreshold") || 0, scrollMargin = view.someProp("scrollMargin") || 5
   let doc = view.dom.ownerDocument
-  for (let parent: Node | null = startDOM || view.dom;; parent = parentNode(parent)) {
+  for (let parent: Node | null = startDOM || view.dom;;) {
     if (!parent) break
-    if (parent.nodeType != 1) continue
+    if (parent.nodeType != 1) { parent = parentNode(parent); continue }
     let elt = parent as HTMLElement
     let atTop = elt == doc.body
     let bounding = atTop ? windowRect(doc) : clientRect(elt as HTMLElement)
@@ -60,7 +60,9 @@ export function scrollRectIntoView(view: EditorView, rect: Rect, startDOM: Node)
         rect = {left: rect.left - dX, top: rect.top - dY, right: rect.right - dX, bottom: rect.bottom - dY}
       }
     }
-    if (atTop || /^(fixed|sticky)$/.test(getComputedStyle(parent as HTMLElement).position)) break
+    let pos: string = atTop ? "fixed" : getComputedStyle(parent as HTMLElement).position
+    if (/^(fixed|sticky)$/.test(pos)) break
+    parent = pos == "absolute" ? (parent as HTMLElement).offsetParent : parentNode(parent)
   }
 }
 
