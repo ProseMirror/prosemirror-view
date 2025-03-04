@@ -1,3 +1,13 @@
+## 1.38.1 (2025-03-04)
+
+### Bug fixes
+
+Fix a regression in 1.38.0 that breaks scrolling back to the selection after Chrome tries to reset it on focus.
+
+Remove some internally used types from the public type declaration files. Include file extension in web test local imports
+
+Fix an issue where scrolling the cursor into view could inappropriately scroll parent nodes of absolutely positioned elements.
+
 ## 1.38.0 (2025-02-12)
 
 ### New features
