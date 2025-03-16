@@ -95,6 +95,18 @@ describe("DOM change", () => {
     ist(enterPressed)
   })
 
+  it("detects an enter press creating a different block", () => {
+    let enterPressed = false
+    let view = tempEditor({
+      doc: doc(h1("<a>")),
+      handleKeyDown: (_view, event) => { if (event.keyCode == 13) return enterPressed = true }
+    })
+    let h2 = view.dom.appendChild(document.createElement("h2"))
+    setSel(h2, 0)
+    flush(view)
+    ist(enterPressed)
+  })
+
   it("detects a simple backspace press", () => {
     let backspacePressed = false
     let view = tempEditor({
