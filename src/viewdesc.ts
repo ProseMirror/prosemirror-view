@@ -135,7 +135,7 @@ const NOT_DIRTY = 0, CHILD_DIRTY = 1, CONTENT_DIRTY = 2, NODE_DIRTY = 3
 // basic structure and shared methods.
 export class ViewDesc {
   dirty = NOT_DIRTY
-  node!: Node | null
+  declare node: Node | null
 
   constructor(
     public parent: ViewDesc | undefined,

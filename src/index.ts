@@ -51,7 +51,7 @@ export class EditorView {
   private prevDirectPlugins: readonly Plugin[] = []
   private pluginViews: PluginView[] = []
   /// @internal
-  domObserver!: DOMObserver
+  declare domObserver: DOMObserver
   /// Holds `true` when a hack node is needed in Firefox to prevent the
   /// [space is eaten issue](https://github.com/ProseMirror/prosemirror/issues/651)
   /// @internal
