@@ -660,6 +660,11 @@ export class Dragging {
 
 const dragCopyModifier: keyof DragEvent = browser.mac ? "altKey" : "ctrlKey"
 
+function dragMoves(view: EditorView, event: DragEvent) {
+  let moves = view.someProp("dragCopies", test => !test(event))
+  return moves != null ? moves : !event[dragCopyModifier]
+}
+
 handlers.dragstart = (view, _event) => {
   let event = _event as DragEvent
   let mouseDown = view.input.mouseDown
@@ -687,7 +692,7 @@ handlers.dragstart = (view, _event) => {
   // See https://github.com/ProseMirror/prosemirror/issues/1156
   event.dataTransfer.effectAllowed = "copyMove"
   if (!brokenClipboardAPI) event.dataTransfer.setData("text/plain", text)
-  view.dragging = new Dragging(slice, !event[dragCopyModifier], node)
+  view.dragging = new Dragging(slice, dragMoves(view, event), node)
 }
 
 handlers.dragend = view => {
@@ -716,7 +721,7 @@ editHandlers.drop = (view, _event) => {
     slice = parseFromClipboard(view, getText(event.dataTransfer),
                                brokenClipboardAPI ? null : event.dataTransfer.getData("text/html"), false, $mouse)
   }
-  let move = !!(dragging && !event[dragCopyModifier])
+  let move = !!(dragging && dragMoves(view, event))
   if (view.someProp("handleDrop", f => f(view, event, slice || Slice.empty, move))) {
     event.preventDefault()
     return

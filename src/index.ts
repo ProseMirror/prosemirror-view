@@ -673,6 +673,11 @@ export interface EditorProps<P = any> {
   /// handlers or the default behavior should be tried.
   handleScrollToSelection?: (this: P, view: EditorView) => boolean
 
+  /// Determines whether an in-editor drag event should copy or move
+  /// the selection. When not given, the event's `altKey` property is
+  /// used on macOS, `ctrlKey` on other platforms.
+  dragCopies?: (event: DragEvent) => boolean
+
   /// Can be used to override the way a selection is created when
   /// reading a DOM selection between the given anchor and head.
   createSelectionBetween?: (this: P, view: EditorView, anchor: ResolvedPos, head: ResolvedPos) => Selection | null
