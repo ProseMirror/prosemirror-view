@@ -1,3 +1,13 @@
+## 1.39.0 (2025-04-04)
+
+### Bug fixes
+
+Fix an issue where, with some types of schemas, pressing Enter on Android with a Chinese keyboard wouldn't properly detect the Enter press.
+
+### New features
+
+The new `dragCopies` prop can be used to configure whether a drag event inside the editor copies or moves content.
+
 ## 1.38.1 (2025-03-04)
 
 ### Bug fixes
