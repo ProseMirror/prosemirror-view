@@ -183,6 +183,7 @@ export function readDOMChange(view: EditorView, from: number, to: number, typeOv
         (!inlineChange || addedNodes.some(n => n.nodeName == "DIV" || n.nodeName == "P"))) ||
        (!inlineChange && $from.pos < parse.doc.content.size &&
         (!$from.sameParent($to) || !$from.parent.inlineContent) &&
+        !/\S/.test(parse.doc.textBetween($from.pos, $to.pos, "", "")) &&
         (nextSel = Selection.findFrom(parse.doc.resolve($from.pos + 1), 1, true)) &&
         nextSel.head > $from.pos)) &&
       view.someProp("handleKeyDown", f => f(view, keyEvent(13, "Enter")))) {
