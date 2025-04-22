@@ -1,3 +1,11 @@
+## 1.39.2 (2025-04-22)
+
+### Bug fixes
+
+Default to using `trustedTypes.defaultPolicy` for clipboard input, when available.
+
+Fix an issue where pasting multiple lines from the virtual keyboard on Android would have only the effect of an enter press.
+
 ## 1.39.1 (2025-04-04)
 
 ## 1.39.0 (2025-04-04)
