@@ -1383,7 +1383,10 @@ class ViewTreeUpdater {
         dom.className = "ProseMirror-separator"
         ;(dom as HTMLImageElement).alt = ""
       }
-      if (nodeName == "BR") dom.className = "ProseMirror-trailingBreak"
+      if (nodeName == "BR") {
+        dom.className = "ProseMirror-trailingBreak"
+        dom.ariaHidden = 'true'
+      }
       let hack = new TrailingHackViewDesc(this.top, [], dom, null)
       if (parent != this.top) parent.children.push(hack)
       else parent.children.splice(this.index++, 0, hack)
