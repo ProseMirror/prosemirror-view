@@ -21,7 +21,7 @@ export class InputState {
   mouseDown: MouseDown | null = null
   lastKeyCode: number | null = null
   lastKeyCodeTime = 0
-  lastClick = {time: 0, x: 0, y: 0, type: ""}
+  lastClick = {time: 0, x: 0, y: 0, type: "", button: 0}
   lastSelectionOrigin: string | null = null
   lastSelectionTime = 0
   lastIOSEnter = 0
@@ -278,11 +278,12 @@ handlers.mousedown = (view, _event) => {
   view.input.shiftKey = event.shiftKey
   let flushed = forceDOMFlush(view)
   let now = Date.now(), type = "singleClick"
-  if (now - view.input.lastClick.time < 500 && isNear(event, view.input.lastClick) && !event[selectNodeModifier]) {
+  if (now - view.input.lastClick.time < 500 && isNear(event, view.input.lastClick) && !event[selectNodeModifier] &&
+      view.input.lastClick.button == event.button) {
     if (view.input.lastClick.type == "singleClick") type = "doubleClick"
     else if (view.input.lastClick.type == "doubleClick") type = "tripleClick"
   }
-  view.input.lastClick = {time: now, x: event.clientX, y: event.clientY, type}
+  view.input.lastClick = {time: now, x: event.clientX, y: event.clientY, type, button: event.button}
 
   let pos = view.posAtCoords(eventCoords(event))
   if (!pos) return
