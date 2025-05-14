@@ -545,9 +545,9 @@ export function endComposition(view: EditorView, restarting = false) {
   view.domObserver.forceFlush()
   clearComposition(view)
   if (restarting || view.docView && view.docView.dirty) {
-    let sel = selectionFromDOM(view)
-    if (sel && !sel.eq(view.state.selection)) view.dispatch(view.state.tr.setSelection(sel))
-    else if ((view.markCursor || restarting) && !view.state.selection.empty) view.dispatch(view.state.tr.deleteSelection())
+    let sel = selectionFromDOM(view), cur = view.state.selection
+    if (sel && !sel.eq(cur)) view.dispatch(view.state.tr.setSelection(sel))
+    else if ((view.markCursor || restarting) && !cur.$from.node(cur.$from.sharedDepth(cur.to)).inlineContent) view.dispatch(view.state.tr.deleteSelection())
     else view.updateState(view.state)
     return true
   }
