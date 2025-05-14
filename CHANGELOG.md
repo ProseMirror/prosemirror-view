@@ -1,3 +1,11 @@
+## 1.39.3 (2025-05-14)
+
+### Bug fixes
+
+Fix an issue where clicks using different mouse buttons could be grouped into a single double- or triple-click.
+
+Only delete the selection when starting a composition when it crosses block boundaries.
+
 ## 1.39.2 (2025-04-22)
 
 ### Bug fixes
