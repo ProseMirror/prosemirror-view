@@ -28,7 +28,8 @@ export const __endComposition = endComposition
 /// editable document. Its state and behavior are determined by its
 /// [props](#view.DirectEditorProps).
 export class EditorView {
-  private _props: DirectEditorProps
+  /// @internal
+  _props: DirectEditorProps
   private directPlugins: readonly Plugin[]
   private _root: Document | ShadowRoot | null = null
   /// @internal
@@ -490,11 +491,7 @@ export class EditorView {
   /// [`updateState`](#view.EditorView.updateState) with the result.
   /// This method is bound to the view instance, so that it can be
   /// easily passed around.
-  dispatch(tr: Transaction) {
-    let dispatchTransaction = this._props.dispatchTransaction
-    if (dispatchTransaction) dispatchTransaction.call(this, tr)
-    else this.updateState(this.state.apply(tr))
-  }
+  declare dispatch: (tr: Transaction) => void
 
   /// @internal
   domSelectionRange(): DOMSelectionRange {
@@ -508,6 +505,12 @@ export class EditorView {
   domSelection(): DOMSelection | null {
     return (this.root as Document).getSelection()
   }
+}
+
+EditorView.prototype.dispatch = function(tr: Transaction) {
+  let dispatchTransaction = this._props.dispatchTransaction
+  if (dispatchTransaction) dispatchTransaction.call(this, tr)
+  else this.updateState(this.state.apply(tr))
 }
 
 function computeDocDeco(view: EditorView) {
