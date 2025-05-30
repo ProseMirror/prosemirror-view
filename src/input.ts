@@ -151,8 +151,9 @@ editHandlers.keypress = (view, _event) => {
   let sel = view.state.selection
   if (!(sel instanceof TextSelection) || !sel.$from.sameParent(sel.$to)) {
     let text = String.fromCharCode(event.charCode)
-    if (!/[\r\n]/.test(text) && !view.someProp("handleTextInput", f => f(view, sel.$from.pos, sel.$to.pos, text)))
-      view.dispatch(view.state.tr.insertText(text).scrollIntoView())
+    let deflt = () => view.state.tr.insertText(text).scrollIntoView()
+    if (!/[\r\n]/.test(text) && !view.someProp("handleTextInput", f => f(view, sel.$from.pos, sel.$to.pos, text, deflt)))
+      view.dispatch(deflt())
     event.preventDefault()
   }
 }

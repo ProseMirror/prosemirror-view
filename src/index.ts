@@ -638,7 +638,7 @@ export interface EditorProps<P = any> {
   /// Whenever the user directly input text, this handler is called
   /// before the input is applied. If it returns `true`, the default
   /// behavior of actually inserting the text is suppressed.
-  handleTextInput?: (this: P, view: EditorView, from: number, to: number, text: string) => boolean | void
+  handleTextInput?: (this: P, view: EditorView, from: number, to: number, text: string, deflt: () => Transaction) => boolean | void
 
   /// Called for each node around a click, from the inside out. The
   /// `direct` flag will be true for the inner node.

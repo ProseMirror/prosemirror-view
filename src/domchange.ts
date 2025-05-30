@@ -1,5 +1,5 @@
 import {Fragment, DOMParser, TagParseRule, Node, Mark, ResolvedPos} from "prosemirror-model"
-import {Selection, TextSelection} from "prosemirror-state"
+import {Selection, TextSelection, Transaction} from "prosemirror-state"
 
 import {selectionBetween, selectionFromDOM, selectionToDOM} from "./selection"
 import {selectionCollapsed, keyEvent, DOMNode} from "./dom"
@@ -223,7 +223,27 @@ export function readDOMChange(view: EditorView, from: number, to: number, typeOv
 
   let chFrom = change.start, chTo = change.endA
 
-  let tr, storedMarks, markChange
+  let mkTr = (base?: Transaction) => {
+    let tr = base || view.state.tr.replace(chFrom, chTo, parse.doc.slice(change!.start - parse.from,
+                                                                         change!.endB - parse.from))
+    if (parse.sel) {
+      let sel = resolveSelection(view, tr.doc, parse.sel)
+      // Chrome will sometimes, during composition, report the
+      // selection in the wrong place. If it looks like that is
+      // happening, don't update the selection.
+      // Edge just doesn't move the cursor forward when you start typing
+      // in an empty block or between br nodes.
+      if (sel && !(browser.chrome && view.composing && sel.empty &&
+        (change!.start != change!.endB || view.input.lastChromeDelete < Date.now() - 100) &&
+        (sel.head == chFrom || sel.head == tr.mapping.map(chTo) - 1) ||
+        browser.ie && sel.empty && sel.head == chFrom))
+        tr.setSelection(sel)
+    }
+    if (compositionID) tr.setMeta("composition", compositionID)
+    return tr.scrollIntoView()
+  }
+
+  let markChange
   if (inlineChange) {
     if ($from.pos == $to.pos) { // Deletion
       // IE11 sometimes weirdly moves the DOM selection around after
@@ -232,42 +252,29 @@ export function readDOMChange(view: EditorView, from: number, to: number, typeOv
         view.domObserver.suppressSelectionUpdates()
         setTimeout(() => selectionToDOM(view), 20)
       }
-      tr = view.state.tr.delete(chFrom, chTo)
-      storedMarks = doc.resolve(change.start).marksAcross(doc.resolve(change.endA))
+      let tr = mkTr(view.state.tr.delete(chFrom, chTo))
+      let marks = doc.resolve(change.start).marksAcross(doc.resolve(change.endA))
+      if (marks) tr.ensureMarks(marks)
+      view.dispatch(tr)
     } else if ( // Adding or removing a mark
       change.endA == change.endB &&
       (markChange = isMarkChange($from.parent.content.cut($from.parentOffset, $to.parentOffset),
                                  $fromA.parent.content.cut($fromA.parentOffset, change.endA - $fromA.start())))
     ) {
-      tr = view.state.tr
+      let tr = mkTr(view.state.tr)
       if (markChange.type == "add") tr.addMark(chFrom, chTo, markChange.mark)
       else tr.removeMark(chFrom, chTo, markChange.mark)
+      view.dispatch(tr)
     } else if ($from.parent.child($from.index()).isText && $from.index() == $to.index() - ($to.textOffset ? 0 : 1)) {
       // Both positions in the same text node -- simply insert text
       let text = $from.parent.textBetween($from.parentOffset, $to.parentOffset)
-      if (view.someProp("handleTextInput", f => f(view, chFrom, chTo, text))) return
-      tr = view.state.tr.insertText(text, chFrom, chTo)
+      let deflt = () => mkTr(view.state.tr.insertText(text, chFrom, chTo))
+      if (!view.someProp("handleTextInput", f => f(view, chFrom, chTo, text, deflt)))
+        view.dispatch(deflt())
     }
+  } else {
+    view.dispatch(mkTr())
   }
-
-  if (!tr)
-    tr = view.state.tr.replace(chFrom, chTo, parse.doc.slice(change.start - parse.from, change.endB - parse.from))
-  if (parse.sel) {
-    let sel = resolveSelection(view, tr.doc, parse.sel)
-    // Chrome will sometimes, during composition, report the
-    // selection in the wrong place. If it looks like that is
-    // happening, don't update the selection.
-    // Edge just doesn't move the cursor forward when you start typing
-    // in an empty block or between br nodes.
-    if (sel && !(browser.chrome && view.composing && sel.empty &&
-                 (change.start != change.endB || view.input.lastChromeDelete < Date.now() - 100) &&
-                 (sel.head == chFrom || sel.head == tr.mapping.map(chTo) - 1) ||
-                 browser.ie && sel.empty && sel.head == chFrom))
-      tr.setSelection(sel)
-  }
-  if (storedMarks) tr.ensureMarks(storedMarks)
-  if (compositionID) tr.setMeta("composition", compositionID)
-  view.dispatch(tr.scrollIntoView())
 }
 
 function resolveSelection(view: EditorView, doc: Node, parsedSel: {anchor: number, head: number}) {
