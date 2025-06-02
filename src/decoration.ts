@@ -156,6 +156,19 @@ export class Decoration {
     /// negative, those of the node after when positive.
     side?: number
 
+    /// By default, the cursor, when at the position of the widget,
+    /// will be strictly kept on the side indicated by
+    /// [`side`](#view.Decoration^widget^spec.side). Set this to true
+    /// to allow the DOM selection to stay on the other side if the
+    /// client sets it there.
+    ///
+    /// **Note**: Mapping of this decoration, which decides on which
+    /// side insertions at its position appear, will still happen
+    /// according to `side`, and keyboard cursor motion will not,
+    /// without further custom handling, visit both sides of the
+    /// widget.
+    relaxedSide?: boolean
+
     /// The precise set of marks to draw around the widget.
     marks?: readonly Mark[]
 

@@ -528,6 +528,8 @@ export class ViewDesc {
 
   get ignoreForCoords() { return false }
 
+  get ignoreForSelection() { return false }
+
   isText(text: string) { return false }
 }
 
@@ -575,6 +577,8 @@ class WidgetViewDesc extends ViewDesc {
   }
 
   get domAtom() { return true }
+
+  get ignoreForSelection() { return !!this.widget.type.spec.relaxedSide }
 
   get side() { return (this.widget.type as any).side as number }
 }
