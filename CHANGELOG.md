@@ -1,3 +1,15 @@
+## 1.40.0 (2025-06-02)
+
+### Bug fixes
+
+Suppress lint warnings about dereferencing methods by making `EditorView.dispatch` a property instead of a method.
+
+### New features
+
+The `"handleTextInput"` prop now takes an additional argument that can be used to generate the default transaction for that text change.
+
+Widget decorations now support a `relaxedSide` option which can be used to allow the DOM cursor to appear at either side.
+
 ## 1.39.3 (2025-05-14)
 
 ### Bug fixes
