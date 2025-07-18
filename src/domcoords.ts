@@ -232,7 +232,7 @@ function posFromCaret(view: EditorView, node: Node, offset: number, coords: {top
     if (desc.dom.nodeType == 1 && (desc.node.isBlock && desc.parent || !desc.contentDOM) &&
         // Ignore elements with zero-size bounding rectangles
         ((rect = (desc.dom as HTMLElement).getBoundingClientRect()).width || rect.height)) {
-      if (desc.node.isBlock && desc.parent) {
+      if (desc.node.isBlock && desc.parent && !/^T(R|BODY|HEAD|FOOT)$/.test(desc.dom!.nodeName)) {
         // Only apply the horizontal test to the innermost block. Vertical for any parent.
         if (!sawBlock && rect.left > coords.left || rect.top > coords.top) outsideBlock = desc.posBefore
         else if (!sawBlock && rect.right < coords.left || rect.bottom < coords.top) outsideBlock = desc.posAfter
