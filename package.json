@@ -1,6 +1,6 @@
 {
   "name": "prosemirror-view",
-  "version": "1.40.0",
+  "version": "1.40.1",
   "description": "ProseMirror's view component",
   "type": "module",
   "main": "dist/index.cjs",

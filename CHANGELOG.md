@@ -1,3 +1,11 @@
+## 1.40.1 (2025-07-18)
+
+### Bug fixes
+
+Fix an issue where, for some Android virtual keyboards, joining textblocks that contain an image with Backspace would run the handler for Enter instead.
+
+Fix an issue causing `posAtCoords` to get confused by table cells sticking out of their parent row elements.
+
 ## 1.40.0 (2025-06-02)
 
 ### Bug fixes
