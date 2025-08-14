@@ -101,7 +101,7 @@ export function parseFromClipboard(view: EditorView, text: string, html: string 
     }
   }
 
-  view.someProp("transformPasted", f => { slice = f(slice!, view) })
+  view.someProp("transformPasted", f => { slice = f(slice!, view, plainText) })
   return slice
 }
 

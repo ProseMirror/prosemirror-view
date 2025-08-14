@@ -718,7 +718,7 @@ editHandlers.drop = (view, _event) => {
   let $mouse = view.state.doc.resolve(eventPos.pos)
   let slice = dragging && dragging.slice
   if (slice) {
-    view.someProp("transformPasted", f => { slice = f(slice!, view) })
+    view.someProp("transformPasted", f => { slice = f(slice!, view, false) })
   } else {
     slice = parseFromClipboard(view, getText(event.dataTransfer),
                                brokenClipboardAPI ? null : event.dataTransfer.getData("text/html"), false, $mouse)

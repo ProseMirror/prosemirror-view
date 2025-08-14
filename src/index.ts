@@ -714,8 +714,9 @@ export interface EditorProps<P = any> {
   clipboardTextParser?: (this: P, text: string, $context: ResolvedPos, plain: boolean, view: EditorView) => Slice
 
   /// Can be used to transform pasted or dragged-and-dropped content
-  /// before it is applied to the document.
-  transformPasted?: (this: P, slice: Slice, view: EditorView) => Slice
+  /// before it is applied to the document. The `plain` flag will be
+  /// true when the text is pasted as plain text.
+  transformPasted?: (this: P, slice: Slice, view: EditorView, plain: boolean) => Slice
 
   /// Can be used to transform copied or cut content before it is
   /// serialized to the clipboard.
