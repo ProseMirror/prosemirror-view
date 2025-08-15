@@ -44,7 +44,7 @@ export function parseFromClipboard(view: EditorView, text: string, html: string 
   let inCode = $context.parent.type.spec.code
   let dom: HTMLElement | undefined, slice: Slice | undefined
   if (!html && !text) return null
-  let asText = text && (plainText || inCode || !html)
+  let asText: boolean = !!text && (plainText || inCode || !html)
   if (asText) {
     view.someProp("transformPastedText", f => { text = f(text, inCode || plainText, view) })
     if (inCode) return text ? new Slice(Fragment.from(view.state.schema.text(text.replace(/\r\n?/g, "\n"))), 0, 0) : Slice.empty
@@ -101,7 +101,7 @@ export function parseFromClipboard(view: EditorView, text: string, html: string 
     }
   }
 
-  view.someProp("transformPasted", f => { slice = f(slice!, view) })
+  view.someProp("transformPasted", f => { slice = f(slice!, view, asText) })
   return slice
 }
 
