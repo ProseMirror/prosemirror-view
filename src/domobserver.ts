@@ -56,9 +56,11 @@ export class DOMObserver {
         // text node after a BR node) call the observer callback
         // before actually updating the DOM, which will cause
         // ProseMirror to miss the change (see #930)
-        if (browser.ie && browser.ie_version <= 11 && mutations.some(
+        if ((browser.ie && browser.ie_version <= 11 && mutations.some(
           m => m.type == "childList" && m.removedNodes.length ||
-               m.type == "characterData" && m.oldValue!.length > m.target.nodeValue!.length))
+               m.type == "characterData" && m.oldValue!.length > m.target.nodeValue!.length)) ||
+          (browser.safari && view.composing && mutations.some(
+            m => m.type == "characterData" && m.oldValue!.length > m.target.nodeValue!.length)))
           this.flushSoon()
         else
           this.flush()
