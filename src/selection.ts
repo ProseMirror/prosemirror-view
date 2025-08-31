@@ -74,7 +74,7 @@ export function selectionToDOM(view: EditorView, force = false) {
 
   view.domObserver.disconnectSelection()
 
-  if (view.cursorWrapper) {
+  if (view.cursorWrapper && !browser.safari) {
     selectCursorWrapper(view)
   } else {
     let {anchor, head} = sel, resetEditableFrom, resetEditableTo
