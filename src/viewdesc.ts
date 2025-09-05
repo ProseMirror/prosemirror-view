@@ -460,7 +460,7 @@ export class ViewDesc {
     // (one where the focus is before the anchor), but not all
     // browsers support it yet.
     let domSelExtended = false
-    if ((domSel.extend || anchor == head) && !brKludge) {
+    if ((domSel.extend || anchor == head) && !(brKludge && browser.gecko)) {
       domSel.collapse(anchorDOM.node, anchorDOM.offset)
       try {
         if (anchor != head)
