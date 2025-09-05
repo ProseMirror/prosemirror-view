@@ -147,14 +147,11 @@ function removeClassOnSelectionChange(view: EditorView) {
 }
 
 function selectCursorWrapper(view: EditorView) {
-  let domSel = view.domSelection(), range = document.createRange()
+  let domSel = view.domSelection()
   if (!domSel) return
   let node = view.cursorWrapper!.dom, img = node.nodeName == "IMG"
-  if (img) range.setStart(node.parentNode!, domIndex(node) + 1)
-  else range.setStart(node, 0)
-  range.collapse(true)
-  domSel.removeAllRanges()
-  domSel.addRange(range)
+  if (img) domSel.collapse(node.parentNode!, domIndex(node) + 1)
+  else domSel.collapse(node, 0)
   // Kludge to kill 'control selection' in IE11 when selecting an
   // invisible cursor wrapper, since that would result in those weird
   // resize handles and a selection that considers the absolutely
