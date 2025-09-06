@@ -1,3 +1,17 @@
+## 1.41.0 (2025-09-06)
+
+### Bug fixes
+
+Make sure `transformPasted` is properly called when pasting into a code block.
+
+Fix an issue where the editor didn't properly set the DOM selection in a shadow DOM on Safari in some situations.
+
+Work around a Safari issue that broke composition right after changing the set of active marks.
+
+### New features
+
+Pass an argument to `transformPasted` that tells the handler whether the paste is plain text. Call transformPasted when pasting into a code block
+
 ## 1.40.1 (2025-07-18)
 
 ### Bug fixes
