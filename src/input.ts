@@ -329,7 +329,7 @@ class MouseDown {
 
     const target = flushed ? null : event.target as HTMLElement
     const targetDesc = target ? view.docView.nearestDesc(target, true) : null
-    this.target = targetDesc && targetDesc.dom.nodeType == 1 ? targetDesc.dom as HTMLElement : null
+    this.target = targetDesc && targetDesc.nodeDOM.nodeType == 1 ? targetDesc.nodeDOM as HTMLElement : null
 
     let {selection} = view.state
     if (event.button == 0 &&
