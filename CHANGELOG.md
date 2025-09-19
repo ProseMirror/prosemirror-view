@@ -1,3 +1,9 @@
+## 1.41.1 (2025-09-19)
+
+### Bug fixes
+
+Consistently set `draggable` on a node's inner DOM representation, not a decoration wrapper element.
+
 ## 1.41.0 (2025-09-06)
 
 ### Bug fixes
