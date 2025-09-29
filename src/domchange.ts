@@ -176,16 +176,13 @@ export function readDOMChange(view: EditorView, from: number, to: number, typeOv
   let $to = parse.doc.resolveNoCache(change.endB - parse.from)
   let $fromA = doc.resolve(change.start)
   let inlineChange = $from.sameParent($to) && $from.parent.inlineContent && $fromA.end() >= change.endA
-  let nextSel
   // If this looks like the effect of pressing Enter (or was recorded
   // as being an iOS enter press), just dispatch an Enter key instead.
   if (((browser.ios && view.input.lastIOSEnter > Date.now() - 225 &&
         (!inlineChange || addedNodes.some(n => n.nodeName == "DIV" || n.nodeName == "P"))) ||
        (!inlineChange && $from.pos < parse.doc.content.size &&
         (!$from.sameParent($to) || !$from.parent.inlineContent) &&
-        !/\S/.test(parse.doc.textBetween($from.pos, $to.pos, "", "")) &&
-        (nextSel = Selection.findFrom(parse.doc.resolve($from.pos + 1), 1, true)) &&
-        nextSel.head > $from.pos)) &&
+        $from.pos < $to.pos && !/\S/.test(parse.doc.textBetween($from.pos, $to.pos, "", "")))) &&
       view.someProp("handleKeyDown", f => f(view, keyEvent(13, "Enter")))) {
     view.input.lastIOSEnter = 0
     return
