@@ -1,3 +1,9 @@
+## 1.41.2 (2025-09-29)
+
+### Bug fixes
+
+Fix an issue where some Backspace presses with SwiftKey on Android would get interpreted as Enter.
+
 ## 1.41.1 (2025-09-19)
 
 ### Bug fixes
