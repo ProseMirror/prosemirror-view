@@ -268,6 +268,8 @@ export function readDOMChange(view: EditorView, from: number, to: number, typeOv
       let deflt = () => mkTr(view.state.tr.insertText(text, chFrom, chTo))
       if (!view.someProp("handleTextInput", f => f(view, chFrom, chTo, text, deflt)))
         view.dispatch(deflt())
+    } else {
+      view.dispatch(mkTr())
     }
   } else {
     view.dispatch(mkTr())
