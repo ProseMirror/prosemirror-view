@@ -1,3 +1,9 @@
+## 1.41.3 (2025-10-09)
+
+### Bug fixes
+
+Fix a bug where typing when the selection crosses inline node boundaries was ignored in some situations.
+
 ## 1.41.2 (2025-09-29)
 
 ### Bug fixes
