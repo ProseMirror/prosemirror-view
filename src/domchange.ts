@@ -1,5 +1,5 @@
 import {Fragment, DOMParser, TagParseRule, Node, Mark, ResolvedPos} from "prosemirror-model"
-import {Selection, TextSelection, Transaction} from "prosemirror-state"
+import {TextSelection, Transaction} from "prosemirror-state"
 
 import {selectionBetween, selectionFromDOM, selectionToDOM} from "./selection"
 import {selectionCollapsed, keyEvent, DOMNode} from "./dom"
