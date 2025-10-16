@@ -184,16 +184,19 @@ function findOffsetInNode(node: HTMLElement, coords: {top: number, left: number}
 
 function findOffsetInText(node: Text, coords: {top: number, left: number}) {
   let len = node.nodeValue!.length
-  let range = document.createRange()
+  let range = document.createRange(), result: {node: Node, offset: number} | undefined
   for (let i = 0; i < len; i++) {
     range.setEnd(node, i + 1)
     range.setStart(node, i)
     let rect = singleRect(range, 1)
     if (rect.top == rect.bottom) continue
-    if (inRect(coords, rect))
-      return {node, offset: i + (coords.left >= (rect.left + rect.right) / 2 ? 1 : 0)}
+    if (inRect(coords, rect)) {
+      result = {node, offset: i + (coords.left >= (rect.left + rect.right) / 2 ? 1 : 0)}
+      break
+    }
   }
-  return {node, offset: 0}
+  range.detach()
+  return result || {node, offset: 0}
 }
 
 function inRect(coords: {top: number, left: number}, rect: Rect) {
