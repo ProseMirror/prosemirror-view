@@ -30,7 +30,7 @@ export const textRange = function(node: Text, from?: number, to?: number) {
 }
 
 export const clearReusedRange = function() {
-  reusedRange = null;
+  reusedRange = null
 }
 
 // Scans forward and backward through DOM positions equivalent to the

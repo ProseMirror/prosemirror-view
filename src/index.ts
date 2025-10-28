@@ -469,7 +469,7 @@ export class EditorView {
     }
     this.docView.destroy()
     ;(this as any).docView = null
-    clearReusedRange();
+    clearReusedRange()
   }
 
   /// This is true when the view has been
