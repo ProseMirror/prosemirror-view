@@ -706,11 +706,15 @@ handlers.dragend = view => {
 
 editHandlers.dragover = editHandlers.dragenter = (_, e) => e.preventDefault()
 
-editHandlers.drop = (view, _event) => {
-  let event = _event as DragEvent
-  let dragging = view.dragging
-  view.dragging = null
+editHandlers.drop = (view, event) => {
+  try {
+    handleDrop(view, event as DragEvent, view.dragging)
+  } finally {
+    view.dragging = null
+  }
+}
 
+function handleDrop(view: EditorView, event: DragEvent, dragging: Dragging | null) {
   if (!event.dataTransfer) return
 
   let eventPos = view.posAtCoords(eventCoords(event))
