@@ -198,6 +198,15 @@ export class DOMObserver {
             br.remove()
         }
       }
+    } else if ((browser.chrome || browser.safari) && added.some(n => n.nodeName == "BR") &&
+               (view.input.lastKeyCode == 8 || view.input.lastKeyCode == 46)) {
+      // Chrome/Safari sometimes insert a bogus break node if you
+      // backspace out the last bit of text before an inline-flex node (#1552)
+      for (let node of added) if (node.nodeName == "BR" && node.parentNode) {
+        let after = node.nextSibling
+        if (after && after.nodeType == 1 && (after as HTMLElement).contentEditable == "false")
+          node.parentNode.removeChild(node)
+      }
     }
 
     let readSel: Selection | null = null
