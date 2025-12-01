@@ -459,7 +459,8 @@ editHandlers.compositionstart = editHandlers.compositionupdate = view => {
     let {state} = view, $pos = state.selection.$to
     if (state.selection instanceof TextSelection &&
         (state.storedMarks ||
-         (!$pos.textOffset && $pos.parentOffset && $pos.nodeBefore!.marks.some(m => m.type.spec.inclusive === false)))) {
+         (!$pos.textOffset && $pos.parentOffset && $pos.nodeBefore!.marks.some(m => m.type.spec.inclusive === false)) ||
+         browser.chrome && browser.windows && selectionBeforeUneditable(view))) { // Issue #1500
       // Need to wrap the cursor in mark nodes different from the ones in the DOM context
       view.markCursor = view.state.storedMarks || $pos.marks()
       endComposition(view, true)
@@ -488,6 +489,13 @@ editHandlers.compositionstart = editHandlers.compositionupdate = view => {
     view.input.composing = true
   }
   scheduleComposeEnd(view, timeoutComposition)
+}
+
+function selectionBeforeUneditable(view: EditorView) {
+  let {focusNode, focusOffset} = view.domSelectionRange()
+  if (!focusNode || focusNode.nodeType != 1 || focusOffset >= focusNode.childNodes.length) return false
+  let next = focusNode.childNodes[focusOffset]
+  return next.nodeType == 1 && (next as HTMLElement).contentEditable == "false"
 }
 
 editHandlers.compositionend = (view, event) => {
