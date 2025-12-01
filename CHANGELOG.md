@@ -1,3 +1,13 @@
+## 1.41.4 (2025-12-01)
+
+### Bug fixes
+
+`EditorView.dragging` is now only cleared after the drop event has entirely been handled.
+
+Add a workaround for an issue where Chrome and Safari will, if you backspace out the last text before an inline-flex node, insert a bogus hard break.
+
+Fix a composition problem on Chrome Windows when starting a composition before an absolutely positioned widget.
+
 ## 1.41.3 (2025-10-09)
 
 ### Bug fixes
