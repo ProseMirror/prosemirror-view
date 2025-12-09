@@ -202,7 +202,7 @@ export class EditorView {
           this.docView.destroy()
           this.docView = docViewDesc(state.doc, outerDeco, innerDeco, this.dom, this)
         }
-        if (chromeKludge && !this.trackWrites) forceSelUpdate = true
+        if (chromeKludge && (!this.trackWrites || !this.dom.contains(this.trackWrites))) forceSelUpdate = true
       }
       // Work around for an issue where an update arriving right between
       // a DOM selection change and the "selectionchange" event for it
