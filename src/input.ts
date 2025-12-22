@@ -38,6 +38,8 @@ export class InputState {
   // Set to a composition ID when there are pending changes at compositionend
   compositionPendingChanges = 0
   domChangeCount = 0
+  safariIMEParagraphSplit = false
+  compositionPos: number | null = null
   eventHandlers: {[event: string]: (event: Event) => void} = Object.create(null)
   hideSelectionGuard: (() => void) | null = null
 }
@@ -455,6 +457,7 @@ const timeoutComposition = browser.android ? 5000 : -1
 
 editHandlers.compositionstart = editHandlers.compositionupdate = view => {
   if (!view.composing) {
+    view.input.compositionPos = view.state.selection.from
     view.domObserver.flush()
     let {state} = view, $pos = state.selection.$to
     if (state.selection instanceof TextSelection &&
@@ -499,6 +502,38 @@ function selectionBeforeUneditable(view: EditorView) {
 }
 
 editHandlers.compositionend = (view, event) => {
+  // Safari IME fix: If we aborted a structural DOM change in readDOMChange,
+  // we now have a clean state (pre-split) and just need to insert the final text.
+  if (view.input.safariIMEParagraphSplit) {
+    view.input.safariIMEParagraphSplit = false
+    view.input.composing = false
+    view.input.compositionEndedAt = event.timeStamp
+    view.input.compositionPendingChanges = 0
+    view.input.compositionNode = null
+
+    let text = (event as CompositionEvent).data
+    if (text) {
+      // Force a DOM sync for the affected area.
+      // Since we aborted the DOM change, ProseMirror thinks the DOM is clean,
+      // but Safari actually modified it (split nodes, added content).
+      // Safari IME fix: Force reconciliation to clear ghost nodes from invalid DOM splits.
+      view.docView.markDirty(0, view.state.doc.content.size)
+
+      let from = view.input.compositionPos
+      let to = view.state.selection.to
+      
+      // Replace pinyin range for TextSelection; use standard insert for structural selections (Cells/Nodes).
+      if (view.state.selection instanceof TextSelection && from != null && from < to) {
+        view.dispatch(view.state.tr.insertText(text, from, to))
+      } else {
+        view.dispatch(view.state.tr.insertText(text))
+      }
+    }
+    view.input.compositionPos = null
+    return
+  }
+
+  view.input.compositionPos = null
   if (view.composing) {
     view.input.composing = false
     view.input.compositionEndedAt = event.timeStamp
