@@ -79,7 +79,7 @@ function ruleFromNode(dom: DOMNode): Omit<TagParseRule, "tag"> | null {
 const isInline = /^(a|abbr|acronym|b|bd[io]|big|br|button|cite|code|data(list)?|del|dfn|em|i|img|ins|kbd|label|map|mark|meter|output|q|ruby|s|samp|small|span|strong|su[bp]|time|u|tt|var)$/i
 
 export function readDOMChange(view: EditorView, from: number, to: number, typeOver: boolean, addedNodes: readonly DOMNode[]) {
-  let compositionID = view.input.compositionPendingChanges || (view.composing ? view.input.compositionID : 0)
+    let compositionID = view.input.compositionPendingChanges || (view.composing ? view.input.compositionID : 0)
   view.input.compositionPendingChanges = 0
   
   if (from < 0) {
@@ -180,7 +180,7 @@ export function readDOMChange(view: EditorView, from: number, to: number, typeOv
   // Safari IME fix: Detect and abort invalid structural changes (DIV/P/BR) during composition.
   // We only block if selection is empty (cursor insertion); valid replacements (e.g. Select All + Type) are allowed.
   // We check for specific block nodes to avoid blocking valid text updates in Table Cells.
-  if (browser.safari && view.composing && !inlineChange && view.state.selection.empty &&
+  if (browser.safari && view.composing && view.state.selection.empty &&
       addedNodes.some(n => n.nodeName == "DIV" || n.nodeName == "P" || n.nodeName == "BR")) {
     view.input.safariIMEParagraphSplit = true
     return

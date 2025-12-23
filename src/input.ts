@@ -528,6 +528,7 @@ editHandlers.compositionend = (view, event) => {
       } else {
         view.dispatch(view.state.tr.insertText(text))
       }
+      view.focus()
     }
     view.input.compositionPos = null
     return
