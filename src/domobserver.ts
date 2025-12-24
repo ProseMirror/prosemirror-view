@@ -167,6 +167,34 @@ export class DOMObserver {
     let {view} = this
     if (!view.docView || this.flushingSoon > -1) return
     let mutations = this.pendingRecords()
+
+    // Safari IME Fix: Ignore DOM mutations during composition to avoid state corruption.
+    // However, we record specific pollution (style changes, FONT tags) to allow for
+    // surgical cleanup in `compositionend`, avoiding expensive full-tree scans.
+    if (view.input.compositionContext && browser.safari) {
+      for (let i = 0; i < mutations.length; i++) {
+        let mut = mutations[i]
+        if (mut.type == "childList") {
+          for (let j = 0; j < mut.addedNodes.length; j++) {
+            let node = mut.addedNodes[j]
+            if (node.nodeName == "FONT") {
+              // Safari inserted a FONT tag. Mark its parent as dirty.
+              view.input.safariDirtyNodes.push(mut.target)
+            }
+          }
+        } else if (mut.type == "attributes" && mut.attributeName == "style") {
+           // Safari modified style. Mark the target as dirty.
+           // We only care if it's an element in the editor
+           if (view.dom.contains(mut.target)) {
+             view.input.safariDirtyNodes.push(mut.target)
+           }
+        }
+      }
+
+      if (mutations.length) this.queue = []
+      return
+    }
+
     if (mutations.length) this.queue = []
 
     let sel = view.domSelectionRange()

@@ -16,6 +16,34 @@ const handlers: {[event: string]: (view: EditorView, event: Event) => void} = {}
 const editHandlers: {[event: string]: (view: EditorView, event: Event) => void} = {}
 const passiveHandlers: Record<string, boolean> = {touchstart: true, touchmove: true}
 
+// CompositionContext tracks the state of an ongoing composition session.
+// This allows us to bypass DOM diff and use event.data directly for text replacement,
+// which is more reliable on Safari with Chinese IME in tables.
+class CompositionContext {
+  private _startPos: number
+  private _replacedTextLength: number  // Length of initially selected text that was replaced
+  
+  constructor(startPos: number, initialSelectionLength: number = 0) {
+    this._startPos = startPos
+    this._replacedTextLength = initialSelectionLength
+  }
+  
+  get startPos() { return this._startPos }
+  
+  // Returns the text to insert and how many characters to replace
+  handleUpdate(text: string): { text: string, replaceFrom: number, replaceTo: number } {
+    // Since we are ignoring all intermediate DOM mutations (in Safari),
+    // the document state remains static during composition.
+    // Thus, we should always replace the ORIGINAL selection range with the new text.
+    const replaceFrom = this._startPos
+    const replaceTo = this._startPos + this._replacedTextLength
+    
+    return { text, replaceFrom, replaceTo }
+  }
+}
+
+
+
 export class InputState {
   shiftKey = false
   mouseDown: MouseDown | null = null
@@ -38,6 +66,10 @@ export class InputState {
   // Set to a composition ID when there are pending changes at compositionend
   compositionPendingChanges = 0
   domChangeCount = 0
+  safariIMEParagraphSplit = false
+  // Safari IME fix: track nodes polluted (dirty styles/garbage) during composition
+  safariDirtyNodes: DOMNode[] = []
+  compositionContext: CompositionContext | null = null
   eventHandlers: {[event: string]: (event: Event) => void} = Object.create(null)
   hideSelectionGuard: (() => void) | null = null
 }
@@ -453,8 +485,30 @@ function inOrNearComposition(view: EditorView, event: Event) {
 // Drop active composition after 5 seconds of inactivity on Android
 const timeoutComposition = browser.android ? 5000 : -1
 
-editHandlers.compositionstart = editHandlers.compositionupdate = view => {
+editHandlers.compositionstart = editHandlers.compositionupdate = (view, event) => {
+  const compEvent = event as CompositionEvent
+  const isStart = event.type === 'compositionstart'
+  
   if (!view.composing) {
+    // This is composition start
+    let selFrom = view.state.selection.from
+    let selTo = view.state.selection.to
+    
+    // When the selection is a NodeSelection/CellSelection, it covers the entire node.
+    // Composition text should be inserted at the DOM caret position (inside the node)
+    // to avoid overwriting the entire node/cell structure.
+    if (!(view.state.selection instanceof TextSelection)) {
+      if (view.domObserver.currentSelection) {
+         let sel = selectionFromDOM(view)
+         if (sel) {
+            selFrom = sel.from
+            selTo = sel.to
+         }
+      }
+    }
+    
+    view.input.compositionPos = selFrom
+    
     view.domObserver.flush()
     let {state} = view, $pos = state.selection.$to
     if (state.selection instanceof TextSelection &&
@@ -487,7 +541,21 @@ editHandlers.compositionstart = editHandlers.compositionupdate = view => {
       }
     }
     view.input.composing = true
+    
+    // Create CompositionContext for Safari IME handling
+    view.input.compositionContext = new CompositionContext(selFrom, selTo - selFrom)
   }
+  
+  if (browser.safari && view.input.compositionContext && compEvent.data != null) {
+    const ctx = view.input.compositionContext
+    const update = ctx.handleUpdate(compEvent.data)
+    
+    // Only dispatch if we have actual text to update and it's a compositionupdate
+    if (!isStart && update.text) {
+      view.input.safariIMEParagraphSplit = true  // Mark that we're handling composition via context
+    }
+  }
+  
   scheduleComposeEnd(view, timeoutComposition)
 }
 
@@ -499,6 +567,96 @@ function selectionBeforeUneditable(view: EditorView) {
 }
 
 editHandlers.compositionend = (view, event) => {
+  const compEvent = event as CompositionEvent
+  const ctx = view.input.compositionContext
+  
+  // Safari IME fix: Use CompositionContext for final text insertion
+  if (browser.safari && ctx) {
+    view.input.safariIMEParagraphSplit = false
+    view.input.composing = false
+    view.input.compositionEndedAt = event.timeStamp
+    view.input.compositionPendingChanges = 0
+    view.input.compositionNode = null
+
+    const text = compEvent.data || ''
+    if (text) {
+      const update = ctx.handleUpdate(text)
+      const $pos = view.state.doc.resolve(update.replaceFrom)
+      let marked = false
+      
+      // Clean up garbage nodes (FONT, BR, etc.) that Safari IME inserts
+      // We process the dirty nodes recorded by DOMObserver during composition
+      if (view.input.safariDirtyNodes.length) {
+        let dirtyNodes = view.input.safariDirtyNodes
+        
+        for (let i = 0; i < dirtyNodes.length; i++) {
+          let node = dirtyNodes[i] as HTMLElement
+          // Ensure node is still in the document
+          if (!view.dom.contains(node)) continue
+          
+          let pos = view.docView.posFromDOM(node, 0, 0)
+          if (pos == null) continue
+
+          // Clean up style
+          if (node.hasAttribute("style")) node.removeAttribute("style")
+          
+          // Clean up FONT tags (if any)
+          let fonts = node.getElementsByTagName("font")
+          for (let j = 0; j < fonts.length; j++) fonts[j].remove() // remove() removes from DOM
+          
+          // Force re-render of this node
+          let desc = view.docView.nearestDesc(node)
+          if (desc) {
+             view.docView.markDirty(pos, pos + desc.size)
+          }
+        }
+        
+        marked = true
+        view.input.safariDirtyNodes.length = 0 // Clear the list
+      }
+      
+      // Fallback: If no mutation recorded but we are in a TR, still mark dirty to be safe (legacy behavior)
+      if (!marked) {
+        for (let d = $pos.depth; d > 0; d--) {
+           let pos = $pos.before(d)
+           let dom = view.nodeDOM(pos)
+           if (dom && dom.nodeName == "TR") {
+              view.docView.markDirty(pos, $pos.after(d))
+              marked = true
+              break
+           }
+        }
+      }
+      
+      if (!marked && $pos.depth > 0) {
+        view.docView.markDirty($pos.before(), $pos.after())
+      }
+      
+      // Insert text
+      const from = update.replaceFrom
+      const to = update.replaceTo
+      
+      view.domObserver.suppressSelectionUpdates()
+      view.domObserver.flush()
+      
+      if (from <= to && from >= 0) {
+        view.dispatch(view.state.tr.insertText(text, from, to))
+      } else {
+        view.dispatch(view.state.tr.insertText(text))
+      }
+      
+      view.updateState(view.state)
+      view.focus()
+    }
+    
+    // Delay clearing context so subsequent DOM mutations are also ignored
+    setTimeout(() => { view.input.compositionContext = null }, 50)
+    return
+  }
+
+  // Cleanup composition context
+  view.input.compositionContext = null
+  
   if (view.composing) {
     view.input.composing = false
     view.input.compositionEndedAt = event.timeStamp
@@ -520,6 +678,7 @@ export function clearComposition(view: EditorView) {
     view.input.composing = false
     view.input.compositionEndedAt = timestampFromCustomEvent()
   }
+  view.input.compositionContext = null  // Clear composition context
   while (view.input.compositionNodes.length > 0) view.input.compositionNodes.pop()!.markParentsDirty()
 }
 

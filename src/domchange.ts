@@ -79,7 +79,7 @@ function ruleFromNode(dom: DOMNode): Omit<TagParseRule, "tag"> | null {
 const isInline = /^(a|abbr|acronym|b|bd[io]|big|br|button|cite|code|data(list)?|del|dfn|em|i|img|ins|kbd|label|map|mark|meter|output|q|ruby|s|samp|small|span|strong|su[bp]|time|u|tt|var)$/i
 
 export function readDOMChange(view: EditorView, from: number, to: number, typeOver: boolean, addedNodes: readonly DOMNode[]) {
-  let compositionID = view.input.compositionPendingChanges || (view.composing ? view.input.compositionID : 0)
+    let compositionID = view.input.compositionPendingChanges || (view.composing ? view.input.compositionID : 0)
   view.input.compositionPendingChanges = 0
   
   if (from < 0) {
@@ -176,6 +176,15 @@ export function readDOMChange(view: EditorView, from: number, to: number, typeOv
   let $to = parse.doc.resolveNoCache(change.endB - parse.from)
   let $fromA = doc.resolve(change.start)
   let inlineChange = $from.sameParent($to) && $from.parent.inlineContent && $fromA.end() >= change.endA
+
+  // Safari IME fix: Detect and abort invalid structural changes (DIV/P/BR) during composition.
+  // We only block if selection is empty (cursor insertion); valid replacements (e.g. Select All + Type) are allowed.
+  // We check for specific block nodes to avoid blocking valid text updates in Table Cells.
+  if (browser.safari && view.composing && view.state.selection.empty &&
+      addedNodes.some(n => n.nodeName == "DIV" || n.nodeName == "P" || n.nodeName == "BR")) {
+    view.input.safariIMEParagraphSplit = true
+    return
+  }
   // If this looks like the effect of pressing Enter (or was recorded
   // as being an iOS enter press), just dispatch an Enter key instead.
   if (((browser.ios && view.input.lastIOSEnter > Date.now() - 225 &&
