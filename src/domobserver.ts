@@ -52,16 +52,24 @@ export class DOMObserver {
     this.observer = window.MutationObserver &&
       new window.MutationObserver(mutations => {
         for (let i = 0; i < mutations.length; i++) this.queue.push(mutations[i])
-        // IE11 will sometimes (on backspacing out a single character
-        // text node after a BR node) call the observer callback
-        // before actually updating the DOM, which will cause
-        // ProseMirror to miss the change (see #930)
         if (browser.ie && browser.ie_version <= 11 && mutations.some(
           m => m.type == "childList" && m.removedNodes.length ||
-               m.type == "characterData" && m.oldValue!.length > m.target.nodeValue!.length))
+               m.type == "characterData" && m.oldValue!.length > m.target.nodeValue!.length)) {
+          // IE11 will sometimes (on backspacing out a single character
+          // text node after a BR node) call the observer callback
+          // before actually updating the DOM, which will cause
+          // ProseMirror to miss the change (see #930)
           this.flushSoon()
-        else
+        } else if (browser.safari && view.composing && mutations.some(
+          m => m.type == "childList" && m.target.nodeName == "TR")) {
+          // Safari does weird stuff when finishing a composition in a
+          // table cell, which tends to involve inserting inappropriate
+          // nodes in the table row.
+          view.input.badSafariComposition = true
+          this.flushSoon()
+        } else {
           this.flush()
+        }
       })
     if (useCharData) {
       this.onCharData = e => {
@@ -226,6 +234,10 @@ export class DOMObserver {
         view.docView.markDirty(from, to)
         checkCSS(view)
       }
+      if (view.input.badSafariComposition) {
+        view.input.badSafariComposition = false
+        fixUpBadSafariComposition(view, added)
+      }
       this.handleDOMChange(from, to, typeOver, added)
       if (view.docView && view.docView.dirty) view.updateState(view.state)
       else if (!this.currentSelection.eq(sel)) selectionToDOM(view)
@@ -346,4 +358,31 @@ function blockParent(view: EditorView, node: DOMNode): Node | null {
     if (desc && desc.node.isBlock) return p
   }
   return null
+}
+
+// Kludge for a Safari bug where, on ending a composition in an
+// otherwise empty table cell, it randomly moves the composed text
+// into the table row around that cell, greatly confusing everything
+// (#188).
+function fixUpBadSafariComposition(view: EditorView, addedNodes: readonly DOMNode[]) {
+  let {focusNode, focusOffset} = view.domSelectionRange()
+  for (let node of addedNodes) {
+    if (node.parentNode?.nodeName == "TR") {
+      let nextCell = node.nextSibling
+      while (nextCell && (nextCell.nodeName != "TD" && nextCell.nodeName != "TH")) nextCell = nextCell.nextSibling
+      if (nextCell) {
+        let parent = nextCell
+        for (;;) {
+          let first = parent.firstChild
+          if (!first || first.nodeType != 1 || (first as HTMLElement).contentEditable == "false" ||
+              /^(BR|IMG)$/.test(first.nodeName)) break
+          parent = first
+        }
+        parent.insertBefore(node, parent.firstChild)
+        if (focusNode == node) view.domSelection()!.collapse(node, focusOffset)
+      } else {
+        node.parentNode.removeChild(node)
+      }
+    }
+  }
 }

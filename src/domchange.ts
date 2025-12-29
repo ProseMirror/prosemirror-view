@@ -81,7 +81,7 @@ const isInline = /^(a|abbr|acronym|b|bd[io]|big|br|button|cite|code|data(list)?|
 export function readDOMChange(view: EditorView, from: number, to: number, typeOver: boolean, addedNodes: readonly DOMNode[]) {
   let compositionID = view.input.compositionPendingChanges || (view.composing ? view.input.compositionID : 0)
   view.input.compositionPendingChanges = 0
-  
+
   if (from < 0) {
     let origin = view.input.lastSelectionTime > Date.now() - 50 ? view.input.lastSelectionOrigin : null
     let newSel = selectionFromDOM(view, origin)

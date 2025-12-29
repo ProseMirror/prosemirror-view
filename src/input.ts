@@ -35,6 +35,7 @@ export class InputState {
   compositionNodes: ViewDesc[] = []
   compositionEndedAt = -2e8
   compositionID = 1
+  badSafariComposition = false
   // Set to a composition ID when there are pending changes at compositionend
   compositionPendingChanges = 0
   domChangeCount = 0
@@ -504,7 +505,8 @@ editHandlers.compositionend = (view, event) => {
     view.input.compositionEndedAt = event.timeStamp
     view.input.compositionPendingChanges = view.domObserver.pendingRecords().length ? view.input.compositionID : 0
     view.input.compositionNode = null
-    if (view.input.compositionPendingChanges) Promise.resolve().then(() => view.domObserver.flush())
+    if (view.input.badSafariComposition) view.domObserver.forceFlush()
+    else if (view.input.compositionPendingChanges) Promise.resolve().then(() => view.domObserver.flush())
     view.input.compositionID++
     scheduleComposeEnd(view, 20)
   }
