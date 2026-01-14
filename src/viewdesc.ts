@@ -772,15 +772,15 @@ export class NodeViewDesc extends ViewDesc {
     let updater = new ViewTreeUpdater(this, localComposition && localComposition.node, view)
     iterDeco(this.node, this.innerDeco, (widget, i, insideNode) => {
       if (widget.spec.marks)
-        updater.syncToMarks(widget.spec.marks, inline, view)
+        updater.syncToMarks(widget.spec.marks, inline, view, i)
       else if ((widget.type as WidgetType).side >= 0 && !insideNode)
-        updater.syncToMarks(i == this.node.childCount ? Mark.none : this.node.child(i).marks, inline, view)
+        updater.syncToMarks(i == this.node.childCount ? Mark.none : this.node.child(i).marks, inline, view, i)
       // If the next node is a desc matching this widget, reuse it,
       // otherwise insert the widget as a new view desc.
       updater.placeWidget(widget, view, off)
     }, (child, outerDeco, innerDeco, i) => {
       // Make sure the wrapping mark descs match the node's marks.
-      updater.syncToMarks(child.marks, inline, view)
+      updater.syncToMarks(child.marks, inline, view, i)
       // Try several strategies for drawing this node
       let compIndex
       if (updater.findNodeMatch(child, outerDeco, innerDeco, i)) {
@@ -799,7 +799,7 @@ export class NodeViewDesc extends ViewDesc {
       off += child.nodeSize
     })
     // Drop all remaining descs after the current position.
-    updater.syncToMarks([], inline, view)
+    updater.syncToMarks([], inline, view, 0)
     if (this.node.isTextblock) updater.addTextblockHacks()
     updater.destroyRest()
 
@@ -1197,7 +1197,7 @@ class ViewTreeUpdater {
 
   // Sync the current stack of mark descs with the given array of
   // marks, reusing existing mark descs when possible.
-  syncToMarks(marks: readonly Mark[], inline: boolean, view: EditorView) {
+  syncToMarks(marks: readonly Mark[], inline: boolean, view: EditorView, parentIndex: number) {
     let keep = 0, depth = this.stack.length >> 1
     let maxKeep = Math.min(depth, marks.length)
     while (keep < maxKeep &&
@@ -1214,8 +1214,9 @@ class ViewTreeUpdater {
     }
     while (depth < marks.length) {
       this.stack.push(this.top, this.index + 1)
-      let found = -1
-      for (let i = this.index; i < Math.min(this.index + 3, this.top.children.length); i++) {
+      let found = -1, scanTo = this.top.children.length
+      if (parentIndex < this.preMatch.index) scanTo = Math.min(this.index + 3, scanTo)
+      for (let i = this.index; i < scanTo; i++) {
         let next = this.top.children[i]
         if (next.matchesMark(marks[depth]) && !this.isLocked(next.dom)) { found = i; break }
       }
@@ -1404,12 +1405,16 @@ class ViewTreeUpdater {
 
 // Iterate from the end of the fragment and array of descs to find
 // directly matching ones, in order to avoid overeagerly reusing those
-// for other nodes. Returns the fragment index of the first node that
-// is part of the sequence of matched nodes at the end of the
-// fragment.
-function preMatch(
-  frag: Fragment, parentDesc: ViewDesc
-): {index: number, matched: Map<ViewDesc, number>, matches: readonly ViewDesc[]} {
+// for other nodes.
+function preMatch(frag: Fragment, parentDesc: ViewDesc): {
+  // The fragment index of the first node that is part of the sequence
+  // of matched nodes at the end of the fragment.
+  index: number,
+  // A map from matched descs to fragment indices.
+  matched: Map<ViewDesc, number>,
+  // The matched descs.
+  matches: readonly ViewDesc[]
+} {
   let curDesc = parentDesc, descI = curDesc.children.length
   let fI = frag.childCount, matched = new Map, matches = []
   outer: while (fI > 0) {
@@ -1428,7 +1433,6 @@ function preMatch(
       } else if (curDesc == parentDesc) {
         break outer
       } else {
-        // FIXME
         descI = curDesc.parent!.children.indexOf(curDesc)
         curDesc = curDesc.parent!
       }
