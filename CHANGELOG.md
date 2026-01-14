@@ -1,3 +1,13 @@
+## 1.41.5 (2026-01-14)
+
+### Bug fixes
+
+Work around an issue where, after some kinds of changes, Chrome misreports the cursor position and breaks composition.
+
+Improve DOM update behavior when deleting three or more nodes right before a mark, which would unnecessarily re-render the entire mark.
+
+Work around a newly introduced bug in Safari where composition in an empty table cell causes it to move the text out of the cell into the row element.
+
 ## 1.41.4 (2025-12-01)
 
 ### Bug fixes
