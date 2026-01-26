@@ -313,6 +313,20 @@ export class EditorView {
     }
   }
 
+  /// @internal
+  /// Returns the active element, accounting for nested contenteditable
+  /// elements. When the editor is inside another contenteditable,
+  /// activeElement may be the outer element even when the selection is
+  /// inside this editor.
+  effectiveActiveElement(): Element | null {
+    let active = this.root.activeElement
+    // If activeElement is an ancestor contenteditable that contains
+    // this.dom, treat this.dom as the effective active element.
+    if (active && active != this.dom && active.contains(this.dom))
+      return this.dom
+    return active
+  }
+
   /// Query whether the view has focus.
   hasFocus() {
     // Work around IE not handling focus correctly if resize handles are shown.
@@ -321,7 +335,7 @@ export class EditorView {
     if (browser.ie) {
       // If activeElement is within this.dom, and there are no other elements
       // setting `contenteditable` to false in between, treat it as focused.
-      let node = this.root.activeElement
+      let node = this.effectiveActiveElement()
       if (node == this.dom) return true
       if (!node || !this.dom.contains(node)) return false
       while (node && this.dom != node && this.dom.contains(node)) {
@@ -330,7 +344,7 @@ export class EditorView {
       }
       return true
     }
-    return this.root.activeElement == this.dom
+    return this.effectiveActiveElement() == this.dom
   }
 
   /// Focus the editor.

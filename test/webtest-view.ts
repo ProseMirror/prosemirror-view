@@ -119,4 +119,15 @@ describe("EditorView", () => {
     view.dispatch(view.state.tr.insertText("x"))
     ist(view, thisBinding)
   })
+
+  it("reports focus correctly when nested in contenteditable", () => {
+    let wrapper = document.createElement("div")
+    wrapper.contentEditable = "true"
+    space.appendChild(wrapper)
+    let view = new EditorView(wrapper, {state: EditorState.create({schema})})
+    view.focus()
+    ist(view.hasFocus())
+    view.destroy()
+    wrapper.remove()
+  })
 })
