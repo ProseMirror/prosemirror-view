@@ -1,3 +1,9 @@
+## 1.41.6 (2026-02-06)
+
+### Bug fixes
+
+Fix an issue where backspacing content before a flexbox or grid styled widget would insert a bogus line break on Firefox.
+
 ## 1.41.5 (2026-01-14)
 
 ### Bug fixes
