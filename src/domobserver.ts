@@ -192,7 +192,15 @@ export class DOMObserver {
       }
     }
 
-    if (browser.gecko && added.length) {
+    if (added.some(n => n.nodeName == "BR") && (view.input.lastKeyCode == 8 || view.input.lastKeyCode == 46)) {
+      // Browsers sometimes insert a bogus break node if you
+      // backspace out the last bit of text before an inline-flex node (#1552)
+      for (let node of added) if (node.nodeName == "BR" && node.parentNode) {
+        let after = node.nextSibling
+        if (after && after.nodeType == 1 && (after as HTMLElement).contentEditable == "false")
+          node.parentNode.removeChild(node)
+      }
+    } else if (browser.gecko && added.length) {
       let brs = added.filter(n => n.nodeName == "BR") as HTMLElement[]
       if (brs.length == 2) {
         let [a, b] = brs
@@ -205,15 +213,6 @@ export class DOMObserver {
           if (parent && parent.nodeName == "LI" && (!focusNode || blockParent(view, focusNode) != parent))
             br.remove()
         }
-      }
-    } else if ((browser.chrome || browser.safari) && added.some(n => n.nodeName == "BR") &&
-               (view.input.lastKeyCode == 8 || view.input.lastKeyCode == 46)) {
-      // Chrome/Safari sometimes insert a bogus break node if you
-      // backspace out the last bit of text before an inline-flex node (#1552)
-      for (let node of added) if (node.nodeName == "BR" && node.parentNode) {
-        let after = node.nextSibling
-        if (after && after.nodeType == 1 && (after as HTMLElement).contentEditable == "false")
-          node.parentNode.removeChild(node)
       }
     }
 
