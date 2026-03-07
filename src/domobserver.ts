@@ -197,8 +197,13 @@ export class DOMObserver {
       // backspace out the last bit of text before an inline-flex node (#1552)
       for (let node of added) if (node.nodeName == "BR" && node.parentNode) {
         let after = node.nextSibling
-        if (after && after.nodeType == 1 && (after as HTMLElement).contentEditable == "false")
-          node.parentNode.removeChild(node)
+        while (after && after.nodeType == 1) {
+          if ((after as HTMLElement).contentEditable == "false") {
+            node.parentNode.removeChild(node)
+            break
+          }
+          after = after.firstChild
+        }
       }
     } else if (browser.gecko && added.length) {
       let brs = added.filter(n => n.nodeName == "BR") as HTMLElement[]
