@@ -274,11 +274,11 @@ export class EditorView {
 
   private updateDraggedNode(dragging: Dragging, prev: EditorState) {
     let sel = dragging.node!, found = -1
-    if (this.state.doc.nodeAt(sel.from) == sel.node) {
+    if (sel.from < this.state.doc.content.size && this.state.doc.nodeAt(sel.from) == sel.node) {
       found = sel.from
     } else {
       let movedPos = sel.from + (this.state.doc.content.size - prev.doc.content.size)
-      let moved = movedPos > 0 && this.state.doc.nodeAt(movedPos)
+      let moved = movedPos > 0 && movedPos < this.state.doc.content.size && this.state.doc.nodeAt(movedPos)
       if (moved == sel.node) found = movedPos
     }
     this.dragging = new Dragging(dragging.slice, dragging.move,
