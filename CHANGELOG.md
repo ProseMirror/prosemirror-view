@@ -1,3 +1,11 @@
+## 1.41.7 (2026-03-18)
+
+### Bug fixes
+
+Work around a Chrome bug where it sometimes inserts a random `<br>` node when you press backspace before a widget.
+
+Fix a crash that could happen when deleting content during a node drag.
+
 ## 1.41.6 (2026-02-06)
 
 ### Bug fixes
