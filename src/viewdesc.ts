@@ -705,7 +705,7 @@ export class NodeViewDesc extends ViewDesc {
       let spec = (DOMSerializer.renderSpec as any)(document, node.type.spec.toDOM!(node), null, node.attrs)
       ;({dom, contentDOM} = spec as {dom: DOMNode, contentDOM?: HTMLElement})
     }
-    if (!contentDOM && !node.isText && dom.nodeName != "BR") { // Chrome gets confused by <br contenteditable=false>
+    if (!contentDOM && !node.isText && dom.nodeType == 3 && dom.nodeName != "BR") { // Chrome gets confused by <br contenteditable=false>
       if (!(dom as HTMLElement).hasAttribute("contenteditable")) (dom as HTMLElement).contentEditable = "false"
       if (node.type.spec.draggable) (dom as HTMLElement).draggable = true
     }
