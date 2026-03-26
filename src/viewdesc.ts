@@ -30,7 +30,7 @@ export type ViewMutationRecord = MutationRecord | { type: "selection", target: D
 /// Objects returned as node views must conform to this interface.
 export interface NodeView {
   /// The outer DOM node that represents the document node.
-  dom: DOMNode
+  dom: HTMLElement
 
   /// The DOM node that should hold the node's content. Only meaningful
   /// if the node view also defines a `dom` property and if its node
@@ -99,7 +99,7 @@ export interface NodeView {
 /// Objects returned as mark views must conform to this interface.
 export interface MarkView {
   /// The outer DOM node that represents the document node.
-  dom: DOMNode
+  dom: HTMLElement
 
   /// The DOM node that should hold the mark's content. When this is not
   /// present, the `dom` property is used as the content DOM.
@@ -610,7 +610,7 @@ class CompositionViewDesc extends ViewDesc {
 // some cases they will be split more often than would appear
 // necessary.
 class MarkViewDesc extends ViewDesc {
-  constructor(parent: ViewDesc, readonly mark: Mark, dom: DOMNode, contentDOM: HTMLElement, readonly spec: MarkView) {
+  constructor(parent: ViewDesc, readonly mark: Mark, dom: HTMLElement, contentDOM: HTMLElement, readonly spec: MarkView) {
     super(parent, [], dom, contentDOM)
   }
 
@@ -697,13 +697,13 @@ export class NodeViewDesc extends ViewDesc {
       if (descObj.parent) return descObj.parent.posBeforeChild(descObj)
     }, outerDeco, innerDeco)
 
-    let dom = spec && spec.dom, contentDOM = spec && spec.contentDOM
+    let dom: DOMNode | undefined = spec && spec.dom, contentDOM = spec && spec.contentDOM
     if (node.isText) {
       if (!dom) dom = document.createTextNode(node.text!)
       else if (dom.nodeType != 3) throw new RangeError("Text must be rendered as a DOM text node")
     } else if (!dom) {
       let spec = (DOMSerializer.renderSpec as any)(document, node.type.spec.toDOM!(node), null, node.attrs)
-      ;({dom, contentDOM} = spec as {dom: DOMNode, contentDOM?: HTMLElement})
+      ;({dom, contentDOM} = spec as {dom: HTMLElement, contentDOM?: HTMLElement})
     }
     if (!contentDOM && !node.isText && dom.nodeName != "BR") { // Chrome gets confused by <br contenteditable=false>
       if (!(dom as HTMLElement).hasAttribute("contenteditable")) (dom as HTMLElement).contentEditable = "false"
@@ -714,8 +714,8 @@ export class NodeViewDesc extends ViewDesc {
     dom = applyOuterDeco(dom, outerDeco, node)
 
     if (spec)
-      return descObj = new CustomNodeViewDesc(parent, node, outerDeco, innerDeco, dom, contentDOM || null, nodeDOM,
-                                              spec, view, pos + 1)
+      return descObj = new CustomNodeViewDesc(parent, node, outerDeco, innerDeco, dom as HTMLElement, contentDOM || null,
+                                              nodeDOM as HTMLElement, spec, view, pos + 1)
     else if (node.isText)
       return new TextViewDesc(parent, node, outerDeco, innerDeco, dom, nodeDOM, view)
     else
@@ -985,7 +985,7 @@ class TrailingHackViewDesc extends ViewDesc {
 // customized.
 class CustomNodeViewDesc extends NodeViewDesc {
   constructor(parent: ViewDesc | undefined, node: Node, outerDeco: readonly Decoration[], innerDeco: DecorationSource,
-              dom: DOMNode, contentDOM: HTMLElement | null, nodeDOM: DOMNode, readonly spec: NodeView,
+              dom: HTMLElement, contentDOM: HTMLElement | null, nodeDOM: HTMLElement, readonly spec: NodeView,
               view: EditorView, pos: number) {
     super(parent, node, outerDeco, innerDeco, dom, contentDOM, nodeDOM, view, pos)
   }
