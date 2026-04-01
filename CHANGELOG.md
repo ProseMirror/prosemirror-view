@@ -2076,7 +2076,7 @@ Fixes a problem where triple-clicking the editor would sometimes cause the scrol
 
 The `inclusiveLeft` and `inclusiveRight` options to inline decorations were renamed to [`inclusiveStart`](https://prosemirror.net/docs/ref/version/0.20.0.html#view.Decoration^inline^spec.inclusiveStart) and [`inclusiveEnd`](https://prosemirror.net/docs/ref/version/0.20.0.html#view.Decoration^inline^spec.inclusiveEnd) so that they also make sense in right-to-left text. The old names work with a warning until the next release.
 
-The default styling for lists and blockquotes was removed from `prosemirror.css`. (They were moved to the [`example-setup`](https://github.com/ProseMirror/prosemirror-example-setup) module.)
+The default styling for lists and blockquotes was removed from `prosemirror.css`. (They were moved to the [`example-setup`](https://code.haverbeke.berlin/prosemirror/prosemirror-example-setup) module.)
 
 ### Bug fixes
 
@@ -2250,7 +2250,7 @@ Fix DOM parsing for decorated text nodes.
 
 The editor view no longer wraps its editable DOM element in a wrapper element. The `ProseMirror` CSS class now applies directly to the editable element. The `ProseMirror-content` CSS class is still present for ease of upgrading but will be dropped in the next release.
 
-The editor view no longer draws a drop cursor when dragging content over the editor. The new [`prosemirror-dropcursor`](https://github.com/prosemirror/prosemirror-dropcursor) module implements this as a plugin.
+The editor view no longer draws a drop cursor when dragging content over the editor. The new [`prosemirror-dropcursor`](https://code.haverbeke.berlin/prosemirror/prosemirror-dropcursor) module implements this as a plugin.
 
 ### Bug fixes
 

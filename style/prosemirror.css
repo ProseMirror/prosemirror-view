@@ -23,7 +23,7 @@
 .ProseMirror-hideselection *::-moz-selection { background: transparent; }
 .ProseMirror-hideselection { caret-color: transparent; }
 
-/* See https://github.com/ProseMirror/prosemirror/issues/1421#issuecomment-1759320191 */
+/* See https://code.haverbeke.berlin/prosemirror/prosemirror/issues/1421#issuecomment-1759320191 */
 .ProseMirror [draggable][contenteditable=false] { user-select: text }
 
 .ProseMirror-selectednode {

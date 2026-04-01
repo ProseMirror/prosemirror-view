@@ -334,8 +334,8 @@ class MouseDown {
 
     let {selection} = view.state
     if (event.button == 0 &&
-        targetNode.type.spec.draggable && targetNode.type.spec.selectable !== false ||
-        selection instanceof NodeSelection && selection.from <= targetPos && selection.to > targetPos)
+        (targetNode.type.spec.draggable && targetNode.type.spec.selectable !== false ||
+         selection instanceof NodeSelection && selection.from <= targetPos && selection.to > targetPos))
       this.mightDrag = {
         node: targetNode,
         pos: targetPos,
@@ -701,7 +701,7 @@ handlers.dragstart = (view, _event) => {
   if (!event.dataTransfer.files.length || !browser.chrome || browser.chrome_version > 120)
     event.dataTransfer.clearData()
   event.dataTransfer.setData(brokenClipboardAPI ? "Text" : "text/html", dom.innerHTML)
-  // See https://github.com/ProseMirror/prosemirror/issues/1156
+  // See https://code.haverbeke.berlin/prosemirror/prosemirror/issues/1156
   event.dataTransfer.effectAllowed = "copyMove"
   if (!brokenClipboardAPI) event.dataTransfer.setData("text/plain", text)
   view.dragging = new Dragging(slice, dragMoves(view, event), node)
